@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { canUndo, cabSide, getMoveRange, isWon, newGame, tryMove, undo } from './game.ts';
 import { parseLevel } from './level.ts';
-import { solve } from './solver.ts';
+import { SolverLimitError, nextMove, solve } from './solver.ts';
 
 // . . . . . .
 // . . . B . .
@@ -153,5 +153,50 @@ describe('solver', () => {
       ],
     });
     expect(solve(stuck)).toBeNull();
+  });
+});
+
+describe('pumpjacks', () => {
+  // A A . P . .   pumpjack at 2,3 blocks red for good; red must use its left gate instead.
+  const withPumpjack = parseLevel({
+    id: 'pj',
+    name: 'Pumpjack',
+    par: 1,
+    trucks: [{ id: 'A', color: 'red', row: 2, col: 1, length: 2, orient: 'h' }],
+    gates: [{ color: 'red', side: 'left', index: 2 }],
+    obstacles: [{ row: 2, col: 3 }],
+  });
+
+  it('blocks trucks like a wall', () => {
+    expect(getMoveRange(newGame(withPumpjack), 'A')).toEqual({ min: -1, max: 0, exitDelta: -1 });
+  });
+
+  it('defaults to no obstacles', () => {
+    expect(level.obstacles).toEqual([]);
+  });
+});
+
+describe('hints', () => {
+  it('solves from the current position, not the start', () => {
+    const moved = tryMove(newGame(level), 'B', -1)!.state;
+    // B moved up out of row 2, so A now drives straight out first.
+    expect(solve(level, 1000, moved.trucks)).toEqual([
+      { id: 'A', delta: 4 },
+      { id: 'B', delta: 4 },
+    ]);
+  });
+
+  it('suggests the first move of a shortest solution', () => {
+    expect(nextMove(newGame(level))).toEqual({ id: 'B', delta: 3 });
+  });
+
+  it('suggests nothing once the pad is clear', () => {
+    let game = tryMove(newGame(level), 'B', 3)!.state;
+    game = tryMove(game, 'A', 4)!.state;
+    expect(nextMove(game)).toBeNull();
+  });
+
+  it('stops at the state limit', () => {
+    expect(() => solve(level, 1)).toThrow(SolverLimitError);
   });
 });

@@ -1,4 +1,4 @@
-import { COLORS, SIZE, type Color, type Gate, type Level, type Side, type Truck } from './types.ts';
+import { COLORS, SIZE, type Cell, type Color, type Gate, type Level, type Side, type Truck } from './types.ts';
 
 export class LevelError extends Error {}
 
@@ -80,10 +80,15 @@ function parseGate(raw: unknown, where: string): Gate {
   return { color, side: side as Side, index };
 }
 
+function parseCell(raw: unknown, where: string): Cell {
+  if (!isObj(raw) || !isIndex(raw.row) || !isIndex(raw.col)) throw new LevelError(`${where}: obstacle needs row/col 0-5`);
+  return { row: raw.row, col: raw.col };
+}
+
 /** Validates raw JSON and returns a Level, or throws LevelError explaining what is wrong. */
 export function parseLevel(raw: unknown): Level {
   if (!isObj(raw)) throw new LevelError('level must be an object');
-  const { id, name, par, hint, trucks, gates } = raw;
+  const { id, name, par, hint, trucks, gates, obstacles = [] } = raw;
   if (typeof id !== 'string' || id === '') throw new LevelError('level id must be a string');
   const where = `level ${id}`;
   if (typeof name !== 'string') throw new LevelError(`${where}: name must be a string`);
@@ -91,6 +96,7 @@ export function parseLevel(raw: unknown): Level {
   if (hint !== undefined && typeof hint !== 'string') throw new LevelError(`${where}: hint must be a string`);
   if (!Array.isArray(trucks) || trucks.length === 0) throw new LevelError(`${where}: needs at least one truck`);
   if (!Array.isArray(gates)) throw new LevelError(`${where}: gates must be an array`);
+  if (!Array.isArray(obstacles)) throw new LevelError(`${where}: obstacles must be an array`);
 
   const level: Level = {
     id,
@@ -99,6 +105,7 @@ export function parseLevel(raw: unknown): Level {
     ...(hint === undefined ? {} : { hint }),
     trucks: trucks.map((t) => parseTruck(t, where)),
     gates: gates.map((g) => parseGate(g, where)),
+    obstacles: obstacles.map((o) => parseCell(o, where)),
   };
 
   const ids = new Set<string>();
@@ -111,6 +118,11 @@ export function parseLevel(raw: unknown): Level {
       if (other) throw new LevelError(`${where}: trucks ${other} and ${t.id} overlap at ${r},${c}`);
       occupied.set(`${r},${c}`, t.id);
     }
+  }
+  for (const o of level.obstacles) {
+    const other = occupied.get(`${o.row},${o.col}`);
+    if (other) throw new LevelError(`${where}: pumpjack at ${o.row},${o.col} overlaps ${other}`);
+    occupied.set(`${o.row},${o.col}`, 'pumpjack');
   }
 
   const gateSpots = new Set<string>();

@@ -111,3 +111,14 @@ describe('hint', () => {
     expect(() => parseLevel({ ...valid(), hint: 3 })).toThrow(/hint/);
   });
 });
+
+describe('obstacles', () => {
+  it('parses pumpjacks', () => {
+    expect(parseLevel({ ...valid(), obstacles: [{ row: 5, col: 5 }] }).obstacles).toEqual([{ row: 5, col: 5 }]);
+  });
+
+  it('rejects a pumpjack on a truck or off the pad', () => {
+    expect(() => parseLevel({ ...valid(), obstacles: [{ row: 2, col: 1 }] })).toThrow(/overlaps A/);
+    expect(() => parseLevel({ ...valid(), obstacles: [{ row: 6, col: 1 }] })).toThrow(/row\/col/);
+  });
+});

@@ -1,38 +1,62 @@
 import { getMoveRange, tryMove } from './game.ts';
 import type { GameState, Level, Move, Truck } from './types.ts';
 
+/** Truck order never changes during play (moves map, exits filter), so no sort is needed. */
 function key(trucks: readonly Truck[]): string {
-  return trucks
-    .map((t) => `${t.id}${t.row}${t.col}`)
-    .sort()
-    .join('|');
+  let k = '';
+  for (const t of trucks) k += `${t.id}${t.row}${t.col}|`;
+  return k;
 }
 
-/** Breadth-first search for the shortest solution. Returns null if the level can't be cleared. */
-export function solve(level: Level, maxStates = 500_000): Move[] | null {
-  const start: GameState = { level, trucks: level.trucks, moves: 0, history: [] };
-  const seen = new Set([key(start.trucks)]);
-  let frontier: { state: GameState; path: Move[] }[] = [{ state: start, path: [] }];
+interface Node {
+  trucks: Truck[];
+  parent: Node | null;
+  move: Move | null;
+}
+
+function pathTo(node: Node): Move[] {
+  const path: Move[] = [];
+  for (let n: Node | null = node; n?.move; n = n.parent) path.push(n.move);
+  return path.reverse();
+}
+
+export class SolverLimitError extends Error {}
+
+/**
+ * Breadth-first search for the shortest solution from `trucks` (default: the level's start).
+ * Returns null if the position can't be cleared. Throws SolverLimitError past `maxStates`.
+ */
+export function solve(level: Level, maxStates = 500_000, trucks: Truck[] = level.trucks): Move[] | null {
+  if (trucks.length === 0) return [];
+  const seen = new Set([key(trucks)]);
+  let frontier: Node[] = [{ trucks, parent: null, move: null }];
+  const scratch: GameState = { level, trucks, moves: 0, history: [] };
 
   while (frontier.length > 0) {
-    const next: typeof frontier = [];
-    for (const { state, path } of frontier) {
-      for (const t of state.trucks) {
-        const range = getMoveRange(state, t.id)!;
+    const next: Node[] = [];
+    for (const node of frontier) {
+      scratch.trucks = node.trucks;
+      for (const t of node.trucks) {
+        const range = getMoveRange(scratch, t.id)!;
         for (let delta = range.min; delta <= range.max; delta++) {
-          const result = tryMove(state, t.id, delta);
+          const result = tryMove(scratch, t.id, delta);
           if (!result) continue;
-          const nextPath = [...path, { id: t.id, delta }];
-          if (result.state.trucks.length === 0) return nextPath;
-          const k = key(result.state.trucks);
+          const child: Node = { trucks: result.state.trucks, parent: node, move: { id: t.id, delta } };
+          if (child.trucks.length === 0) return pathTo(child);
+          const k = key(child.trucks);
           if (seen.has(k)) continue;
           seen.add(k);
-          if (seen.size > maxStates) throw new Error(`solver gave up on level ${level.id}`);
-          next.push({ state: { ...result.state, history: [] }, path: nextPath });
+          if (seen.size > maxStates) throw new SolverLimitError(`solver gave up on level ${level.id}`);
+          next.push(child);
         }
       }
     }
     frontier = next;
   }
   return null;
+}
+
+/** The first move of a shortest solution from the current position, or null if already won. */
+export function nextMove(state: GameState): Move | null {
+  return solve(state.level, 500_000, state.trucks)?.[0] ?? null;
 }

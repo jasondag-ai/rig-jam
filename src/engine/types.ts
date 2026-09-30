@@ -24,6 +24,12 @@ export interface Gate {
   index: number;
 }
 
+/** A fixed 1-cell obstacle (a pumpjack). Nothing can drive through it. */
+export interface Cell {
+  row: number;
+  col: number;
+}
+
 export interface Level {
   id: string;
   name: string;
@@ -32,6 +38,8 @@ export interface Level {
   hint?: string;
   trucks: Truck[];
   gates: Gate[];
+  /** Pumpjacks. Empty when the level has none. */
+  obstacles: Cell[];
 }
 
 export interface GameState {
