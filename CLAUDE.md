@@ -27,7 +27,7 @@ something, give exact clicks and one command at a time.
 ## Level JSON format
 ```json
 {
-  "id": "01", "name": "First Load", "par": 2,
+  "id": "01", "name": "First Load", "par": 2, "hint": "optional one-line tip",
   "trucks": [{ "id": "A", "color": "red", "row": 2, "col": 0, "length": 2, "orient": "h" }],
   "gates":  [{ "color": "red", "side": "right", "index": 2 }]
 }

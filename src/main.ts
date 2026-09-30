@@ -16,7 +16,7 @@ function showLevels(): void {
   screen.innerHTML = `
     <header class="brand">
       <h1>Rush Hour Rigs</h1>
-      <p>Slide each truck out through the gate of its color. Trucks only move the way they face.</p>
+      <p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>
     </header>
     <ol class="level-list"></ol>`;
   const list = screen.querySelector('.level-list')!;

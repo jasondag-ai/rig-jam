@@ -182,6 +182,19 @@ button {
   padding: 8px 0;
 }
 
+.hint {
+  margin: 0 0 12px;
+  min-height: 1.3em;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--ink-dim);
+}
+
+.hint:empty {
+  display: none;
+}
+
 .controls {
   display: grid;
   grid-template-columns: 1fr 1fr;

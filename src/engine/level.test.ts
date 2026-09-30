@@ -103,3 +103,11 @@ describe('helpers', () => {
     expect(gateFor(level, level.trucks[1]).side).toBe('bottom');
   });
 });
+
+describe('hint', () => {
+  it('keeps an optional hint and rejects a non-string one', () => {
+    expect(parseLevel({ ...valid(), hint: 'Try it' }).hint).toBe('Try it');
+    expect(parseLevel(valid()).hint).toBeUndefined();
+    expect(() => parseLevel({ ...valid(), hint: 3 })).toThrow(/hint/);
+  });
+});

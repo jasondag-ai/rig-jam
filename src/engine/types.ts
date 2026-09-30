@@ -28,6 +28,8 @@ export interface Level {
   id: string;
   name: string;
   par: number;
+  /** Optional one-line tip shown under the board. */
+  hint?: string;
   trucks: Truck[];
   gates: Gate[];
 }

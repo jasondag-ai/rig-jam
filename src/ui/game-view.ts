@@ -39,12 +39,14 @@ export class GameView {
         <div class="score"><span class="moves">0</span><span class="par">par ${level.par}</span></div>
       </header>
       <main class="stage"></main>
+      <p class="hint"></p>
       <footer class="controls">
-        <button class="btn" data-act="undo">↶ Undo</button>
-        <button class="btn" data-act="restart">⟲ Restart</button>
+        <button class="btn" data-act="undo">Undo</button>
+        <button class="btn" data-act="restart">Restart</button>
       </footer>
       <div class="overlay win" hidden></div>`;
     this.el.querySelector('.name')!.textContent = level.name;
+    this.el.querySelector('.hint')!.textContent = level.hint ?? '';
     this.movesEl = this.el.querySelector('.moves')!;
     this.undoBtn = this.el.querySelector('[data-act="undo"]')!;
     this.winEl = this.el.querySelector('.win')!;
