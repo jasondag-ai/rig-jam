@@ -11,6 +11,7 @@
     "check-levels": "node scripts/check-levels.ts"
   },
   "devDependencies": {
+    "@types/node": "^26.6.3",
     "typescript": "^7.0.2",
     "vite": "^8.3.1",
     "vitest": "^4.1.11"
