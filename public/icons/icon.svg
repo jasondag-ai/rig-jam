@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd84a"/><stop offset="1" stop-color="#ffb21a"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#sky)"/>
+  <rect y="352" width="512" height="160" fill="#e8cb92"/>
+  <rect y="346" width="512" height="12" fill="#2a1a0c" opacity="0.18"/>
+  <!-- truck: bed, cab, wheels -->
+  <ellipse cx="256" cy="392" rx="190" ry="20" fill="#2a1a0c" opacity="0.25"/>
+  <rect x="62" y="196" width="250" height="150" rx="24" fill="#ff4747" stroke="#2a1a0c" stroke-width="16"/>
+  <rect x="80" y="214" width="214" height="26" rx="13" fill="#fff" opacity="0.45"/>
+  <path d="M312 230 h70 q22 0 34 18 l34 50 q8 12 8 26 v22 q0 18 -18 18 h-128 z" fill="#c42f2f" stroke="#2a1a0c" stroke-width="16" stroke-linejoin="round"/>
+  <path d="M338 252 h40 q10 0 16 9 l24 36 h-80 z" fill="#d9f3ff" stroke="#2a1a0c" stroke-width="12" stroke-linejoin="round"/>
+  <circle cx="140" cy="352" r="44" fill="#2a2725" stroke="#2a1a0c" stroke-width="12"/>
+  <circle cx="140" cy="352" r="17" fill="#c9c6be"/>
+  <circle cx="370" cy="352" r="44" fill="#2a2725" stroke="#2a1a0c" stroke-width="12"/>
+  <circle cx="370" cy="352" r="17" fill="#c9c6be"/>
+  <!-- gate symbol badge -->
+  <circle cx="187" cy="280" r="40" fill="#ff4747" stroke="#2a1a0c" stroke-width="10"/>
+  <path d="M187 254 l24 26 l-24 26 l-24 -26 z" fill="#fff" stroke="#2a1a0c" stroke-width="6" stroke-linejoin="round"/>
+  <!-- hard hat -->
+  <path d="M196 124 a64 56 0 0 1 128 0 z" fill="#ffd21f" stroke="#2a1a0c" stroke-width="12" stroke-linejoin="round"/>
+  <rect x="176" y="118" width="168" height="24" rx="12" fill="#ffd21f" stroke="#2a1a0c" stroke-width="12"/>
+  <rect x="252" y="70" width="16" height="52" rx="6" fill="#2a1a0c" opacity="0.25"/>
+</svg>
