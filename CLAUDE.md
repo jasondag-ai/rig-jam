@@ -48,6 +48,8 @@ something, give exact clicks and one command at a time.
 - `src/ui/lines.ts` – driver bump lines and the NEAR MISS stamp text. Owner edits these freely.
   Pools by trigger: `any` (every bump; tanks and wellheads use only this), `truck`, `wall` (fence or
   wrong-color gate), `pumpjack`. A bump draws from its pool plus `any`, never repeating the last line.
+  Who speaks (`src/ui/bump.ts`): the truck that got hit; for a fence, wrong gate or obstacle, a random
+  other truck still on the pad; the dragged truck only when it is the last one. Bubbles stay on screen.
 - `src/levels/cardium.json`, `montney.json` – GENERATED. Never hand-edit; `src/levels/regions.ts`
   loads them.
 - `tools/generator.ts` – generator core (random layouts hill-climbed toward a target par, proven by

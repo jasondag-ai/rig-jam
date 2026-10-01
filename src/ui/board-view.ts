@@ -1,4 +1,5 @@
 import { SIZE, cabSide, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
+import { bumpTarget, pickSpeaker } from './bump.ts';
 import { BUMP_STAMP, pickLine, type BumpHit } from './lines.ts';
 import { OBSTACLE_SVG } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
@@ -250,26 +251,15 @@ export class BoardView {
     body.classList.remove('jolt');
     void body.offsetWidth; // restart the animation
     body.classList.add('jolt');
-    this.stamp(d.el);
-    this.speak(d.el, this.whatWasHit(d, direction));
-  }
-
-  /** The thing just past where the truck stopped: another truck, an obstacle, or the fence/gate. */
-  private whatWasHit(d: Drag, direction: 1 | -1): BumpHit {
+    // The driver who'd complain: the truck that got hit, else another truck, else the dragged one.
     const state = this.getState();
-    const t = state.trucks.find((x) => x.id === d.id);
-    if (!t) return 'wall';
-    const pos = t.orient === 'h' ? t.col : t.row;
-    const next = direction > 0 ? pos + t.length - 1 + d.range.max + 1 : pos + d.range.min - 1;
-    if (next < 0 || next >= SIZE) return 'wall';
-    const row = t.orient === 'h' ? t.row : next;
-    const col = t.orient === 'h' ? next : t.col;
-    const ob = state.level.obstacles.find((o) => o.row === row && o.col === col);
-    if (ob) return ob.kind ?? 'pumpjack';
-    return 'truck';
+    const target = bumpTarget(state, d.id, d.range, direction);
+    const speakerEl = this.trucks.get(pickSpeaker(state, d.id, target)) ?? d.el;
+    this.stamp(speakerEl);
+    this.speak(speakerEl, target.hit);
   }
 
-  /** Flashes the stamp on the half of the board away from the truck, so it doesn't cover the bubble. */
+  /** Flashes the stamp on the half of the board away from the speaker, so it doesn't cover the bubble. */
   private stamp(truckEl: HTMLElement): void {
     this.el.querySelector('.stamp')?.remove();
     const s = document.createElement('div');
@@ -292,25 +282,30 @@ export class BoardView {
     b.className = 'bubble';
     b.textContent = line;
     b.dataset.hit = hit;
+    b.dataset.speaker = truckEl.dataset.id ?? '';
     this.el.append(b);
 
-    // Point the bubble at the cab, above it (or below if the truck is on the top row).
+    // Point the bubble at the speaker's cab: above it if it fits on screen, otherwise below.
+    // Positions are worked out in viewport space so the bubble always stays fully on screen.
+    const margin = 8;
+    const gap = 10;
     const board = this.el.getBoundingClientRect();
     const cab = (truckEl.querySelector('.cab') ?? truckEl).getBoundingClientRect();
-    const cx = cab.left + cab.width / 2 - board.left;
-    const below = cab.top - board.top < this.cell * 1.3;
-    const maxW = Math.min(board.width - 16, 240);
-    b.style.maxWidth = `${maxW}px`;
+    const vw = document.documentElement.clientWidth;
+    const vh = window.innerHeight;
+    b.style.maxWidth = `${Math.min(vw - margin * 2, 240)}px`;
     const bw = b.offsetWidth;
-    const left = Math.max(8, Math.min(board.width - bw - 8, cx - bw / 2));
-    b.style.left = `${left}px`;
-    b.style.setProperty('--tail', `${cx - left}px`);
-    if (below) {
-      b.classList.add('below');
-      b.style.top = `${cab.bottom - board.top + 10}px`;
-    } else {
-      b.style.top = `${cab.top - board.top - b.offsetHeight - 10}px`;
-    }
+    const bh = b.offsetHeight;
+    const cx = cab.left + cab.width / 2;
+    const left = Math.max(margin, Math.min(vw - bw - margin, cx - bw / 2));
+    const aboveTop = cab.top - bh - gap;
+    const belowTop = cab.bottom + gap;
+    const below = aboveTop < margin && belowTop + bh <= vh - margin;
+    const top = Math.max(margin, Math.min(vh - bh - margin, below ? belowTop : aboveTop));
+    b.classList.toggle('below', below);
+    b.style.left = `${left - board.left}px`;
+    b.style.top = `${top - board.top}px`;
+    b.style.setProperty('--tail', `${Math.max(14, Math.min(bw - 14, cx - left))}px`);
     setTimeout(() => b.remove(), BUBBLE_MS);
   }
 
