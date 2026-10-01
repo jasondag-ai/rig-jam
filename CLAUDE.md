@@ -10,6 +10,8 @@ something, give exact clicks and one command at a time.
 - Colored gates sit in the fence. A truck exits when it slides into a gate of its own color.
   Wrong-color gates act as walls, same as the fence.
 - Each truck has exactly one gate of its color in line with it. The cab faces that gate.
+- Trucks have a cosmetic `kind` that must suit their length: 2-cell `pickup`/`picker`, 3-cell
+  `vac`/`frac`/`water` (missing = pickup or vac). The engine and solver never read it.
 - Obstacles are fixed 1-cell lease equipment. Nothing moves through them. Each has a cosmetic
   `kind` (pumpjack, tank, wellhead; missing = pumpjack). The engine and solver never read it.
 - Clear all trucks to win. Score = moves vs par (par = optimal move count from the solver).
@@ -41,6 +43,8 @@ something, give exact clicks and one command at a time.
   next to it (`*.test.ts`).
 - `src/ui/` – DOM rendering, drag input, screens, local progress.
 - `src/ui/obstacles.ts` – SVG art for each obstacle kind (colors and nod/crank motion in style.css).
+- `src/ui/vehicles.ts` – top-down SVG art per truck kind, drawn cab-right and rotated by CSS to face
+  the gate. Body panels use the truck color; the gate symbol sits on an upright color badge.
 - `src/ui/lines.ts` – driver bump lines and the NEAR MISS stamp text. Owner edits these freely.
   Pools by trigger: `any` (every bump; tanks and wellheads use only this), `truck`, `wall` (fence or
   wrong-color gate), `pumpjack`. A bump draws from its pool plus `any`, never repeating the last line.
@@ -50,7 +54,8 @@ something, give exact clicks and one command at a time.
   the solver). `tools/gen-levels.ts` – slot targets per region (trucks, pumpjacks, par window,
   forced extra moves, decoy gates, seed), names and hints. To change levels, tune the slots and run
   `npm run gen-levels`. Finished slots are cached in `tools/.gen-cache/` (gitignored). Obstacle
-  kinds are assigned at write time from each region's fixed `kindSeed`, so they never touch layouts.
+  kinds and truck kinds are assigned at write time from each region's fixed `kindSeed` and
+  `truckKindSeed`, so they never touch layouts.
 - `tools/check-levels.ts` – prints every level with its optimal solution.
 - `public/` – static files copied as-is.
 
@@ -58,7 +63,7 @@ something, give exact clicks and one command at a time.
 ```json
 {
   "id": "01", "name": "First Load", "par": 2, "hint": "optional one-line tip",
-  "trucks": [{ "id": "A", "color": "red", "row": 2, "col": 0, "length": 2, "orient": "h" }],
+  "trucks": [{ "id": "A", "color": "red", "row": 2, "col": 0, "length": 2, "orient": "h", "kind": "pickup" }],
   "gates":  [{ "color": "red", "side": "right", "index": 2 }],
   "obstacles": [{ "row": 4, "col": 4, "kind": "tank" }]
 }
@@ -70,7 +75,7 @@ something, give exact clicks and one command at a time.
   gates of its color, and a truck already touching its gate.
 - Tests assert every shipped level is solvable, `par` equals the solver's optimum, par and truck
   count never drop within a region, every Montney obstacle gets in the way of the best solution, and
-  obstacle kind never changes solver results.
+  obstacle kind and truck kind never change solver results.
 
 ## Conventions
 - Imports use explicit `.ts` extensions (lets Node run `tools/*.ts` directly).
