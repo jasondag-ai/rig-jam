@@ -4,7 +4,7 @@ import { GHOST_MS, onTap } from './tap.ts';
 
 const pointer = (el: Element, type: string, x: number, y: number, id = 1) =>
   el.dispatchEvent(new PointerEvent(type, { pointerId: id, clientX: x, clientY: y, bubbles: true }));
-const click = (el: Element) => el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+const click = (el: Element, x = 100, y = 100) => el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, clientX: x, clientY: y }));
 
 // The fake clock restarts at 0 for every test, but the module's swallow window doesn't, so each
 // test starts further along the clock than any window an earlier test could have left open.
@@ -58,6 +58,21 @@ describe('onTap', () => {
     vi.advanceTimersByTime(GHOST_MS + 10);
     click(other); // a real, later tap is fine
     expect(otherClicks).toEqual(['level 1']);
+  });
+
+  it('never swallows a genuine new tap, even a quick one', () => {
+    const otherClicks: string[] = [];
+    other.addEventListener('click', () => otherClicks.push('done'));
+    pointer(btn, 'pointerdown', 100, 100);
+    pointer(btn, 'pointerup', 100, 100);
+    // A new touch begins right away on the next screen's button: its click must go through.
+    pointer(other, 'pointerdown', 100, 100);
+    click(other);
+    // And a click somewhere else entirely (not the echo of this tap) goes through too.
+    pointer(btn, 'pointerdown', 100, 100);
+    pointer(btn, 'pointerup', 100, 100);
+    click(other, 300, 500);
+    expect(otherClicks).toEqual(['done', 'done']);
   });
 
   it('ignores disabled buttons and a cancelled pointer', () => {

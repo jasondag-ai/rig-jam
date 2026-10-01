@@ -6,6 +6,7 @@ import { streakSignHtml } from './ui/sign.ts';
 import { hatsHtml } from './ui/hats.ts';
 import { hardHats, loadProgress, resetProgress, saveProgress } from './ui/progress.ts';
 import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } from './ui/unlocks.ts';
+import { onTap } from './ui/tap.ts';
 import { sceneryHtml } from './ui/scenery.ts';
 import { THEMES, applyTheme, themeOverride } from './ui/themes.ts';
 
@@ -67,6 +68,7 @@ function showLevels(requested = savedRegion()): void {
     const open = regionOpen(REGIONS, i, progress.best, progress.demo);
     const tab = document.createElement('button');
     tab.className = `region-tab${open ? '' : ' locked'}`;
+    tab.dataset.index = String(i);
     tab.setAttribute('role', 'tab');
     tab.setAttribute('aria-selected', String(i === regionIndex));
     tab.innerHTML =
@@ -77,8 +79,13 @@ function showLevels(requested = savedRegion()): void {
       tab.querySelector('.rlock')!.textContent = regionLockText(REGIONS, i, progress.best);
       tab.setAttribute('aria-disabled', 'true');
     }
-    tab.addEventListener('click', () => (open ? showLevels(i) : shake(tab)));
     tabs.append(tab);
+  });
+  // Tabs and the gear act on the first tap, even on iOS (see tap.ts).
+  onTap(tabs as HTMLElement, '.region-tab', (tab) => {
+    const i = Number(tab.dataset.index);
+    if (tab.classList.contains('locked')) shake(tab);
+    else showLevels(i);
   });
   screen.querySelector('.region-blurb')!.textContent = region.blurb;
 
@@ -95,7 +102,7 @@ function showLevels(requested = savedRegion()): void {
       <span class="daily-sub">${s.clearedToday ? 'Cleared today ✓ Come back tomorrow' : `Today's pad · par ${daily.par} · same for everyone`}</span>
     </button>`;
   block.querySelector('.daily-btn')!.addEventListener('click', () => showDaily());
-  screen.querySelector('.gear')!.addEventListener('click', () => showSettings(screen));
+  onTap(screen.querySelector('.brand')!, '.gear', () => showSettings(screen));
 
   const list = screen.querySelector('.level-list')!;
   region.levels.forEach((level, i) => {
