@@ -132,8 +132,6 @@ export class GameView {
       this.board.sync(this.state);
       return;
     }
-    const before = this.state.trucks.find((t) => t.id === id)!;
-    this.board.addTrack(before, delta, result.exited);
     this.state = result.state;
     this.resetHint();
     this.showLevelHint();

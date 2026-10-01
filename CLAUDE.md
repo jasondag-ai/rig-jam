@@ -38,13 +38,20 @@ something, give exact clicks and one command at a time.
   trees, truck grime/roof snow) plus a pad ground style. A region picks its theme in
   `src/levels/regions.ts`. Tests check every theme is complete and every gate color has at least
   1.8:1 contrast with every fence.
-- Tire tracks: every level starts clean; each move lays a pair of wheel marks along the path
-  travelled (to the fence on an exit), under obstacles and trucks. `src/ui/tracks.ts` is the pure
-  geometry and wear; `src/ui/track-layer.ts` draws it. Marks are revealed behind the wheels by a clip
-  that follows the truck element's real position each frame (drag, snap, drive-out); only the track
-  being laid updates, finished ones are static. Wear: each lane cell counts passes; repeated passes
-  draw wider/darker (w1..w4, `WEAR_CAP`). Older moves fade (`FADE_STEP`) to `FADE_FLOOR`. Undo
-  removes that move's marks and wear; Restart clears. Styles per ground in style.css ("Tire tracks").
+- Tire tracks: every level starts clean. The path a truck actually drives during a drag is written
+  into the ground, live under the finger: `DragPath` (`src/ui/tracks.ts`) splits a drag into sweeps
+  at each reversal (> `REVERSE` cells; snap-backs don't count), and every sweep wears the lane cells
+  it covers at least halfway (w1..w4, `WEAR_CAP`). `src/ui/track-layer.ts` draws by moving line
+  endpoints on every pointer move and animation frame (drag, snap, drive-out). Never use SVG clip
+  paths for this: iOS Safari doesn't reliably repaint them mid-drag. Undo removes every mark and the
+  wear from the last drag that moved a truck; drags that end where they started stay as decoration.
+  Restart clears. Older drags fade (`FADE_STEP`) to `FADE_FLOOR`. Styles per ground ("Tire tracks").
+- Wheel spray (`src/ui/spray.ts`): rear wheels flick particles opposite the direction of travel,
+  scaled to speed (measured between actual movements). Mud: clumps plus splats that sit on the pad
+  ~2 s; gravel: dust; snow: powder. Capped (`MAX_PARTICLES`, `MAX_PER_FRAME`); none with reduced motion.
+- Touch tests: `setPointerCapture` is wrapped in try/catch so synthetic/edge-case pointers can't
+  kill a drag. Playwright iPhone emulation: Chromium with real touch events (CDP
+  `Input.dispatchTouchEvent`); WebKit with touch-type PointerEvents (its build has no touch drag API).
 - Puddles are flat, low-contrast stains (no outline, rim, glint or shadow) centred on grid corners,
   never on a cell, and drawn under the `.pad-grid` cell lines. If they ever read as objects, remove them.
 - `src/ui/scenery.ts` (border trees) and `src/ui/pad-decor.ts` (gravel/mud/snow detail) are seeded,

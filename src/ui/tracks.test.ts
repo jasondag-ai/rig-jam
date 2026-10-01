@@ -1,94 +1,93 @@
 import { describe, expect, it } from 'vitest';
-import type { Truck } from '../engine/index.ts';
 import {
+  DragPath,
   END_INSET,
   FADE_FLOOR,
   WEAR_CAP,
   WHEEL_OFFSET,
   addWear,
-  passOf,
   removeWear,
-  revealed,
-  segments,
-  stretchOf,
+  sweepCells,
+  sweepSegments,
   trackOpacity,
   type Wear,
 } from './tracks.ts';
 
-const h: Truck = { id: 'A', color: 'red', row: 2, col: 1, length: 2, orient: 'h' };
-const v: Truck = { id: 'B', color: 'blue', row: 1, col: 4, length: 3, orient: 'v' };
-
-describe('passes', () => {
-  it('covers the ground between the start and end footprints', () => {
-    expect(passOf(h, 2, false)).toEqual({ orient: 'h', lane: 2, from: 1, to: 4, fenceLow: false, fenceHigh: false });
-    expect(passOf(v, -1, false)).toMatchObject({ orient: 'v', lane: 4, from: 0, to: 3 });
+describe('drag path', () => {
+  it('follows a straight drag as one sweep over both footprints', () => {
+    const p = new DragPath(1, 2);
+    expect(p.current).toBeNull(); // not moved yet
+    for (const x of [1.2, 1.8, 2.6, 3]) p.update(x);
+    expect(p.current).toEqual({ lo: 1, hi: 5 });
+    expect(p.end()).toEqual({ lo: 1, hi: 5 });
+    expect(p.closed).toEqual([{ lo: 1, hi: 5 }]);
   });
 
-  it('runs to the fence when the truck drives out', () => {
-    expect(passOf(h, 3, true)).toMatchObject({ from: 1, to: 5, fenceHigh: true });
-    expect(passOf(v, -1, true)).toMatchObject({ from: 0, fenceLow: true });
+  it('splits a back-and-forth drag into a sweep per direction', () => {
+    const p = new DragPath(1, 2);
+    const reversals: unknown[] = [];
+    for (const x of [1.5, 2.5, 3, 2.6, 2, 1.2, 0.5, 0, 0.8, 1]) {
+      const done = p.update(x);
+      if (done) reversals.push(done);
+    }
+    p.end();
+    expect(reversals).toEqual([{ lo: 1, hi: 5 }, { lo: 0, hi: 5 }]);
+    expect(p.closed.at(-1)).toEqual({ lo: 0, hi: 3 });
   });
 
-  it('knows the whole stretch a drag could reach', () => {
-    expect(stretchOf(h, { min: -1, max: 3, exitDelta: 3 })).toMatchObject({ from: 0, to: 5, fenceHigh: true, fenceLow: false });
-  });
-});
-
-describe('wheel marks', () => {
-  it('draws two wheel lines, inset at the ends', () => {
-    const [a, b] = segments(passOf(h, 2, false), new Map(), 1);
-    expect(a).toEqual({ x1: 1 + END_INSET, y1: 2.5 - WHEEL_OFFSET, x2: 5 - END_INSET, y2: 2.5 - WHEEL_OFFSET, wear: 1 });
-    expect(b.y1).toBeCloseTo(2.5 + WHEEL_OFFSET);
+  it('ignores a small snap-back when the finger lifts', () => {
+    const p = new DragPath(1, 2);
+    for (const x of [1.8, 2.4, 2.1, 2]) p.update(x);
+    expect(p.end()).toEqual({ lo: 1, hi: 4.4 });
+    expect(p.closed).toHaveLength(1);
   });
 
-  it('runs exits right to the fence', () => {
-    const s = segments(passOf(h, 3, true), new Map(), 1);
-    expect(s[0].x2).toBe(6);
+  it('never runs past the fence', () => {
+    const p = new DragPath(3, 3);
+    for (const x of [4, 6, 9]) p.update(x);
+    expect(p.end()).toEqual({ lo: 3, hi: 6 });
   });
 });
 
 describe('wear', () => {
-  it('makes repeated passes deeper only where they overlap', () => {
-    const wear: Wear = new Map();
-    addWear(wear, passOf(h, 2, false)); // cols 1-4
-    addWear(wear, passOf({ ...h, col: 3 }, 1, false)); // cols 3-5
-    const s = segments(passOf({ ...h, col: 3 }, 1, false), wear);
-    // cols 3-4 have two passes, col 5 has one: two runs per wheel.
-    expect(s.filter((x) => x.y1 < 2.5).map((x) => [x.x1, x.x2, x.wear])).toEqual([
-      [3 + END_INSET, 5, 2],
-      [5, 6 - END_INSET, 1],
-    ]);
+  it('wears only cells a sweep covers at least halfway', () => {
+    expect(sweepCells({ lo: 1, hi: 4.4 })).toEqual([1, 2, 3]);
+    expect(sweepCells({ lo: 0.4, hi: 3 })).toEqual([0, 1, 2]);
   });
 
-  it('stops getting deeper at the cap', () => {
+  it('counts every pass, so back-and-forth lanes wear in, up to the cap', () => {
     const wear: Wear = new Map();
-    const p = passOf(h, 1, false);
-    for (let i = 0; i < 10; i++) addWear(wear, p);
-    expect(segments(p, wear).every((s) => s.wear === WEAR_CAP)).toBe(true);
+    for (let i = 0; i < 3; i++) addWear(wear, 'h', 2, [1, 2, 3]);
+    const marks = sweepSegments('h', 2, { lo: 1, hi: 4 }, wear);
+    expect(marks.every((s) => s.wear === 3)).toBe(true);
+    for (let i = 0; i < 9; i++) addWear(wear, 'h', 2, [1, 2, 3]);
+    expect(sweepSegments('h', 2, { lo: 1, hi: 4 }, wear).every((s) => s.wear === WEAR_CAP)).toBe(true);
   });
 
-  it('undo takes a pass back off', () => {
+  it('undo takes those passes back off', () => {
     const wear: Wear = new Map();
-    const p = passOf(h, 1, false);
-    addWear(wear, p);
-    addWear(wear, p);
-    removeWear(wear, p);
-    expect(segments(p, wear)[0].wear).toBe(1);
-    removeWear(wear, p);
+    addWear(wear, 'v', 4, [0, 1]);
+    removeWear(wear, 'v', 4, [0, 1]);
     expect(wear.size).toBe(0);
   });
 });
 
-describe('progressive reveal', () => {
-  it('reveals from the start footprint to wherever the truck is now', () => {
-    expect(revealed(1, 1, 2)).toEqual([1, 3]);
-    expect(revealed(1, 2.4, 2)).toEqual([1, 4.4]);
-    expect(revealed(3, 1.5, 2)).toEqual([1.5, 5]);
+describe('wheel marks', () => {
+  it('draws two wheel lines, inset at the truck ends, deeper where the lane is worn', () => {
+    const wear: Wear = new Map();
+    addWear(wear, 'h', 2, [3, 4]);
+    const marks = sweepSegments('h', 2, { lo: 1, hi: 5 }, wear, 1);
+    const top = marks.filter((s) => s.y1 < 2.5);
+    expect(top.map((s) => [s.x1, s.x2, s.wear])).toEqual([
+      [1 + END_INSET, 3, 1],
+      [3, 5 - END_INSET, 2],
+    ]);
+    expect(top[0].y1).toBeCloseTo(2.5 - WHEEL_OFFSET);
   });
 
-  it('stops at the fence when the truck drives out', () => {
-    expect(revealed(2, 9, 2)).toEqual([2, 6]);
-    expect(revealed(2, -4, 2)).toEqual([0, 4]);
+  it('runs right to the fence when the truck drives out', () => {
+    const marks = sweepSegments('v', 1, { lo: 0, hi: 3 }, new Map(), 1);
+    expect(marks[0].y1).toBe(0);
   });
 });
 

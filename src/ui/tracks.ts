@@ -1,80 +1,116 @@
-// Tire tracks: every move lays a pair of wheel marks along the path the truck travelled, so a
-// finished pad shows the history of the solve. Lanes that are driven again and again wear in:
-// each pass makes those cells' marks wider and darker, up to WEAR_CAP. Pure geometry and wear
-// bookkeeping here; board-view draws it and reveals it behind the moving truck.
-import { SIZE, type MoveRange, type Truck } from '../engine/index.ts';
+// Tire tracks: the path a truck actually drives during a drag is written into the ground. A drag
+// is split into sweeps (each time the truck reverses, a new sweep starts), so dragging back and
+// forth leaves marks and wears the lane on every pass. Lane cells driven again and again get wider,
+// darker marks, up to WEAR_CAP. Pure geometry and wear bookkeeping; track-layer.ts draws it.
+import { SIZE } from '../engine/index.ts';
 
 /** Wheel marks sit this far either side of the truck's center line (in cells). */
 export const WHEEL_OFFSET = 0.27;
-/** Marks stop this far short of where the truck's ends were (no inset where they run to the fence). */
+/** Marks stop this far short of the truck's ends (not where they run to the fence). */
 export const END_INSET = 0.15;
-/** Newest tracks are fully drawn; each later move fades older ones by this much... */
+/** Newest tracks are fully drawn; each later drag fades older ones by this much... */
 export const FADE_STEP = 0.1;
 /** ...down to this floor, so the history never disappears. */
 export const FADE_FLOOR = 0.3;
 /** Passes after which a lane cell stops getting deeper. */
 export const WEAR_CAP = 4;
+/** Backing up this far (cells) counts as reversing: small snap-backs on release don't. */
+export const REVERSE = 0.6;
+/** A sweep must cover at least this much of a cell for that cell to wear. */
+export const WEAR_OVERLAP = 0.5;
 
-/** The stretch of one lane a truck rolled over, in whole cells (inclusive). */
-export interface Pass {
-  orient: 'h' | 'v';
-  /** Row for horizontal trucks, column for vertical ones. */
-  lane: number;
-  from: number;
-  to: number;
-  /** The marks run right to the fence at this end (the truck drove out). */
-  fenceLow: boolean;
-  fenceHigh: boolean;
+/** Ground covered by one sweep along a lane, in cells: from `lo` to `hi` (fractional). */
+export interface Sweep {
+  lo: number;
+  hi: number;
 }
 
-const posOf = (t: Truck) => (t.orient === 'h' ? t.col : t.row);
-const laneOf = (t: Truck) => (t.orient === 'h' ? t.row : t.col);
+const clampToPad = (v: number) => Math.max(0, Math.min(SIZE, v));
 
-/** Ground covered by `truck` sliding `delta` cells (to the fence if it drove out). */
-export function passOf(truck: Truck, delta: number, exited: boolean): Pass {
-  const pos = posOf(truck);
-  let from = Math.min(pos, pos + delta);
-  let to = Math.max(pos, pos + delta) + truck.length - 1;
-  const fenceLow = exited && delta < 0;
-  const fenceHigh = exited && delta > 0;
-  if (fenceLow) from = 0;
-  if (fenceHigh) to = SIZE - 1;
-  return { orient: truck.orient, lane: laneOf(truck), from: Math.max(0, from), to: Math.min(SIZE - 1, to), fenceLow, fenceHigh };
-}
+/** Follows a truck's position during a drag and splits it into sweeps at each reversal. */
+export class DragPath {
+  readonly closed: Sweep[] = [];
+  private dir = 0;
+  private from: number;
+  private ext: number;
+  private readonly length: number;
 
-/** Everything the truck could reach in this drag: the marks are revealed from this as it moves. */
-export function stretchOf(truck: Truck, range: MoveRange): Pass {
-  const pos = posOf(truck);
-  return {
-    orient: truck.orient,
-    lane: laneOf(truck),
-    from: pos + range.min,
-    to: pos + truck.length - 1 + range.max,
-    fenceLow: range.exitDelta !== null && range.exitDelta < 0,
-    fenceHigh: range.exitDelta !== null && range.exitDelta > 0,
-  };
-}
+  constructor(start: number, length: number) {
+    this.from = start;
+    this.ext = start;
+    this.length = length;
+  }
 
-const key = (p: Pass, cell: number) => `${p.orient}${p.lane}:${cell}`;
+  /** Feed the truck's current position (cells). Returns the sweep that just ended, if it reversed. */
+  update(pos: number): Sweep | null {
+    if (this.dir === 0) {
+      if (Math.abs(pos - this.from) > 0.05) {
+        this.dir = Math.sign(pos - this.from);
+        this.ext = pos;
+      }
+      return null;
+    }
+    if ((pos - this.ext) * this.dir > 0) {
+      this.ext = pos;
+      return null;
+    }
+    if ((this.ext - pos) * this.dir > REVERSE) {
+      const done = this.cover(this.from, this.ext);
+      this.closed.push(done);
+      this.from = this.ext;
+      this.dir = -this.dir;
+      this.ext = pos;
+      return done;
+    }
+    return null;
+  }
 
-/** Passes over each lane cell so far. */
-export type Wear = Map<string, number>;
+  /** The sweep in progress, or null if the truck hasn't moved yet. */
+  get current(): Sweep | null {
+    return this.dir === 0 ? null : this.cover(this.from, this.ext);
+  }
 
-export function addWear(wear: Wear, p: Pass): void {
-  for (let c = p.from; c <= p.to; c++) wear.set(key(p, c), (wear.get(key(p, c)) ?? 0) + 1);
-}
+  /** Ends the drag: the sweep in progress (if any) becomes final. */
+  end(): Sweep | null {
+    const last = this.current;
+    if (last) this.closed.push(last);
+    this.dir = 0;
+    return last;
+  }
 
-export function removeWear(wear: Wear, p: Pass): void {
-  for (let c = p.from; c <= p.to; c++) {
-    const n = (wear.get(key(p, c)) ?? 0) - 1;
-    if (n > 0) wear.set(key(p, c), n);
-    else wear.delete(key(p, c));
+  private cover(a: number, b: number): Sweep {
+    return { lo: clampToPad(Math.min(a, b)), hi: clampToPad(Math.max(a, b) + this.length) };
   }
 }
 
-/** How worn a lane cell looks: passes so far (plus `extra` for a pass being drawn), capped. */
-export function wearLevel(wear: Wear, p: Pass, cell: number, extra = 0): number {
-  return Math.max(1, Math.min(WEAR_CAP, (wear.get(key(p, cell)) ?? 0) + extra));
+/** Lane cells a sweep wears: those it covers by at least WEAR_OVERLAP. */
+export function sweepCells(s: Sweep): number[] {
+  const cells: number[] = [];
+  for (let c = Math.floor(s.lo); c < Math.ceil(s.hi); c++) {
+    if (Math.min(c + 1, s.hi) - Math.max(c, s.lo) >= WEAR_OVERLAP) cells.push(c);
+  }
+  return cells;
+}
+
+/** Passes over each lane cell so far, keyed by lane and cell. */
+export type Wear = Map<string, number>;
+const key = (orient: 'h' | 'v', lane: number, cell: number) => `${orient}${lane}:${cell}`;
+
+export function addWear(wear: Wear, orient: 'h' | 'v', lane: number, cells: number[]): void {
+  for (const c of cells) wear.set(key(orient, lane, c), (wear.get(key(orient, lane, c)) ?? 0) + 1);
+}
+
+export function removeWear(wear: Wear, orient: 'h' | 'v', lane: number, cells: number[]): void {
+  for (const c of cells) {
+    const n = (wear.get(key(orient, lane, c)) ?? 0) - 1;
+    if (n > 0) wear.set(key(orient, lane, c), n);
+    else wear.delete(key(orient, lane, c));
+  }
+}
+
+/** How worn a lane cell looks: passes so far plus `extra` (1 for a sweep still being driven), capped. */
+export function wearLevel(wear: Wear, orient: 'h' | 'v', lane: number, cell: number, extra = 0): number {
+  return Math.max(1, Math.min(WEAR_CAP, (wear.get(key(orient, lane, cell)) ?? 0) + extra));
 }
 
 export interface Segment {
@@ -87,27 +123,28 @@ export interface Segment {
 }
 
 /**
- * Wheel-mark segments for a pass, in cell units. Neighbouring cells with the same wear merge into
- * one segment, so a move draws a handful of lines, not one per cell.
+ * Wheel-mark segments for one sweep, in cell units. Neighbouring cells with the same wear merge,
+ * so a sweep draws a handful of lines. Ends are inset, except where they run to the fence.
  */
-export function segments(p: Pass, wear: Wear, extra = 0): Segment[] {
+export function sweepSegments(orient: 'h' | 'v', lane: number, s: Sweep, wear: Wear, extra = 0): Segment[] {
+  const start = s.lo + (s.lo <= 0 ? 0 : END_INSET);
+  const end = s.hi - (s.hi >= SIZE ? 0 : END_INSET);
+  if (end <= start) return [];
   const runs: { from: number; to: number; level: number }[] = [];
-  for (let c = p.from; c <= p.to; c++) {
-    const level = wearLevel(wear, p, c, extra);
+  for (let c = Math.floor(start); c < Math.ceil(end); c++) {
+    const level = wearLevel(wear, orient, lane, c, extra);
     const last = runs.at(-1);
     if (last && last.level === level) last.to = c;
     else runs.push({ from: c, to: c, level });
   }
-  const start = p.from + (p.fenceLow ? 0 : END_INSET);
-  const end = p.to + 1 - (p.fenceHigh ? 0 : END_INSET);
   const out: Segment[] = [];
   for (const offset of [-WHEEL_OFFSET, WHEEL_OFFSET]) {
-    const across = p.lane + 0.5 + offset;
+    const across = lane + 0.5 + offset;
     for (const r of runs) {
       const a = Math.max(start, r.from);
       const b = Math.min(end, r.to + 1);
       out.push(
-        p.orient === 'h'
+        orient === 'h'
           ? { x1: a, y1: across, x2: b, y2: across, wear: r.level }
           : { x1: across, y1: a, x2: across, y2: b, wear: r.level },
       );
@@ -116,15 +153,7 @@ export function segments(p: Pass, wear: Wear, extra = 0): Segment[] {
   return out;
 }
 
-/**
- * The part of the lane revealed so far: from where the truck started to where it is now, both
- * footprints included, never past the fence. Positions in cells (may be fractional mid-slide).
- */
-export function revealed(startPos: number, currentPos: number, length: number): [number, number] {
-  return [Math.max(0, Math.min(startPos, currentPos)), Math.min(SIZE, Math.max(startPos, currentPos) + length)];
-}
-
-/** Opacity of a track laid `age` moves ago (0 = the newest). */
+/** Opacity of a drag's tracks laid `age` drags ago (0 = the newest). */
 export function trackOpacity(age: number): number {
   return Math.max(FADE_FLOOR, 1 - age * FADE_STEP);
 }

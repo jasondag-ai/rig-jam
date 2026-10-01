@@ -3,6 +3,7 @@ import { bumpTarget, pickSpeaker } from './bump.ts';
 import { pickLine, type BumpHit } from './lines.ts';
 import { OBSTACLE_SVG } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
+import { Spray } from './spray.ts';
 import { TrackLayer } from './track-layer.ts';
 import type { Ground } from './themes.ts';
 import { SYMBOL } from './palette.ts';
@@ -40,8 +41,9 @@ export class BoardView {
   private fence = 20;
   private drag: Drag | null = null;
   private lastLine: string | null = null;
-  /** Tire tracks laid by moves, under obstacles and trucks. */
-  private tracks = new TrackLayer();
+  /** Tire tracks laid by drags, under obstacles and trucks; wheel spray while trucks move. */
+  private tracks: TrackLayer;
+  private spray: Spray;
   /** Cell lines, drawn over the ground (so puddles sit under them) and under the tracks. */
   private grid: HTMLElement;
   private getState: () => GameState;
@@ -63,6 +65,8 @@ export class BoardView {
     this.el.append(this.yard);
     this.grid = document.createElement('div');
     this.grid.className = 'pad-grid';
+    this.spray = new Spray(this.pad, () => this.pad.querySelector('.truck'));
+    this.tracks = new TrackLayer((m) => this.spray.emit(m, this.cell));
   }
 
   setLevel(level: Level): void {
@@ -73,6 +77,7 @@ export class BoardView {
     this.trucks.clear();
     // A clean pad: grid and track layer go in first so obstacles and trucks sit on top of them.
     this.tracks.clear();
+    this.spray.clear();
     this.pad.append(this.grid, this.tracks.svg);
     for (const gate of level.gates) {
       const g = document.createElement('div');
@@ -325,14 +330,10 @@ export class BoardView {
     this.pad.querySelector('.pad-decor')?.remove();
     this.pad.insertAdjacentHTML('afterbegin', svg);
     this.tracks.setGround(ground);
+    this.spray.setGround(ground);
   }
 
-  /** The move happened: its tire tracks keep appearing behind the truck until it settles or drives out. */
-  addTrack(truck: Truck, delta: number, exited: boolean): void {
-    this.tracks.commit(truck, delta, exited, exited ? WAVE_MS + DRIVE_MS + 80 : 260);
-  }
-
-  /** Undo: the last move's tracks (and the wear they added) go away. */
+  /** Undo: every track (and the wear) from the last drag that moved a truck goes away. */
   removeLastTrack(): void {
     this.tracks.undo();
   }
@@ -382,11 +383,17 @@ export class BoardView {
     const range = truck && getMoveRange(this.getState(), id);
     if (!truck || !range) return;
     e.preventDefault();
-    el.setPointerCapture(e.pointerId);
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      // Capture can fail (e.g. the pointer is already gone); the drag still works without it.
+    }
     const horizontal = truck.orient === 'h';
     this.drag = { id, el, pointerId: e.pointerId, start: horizontal ? e.clientX : e.clientY, range, horizontal, offset: 0, pressing: false };
     el.classList.add('dragging');
-    this.tracks.begin(truck, range, el, () => this.positionOf(el, horizontal));
+    this.tracks.begin(truck.orient, horizontal ? truck.row : truck.col, horizontal ? truck.col : truck.row, truck.length, el, () =>
+      this.positionOf(el, horizontal),
+    );
   }
 
   private onPointerMove(e: PointerEvent): void {
@@ -402,6 +409,7 @@ export class BoardView {
     d.offset = Math.max(lo, Math.min(hi, raw));
     const truck = this.truckById(d.id);
     if (truck) this.place(d.el, truck, d.offset);
+    this.tracks.update(); // draw marks now, under the finger, not on the next frame
 
     // Pushing into a truck, obstacle, fence or wrong gate is a bump. Open gates never bump.
     const push = this.cell * BUMP_PUSH;
@@ -420,16 +428,17 @@ export class BoardView {
     if (!d || e.pointerId !== d.pointerId) return;
     this.endDrag();
     const delta = Math.max(d.range.min, Math.min(d.range.max, Math.round(d.offset / this.cell)));
+    // Keep laying marks while the truck snaps into place, or all the way out through its gate.
+    this.tracks.release(delta !== 0, delta !== 0 && delta === d.range.exitDelta ? WAVE_MS + DRIVE_MS + 80 : 260);
     if (delta !== 0) this.onMove(d.id, delta);
     else this.sync(this.getState());
-    this.tracks.cancel(); // no-op if the move went through
   }
 
   private onPointerCancel(e: PointerEvent): void {
     if (!this.drag || e.pointerId !== this.drag.pointerId) return;
     this.endDrag();
+    this.tracks.release(false, 260);
     this.sync(this.getState());
-    this.tracks.cancel();
   }
 
   private endDrag(): void {
