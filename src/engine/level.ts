@@ -59,7 +59,7 @@ function isColor(v: unknown): v is Color {
 
 function parseTruck(raw: unknown, where: string): Truck {
   if (!isObj(raw)) throw new LevelError(`${where}: truck must be an object`);
-  const { id, color, row, col, length, orient, kind } = raw;
+  const { id, color, row, col, length, orient, kind, convoy } = raw;
   if (typeof id !== 'string' || id === '') throw new LevelError(`${where}: truck id must be a string`);
   if (!isColor(color)) throw new LevelError(`${where}: truck ${id} has unknown color ${String(color)}`);
   if (length !== 2 && length !== 3) throw new LevelError(`${where}: truck ${id} length must be 2 or 3`);
@@ -71,6 +71,10 @@ function parseTruck(raw: unknown, where: string): Truck {
       throw new LevelError(`${where}: truck ${id} can't be a ${String(kind)} (length ${length})`);
     }
     truck.kind = kind as TruckKind;
+  }
+  if (convoy !== undefined) {
+    if (convoy !== 1 && convoy !== 2) throw new LevelError(`${where}: truck ${id} convoy must be 1 or 2`);
+    truck.convoy = convoy;
   }
   const end = orient === 'h' ? col + length - 1 : row + length - 1;
   if (end >= SIZE) throw new LevelError(`${where}: truck ${id} runs off the pad`);
@@ -139,6 +143,15 @@ export function parseLevel(raw: unknown): Level {
     const key = `${g.side}${g.index}`;
     if (gateSpots.has(key)) throw new LevelError(`${where}: two gates at ${g.side} ${g.index}`);
     gateSpots.add(key);
+  }
+
+  // A convoy is every truck of one color: exactly one number 1 and one number 2.
+  for (const color of new Set(level.trucks.filter((t) => t.convoy).map((t) => t.color))) {
+    const members = level.trucks.filter((t) => t.color === color);
+    const numbers = members.map((t) => t.convoy).sort();
+    if (numbers.length !== 2 || numbers[0] !== 1 || numbers[1] !== 2) {
+      throw new LevelError(`${where}: the ${color} convoy needs exactly one truck 1 and one truck 2`);
+    }
   }
 
   for (const t of level.trucks) {

@@ -50,11 +50,26 @@ export function getMoveRange(state: GameState, id: string): MoveRange | null {
   const max = p - pos - truck.length;
 
   const side = gateFor(state.level, truck).side;
-  let exitDelta: number | null = null;
-  if ((side === 'left' || side === 'top') && pos + min === 0) exitDelta = min;
-  if ((side === 'right' || side === 'bottom') && pos + truck.length - 1 + max === SIZE - 1) exitDelta = max;
+  if (!gateOpen(state, truck)) return { min, max, exitDelta: null }; // convoy gate: a wall for now
+  // Reaching an open gate drives out. A truck already parked against it (it waited there while
+  // its gate was closed) drives out by sliding one more cell into the gate.
+  if (side === 'left' || side === 'top') {
+    if (pos === 0) return { min: -1, max, exitDelta: -1 };
+    return { min, max, exitDelta: pos + min === 0 ? min : null };
+  }
+  if (pos + truck.length - 1 === SIZE - 1) return { min, max: 1, exitDelta: 1 };
+  return { min, max, exitDelta: pos + truck.length - 1 + max === SIZE - 1 ? max : null };
+}
 
-  return { min, max, exitDelta };
+/** The convoy number a color's gates are waiting for, or null if that color has no convoy left. */
+export function convoyWaitingFor(state: GameState, color: Truck['color']): 1 | 2 | null {
+  const numbers = state.trucks.filter((t) => t.color === color && t.convoy).map((t) => t.convoy!);
+  return numbers.length ? (Math.min(...numbers) as 1 | 2) : null;
+}
+
+/** Whether a truck's gate will let it out now. Only convoy order can close a gate. */
+export function gateOpen(state: GameState, truck: Truck): boolean {
+  return !truck.convoy || convoyWaitingFor(state, truck.color) === truck.convoy;
 }
 
 /** Slides a truck by delta cells. Returns null if the move is illegal or zero. */

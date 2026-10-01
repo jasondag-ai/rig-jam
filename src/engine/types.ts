@@ -24,6 +24,11 @@ export interface Truck {
   orient: Orient;
   /** Cosmetic only; must suit the length. Missing means pickup (2) or vac truck (3). */
   kind?: TruckKind;
+  /**
+   * Convoy position (1 or 2). Both trucks of a convoy share a color, and every gate of that color
+   * only accepts the lowest number still on the pad; for the other it acts as a wall.
+   */
+  convoy?: 1 | 2;
 }
 
 export interface Gate {
