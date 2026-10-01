@@ -1,0 +1,246 @@
+[
+  {
+    "id": "m01", "name": "Nodding Donkey", "par": 3,
+    "hint": "Pumpjacks never move. Drive around them.",
+    "trucks": [
+      {"id":"A","color":"red","row":4,"col":2,"length":2,"orient":"v"},
+      {"id":"B","color":"blue","row":1,"col":1,"length":3,"orient":"h"},
+      {"id":"C","color":"yellow","row":3,"col":1,"length":3,"orient":"v"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":2},
+      {"color":"blue","side":"right","index":1},
+      {"color":"yellow","side":"top","index":1}
+    ],
+    "obstacles": [
+      {"row":1,"col":0}
+    ]
+  },
+  {
+    "id": "m02", "name": "Horsehead Hill", "par": 5,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":4,"length":2,"orient":"h"},
+      {"id":"B","color":"blue","row":0,"col":3,"length":2,"orient":"v"},
+      {"id":"C","color":"yellow","row":3,"col":4,"length":2,"orient":"v"},
+      {"id":"D","color":"green","row":3,"col":1,"length":3,"orient":"h"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":1},
+      {"color":"blue","side":"bottom","index":3},
+      {"color":"yellow","side":"top","index":4},
+      {"color":"green","side":"right","index":3},
+      {"color":"blue","side":"right","index":1}
+    ],
+    "obstacles": [
+      {"row":3,"col":0}
+    ]
+  },
+  {
+    "id": "m03", "name": "Lease Road", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":1,"length":2,"orient":"v"},
+      {"id":"B","color":"blue","row":2,"col":2,"length":2,"orient":"h"},
+      {"id":"C","color":"yellow","row":0,"col":0,"length":2,"orient":"h"},
+      {"id":"D","color":"green","row":1,"col":0,"length":2,"orient":"v"},
+      {"id":"E","color":"orange","row":0,"col":3,"length":2,"orient":"v"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":1},
+      {"color":"blue","side":"left","index":2},
+      {"color":"yellow","side":"right","index":0},
+      {"color":"green","side":"top","index":0},
+      {"color":"orange","side":"bottom","index":3},
+      {"color":"red","side":"right","index":2}
+    ],
+    "obstacles": [
+      {"row":4,"col":0}
+    ]
+  },
+  {
+    "id": "m04", "name": "Wellsite Shuffle", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":5,"col":0,"length":3,"orient":"h"},
+      {"id":"B","color":"blue","row":2,"col":3,"length":3,"orient":"h"},
+      {"id":"C","color":"yellow","row":2,"col":0,"length":3,"orient":"v"},
+      {"id":"D","color":"green","row":3,"col":2,"length":2,"orient":"h"},
+      {"id":"E","color":"orange","row":4,"col":3,"length":2,"orient":"v"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":5},
+      {"color":"blue","side":"left","index":2},
+      {"color":"yellow","side":"bottom","index":0},
+      {"color":"green","side":"left","index":3},
+      {"color":"orange","side":"top","index":3},
+      {"color":"red","side":"right","index":2}
+    ],
+    "obstacles": [
+      {"row":3,"col":5},
+      {"row":1,"col":0}
+    ]
+  },
+  {
+    "id": "m05", "name": "Pipe Rack", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":3,"length":3,"orient":"v"},
+      {"id":"B","color":"blue","row":1,"col":2,"length":2,"orient":"v"},
+      {"id":"C","color":"yellow","row":1,"col":0,"length":2,"orient":"v"},
+      {"id":"D","color":"green","row":2,"col":1,"length":2,"orient":"v"},
+      {"id":"E","color":"orange","row":4,"col":1,"length":2,"orient":"h"},
+      {"id":"F","color":"purple","row":2,"col":3,"length":2,"orient":"h"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":3},
+      {"color":"blue","side":"bottom","index":2},
+      {"color":"yellow","side":"bottom","index":0},
+      {"color":"green","side":"bottom","index":1},
+      {"color":"orange","side":"right","index":4},
+      {"color":"purple","side":"left","index":2},
+      {"color":"red","side":"top","index":0},
+      {"color":"red","side":"right","index":2}
+    ],
+    "obstacles": [
+      {"row":0,"col":0},
+      {"row":2,"col":5}
+    ]
+  },
+  {
+    "id": "m06", "name": "Tank Farm", "par": 9,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":4,"length":2,"orient":"v"},
+      {"id":"B","color":"blue","row":2,"col":1,"length":2,"orient":"v"},
+      {"id":"C","color":"yellow","row":1,"col":2,"length":2,"orient":"v"},
+      {"id":"D","color":"green","row":3,"col":2,"length":2,"orient":"h"},
+      {"id":"E","color":"orange","row":4,"col":1,"length":2,"orient":"h"},
+      {"id":"F","color":"purple","row":2,"col":4,"length":2,"orient":"h"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":4},
+      {"color":"blue","side":"bottom","index":1},
+      {"color":"yellow","side":"bottom","index":2},
+      {"color":"green","side":"right","index":3},
+      {"color":"orange","side":"right","index":4},
+      {"color":"purple","side":"left","index":2},
+      {"color":"blue","side":"bottom","index":4},
+      {"color":"red","side":"right","index":2}
+    ],
+    "obstacles": [
+      {"row":0,"col":2},
+      {"row":3,"col":0}
+    ]
+  },
+  {
+    "id": "m07", "name": "Flare Stack", "par": 10,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":4,"length":2,"orient":"h"},
+      {"id":"B","color":"blue","row":3,"col":3,"length":2,"orient":"v"},
+      {"id":"C","color":"yellow","row":0,"col":5,"length":2,"orient":"v"},
+      {"id":"D","color":"green","row":0,"col":3,"length":2,"orient":"h"},
+      {"id":"E","color":"orange","row":1,"col":3,"length":2,"orient":"h"},
+      {"id":"F","color":"purple","row":1,"col":1,"length":2,"orient":"v"},
+      {"id":"G","color":"red","row":4,"col":1,"length":2,"orient":"h"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":3},
+      {"color":"blue","side":"top","index":3},
+      {"color":"yellow","side":"bottom","index":5},
+      {"color":"green","side":"right","index":0},
+      {"color":"orange","side":"right","index":1},
+      {"color":"purple","side":"bottom","index":1},
+      {"color":"red","side":"right","index":4},
+      {"color":"red","side":"bottom","index":3},
+      {"color":"blue","side":"right","index":3}
+    ],
+    "obstacles": [
+      {"row":5,"col":3},
+      {"row":1,"col":0}
+    ]
+  },
+  {
+    "id": "m08", "name": "Swab Rig", "par": 11,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":1,"length":2,"orient":"v"},
+      {"id":"B","color":"blue","row":1,"col":4,"length":2,"orient":"h"},
+      {"id":"C","color":"yellow","row":1,"col":2,"length":2,"orient":"v"},
+      {"id":"D","color":"green","row":4,"col":1,"length":2,"orient":"h"},
+      {"id":"E","color":"orange","row":3,"col":1,"length":2,"orient":"h"},
+      {"id":"F","color":"purple","row":2,"col":3,"length":2,"orient":"h"},
+      {"id":"G","color":"red","row":3,"col":4,"length":2,"orient":"v"}
+    ],
+    "gates": [
+      {"color":"red","side":"bottom","index":1},
+      {"color":"blue","side":"left","index":1},
+      {"color":"yellow","side":"bottom","index":2},
+      {"color":"green","side":"right","index":4},
+      {"color":"orange","side":"right","index":3},
+      {"color":"purple","side":"left","index":2},
+      {"color":"red","side":"top","index":4},
+      {"color":"red","side":"right","index":2},
+      {"color":"red","side":"top","index":2}
+    ],
+    "obstacles": [
+      {"row":0,"col":2},
+      {"row":2,"col":5},
+      {"row":5,"col":4}
+    ]
+  },
+  {
+    "id": "m09", "name": "Frost Laws", "par": 12,
+    "trucks": [
+      {"id":"A","color":"red","row":4,"col":1,"length":2,"orient":"v"},
+      {"id":"B","color":"blue","row":5,"col":2,"length":2,"orient":"h"},
+      {"id":"C","color":"yellow","row":3,"col":0,"length":2,"orient":"h"},
+      {"id":"D","color":"green","row":2,"col":3,"length":3,"orient":"h"},
+      {"id":"E","color":"orange","row":1,"col":0,"length":2,"orient":"v"},
+      {"id":"F","color":"purple","row":3,"col":2,"length":2,"orient":"v"},
+      {"id":"G","color":"red","row":3,"col":3,"length":2,"orient":"v"},
+      {"id":"H","color":"blue","row":1,"col":1,"length":3,"orient":"h"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":1},
+      {"color":"blue","side":"left","index":5},
+      {"color":"yellow","side":"right","index":3},
+      {"color":"green","side":"left","index":2},
+      {"color":"orange","side":"bottom","index":0},
+      {"color":"purple","side":"top","index":2},
+      {"color":"red","side":"bottom","index":3},
+      {"color":"blue","side":"left","index":1},
+      {"color":"blue","side":"top","index":3},
+      {"color":"red","side":"right","index":2}
+    ],
+    "obstacles": [
+      {"row":0,"col":0},
+      {"row":1,"col":5},
+      {"row":5,"col":5}
+    ]
+  },
+  {
+    "id": "m10", "name": "Last Call", "par": 14,
+    "trucks": [
+      {"id":"A","color":"red","row":2,"col":1,"length":3,"orient":"v"},
+      {"id":"B","color":"blue","row":0,"col":5,"length":3,"orient":"v"},
+      {"id":"C","color":"yellow","row":3,"col":2,"length":2,"orient":"v"},
+      {"id":"D","color":"green","row":3,"col":4,"length":2,"orient":"h"},
+      {"id":"E","color":"orange","row":3,"col":3,"length":2,"orient":"v"},
+      {"id":"F","color":"purple","row":2,"col":2,"length":2,"orient":"h"},
+      {"id":"G","color":"red","row":0,"col":1,"length":2,"orient":"h"},
+      {"id":"H","color":"blue","row":1,"col":1,"length":3,"orient":"h"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":1},
+      {"color":"blue","side":"bottom","index":5},
+      {"color":"yellow","side":"top","index":2},
+      {"color":"green","side":"left","index":3},
+      {"color":"orange","side":"top","index":3},
+      {"color":"purple","side":"right","index":2},
+      {"color":"red","side":"right","index":0},
+      {"color":"blue","side":"right","index":1},
+      {"color":"red","side":"bottom","index":2},
+      {"color":"blue","side":"left","index":0}
+    ],
+    "obstacles": [
+      {"row":2,"col":0},
+      {"row":5,"col":1},
+      {"row":5,"col":3}
+    ]
+  }
+]
