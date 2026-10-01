@@ -12,7 +12,9 @@ npm run dev -- --host   # open the Network URL on your phone (same Wi-Fi)
 npm test
 npm run build
 npm run check-levels    # print every level with its optimal solution
+npm run gen-levels      # regenerate levels from the slot targets in tools/gen-levels.ts
 ```
 
 Built with TypeScript, Vite and plain DOM. Rules live in `src/engine` (pure, unit-tested);
-rendering and input in `src/ui`; levels in `src/levels/levels.json`.
+rendering and input in `src/ui`; levels are generated into `src/levels/` (two regions, Cardium and
+Montney) by `tools/gen-levels.ts`. Driver bump lines live in `src/ui/lines.ts`.
