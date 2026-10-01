@@ -8,9 +8,16 @@ export interface Progress {
   hints: number;
   /** Levels that already paid out their perfect-solve hint. */
   perfect: string[];
+  /** Local dates ('YYYY-MM-DD') on which that day's Daily Pad was cleared. */
+  dailyCleared: string[];
 }
 
-export const freshProgress = (): Progress => ({ best: {}, hints: START_HINTS, perfect: [] });
+export const freshProgress = (): Progress => ({ best: {}, hints: START_HINTS, perfect: [], dailyCleared: [] });
+
+/** Records today's Daily Pad as cleared (once per day). */
+export function recordDailyClear(p: Progress, day: string): Progress {
+  return p.dailyCleared.includes(day) ? p : { ...p, dailyCleared: [...p.dailyCleared, day] };
+}
 
 /** Hard hats earned: 3 at par, 2 within three moves of par, otherwise 1. */
 export function hardHats(moves: number, par: number): 1 | 2 | 3 {
@@ -26,6 +33,7 @@ export function recordWin(p: Progress, levelId: string, moves: number, par: numb
   const earnedHint = moves <= par && !p.perfect.includes(levelId);
   return {
     progress: {
+      ...p,
       best,
       hints: p.hints + (earnedHint ? 1 : 0),
       perfect: earnedHint ? [...p.perfect, levelId] : p.perfect,
@@ -48,6 +56,7 @@ export function loadProgress(): Progress {
       best: p.best ?? {},
       hints: Number.isInteger(p.hints) ? (p.hints as number) : START_HINTS,
       perfect: Array.isArray(p.perfect) ? p.perfect : [],
+      dailyCleared: Array.isArray(p.dailyCleared) ? p.dailyCleared : [],
     };
   } catch {
     return freshProgress();

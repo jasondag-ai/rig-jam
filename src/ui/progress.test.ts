@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { freshProgress, hardHats, recordWin, spendHint, START_HINTS } from './progress.ts';
+import { freshProgress, hardHats, recordDailyClear, recordWin, spendHint, START_HINTS } from './progress.ts';
 
 describe('hard hats', () => {
   it('gives 3 at par, 2 up to par + 3, otherwise 1', () => {
@@ -45,5 +45,15 @@ describe('best scores', () => {
     p = recordWin(p, 'c01', 4, 2).progress;
     p = recordWin(p, 'c01', 5, 2).progress;
     expect(p.best.c01).toBe(4);
+  });
+});
+
+describe('daily record', () => {
+  it('records each day once and survives other progress updates', () => {
+    let p = recordDailyClear(freshProgress(), '2026-09-30');
+    p = recordDailyClear(p, '2026-09-30');
+    expect(p.dailyCleared).toEqual(['2026-09-30']);
+    p = recordWin(p, 'd01', 8, 8).progress;
+    expect(p.dailyCleared).toEqual(['2026-09-30']);
   });
 });
