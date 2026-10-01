@@ -6,6 +6,13 @@ export type Color = (typeof COLORS)[number];
 export type Orient = 'h' | 'v';
 export type Side = 'top' | 'right' | 'bottom' | 'left';
 
+/** What a truck looks like, by length. Purely cosmetic: the rules treat every kind the same. */
+export const TRUCK_KINDS = {
+  2: ['pickup', 'picker'],
+  3: ['vac', 'frac', 'water'],
+} as const;
+export type TruckKind = (typeof TRUCK_KINDS)[2 | 3][number];
+
 export interface Truck {
   id: string;
   color: Color;
@@ -15,6 +22,8 @@ export interface Truck {
   col: number;
   length: 2 | 3;
   orient: Orient;
+  /** Cosmetic only; must suit the length. Missing means pickup (2) or vac truck (3). */
+  kind?: TruckKind;
 }
 
 export interface Gate {

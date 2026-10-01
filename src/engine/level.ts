@@ -1,4 +1,4 @@
-import { COLORS, OBSTACLE_KINDS, SIZE, type Cell, type Color, type Gate, type Level, type ObstacleKind, type Side, type Truck } from './types.ts';
+import { COLORS, OBSTACLE_KINDS, SIZE, TRUCK_KINDS, type Cell, type Color, type Gate, type Level, type ObstacleKind, type Side, type Truck, type TruckKind } from './types.ts';
 
 export class LevelError extends Error {}
 
@@ -59,13 +59,19 @@ function isColor(v: unknown): v is Color {
 
 function parseTruck(raw: unknown, where: string): Truck {
   if (!isObj(raw)) throw new LevelError(`${where}: truck must be an object`);
-  const { id, color, row, col, length, orient } = raw;
+  const { id, color, row, col, length, orient, kind } = raw;
   if (typeof id !== 'string' || id === '') throw new LevelError(`${where}: truck id must be a string`);
   if (!isColor(color)) throw new LevelError(`${where}: truck ${id} has unknown color ${String(color)}`);
   if (length !== 2 && length !== 3) throw new LevelError(`${where}: truck ${id} length must be 2 or 3`);
   if (orient !== 'h' && orient !== 'v') throw new LevelError(`${where}: truck ${id} orient must be h or v`);
   if (!isIndex(row) || !isIndex(col)) throw new LevelError(`${where}: truck ${id} row/col out of range`);
   const truck: Truck = { id, color, row, col, length, orient };
+  if (kind !== undefined) {
+    if (!(TRUCK_KINDS[length] as readonly unknown[]).includes(kind)) {
+      throw new LevelError(`${where}: truck ${id} can't be a ${String(kind)} (length ${length})`);
+    }
+    truck.kind = kind as TruckKind;
+  }
   const end = orient === 'h' ? col + length - 1 : row + length - 1;
   if (end >= SIZE) throw new LevelError(`${where}: truck ${id} runs off the pad`);
   return truck;

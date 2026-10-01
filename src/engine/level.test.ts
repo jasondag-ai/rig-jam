@@ -131,3 +131,20 @@ describe('obstacle kind', () => {
     expect(() => parseLevel({ ...valid(), obstacles: [{ row: 5, col: 5, kind: 'outhouse' }] })).toThrow(/unknown obstacle kind/);
   });
 });
+
+describe('truck kind', () => {
+  it('keeps a cosmetic kind that suits the length', () => {
+    const l = valid();
+    (l.trucks[0] as { kind?: string }).kind = 'picker';
+    (l.trucks[1] as { kind?: string }).kind = 'pickup';
+    expect(parseLevel(l).trucks.map((t) => t.kind)).toEqual(['picker', 'pickup']);
+  });
+
+  it('rejects unknown kinds and kinds that do not fit the length', () => {
+    const l = valid();
+    (l.trucks[0] as { kind?: string }).kind = 'vac';
+    expect(() => parseLevel(l)).toThrow(/can't be a vac \(length 2\)/);
+    (l.trucks[0] as { kind?: string }).kind = 'zamboni';
+    expect(() => parseLevel(l)).toThrow(/can't be a zamboni/);
+  });
+});

@@ -221,3 +221,11 @@ describe('rng', () => {
     expect(seedFrom('m01')).not.toBe(seedFrom('m02'));
   });
 });
+
+describe('truck kind is cosmetic', () => {
+  it('never changes ranges, moves or the solution', () => {
+    const picked = { ...level, trucks: level.trucks.map((t) => ({ ...t, kind: 'picker' as const })) };
+    expect(getMoveRange(newGame(picked), 'B')).toEqual(getMoveRange(newGame(level), 'B'));
+    expect(solve(picked)).toEqual(solve(level));
+  });
+});
