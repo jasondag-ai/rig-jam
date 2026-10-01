@@ -1,6 +1,7 @@
 import { SIZE, cabSide, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
 import { BUMP_STAMP, pickLine, type BumpHit } from './lines.ts';
 import { OBSTACLE_SVG } from './obstacles.ts';
+import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
 import { SYMBOL } from './palette.ts';
 
 const FENCE_RATIO = 0.42;
@@ -149,7 +150,12 @@ export class BoardView {
     el.className = `truck c-${t.color} ${t.orient === 'h' ? 'horiz' : 'vert'}`;
     el.dataset.id = t.id;
     el.dataset.cab = cabSide(this.level!, t);
-    el.innerHTML = `<div class="body"><div class="bed"><span class="sym">${SYMBOL[t.color]}</span></div><div class="cab"><span class="driver-arm"></span></div></div>`;
+    el.dataset.kind = t.kind ?? defaultKind(t.length);
+    // The art is drawn cab-right and rotated by CSS; the symbol badge and cab overlay stay upright.
+    el.innerHTML =
+      `<div class="body"><div class="art">${VEHICLE_SVG[t.kind ?? defaultKind(t.length)]}</div>` +
+      `<div class="bed"><span class="sym">${SYMBOL[t.color]}</span></div>` +
+      `<div class="cab"><span class="driver-arm"></span></div></div>`;
     el.addEventListener('pointerdown', (e) => this.onPointerDown(e, t.id, el));
     el.addEventListener('pointermove', (e) => this.onPointerMove(e));
     el.addEventListener('pointerup', (e) => this.onPointerUp(e));
@@ -166,6 +172,8 @@ export class BoardView {
     const { cell } = this;
     el.style.width = `${(t.orient === 'h' ? t.length : 1) * cell - GAP * 2}px`;
     el.style.height = `${(t.orient === 'v' ? t.length : 1) * cell - GAP * 2}px`;
+    el.style.setProperty('--along', `${t.length * cell - GAP * 2}px`);
+    el.style.setProperty('--across', `${cell - GAP * 2}px`);
     const { x, y } = this.origin(t);
     el.style.transform = `translate3d(${x + (t.orient === 'h' ? offset : 0)}px, ${y + (t.orient === 'v' ? offset : 0)}px, 0)`;
   }

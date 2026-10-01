@@ -611,55 +611,102 @@ button {
   inset: 0;
 }
 
+/* ---------- Vehicles (art in vehicles.ts, drawn cab-right and turned to face the gate) ---------- */
+
+.truck .art {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--along);
+  height: var(--across);
+  transform: translate(-50%, -50%);
+}
+
+.truck[data-cab='left'] .art { transform: translate(-50%, -50%) rotate(180deg); }
+.truck[data-cab='top'] .art { transform: translate(-50%, -50%) rotate(-90deg); }
+.truck[data-cab='bottom'] .art { transform: translate(-50%, -50%) rotate(90deg); }
+
+.truck .art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.v-body { fill: var(--c); stroke: var(--outline); stroke-width: 6; stroke-linejoin: round; }
+.v-cab { fill: color-mix(in srgb, var(--c) 74%, #000); stroke: var(--outline); stroke-width: 6; }
+.v-shade { fill: color-mix(in srgb, var(--c) 62%, #000); }
+.v-light { fill: #fff; opacity: 0.4; }
+.v-glass { fill: #d9f3ff; stroke: var(--outline); stroke-width: 4; }
+.v-mirror { fill: #3a3735; stroke: var(--outline); stroke-width: 3; }
+.v-bumper { fill: #b9b6ae; stroke: var(--outline); stroke-width: 3; }
+.v-chassis { fill: #3a3735; stroke: var(--outline); stroke-width: 4; }
+.v-steel { fill: #a19e97; stroke: var(--outline); stroke-width: 4; }
+
+/* Pickup box */
+.v-floor { fill: color-mix(in srgb, var(--c) 45%, #1d1a18); stroke: var(--outline); stroke-width: 4; }
+.v-rib { stroke: rgba(255, 255, 255, 0.22); stroke-width: 4; stroke-linecap: round; }
+
+/* Picker deck and folded crane */
+.v-plank { stroke: color-mix(in srgb, var(--c) 65%, #000); stroke-width: 3; }
+.v-pocket { stroke: var(--outline); stroke-width: 5; }
+.v-boom { fill: #c9c6be; stroke: var(--outline); stroke-width: 4.5; }
+.v-joint { fill: #5a5754; stroke: var(--outline); stroke-width: 3.5; }
+.v-turret { fill: #8f8c86; stroke: var(--outline); stroke-width: 5; }
+.v-cable { stroke: var(--outline); stroke-width: 2.5; }
+.v-hook { fill: #ffc21a; stroke: var(--outline); stroke-width: 2.5; }
+
+/* Vac truck */
+.v-ring { stroke: color-mix(in srgb, var(--c) 60%, #000); stroke-width: 4; }
+.v-reel { fill: #2a2725; stroke: var(--outline); stroke-width: 5; }
+.v-coil { stroke: #6b6762; stroke-width: 4; stroke-linecap: round; }
+.v-door { fill: #b9b6ae; stroke: var(--outline); stroke-width: 5; }
+.v-door-ring { fill: none; stroke: #6b6762; stroke-width: 4; }
+.v-bolt { fill: var(--outline); }
+
+/* Frac pump truck */
+.v-pipe-o { fill: none; stroke: var(--outline); stroke-width: 15; stroke-linecap: round; stroke-linejoin: round; }
+.v-pipe { fill: none; stroke: #c8c5bd; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+.v-flange { fill: #8f8c86; stroke: var(--outline); stroke-width: 3; }
+.v-pump { fill: #6f6c67; stroke: var(--outline); stroke-width: 5; }
+.v-plunger { fill: #d4d1c9; stroke: var(--outline); stroke-width: 3.5; }
+.v-engine { fill: color-mix(in srgb, var(--c) 82%, #fff); stroke: var(--outline); stroke-width: 5; }
+.v-grille { stroke: var(--outline); stroke-width: 3.5; stroke-linecap: round; }
+.v-stack { fill: #2a2725; stroke: var(--outline); stroke-width: 3.5; }
+
+/* Water hauler */
+.v-walk { fill: #c9c6be; stroke: var(--outline); stroke-width: 3.5; }
+.v-hatch { fill: #8f8c86; stroke: var(--outline); stroke-width: 4; }
+.v-ladder { fill: none; stroke: var(--outline); stroke-width: 4; }
+.v-rung { stroke: var(--outline); stroke-width: 3; }
+
+/* Upright overlays: the color badge with the gate symbol, and the cab area (driver's arm, roof snow). */
 .truck .bed,
 .truck .cab {
   position: absolute;
-  border: 3px solid var(--outline);
-  border-radius: 9px;
 }
 
-/* Bed: ribbed cargo deck; light top edge, darker bottom lip. */
 .truck .bed {
   inset: 0;
   display: grid;
   place-items: center;
-  background-color: var(--c);
-  box-shadow:
-    inset 0 4px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -6px 0 color-mix(in srgb, var(--c) 62%, #000);
-}
-
-.truck.horiz .bed {
-  background-image: repeating-linear-gradient(90deg, transparent 0 9px, rgba(0, 0, 0, 0.1) 9px 12px);
-}
-
-.truck.vert .bed {
-  background-image: repeating-linear-gradient(0deg, transparent 0 9px, rgba(0, 0, 0, 0.1) 9px 12px);
 }
 
 .truck .sym {
-  font-size: calc(var(--cell) * 0.36);
+  display: grid;
+  place-items: center;
+  width: calc(var(--cell) * 0.46);
+  height: calc(var(--cell) * 0.46);
+  border: 3px solid var(--outline);
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.45), 0 2px 0 rgba(0, 0, 0, 0.3);
+  font-size: calc(var(--cell) * 0.26);
+  line-height: 1;
   color: #fff;
   text-shadow:
     -1.5px -1.5px 0 var(--outline), 1.5px -1.5px 0 var(--outline), -1.5px 1.5px 0 var(--outline),
     1.5px 1.5px 0 var(--outline);
-}
-
-/* Cab: deeper shade on the gate side, with a windshield on its front edge. */
-.truck .cab {
-  z-index: 1;
-  background: color-mix(in srgb, var(--c) 72%, #000);
-  box-shadow:
-    inset 0 4px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -5px 0 rgba(0, 0, 0, 0.28);
-}
-
-.truck .cab::after {
-  content: '';
-  position: absolute;
-  background: #d9f3ff;
-  border: 2px solid var(--outline);
-  border-radius: 4px;
 }
 
 .truck[data-cab='right'] .cab { top: 0; bottom: 0; right: 0; width: calc(var(--cell) * 0.64); }
@@ -667,12 +714,7 @@ button {
 .truck[data-cab='top'] .cab { left: 0; right: 0; top: 0; height: calc(var(--cell) * 0.64); }
 .truck[data-cab='bottom'] .cab { left: 0; right: 0; bottom: 0; height: calc(var(--cell) * 0.64); }
 
-.truck[data-cab='right'] .cab::after { top: 16%; bottom: 16%; right: 9%; width: 26%; }
-.truck[data-cab='left'] .cab::after { top: 16%; bottom: 16%; left: 9%; width: 26%; }
-.truck[data-cab='top'] .cab::after { left: 16%; right: 16%; top: 9%; height: 26%; }
-.truck[data-cab='bottom'] .cab::after { left: 16%; right: 16%; bottom: 9%; height: 26%; }
-
-/* Keep the symbol on the bed, not under the cab. */
+/* Keep the symbol badge on the body, clear of the cab. */
 .truck[data-cab='right'] .bed { padding-right: calc(var(--cell) * 0.62); }
 .truck[data-cab='left'] .bed { padding-left: calc(var(--cell) * 0.62); }
 .truck[data-cab='top'] .bed { padding-top: calc(var(--cell) * 0.62); }
@@ -683,9 +725,9 @@ button {
   content: '';
   position: absolute;
   z-index: 2;
-  left: 3px;
-  right: 3px;
-  bottom: 3px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
   height: 40%;
   max-height: calc(var(--cell) * 0.4);
   border-radius: 0 0 7px 7px;
@@ -705,7 +747,7 @@ button {
 .truck .cab::before {
   content: '';
   position: absolute;
-  inset: 12% 14%;
+  inset: 16%;
   border-radius: 8px;
   background: var(--truck-roof);
   box-shadow: 0 2px 0 color-mix(in srgb, var(--truck-roof) 70%, #6f9fd0);
