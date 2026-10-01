@@ -4,5 +4,5 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   base: './',
   server: { host: true },
-  test: { include: ['src/**/*.test.ts'] },
+  test: { include: ['src/**/*.test.ts', 'tools/**/*.test.ts'] },
 });

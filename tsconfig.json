@@ -15,5 +15,5 @@
     "noUnusedParameters": true,
     "skipLibCheck": true
   },
-  "include": ["src", "scripts", "vite.config.ts"]
+  "include": ["src", "tools", "vite.config.ts"]
 }

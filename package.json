@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "check-levels": "node scripts/check-levels.ts"
+    "check-levels": "node tools/check-levels.ts",
+    "gen-levels": "node tools/gen-levels.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
