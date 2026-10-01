@@ -1,7 +1,7 @@
 [
   {
     "id": "m01", "name": "Nodding Donkey", "par": 3,
-    "hint": "Pumpjacks never move. Drive around them.",
+    "hint": "Pumpjacks, tanks and wellheads never move. Drive around them.",
     "trucks": [
       {"id":"A","color":"red","row":4,"col":2,"length":2,"orient":"v"},
       {"id":"B","color":"blue","row":1,"col":1,"length":3,"orient":"h"},
@@ -13,7 +13,7 @@
       {"color":"yellow","side":"top","index":1}
     ],
     "obstacles": [
-      {"row":1,"col":0}
+      {"row":1,"col":0,"kind":"tank"}
     ]
   },
   {
@@ -32,7 +32,7 @@
       {"color":"blue","side":"right","index":1}
     ],
     "obstacles": [
-      {"row":3,"col":0}
+      {"row":3,"col":0,"kind":"tank"}
     ]
   },
   {
@@ -53,7 +53,7 @@
       {"color":"red","side":"right","index":2}
     ],
     "obstacles": [
-      {"row":4,"col":0}
+      {"row":4,"col":0,"kind":"wellhead"}
     ]
   },
   {
@@ -74,8 +74,8 @@
       {"color":"red","side":"right","index":2}
     ],
     "obstacles": [
-      {"row":3,"col":5},
-      {"row":1,"col":0}
+      {"row":3,"col":5,"kind":"pumpjack"},
+      {"row":1,"col":0,"kind":"wellhead"}
     ]
   },
   {
@@ -99,8 +99,8 @@
       {"color":"red","side":"right","index":2}
     ],
     "obstacles": [
-      {"row":0,"col":0},
-      {"row":2,"col":5}
+      {"row":0,"col":0,"kind":"pumpjack"},
+      {"row":2,"col":5,"kind":"wellhead"}
     ]
   },
   {
@@ -124,8 +124,8 @@
       {"color":"red","side":"right","index":2}
     ],
     "obstacles": [
-      {"row":0,"col":2},
-      {"row":3,"col":0}
+      {"row":0,"col":2,"kind":"wellhead"},
+      {"row":3,"col":0,"kind":"pumpjack"}
     ]
   },
   {
@@ -151,8 +151,8 @@
       {"color":"blue","side":"right","index":3}
     ],
     "obstacles": [
-      {"row":5,"col":3},
-      {"row":1,"col":0}
+      {"row":5,"col":3,"kind":"wellhead"},
+      {"row":1,"col":0,"kind":"tank"}
     ]
   },
   {
@@ -178,9 +178,9 @@
       {"color":"red","side":"top","index":2}
     ],
     "obstacles": [
-      {"row":0,"col":2},
-      {"row":2,"col":5},
-      {"row":5,"col":4}
+      {"row":0,"col":2,"kind":"wellhead"},
+      {"row":2,"col":5,"kind":"tank"},
+      {"row":5,"col":4,"kind":"pumpjack"}
     ]
   },
   {
@@ -208,9 +208,9 @@
       {"color":"red","side":"right","index":2}
     ],
     "obstacles": [
-      {"row":0,"col":0},
-      {"row":1,"col":5},
-      {"row":5,"col":5}
+      {"row":0,"col":0,"kind":"wellhead"},
+      {"row":1,"col":5,"kind":"tank"},
+      {"row":5,"col":5,"kind":"pumpjack"}
     ]
   },
   {
@@ -238,9 +238,9 @@
       {"color":"blue","side":"left","index":0}
     ],
     "obstacles": [
-      {"row":2,"col":0},
-      {"row":5,"col":1},
-      {"row":5,"col":3}
+      {"row":2,"col":0,"kind":"tank"},
+      {"row":5,"col":1,"kind":"wellhead"},
+      {"row":5,"col":3,"kind":"pumpjack"}
     ]
   }
 ]

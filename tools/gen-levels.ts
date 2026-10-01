@@ -5,7 +5,7 @@
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
-import { generate, isBetter, type Generated, type SearchOptions, type Slot } from './generator.ts';
+import { assignKinds, generate, isBetter, type Generated, type SearchOptions, type Slot } from './generator.ts';
 import type { Level } from '../src/engine/index.ts';
 
 interface SlotConfig extends Slot {
@@ -18,6 +18,8 @@ interface SlotConfig extends Slot {
 interface RegionConfig {
   id: string;
   prefix: string;
+  /** Fixed seed for the cosmetic obstacle looks (pumpjack, tank, wellhead). Layouts don't use it. */
+  kindSeed: number;
   slots: SlotConfig[];
 }
 
@@ -31,6 +33,7 @@ const REGIONS: RegionConfig[] = [
   {
     id: 'cardium',
     prefix: 'c',
+    kindSeed: 1000,
     slots: [
       { name: 'Spud Day', trucks: 2, pumpjacks: 0, minPar: 2, maxPar: 2, minExtra: 0, decoys: 0, seed: 101,
         hint: 'Drag a truck along its length. It drives out through the gate with its color and symbol.' },
@@ -50,9 +53,10 @@ const REGIONS: RegionConfig[] = [
   {
     id: 'montney',
     prefix: 'm',
+    kindSeed: 2000,
     slots: [
       { name: 'Nodding Donkey', trucks: 3, pumpjacks: 1, minPar: 3, maxPar: 4, minExtra: 0, decoys: 0, seed: 201,
-        hint: 'Pumpjacks never move. Drive around them.' },
+        hint: 'Pumpjacks, tanks and wellheads never move. Drive around them.' },
       { name: 'Horsehead Hill', trucks: 4, pumpjacks: 1, minPar: 5, maxPar: 5, minExtra: 1, decoys: 1, seed: 202 },
       { name: 'Lease Road', trucks: 5, pumpjacks: 1, minPar: 6, maxPar: 6, minExtra: 1, decoys: 1, seed: 203 },
       { name: 'Wellsite Shuffle', trucks: 5, pumpjacks: 2, minPar: 7, maxPar: 7, minExtra: 2, decoys: 1, seed: 204 },
@@ -175,7 +179,10 @@ async function main() {
 
   let failed = false;
   for (const region of REGIONS) {
-    const levels = region.slots.map((_, i) => results.get(`${region.prefix}${String(i + 1).padStart(2, '0')}`));
+    const levels = region.slots.map((_, i) => {
+      const level = results.get(`${region.prefix}${String(i + 1).padStart(2, '0')}`);
+      return level && { ...level, obstacles: assignKinds(level.obstacles, region.kindSeed + i) };
+    });
     if (levels.some((l) => !l)) {
       failed = true;
       console.error(`${region.id}: some slots have no level; loosen those slots and rerun. File not written.`);

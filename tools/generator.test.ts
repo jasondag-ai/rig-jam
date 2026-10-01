@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { solve } from '../src/engine/index.ts';
-import { buildLevel, everyPumpjackInTheWay, generate, mulberry32, type Slot } from './generator.ts';
+import { assignKinds, buildLevel, everyPumpjackInTheWay, generate, mulberry32, type Slot } from './generator.ts';
 
 const small = { restarts: 6, iters: 150, maxStates: 20_000 };
 
@@ -39,5 +39,18 @@ describe('generator', () => {
   it('rejects two trucks sharing one gate', () => {
     const piece = { orient: 'h', length: 2, col: 0, side: 'right' } as const;
     expect(buildLevel({ pieces: [{ ...piece, row: 1 }, { ...piece, row: 1, col: 2 }], pumpjacks: [] })).toBeNull();
+  });
+});
+
+describe('assignKinds', () => {
+  const cells = [{ row: 1, col: 2 }, { row: 3, col: 4 }, { row: 5, col: 0 }, { row: 0, col: 5 }];
+
+  it('is fixed by the seed and keeps positions', () => {
+    expect(assignKinds(cells, 9)).toEqual(assignKinds(cells, 9));
+    expect(assignKinds(cells, 9).map(({ row, col }) => ({ row, col }))).toEqual(cells);
+  });
+
+  it('uses all three looks before repeating', () => {
+    expect(new Set(assignKinds(cells.slice(0, 3), 9).map((c) => c.kind)).size).toBe(3);
   });
 });

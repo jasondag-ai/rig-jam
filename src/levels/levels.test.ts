@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { solve } from '../engine/index.ts';
+import { OBSTACLE_KINDS, solve } from '../engine/index.ts';
 import { everyPumpjackInTheWay } from '../../tools/generator.ts';
 import { REGIONS } from './regions.ts';
 
@@ -37,6 +37,28 @@ describe('shipped levels', () => {
     for (const level of REGIONS[1].levels) {
       expect(level.obstacles.length).toBeGreaterThan(0);
       expect(everyPumpjackInTheWay(level, solve(level)!)).toBe(true);
+    }
+  });
+});
+
+describe('obstacle looks', () => {
+  const montney = REGIONS[1].levels;
+
+  it.each(montney.map((l) => [l.id, l] as const))('%s: kind never changes solver results', (_id, level) => {
+    const expected = solve(level);
+    const variants = [
+      level.obstacles.map(({ row, col }) => ({ row, col })),
+      ...OBSTACLE_KINDS.map((kind) => level.obstacles.map(({ row, col }) => ({ row, col, kind }))),
+    ];
+    for (const obstacles of variants) expect(solve({ ...level, obstacles })).toEqual(expected);
+  });
+
+  it('gives Montney a mix of pumpjacks, tanks and wellheads', () => {
+    const kinds = montney.flatMap((l) => l.obstacles.map((o) => o.kind));
+    expect(new Set(kinds)).toEqual(new Set(OBSTACLE_KINDS));
+    for (const l of montney) {
+      const own = l.obstacles.map((o) => o.kind);
+      expect(new Set(own).size).toBe(Math.min(own.length, OBSTACLE_KINDS.length));
     }
   });
 });
