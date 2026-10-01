@@ -1,4 +1,4 @@
-import { COLORS, SIZE, type Cell, type Color, type Gate, type Level, type Side, type Truck } from './types.ts';
+import { COLORS, OBSTACLE_KINDS, SIZE, type Cell, type Color, type Gate, type Level, type ObstacleKind, type Side, type Truck } from './types.ts';
 
 export class LevelError extends Error {}
 
@@ -82,7 +82,10 @@ function parseGate(raw: unknown, where: string): Gate {
 
 function parseCell(raw: unknown, where: string): Cell {
   if (!isObj(raw) || !isIndex(raw.row) || !isIndex(raw.col)) throw new LevelError(`${where}: obstacle needs row/col 0-5`);
-  return { row: raw.row, col: raw.col };
+  const { kind } = raw;
+  if (kind === undefined) return { row: raw.row, col: raw.col };
+  if (!OBSTACLE_KINDS.includes(kind as ObstacleKind)) throw new LevelError(`${where}: unknown obstacle kind ${String(kind)}`);
+  return { row: raw.row, col: raw.col, kind: kind as ObstacleKind };
 }
 
 /** Validates raw JSON and returns a Level, or throws LevelError explaining what is wrong. */

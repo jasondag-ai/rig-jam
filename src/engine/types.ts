@@ -24,10 +24,16 @@ export interface Gate {
   index: number;
 }
 
-/** A fixed 1-cell obstacle (a pumpjack). Nothing can drive through it. */
+export const OBSTACLE_KINDS = ['pumpjack', 'tank', 'wellhead'] as const;
+/** What an obstacle looks like. Purely cosmetic: the rules treat every kind the same. */
+export type ObstacleKind = (typeof OBSTACLE_KINDS)[number];
+
+/** A fixed 1-cell obstacle (pumpjack, tank or wellhead). Nothing can drive through it. */
 export interface Cell {
   row: number;
   col: number;
+  /** Cosmetic only. Missing means pumpjack. The engine and solver never read it. */
+  kind?: ObstacleKind;
 }
 
 export interface Level {

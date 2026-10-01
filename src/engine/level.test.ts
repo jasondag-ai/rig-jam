@@ -122,3 +122,12 @@ describe('obstacles', () => {
     expect(() => parseLevel({ ...valid(), obstacles: [{ row: 6, col: 1 }] })).toThrow(/row\/col/);
   });
 });
+
+describe('obstacle kind', () => {
+  it('keeps a cosmetic kind and rejects unknown ones', () => {
+    expect(parseLevel({ ...valid(), obstacles: [{ row: 5, col: 5, kind: 'tank' }] }).obstacles).toEqual([
+      { row: 5, col: 5, kind: 'tank' },
+    ]);
+    expect(() => parseLevel({ ...valid(), obstacles: [{ row: 5, col: 5, kind: 'outhouse' }] })).toThrow(/unknown obstacle kind/);
+  });
+});

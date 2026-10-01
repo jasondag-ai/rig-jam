@@ -200,3 +200,13 @@ describe('hints', () => {
     expect(() => solve(level, 1)).toThrow(SolverLimitError);
   });
 });
+
+describe('obstacle kind is cosmetic', () => {
+  it('never changes how far a truck can slide', () => {
+    for (const kind of [undefined, 'pumpjack', 'tank', 'wellhead'] as const) {
+      const lv = { ...level, obstacles: [{ row: 4, col: 3, ...(kind ? { kind } : {}) }] };
+      // The obstacle at 4,3 stops B one cell down, whatever it looks like.
+      expect(getMoveRange(newGame(lv), 'B')).toEqual({ min: -1, max: 1, exitDelta: null });
+    }
+  });
+});
