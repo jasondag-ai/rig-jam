@@ -4,7 +4,7 @@ import { dayKey, padLevelIndex, padNumber, streak } from './ui/daily.ts';
 import { GameView } from './ui/game-view.ts';
 import { streakSignHtml } from './ui/sign.ts';
 import { hatsHtml } from './ui/hats.ts';
-import { hardHats, loadProgress } from './ui/progress.ts';
+import { hardHats, loadProgress, resetProgress } from './ui/progress.ts';
 import { sceneryHtml } from './ui/scenery.ts';
 import { THEMES, applyTheme, themeOverride } from './ui/themes.ts';
 
@@ -39,6 +39,7 @@ function showLevels(regionIndex = savedRegion()): void {
   screen.innerHTML = `
     <div class="scenery" aria-hidden="true"></div>
     <header class="brand">
+      <button class="gear" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 2h3.4l.5 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.7c.1.6.1 1.2 0 1.8l2 1.7-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.5 2.6h-3.4l-.5-2.6c-.6-.2-1.2-.5-1.7-.9l-2.5.9-1.7-2.9 2-1.7c-.1-.6-.1-1.2 0-1.8l-2-1.7 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9z"/><circle cx="12" cy="10.8" r="3"/></svg></button>
       <h1>Rush Hour Rigs</h1>
       <p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>
     </header>
@@ -75,6 +76,7 @@ function showLevels(regionIndex = savedRegion()): void {
       <span class="daily-sub">${s.clearedToday ? 'Cleared today ✓ Come back tomorrow' : `Today's pad · par ${daily.par} · same for everyone`}</span>
     </button>`;
   block.querySelector('.daily-btn')!.addEventListener('click', () => showDaily());
+  screen.querySelector('.gear')!.addEventListener('click', () => showSettings(screen));
 
   const list = screen.querySelector('.level-list')!;
   region.levels.forEach((level, i) => {
@@ -116,6 +118,38 @@ function showGame(regionIndex: number, index: number): void {
   });
   app.replaceChildren(game.el);
   game.fit();
+}
+
+/** Settings panel over the level list: Reset progress, with a confirm step. */
+function showSettings(screen: HTMLElement): void {
+  const panel = document.createElement('div');
+  panel.className = 'overlay settings';
+  panel.innerHTML = `
+    <div class="card" role="dialog" aria-label="Settings">
+      <h2>Settings</h2>
+      <div class="step ask">
+        <button class="btn danger" data-act="reset">Reset progress</button>
+        <button class="btn" data-act="close">Done</button>
+      </div>
+      <div class="step confirm" hidden>
+        <p class="warn">This wipes your levels, hard hats and streak. Sure?</p>
+        <button class="btn danger" data-act="wipe">Yes, wipe it</button>
+        <button class="btn" data-act="cancel">Cancel</button>
+      </div>
+    </div>`;
+  const ask = panel.querySelector<HTMLElement>('.ask')!;
+  const confirm = panel.querySelector<HTMLElement>('.confirm')!;
+  panel.addEventListener('click', (e) => {
+    const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
+    if (act === 'reset') [ask.hidden, confirm.hidden] = [true, false];
+    if (act === 'cancel') [ask.hidden, confirm.hidden] = [false, true];
+    if (act === 'close' || e.target === panel) panel.remove();
+    if (act === 'wipe') {
+      resetProgress();
+      showLevels(0); // a brand-new player
+    }
+  });
+  screen.append(panel);
 }
 
 /** Today's Daily Pad, picked by the phone's local date. */

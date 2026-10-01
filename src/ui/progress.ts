@@ -70,3 +70,20 @@ export function saveProgress(p: Progress): void {
     // Storage blocked (private mode): progress just won't persist.
   }
 }
+
+/** Every key this game stores starts with this. */
+export const STORAGE_PREFIX = 'rush-hour-rigs:';
+
+/** Wipes everything the game saved on this phone: levels, hard hats, hints, streak, last region. */
+export function resetProgress(): void {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(STORAGE_PREFIX)) keys.push(key);
+    }
+    for (const key of keys) localStorage.removeItem(key);
+  } catch {
+    // Storage blocked: there was nothing saved anyway.
+  }
+}

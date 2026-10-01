@@ -57,3 +57,37 @@ describe('daily record', () => {
     expect(p.dailyCleared).toEqual(['2026-09-30']);
   });
 });
+
+describe('reset progress', () => {
+  it('wipes everything the game saved and leaves other sites\' data alone', async () => {
+    const store = new Map<string, string>();
+    const fake = {
+      get length() {
+        return store.size;
+      },
+      key: (i: number) => [...store.keys()][i] ?? null,
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => void store.set(k, v),
+      removeItem: (k: string) => void store.delete(k),
+    };
+    const g = globalThis as { localStorage?: unknown };
+    const before = g.localStorage;
+    g.localStorage = fake;
+    try {
+      const { loadProgress, resetProgress, saveProgress } = await import('./progress.ts');
+      let p = recordWin(freshProgress(), 'c01', 2, 2).progress;
+      p = recordDailyClear(p, '2026-09-30');
+      saveProgress(spendHint(p)!);
+      store.set('rush-hour-rigs:region', 'montney');
+      store.set('someone-else', 'keep');
+      expect(loadProgress().dailyCleared).toEqual(['2026-09-30']);
+
+      resetProgress();
+
+      expect(loadProgress()).toEqual(freshProgress());
+      expect([...store.keys()]).toEqual(['someone-else']);
+    } finally {
+      g.localStorage = before;
+    }
+  });
+});
