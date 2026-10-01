@@ -10,9 +10,20 @@ export interface Progress {
   perfect: string[];
   /** Local dates ('YYYY-MM-DD') on which that day's Daily Pad was cleared. */
   dailyCleared: string[];
+  /** Demo mode: every level and region open. Never changes scores or streak. */
+  demo: boolean;
+  /** Regions whose "NEW LEASE OPEN" banner has been shown. */
+  announced: string[];
 }
 
-export const freshProgress = (): Progress => ({ best: {}, hints: START_HINTS, perfect: [], dailyCleared: [] });
+export const freshProgress = (): Progress => ({
+  best: {},
+  hints: START_HINTS,
+  perfect: [],
+  dailyCleared: [],
+  demo: false,
+  announced: [],
+});
 
 /** Records today's Daily Pad as cleared (once per day). */
 export function recordDailyClear(p: Progress, day: string): Progress {
@@ -57,6 +68,8 @@ export function loadProgress(): Progress {
       hints: Number.isInteger(p.hints) ? (p.hints as number) : START_HINTS,
       perfect: Array.isArray(p.perfect) ? p.perfect : [],
       dailyCleared: Array.isArray(p.dailyCleared) ? p.dailyCleared : [],
+      demo: p.demo === true,
+      announced: Array.isArray(p.announced) ? p.announced : [],
     };
   } catch {
     return freshProgress();

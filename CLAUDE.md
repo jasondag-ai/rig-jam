@@ -41,6 +41,14 @@ something, give exact clicks and one command at a time.
 - `src/ui/scenery.ts` (border trees) and `src/ui/pad-decor.ts` (gravel/mud/snow detail) are seeded,
   cosmetic, and never affect play. `--fence` is the fence thickness in px; its color is `--fence-color`.
 
+## Progression
+- Levels open in order within a region (clear one to open the next). A region opens after clearing
+  5 of the previous region's 10 (`REGION_UNLOCK` in `src/ui/unlocks.ts`). Cardium is always open;
+  the Daily Pad is never locked. Locked items show a padlock and "Clear … to unlock"; tapping
+  only shakes. A region earned for real shows a one-time "NEW LEASE OPEN" banner (`announced`).
+- Settings → "Unlock everything (demo mode)": a flag in progress that opens everything without
+  touching scores or streak. Off restores normal locks. Reset progress turns it off.
+
 ## Daily Pad (M3)
 - 60 pre-generated medium pads in `src/levels/daily.json` (generated like the regions; par 6-8, 5-6
   trucks, 1-2 obstacles). Pad #1 is 2026-09-30 (`DAILY_EPOCH` in `src/ui/daily.ts`); the pad is

@@ -91,3 +91,13 @@ describe('reset progress', () => {
     }
   });
 });
+
+describe('demo mode flag', () => {
+  it('starts off, and recording wins never touches it or the streak', () => {
+    expect(freshProgress().demo).toBe(false);
+    const p = { ...recordDailyClear(freshProgress(), '2026-10-01'), demo: true };
+    const after = recordWin(p, 'c01', 2, 2).progress;
+    expect(after.demo).toBe(true);
+    expect(after.dailyCleared).toEqual(['2026-10-01']);
+  });
+});
