@@ -31,12 +31,13 @@ describe('themes', () => {
     for (const v of Object.values(theme.vars)) expect(v).not.toBe('');
   });
 
-  it('gives Cardium summer and Montney spring mud, with winter ready but unused', () => {
+  it('gives Cardium summer, Montney spring mud and Duvernay winter', () => {
     expect(REGIONS.map((r) => [r.id, r.theme])).toEqual([
       ['cardium', 'summer'],
       ['montney', 'spring'],
+      ['duvernay', 'winter'],
     ]);
-    expect(THEMES.winter).toBeDefined();
+    for (const r of REGIONS) expect(THEMES[r.theme]).toBeDefined();
   });
 
   it.each(Object.values(THEMES))('$id: every gate color stands out from the fence', (theme) => {

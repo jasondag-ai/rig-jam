@@ -14,6 +14,13 @@ something, give exact clicks and one command at a time.
   `vac`/`frac`/`water` (missing = pickup or vac). The engine and solver never read it.
 - Obstacles are fixed 1-cell lease equipment. Nothing moves through them. Each has a cosmetic
   `kind` (pumpjack, tank, wellhead; missing = pumpjack). The engine and solver never read it.
+- Convoys (Duvernay): a convoy is the two trucks of one color, numbered 1 and 2, each with its own
+  gate of that color. Every gate of that color only accepts the lowest number still on the pad; for
+  the other truck it's a wall. A truck parked against its gate while it was closed drives out with
+  one more cell once it opens. (Partners can't share one physical gate: the truck in front would
+  always leave first, so the order would never matter.) Convoy gates show the number they're
+  waiting for; convoy trucks carry a big number plate. Generator rule: the convoy order must raise
+  par (`convoyRaisesPar`). Out-of-order bumps use only the `convoy` line pool; truck 1 speaks.
 - Clear all trucks to win. Score = moves vs par (par = optimal move count from the solver).
 - Rating is hard hats: at par = 3, up to par + 3 = 2, otherwise 1.
 - Hints: first tap highlights the truck to move, second tap shows where it goes. 3 free hints;
@@ -22,7 +29,7 @@ something, give exact clicks and one command at a time.
 ## Regions
 - Cardium: 10 levels, trucks and gates only. Theme: summer.
 - Montney: 10 levels, adds obstacles (pumpjacks, 400 bbl tanks, wellheads). Theme: spring mud.
-- Winter theme is ready for region 3. Preview any theme with `?theme=winter` (or summer/spring).
+- Duvernay: 10 levels, adds convoys. Theme: winter. Preview any theme with `?theme=winter` etc.
 
 ## Look
 - Bright, chunky toy style: dark outlines (`--outline`), light top edge, darker bottom lip, soft

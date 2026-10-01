@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { OBSTACLE_KINDS, TRUCK_KINDS, solve } from '../engine/index.ts';
-import { everyPumpjackInTheWay } from '../../tools/generator.ts';
+import { convoyRaisesPar, everyPumpjackInTheWay, withoutConvoys } from '../../tools/generator.ts';
 import { DAILY_LEVELS, REGIONS } from './regions.ts';
 
 describe('shipped levels', () => {
-  it('has two regions of 10 levels with unique ids', () => {
+  it('has three regions of 10 levels with unique ids', () => {
     expect(REGIONS.map((r) => [r.id, r.levels.length])).toEqual([
       ['cardium', 10],
       ['montney', 10],
+      ['duvernay', 10],
     ]);
     const ids = REGIONS.flatMap((r) => r.levels.map((l) => l.id));
     expect(new Set(ids).size).toBe(ids.length);
@@ -108,5 +109,26 @@ describe('Daily Pads', () => {
     expect(obstacleKinds).toEqual(new Set(OBSTACLE_KINDS));
     expect(truckKinds).toEqual(new Set([...TRUCK_KINDS[2], ...TRUCK_KINDS[3]]));
     for (const l of DAILY_LEVELS) expect(new Set(l.trucks.map((t) => t.kind)).size).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('Duvernay convoys', () => {
+  const duvernay = REGIONS.find((r) => r.id === 'duvernay')!.levels;
+
+  it('opens with the convoy tip', () => {
+    expect(duvernay[0].hint).toBe('Convoys leave in order. Number 1 first.');
+  });
+
+  it.each(duvernay.map((l) => [l.id, l] as const))('%s has a convoy whose order changes the best solution', (_id, level) => {
+    expect(level.trucks.some((t) => t.convoy === 1)).toBe(true);
+    expect(level.trucks.some((t) => t.convoy === 2)).toBe(true);
+    expect(convoyRaisesPar(level, level.par)).toBe(true);
+    expect(solve(withoutConvoys(level))!.length).toBeLessThan(level.par);
+  });
+
+  it('mixes in obstacles, and every one gets in the way', () => {
+    const withObstacles = duvernay.filter((l) => l.obstacles.length > 0);
+    expect(withObstacles.length).toBeGreaterThanOrEqual(5);
+    for (const l of withObstacles) expect(everyPumpjackInTheWay(l, solve(l)!)).toBe(true);
   });
 });

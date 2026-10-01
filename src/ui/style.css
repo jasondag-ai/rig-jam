@@ -235,7 +235,8 @@ button {
 
 .regions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
   gap: 6px;
   padding: 5px;
   margin: 26px 0 8px;
@@ -1339,4 +1340,58 @@ button {
 
 .btn.danger {
   --btn: #ff4747;
+}
+
+/* ---------- Convoys: number plates on trucks, waiting number on gates ---------- */
+
+.truck .bed {
+  gap: calc(var(--cell) * 0.08);
+}
+
+.truck.horiz .bed { grid-auto-flow: column; }
+.truck.vert .bed { grid-auto-flow: row; }
+
+/* A big yellow fleet-number plate. */
+.truck .convoy-no {
+  display: grid;
+  place-items: center;
+  width: calc(var(--cell) * 0.5);
+  height: calc(var(--cell) * 0.5);
+  border: 3px solid var(--outline);
+  border-radius: 8px;
+  background: #ffd21f;
+  color: var(--outline);
+  font-size: calc(var(--cell) * 0.42);
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.55), 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.gate.convoy-gate {
+  gap: 2px;
+}
+
+.gate[data-side='top'].convoy-gate,
+.gate[data-side='bottom'].convoy-gate {
+  grid-auto-flow: column;
+}
+
+/* The number this gate will let out next. */
+.gate .wait {
+  display: grid;
+  place-items: center;
+  width: calc(var(--fence) * 0.8);
+  height: calc(var(--fence) * 0.8);
+  border: 2px solid #ffd21f;
+  border-radius: 50%;
+  background: var(--outline);
+  color: #ffd21f;
+  font-size: calc(var(--fence) * 0.58);
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: none;
+}
+
+.gate.convoy-done .wait {
+  display: none;
 }

@@ -87,6 +87,26 @@ const REGIONS: RegionConfig[] = [
     ],
   },
   {
+    id: 'duvernay',
+    prefix: 'v',
+    kindSeed: 8000,
+    truckKindSeed: 9000,
+    // Each par window starts where the previous one ends, so par can only ramp up.
+    slots: [
+      { name: 'Convoy Briefing', trucks: 4, pumpjacks: 0, convoys: 1, minPar: 5, maxPar: 6, minExtra: 1, decoys: 0, seed: 301,
+        hint: 'Convoys leave in order. Number 1 first.' },
+      { name: 'Frost Heave', trucks: 4, pumpjacks: 1, convoys: 1, minPar: 6, maxPar: 7, minExtra: 1, decoys: 1, seed: 302 },
+      { name: 'Ice Road', trucks: 5, pumpjacks: 0, convoys: 1, minPar: 7, maxPar: 8, minExtra: 2, decoys: 1, seed: 303 },
+      { name: 'Block Heater', trucks: 5, pumpjacks: 1, convoys: 1, minPar: 8, maxPar: 9, minExtra: 2, decoys: 1, seed: 304 },
+      { name: 'Whiteout', trucks: 6, pumpjacks: 0, convoys: 1, minPar: 9, maxPar: 10, minExtra: 3, decoys: 2, seed: 305, search: LATE },
+      { name: 'Chinook', trucks: 6, pumpjacks: 1, convoys: 1, minPar: 10, maxPar: 11, minExtra: 3, decoys: 2, seed: 306, search: LATE },
+      { name: 'Cold Start', trucks: 7, pumpjacks: 1, convoys: 1, minPar: 11, maxPar: 12, minExtra: 3, decoys: 2, seed: 307, search: LATE },
+      { name: 'Hoarfrost', trucks: 7, pumpjacks: 2, convoys: 1, minPar: 12, maxPar: 13, minExtra: 4, decoys: 2, seed: 308, search: LATE },
+      { name: 'Plug-In Row', trucks: 8, pumpjacks: 1, convoys: 2, minPar: 13, maxPar: 14, minExtra: 4, decoys: 2, seed: 309, search: LATE },
+      { name: 'Deep Freeze', trucks: 8, pumpjacks: 2, convoys: 2, minPar: 14, maxPar: 15, minExtra: 5, decoys: 2, seed: 310, search: LATE },
+    ],
+  },
+  {
     id: 'daily',
     prefix: 'd',
     kindSeed: 6000,
