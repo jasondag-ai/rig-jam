@@ -38,10 +38,15 @@ something, give exact clicks and one command at a time.
   trees, truck grime/roof snow) plus a pad ground style. A region picks its theme in
   `src/levels/regions.ts`. Tests check every theme is complete and every gate color has at least
   1.8:1 contrast with every fence.
-- Tire tracks (`src/ui/tracks.ts`): every level starts clean; each move lays a pair of wheel marks
-  along the path travelled (to the fence on an exit), under obstacles and trucks. Older moves fade
-  (`FADE_STEP`) down to `FADE_FLOOR`. Undo removes that move's tracks; Restart clears them. Style per
-  ground in style.css ("Tire tracks"): faint on gravel, deep ruts in mud, crisp impressions in snow.
+- Tire tracks: every level starts clean; each move lays a pair of wheel marks along the path
+  travelled (to the fence on an exit), under obstacles and trucks. `src/ui/tracks.ts` is the pure
+  geometry and wear; `src/ui/track-layer.ts` draws it. Marks are revealed behind the wheels by a clip
+  that follows the truck element's real position each frame (drag, snap, drive-out); only the track
+  being laid updates, finished ones are static. Wear: each lane cell counts passes; repeated passes
+  draw wider/darker (w1..w4, `WEAR_CAP`). Older moves fade (`FADE_STEP`) to `FADE_FLOOR`. Undo
+  removes that move's marks and wear; Restart clears. Styles per ground in style.css ("Tire tracks").
+- Puddles are flat, low-contrast stains (no outline, rim, glint or shadow) centred on grid corners,
+  never on a cell, and drawn under the `.pad-grid` cell lines. If they ever read as objects, remove them.
 - `src/ui/scenery.ts` (border trees) and `src/ui/pad-decor.ts` (gravel/mud/snow detail) are seeded,
   cosmetic, and never affect play. `--fence` is the fence thickness in px; its color is `--fence-color`.
 

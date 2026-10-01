@@ -3,7 +3,7 @@ import { bumpTarget, pickSpeaker } from './bump.ts';
 import { pickLine, type BumpHit } from './lines.ts';
 import { OBSTACLE_SVG } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
-import { trackLines, trackOpacity } from './tracks.ts';
+import { TrackLayer } from './track-layer.ts';
 import type { Ground } from './themes.ts';
 import { SYMBOL } from './palette.ts';
 
@@ -40,8 +40,10 @@ export class BoardView {
   private fence = 20;
   private drag: Drag | null = null;
   private lastLine: string | null = null;
-  /** Tire tracks laid by moves, under obstacles and trucks. One <g> per move. */
-  private tracks: SVGSVGElement;
+  /** Tire tracks laid by moves, under obstacles and trucks. */
+  private tracks = new TrackLayer();
+  /** Cell lines, drawn over the ground (so puddles sit under them) and under the tracks. */
+  private grid: HTMLElement;
   private getState: () => GameState;
   private onMove: (id: string, delta: number) => void;
   private onBump: () => void;
@@ -59,11 +61,8 @@ export class BoardView {
     this.pad.className = 'pad';
     this.yard.append(this.pad);
     this.el.append(this.yard);
-    this.tracks = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    this.tracks.setAttribute('class', 'tracks');
-    this.tracks.setAttribute('viewBox', `0 0 ${SIZE * 100} ${SIZE * 100}`);
-    this.tracks.setAttribute('preserveAspectRatio', 'none');
-    this.tracks.setAttribute('aria-hidden', 'true');
+    this.grid = document.createElement('div');
+    this.grid.className = 'pad-grid';
   }
 
   setLevel(level: Level): void {
@@ -72,9 +71,9 @@ export class BoardView {
     this.el.querySelectorAll('.gate, .obstacle, .ghost, .bubble, .dust').forEach((n) => n.remove());
     this.trucks.forEach((t) => t.remove());
     this.trucks.clear();
-    // A clean pad: the track layer goes in first so obstacles and trucks sit on top of it.
-    this.tracks.replaceChildren();
-    this.pad.append(this.tracks);
+    // A clean pad: grid and track layer go in first so obstacles and trucks sit on top of them.
+    this.tracks.clear();
+    this.pad.append(this.grid, this.tracks.svg);
     for (const gate of level.gates) {
       const g = document.createElement('div');
       g.className = `gate c-${gate.color}`;
@@ -325,38 +324,23 @@ export class BoardView {
   setDecor(svg: string, ground: Ground): void {
     this.pad.querySelector('.pad-decor')?.remove();
     this.pad.insertAdjacentHTML('afterbegin', svg);
-    this.tracks.dataset.ground = ground;
+    this.tracks.setGround(ground);
   }
 
-  /** Lays the tire tracks for one move (`truck` is where it was before the move). */
+  /** The move happened: its tire tracks keep appearing behind the truck until it settles or drives out. */
   addTrack(truck: Truck, delta: number, exited: boolean): void {
-    const ns = 'http://www.w3.org/2000/svg';
-    const g = document.createElementNS(ns, 'g');
-    // Each wheel line is drawn as three strokes; the ground style decides which show (style.css).
-    for (const l of trackLines(truck, delta, exited)) {
-      for (const part of ['tt-edge', 'tt-mark', 'tt-tread']) {
-        const line = document.createElementNS(ns, 'line');
-        line.setAttribute('class', part);
-        line.setAttribute('x1', String(l.x1 * 100));
-        line.setAttribute('y1', String(l.y1 * 100));
-        line.setAttribute('x2', String(l.x2 * 100));
-        line.setAttribute('y2', String(l.y2 * 100));
-        g.append(line);
-      }
-    }
-    this.tracks.append(g);
-    this.fadeTracks();
+    this.tracks.commit(truck, delta, exited, exited ? WAVE_MS + DRIVE_MS + 80 : 260);
   }
 
-  /** Undo: the last move's tracks go away. */
+  /** Undo: the last move's tracks (and the wear they added) go away. */
   removeLastTrack(): void {
-    this.tracks.lastElementChild?.remove();
-    this.fadeTracks();
+    this.tracks.undo();
   }
 
-  private fadeTracks(): void {
-    const groups = [...this.tracks.children] as SVGGElement[];
-    groups.forEach((g, i) => g.setAttribute('opacity', String(trackOpacity(groups.length - 1 - i))));
+  /** Where a truck element is right now along its lane, in cells (mid-animation too). */
+  private positionOf(el: HTMLElement, horizontal: boolean): number {
+    const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+    return ((horizontal ? m.m41 : m.m42) - GAP) / this.cell;
   }
 
   // ---------- Hints ----------
@@ -402,6 +386,7 @@ export class BoardView {
     const horizontal = truck.orient === 'h';
     this.drag = { id, el, pointerId: e.pointerId, start: horizontal ? e.clientX : e.clientY, range, horizontal, offset: 0, pressing: false };
     el.classList.add('dragging');
+    this.tracks.begin(truck, range, el, () => this.positionOf(el, horizontal));
   }
 
   private onPointerMove(e: PointerEvent): void {
@@ -437,12 +422,14 @@ export class BoardView {
     const delta = Math.max(d.range.min, Math.min(d.range.max, Math.round(d.offset / this.cell)));
     if (delta !== 0) this.onMove(d.id, delta);
     else this.sync(this.getState());
+    this.tracks.cancel(); // no-op if the move went through
   }
 
   private onPointerCancel(e: PointerEvent): void {
     if (!this.drag || e.pointerId !== this.drag.pointerId) return;
     this.endDrag();
     this.sync(this.getState());
+    this.tracks.cancel();
   }
 
   private endDrag(): void {

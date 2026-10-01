@@ -471,11 +471,19 @@ button {
   overflow: hidden;
   border-radius: 6px;
   background:
-    linear-gradient(var(--pad-grid) 1.5px, transparent 1.5px) 0 0 / var(--cell) var(--cell),
-    linear-gradient(90deg, var(--pad-grid) 1.5px, transparent 1.5px) 0 0 / var(--cell) var(--cell),
     radial-gradient(ellipse at 30% 25%, var(--pad-light), transparent 60%),
     var(--pad);
   box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.25), inset 0 6px 10px rgba(0, 0, 0, 0.25);
+}
+
+/* Cell lines sit over the ground detail (puddle stains are under them) and under the tracks. */
+.pad-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--pad-grid) 1.5px, transparent 1.5px) 0 0 / var(--cell) var(--cell),
+    linear-gradient(90deg, var(--pad-grid) 1.5px, transparent 1.5px) 0 0 / var(--cell) var(--cell);
 }
 
 .pad-decor {
@@ -490,13 +498,11 @@ button {
 .pd-speck-dark { fill: var(--pad-dark); opacity: 0.55; }
 .pd-speck-light { fill: var(--pad-light); opacity: 0.9; }
 
-/* Mud: wet sheen, sky-blue puddles, glossy flecks */
+/* Mud: wet sheen, glossy flecks, and puddles as flat low-contrast wet stains (no rim, glint or shadow). */
+.pd-stain { fill: var(--pad-dark); opacity: 0.32; }
 .pd-wet { fill: var(--pad-light); opacity: 0.35; }
 .pd-sheen { fill: #fff; opacity: 0.15; }
 .pd-clump { fill: var(--pad-dark); opacity: 0.8; }
-.pd-puddle-edge { fill: var(--pad-light); opacity: 0.75; }
-.pd-ripple { fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; opacity: 0.5; }
-.pd-glint { fill: #fff; opacity: 0.85; }
 .pd-gloss { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; opacity: 0.42; }
 
 /* Snow: blue-shadowed drifts and sparkles */
@@ -1581,17 +1587,35 @@ button {
   stroke-linecap: round;
 }
 
-/* Summer gravel: faint pressed bands with a light tread. */
+/* Wear: w1 is a fresh pass, w4 a lane driven four or more times. Busy lanes get wider and darker. */
+
+/* Summer gravel: faint pressed bands with a light tread; wear shows subtly. */
 .tracks[data-ground='gravel'] .tt-edge { display: none; }
-.tracks[data-ground='gravel'] .tt-mark { stroke: var(--pad-dark); stroke-width: 11; opacity: 0.4; }
+.tracks[data-ground='gravel'] .tt-mark { stroke: var(--pad-dark); stroke-width: 11; opacity: 0.38; }
+.tracks[data-ground='gravel'] .tt-mark.w2 { stroke-width: 13; opacity: 0.5; }
+.tracks[data-ground='gravel'] .tt-mark.w3 { stroke-width: 15; opacity: 0.6; }
+.tracks[data-ground='gravel'] .tt-mark.w4 { stroke-width: 17; opacity: 0.7; }
 .tracks[data-ground='gravel'] .tt-tread { stroke: var(--pad-light); stroke-width: 5; stroke-dasharray: 4 9; opacity: 0.55; }
 
-/* Spring mud: deep dark ruts between pushed-up wet edges, with a shine in the bottom. */
-.tracks[data-ground='mud'] .tt-edge { stroke: var(--pad-light); stroke-width: 34; opacity: 0.35; }
-.tracks[data-ground='mud'] .tt-mark { stroke: var(--pad-dark); stroke-width: 22; opacity: 0.8; }
+/* Spring mud: ruts between pushed-up wet edges; heavy traffic digs deep, dark channels. */
+.tracks[data-ground='mud'] .tt-edge { stroke: var(--pad-light); stroke-width: 32; opacity: 0.32; }
+.tracks[data-ground='mud'] .tt-edge.w2 { stroke-width: 38; opacity: 0.4; }
+.tracks[data-ground='mud'] .tt-edge.w3 { stroke-width: 44; opacity: 0.46; }
+.tracks[data-ground='mud'] .tt-edge.w4 { stroke-width: 50; opacity: 0.5; }
+.tracks[data-ground='mud'] .tt-mark { stroke: var(--pad-dark); stroke-width: 20; opacity: 0.75; }
+.tracks[data-ground='mud'] .tt-mark.w2 { stroke-width: 26; opacity: 0.85; }
+.tracks[data-ground='mud'] .tt-mark.w3 { stroke: color-mix(in srgb, var(--pad-dark) 85%, #000); stroke-width: 30; opacity: 0.85; }
+.tracks[data-ground='mud'] .tt-mark.w4 { stroke: color-mix(in srgb, var(--pad-dark) 75%, #000); stroke-width: 34; opacity: 0.88; }
 .tracks[data-ground='mud'] .tt-tread { stroke: #fff; stroke-width: 4; opacity: 0.12; }
+.tracks[data-ground='mud'] .tt-tread.w3,
+.tracks[data-ground='mud'] .tt-tread.w4 { stroke-width: 5; opacity: 0.2; } /* water sits in deep ruts */
 
-/* Winter snow: crisp blue impressions with a raised white lip and a tread pattern. */
+/* Winter snow: crisp blue impressions with a raised white lip; packed lanes get bluer and wider. */
 .tracks[data-ground='snow'] .tt-edge { stroke: #fff; stroke-width: 21; }
-.tracks[data-ground='snow'] .tt-mark { stroke: var(--pad-dark); stroke-width: 14; opacity: 0.9; }
+.tracks[data-ground='snow'] .tt-edge.w3,
+.tracks[data-ground='snow'] .tt-edge.w4 { stroke-width: 26; }
+.tracks[data-ground='snow'] .tt-mark { stroke: var(--pad-dark); stroke-width: 14; opacity: 0.85; }
+.tracks[data-ground='snow'] .tt-mark.w2 { stroke-width: 16; opacity: 0.95; }
+.tracks[data-ground='snow'] .tt-mark.w3 { stroke: color-mix(in srgb, var(--pad-dark) 80%, #4a6f99); stroke-width: 18; }
+.tracks[data-ground='snow'] .tt-mark.w4 { stroke: color-mix(in srgb, var(--pad-dark) 60%, #4a6f99); stroke-width: 20; }
 .tracks[data-ground='snow'] .tt-tread { stroke: var(--pad); stroke-width: 9; stroke-dasharray: 3 7; }

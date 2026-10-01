@@ -98,7 +98,7 @@ export class GameView {
     applyTheme(this.el, theme);
     this.stage.append(this.board.el);
     this.board.setLevel(level);
-    this.board.setDecor(padDecor(theme.ground, seedFrom(level.id), level.obstacles), theme.ground);
+    this.board.setDecor(padDecor(theme.ground, seedFrom(level.id)), theme.ground);
     this.showLevelHint();
 
     this.el.addEventListener('click', (e) => {

@@ -1,7 +1,6 @@
 // Ground detail painted on the pad under the trucks: gravel speckle, wet mud with puddles, or
 // packed snow with drifts. Every level starts with no tire tracks: those are laid by your moves
 // (tracks.ts). Purely cosmetic; seeded per level so it never flickers.
-import type { Cell } from '../engine/index.ts';
 import { mulberry32 } from '../engine/rng.ts';
 import type { Ground } from './themes.ts';
 
@@ -27,14 +26,15 @@ function gravel(rng: Rng): string {
   ].join('');
 }
 
-/** Cells for puddles: not under an obstacle, spread out. */
-function puddleCells(rng: Rng, avoid: readonly Cell[], count: number): Cell[] {
-  const taken = new Set(avoid.map((c) => `${c.row},${c.col}`));
-  const picked: Cell[] = [];
+/**
+ * Grid corners for puddle stains. A stain centred on a corner spreads over four cells and is never
+ * centred on any one of them, so it reads as ground, not as something sitting in a cell.
+ */
+function stainCorners(rng: Rng, count: number): { x: number; y: number }[] {
+  const picked: { x: number; y: number }[] = [];
   for (let tries = 0; picked.length < count && tries < 200; tries++) {
-    const c = { row: Math.floor(rng() * 6), col: Math.floor(rng() * 6) };
-    if (taken.has(`${c.row},${c.col}`)) continue;
-    if (picked.some((p) => Math.abs(p.row - c.row) + Math.abs(p.col - c.col) < 3)) continue;
+    const c = { x: (1 + Math.floor(rng() * 5)) * CELL, y: (1 + Math.floor(rng() * 5)) * CELL };
+    if (picked.some((p) => Math.abs(p.x - c.x) + Math.abs(p.y - c.y) < 3 * CELL)) continue;
     picked.push(c);
   }
   return picked;
@@ -57,7 +57,7 @@ function blob(rng: Rng, cx: number, cy: number, rx: number, ry: number): string 
   return `${d} Z`;
 }
 
-function mud(rng: Rng, avoid: readonly Cell[], id: string): string {
+function mud(rng: Rng): string {
   const parts: string[] = [];
   // Broad glossy sheen: long soft bands of reflected sky.
   for (let i = 0; i < 5; i++) {
@@ -72,19 +72,11 @@ function mud(rng: Rng, avoid: readonly Cell[], id: string): string {
     );
   }
   parts.push(speckles(rng, 70, 'pd-clump', 2, 5));
-  // Puddles: flat, irregular pools of sky-colored water ringed by wet, shiny mud.
-  for (const c of puddleCells(rng, avoid, 3)) {
-    const cx = c.col * CELL + 50 + between(rng, -10, 10);
-    const cy = c.row * CELL + 50 + between(rng, -10, 10);
-    const rx = between(rng, 38, 47);
-    const ry = between(rng, 22, 30);
-    const pool = blob(rng, cx, cy, rx, ry);
-    parts.push(
-      `<path class="pd-puddle-edge" d="${blob(rng, cx, cy, rx + 7, ry + 6)}"/>` +
-        `<path fill="url(#${id}-water)" d="${pool}"/>` +
-        `<path class="pd-ripple" d="M${r1(cx - rx * 0.5)} ${r1(cy + ry * 0.25)} q${r1(rx * 0.25)} ${r1(-ry * 0.12)} ${r1(rx * 0.5)} 0"/>` +
-        `<ellipse class="pd-glint" cx="${r1(cx - rx * 0.32)}" cy="${r1(cy - ry * 0.32)}" rx="${r1(rx * 0.28)}" ry="${r1(ry * 0.14)}"/>`,
-    );
+  // Puddles: flat, irregular, low-contrast wet stains on grid corners. No rim, glint or shadow.
+  for (const c of stainCorners(rng, 3)) {
+    const cx = c.x + between(rng, -8, 8);
+    const cy = c.y + between(rng, -8, 8);
+    parts.push(`<path class="pd-stain" d="${blob(rng, cx, cy, between(rng, 34, 46), between(rng, 20, 30))}"/>`);
   }
   // Glossy highlights: short bright flecks that say "wet".
   for (let i = 0; i < 45; i++) {
@@ -93,11 +85,7 @@ function mud(rng: Rng, avoid: readonly Cell[], id: string): string {
     const len = between(rng, 8, 18);
     parts.push(`<path class="pd-gloss" d="M${r1(x)} ${r1(y)} q${r1(len / 2)} ${r1(-len / 4)} ${r1(len)} 0"/>`);
   }
-  const defs =
-    `<defs><linearGradient id="${id}-water" x1="0" y1="0" x2="0" y2="1">` +
-    `<stop offset="0" stop-color="#cfe6f2"/><stop offset="0.55" stop-color="#8fb3c8"/><stop offset="1" stop-color="#5d7f94"/>` +
-    `</linearGradient></defs>`;
-  return defs + parts.join('');
+  return parts.join('');
 }
 
 function snow(rng: Rng): string {
@@ -112,9 +100,8 @@ function snow(rng: Rng): string {
 }
 
 /** SVG markup for the pad surface (600x600 viewBox, one cell = 100). */
-export function padDecor(ground: Ground, seed: number, avoid: readonly Cell[] = []): string {
+export function padDecor(ground: Ground, seed: number): string {
   const rng = mulberry32(seed);
-  const id = `pd${seed.toString(36)}`;
-  const body = ground === 'gravel' ? gravel(rng) : ground === 'mud' ? mud(rng, avoid, id) : snow(rng);
+  const body = ground === 'gravel' ? gravel(rng) : ground === 'mud' ? mud(rng) : snow(rng);
   return `<svg class="pad-decor" viewBox="0 0 ${SIZE} ${SIZE}" preserveAspectRatio="none" aria-hidden="true">${body}</svg>`;
 }
