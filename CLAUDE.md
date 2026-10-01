@@ -18,8 +18,19 @@ something, give exact clicks and one command at a time.
   +1 the first time each level is cleared at par. One tap-pair costs one hint.
 
 ## Regions
-- Cardium: 10 levels, trucks and gates only.
-- Montney: 10 levels, adds obstacles (pumpjacks, 400 bbl tanks, wellheads).
+- Cardium: 10 levels, trucks and gates only. Theme: summer.
+- Montney: 10 levels, adds obstacles (pumpjacks, 400 bbl tanks, wellheads). Theme: spring mud.
+- Winter theme is ready for region 3. Preview any theme with `?theme=winter` (or summer/spring).
+
+## Look
+- Bright, chunky toy style: dark outlines (`--outline`), light top edge, darker bottom lip, soft
+  drop shadow. Fredoka (bundled via @fontsource) with outlined white text for titles and buttons.
+- `src/ui/themes.ts` – each theme sets every variable in `THEME_VARS` (sky, ground, fence, pad,
+  trees, truck grime/roof snow) plus a pad ground style. A region picks its theme in
+  `src/levels/regions.ts`. Tests check every theme is complete and every gate color has at least
+  1.8:1 contrast with every fence.
+- `src/ui/scenery.ts` (border trees) and `src/ui/pad-decor.ts` (gravel/mud/snow detail) are seeded,
+  cosmetic, and never affect play. `--fence` is the fence thickness in px; its color is `--fence-color`.
 
 ## Stack
 - TypeScript + Vite, DOM + CSS transforms, Pointer Events. No game engine, no frameworks.
@@ -31,6 +42,8 @@ something, give exact clicks and one command at a time.
 - `src/ui/` – DOM rendering, drag input, screens, local progress.
 - `src/ui/obstacles.ts` – SVG art for each obstacle kind (colors and nod/crank motion in style.css).
 - `src/ui/lines.ts` – driver bump lines and the NEAR MISS stamp text. Owner edits these freely.
+  Pools by trigger: `any` (every bump; tanks and wellheads use only this), `truck`, `wall` (fence or
+  wrong-color gate), `pumpjack`. A bump draws from its pool plus `any`, never repeating the last line.
 - `src/levels/cardium.json`, `montney.json` – GENERATED. Never hand-edit; `src/levels/regions.ts`
   loads them.
 - `tools/generator.ts` – generator core (random layouts hill-climbed toward a target par, proven by
