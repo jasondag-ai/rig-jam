@@ -1,5 +1,5 @@
 import { SIZE, cabSide, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
-import { BUMP_LINES, BUMP_STAMP } from './lines.ts';
+import { BUMP_STAMP, pickLine, type BumpHit } from './lines.ts';
 import { OBSTACLE_SVG } from './obstacles.ts';
 import { SYMBOL } from './palette.ts';
 
@@ -36,7 +36,7 @@ export class BoardView {
   private cell = 48;
   private fence = 20;
   private drag: Drag | null = null;
-  private lastLine = -1;
+  private lastLine: string | null = null;
   private getState: () => GameState;
   private onMove: (id: string, delta: number) => void;
 
@@ -243,7 +243,22 @@ export class BoardView {
     void body.offsetWidth; // restart the animation
     body.classList.add('jolt');
     this.stamp(d.el);
-    this.speak(d.el);
+    this.speak(d.el, this.whatWasHit(d, direction));
+  }
+
+  /** The thing just past where the truck stopped: another truck, an obstacle, or the fence/gate. */
+  private whatWasHit(d: Drag, direction: 1 | -1): BumpHit {
+    const state = this.getState();
+    const t = state.trucks.find((x) => x.id === d.id);
+    if (!t) return 'wall';
+    const pos = t.orient === 'h' ? t.col : t.row;
+    const next = direction > 0 ? pos + t.length - 1 + d.range.max + 1 : pos + d.range.min - 1;
+    if (next < 0 || next >= SIZE) return 'wall';
+    const row = t.orient === 'h' ? t.row : next;
+    const col = t.orient === 'h' ? next : t.col;
+    const ob = state.level.obstacles.find((o) => o.row === row && o.col === col);
+    if (ob) return ob.kind ?? 'pumpjack';
+    return 'truck';
   }
 
   /** Flashes the stamp on the half of the board away from the truck, so it doesn't cover the bubble. */
@@ -260,16 +275,15 @@ export class BoardView {
     setTimeout(() => s.remove(), STAMP_MS);
   }
 
-  private speak(truckEl: HTMLElement): void {
-    if (BUMP_LINES.length === 0) return;
-    let i = Math.floor(Math.random() * BUMP_LINES.length);
-    if (BUMP_LINES.length > 1 && i === this.lastLine) i = (i + 1) % BUMP_LINES.length;
-    this.lastLine = i;
+  private speak(truckEl: HTMLElement, hit: BumpHit): void {
+    const line = pickLine(hit, this.lastLine);
+    this.lastLine = line;
 
     this.el.querySelector('.bubble')?.remove();
     const b = document.createElement('div');
     b.className = 'bubble';
-    b.textContent = BUMP_LINES[i];
+    b.textContent = line;
+    b.dataset.hit = hit;
     this.el.append(b);
 
     // Point the bubble at the cab, above it (or below if the truck is on the top row).
