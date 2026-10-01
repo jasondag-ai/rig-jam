@@ -34,6 +34,21 @@ something, give exact clicks and one command at a time.
 - `src/ui/scenery.ts` (border trees) and `src/ui/pad-decor.ts` (gravel/mud/snow detail) are seeded,
   cosmetic, and never affect play. `--fence` is the fence thickness in px; its color is `--fence-color`.
 
+## Daily Pad (M3)
+- 60 pre-generated medium pads in `src/levels/daily.json` (generated like the regions; par 6-8, 5-6
+  trucks, 1-2 obstacles). Pad #1 is 2026-09-30 (`DAILY_EPOCH` in `src/ui/daily.ts`); the pad is
+  picked by the phone's local date and wraps after 60. Odd pads use summer, even pads spring mud.
+- Streak "DAYS WITHOUT INCIDENT" = Daily Pads cleared in an unbroken run. Today doesn't break it
+  until the day is over. One Safety Stand-Down per Monday-Sunday week covers a missed day
+  automatically (only if there's an earlier cleared day to bridge to). Logic in `streak()`.
+- Near misses = bumps this attempt (reset on Restart, not on Undo). ZERO INCIDENT = at par, no bumps.
+- Share (Daily win screen) copies spoiler-free text: pad, hats, moves vs par, badge, streak, link.
+- All progress is in localStorage (`rush-hour-rigs:v2`); no accounts.
+- PWA: `public/manifest.webmanifest`, icons in `public/icons/` (rendered from `icon.svg`), and a
+  service worker generated at build time by the plugin in `vite.config.ts`
+  (`tools/service-worker.ts`). It precaches every built file; pages load network-first. Not
+  registered in dev.
+
 ## Stack
 - TypeScript + Vite, DOM + CSS transforms, Pointer Events. No game engine, no frameworks.
 - Portrait, one-thumb layout. Main controls live at the bottom of the screen.
