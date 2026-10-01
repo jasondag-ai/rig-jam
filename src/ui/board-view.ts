@@ -1,4 +1,4 @@
-import { SIZE, cabSide, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
+import { SIZE, cabSide, convoyWaitingFor, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
 import { bumpTarget, pickSpeaker } from './bump.ts';
 import { pickLine, type BumpHit } from './lines.ts';
 import { OBSTACLE_SVG } from './obstacles.ts';
@@ -69,6 +69,11 @@ export class BoardView {
       g.dataset.side = gate.side;
       g.dataset.index = String(gate.index);
       g.innerHTML = `<span class="sym">${SYMBOL[gate.color]}</span><span class="boom"></span>`;
+      // Convoy gates show the number they're waiting for.
+      if (level.trucks.some((t) => t.color === gate.color && t.convoy)) {
+        g.classList.add('convoy-gate');
+        g.insertAdjacentHTML('beforeend', '<span class="wait" aria-label="waiting for convoy truck"></span>');
+      }
       this.yard.append(g);
     }
     for (const o of level.obstacles) {
@@ -125,6 +130,14 @@ export class BoardView {
 
   /** Brings truck elements in line with the game state. */
   sync(state: GameState, animate = true, exitedId?: string): void {
+    this.el.querySelectorAll<HTMLElement>('.convoy-gate').forEach((g) => {
+      const color = state.level.gates.find((x) => x.side === g.dataset.side && x.index === Number(g.dataset.index))!.color;
+      const waiting = convoyWaitingFor(state, color);
+      const wait = g.querySelector<HTMLElement>('.wait')!;
+      wait.textContent = waiting ? String(waiting) : '';
+      wait.setAttribute('aria-label', waiting ? `waiting for convoy truck ${waiting}` : 'convoy gone');
+      g.classList.toggle('convoy-done', !waiting);
+    });
     const alive = new Set(state.trucks.map((t) => t.id));
     for (const [id, el] of this.trucks) {
       if (alive.has(id)) continue;
@@ -156,7 +169,7 @@ export class BoardView {
     // The art is drawn cab-right and rotated by CSS; the symbol badge and cab overlay stay upright.
     el.innerHTML =
       `<div class="body"><div class="art">${VEHICLE_SVG[t.kind ?? defaultKind(t.length)]}</div>` +
-      `<div class="bed"><span class="sym">${SYMBOL[t.color]}</span></div>` +
+      `<div class="bed"><span class="sym">${SYMBOL[t.color]}</span>${t.convoy ? `<span class="convoy-no" aria-label="convoy ${t.convoy}">${t.convoy}</span>` : ''}</div>` +
       `<div class="cab"><span class="driver-arm"></span></div></div>`;
     el.addEventListener('pointerdown', (e) => this.onPointerDown(e, t.id, el));
     el.addEventListener('pointermove', (e) => this.onPointerMove(e));
