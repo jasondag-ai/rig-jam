@@ -1,5 +1,6 @@
 import { SIZE, cabSide, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
 import { BUMP_LINES, BUMP_STAMP } from './lines.ts';
+import { OBSTACLE_SVG } from './obstacles.ts';
 import { SYMBOL } from './palette.ts';
 
 const FENCE_RATIO = 0.42;
@@ -12,19 +13,6 @@ const STAMP_MS = 900;
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const PUMPJACK_SVG = `
-<svg viewBox="0 0 100 100" aria-hidden="true">
-  <rect x="8" y="8" width="84" height="84" rx="10" class="pj-pad"/>
-  <rect x="18" y="74" width="64" height="8" rx="2" class="pj-steel"/>
-  <path d="M42 76 L50 36 L58 76 Z" class="pj-steel"/>
-  <rect x="62" y="56" width="12" height="20" rx="2" class="pj-steel"/>
-  <g class="pj-beam">
-    <rect x="22" y="31" width="58" height="8" rx="3" class="pj-yellow"/>
-    <path d="M14 26 Q24 26 26 35 Q24 48 16 50 Z" class="pj-yellow"/>
-    <circle cx="74" cy="35" r="7" class="pj-steel"/>
-  </g>
-  <circle cx="50" cy="35" r="3.5" class="pj-dark"/>
-</svg>`;
 
 interface Drag {
   id: string;
@@ -38,7 +26,7 @@ interface Drag {
   pressing: boolean;
 }
 
-/** Renders the pad, gates, pumpjacks and trucks, and turns drags into (truckId, delta) move requests. */
+/** Renders the pad, gates, obstacles and trucks, and turns drags into (truckId, delta) move requests. */
 export class BoardView {
   readonly el: HTMLElement;
   private yard: HTMLElement;
@@ -69,7 +57,7 @@ export class BoardView {
   setLevel(level: Level): void {
     this.level = level;
     this.drag = null;
-    this.el.querySelectorAll('.gate, .pumpjack, .ghost, .bubble, .stamp, .dust').forEach((n) => n.remove());
+    this.el.querySelectorAll('.gate, .obstacle, .ghost, .bubble, .stamp, .dust').forEach((n) => n.remove());
     this.trucks.forEach((t) => t.remove());
     this.trucks.clear();
     for (const gate of level.gates) {
@@ -81,12 +69,13 @@ export class BoardView {
       this.yard.append(g);
     }
     for (const o of level.obstacles) {
-      const pj = document.createElement('div');
-      pj.className = 'pumpjack';
-      pj.dataset.row = String(o.row);
-      pj.dataset.col = String(o.col);
-      pj.innerHTML = PUMPJACK_SVG;
-      this.pad.append(pj);
+      const kind = o.kind ?? 'pumpjack';
+      const ob = document.createElement('div');
+      ob.className = `obstacle ${kind}`;
+      ob.dataset.row = String(o.row);
+      ob.dataset.col = String(o.col);
+      ob.innerHTML = OBSTACLE_SVG[kind];
+      this.pad.append(ob);
     }
     this.layout();
   }
@@ -120,11 +109,11 @@ export class BoardView {
         height: `${vertical ? cell : fence}px`,
       });
     });
-    this.el.querySelectorAll<HTMLElement>('.pumpjack').forEach((pj) => {
-      Object.assign(pj.style, {
+    this.el.querySelectorAll<HTMLElement>('.obstacle').forEach((ob) => {
+      Object.assign(ob.style, {
         width: `${cell}px`,
         height: `${cell}px`,
-        transform: `translate(${Number(pj.dataset.col) * cell}px, ${Number(pj.dataset.row) * cell}px)`,
+        transform: `translate(${Number(ob.dataset.col) * cell}px, ${Number(ob.dataset.row) * cell}px)`,
       });
     });
     const state = this.level ? this.getState() : null;
@@ -362,7 +351,7 @@ export class BoardView {
     const truck = this.truckById(d.id);
     if (truck) this.place(d.el, truck, d.offset);
 
-    // Pushing into a truck, pumpjack, fence or wrong gate is a bump. Open gates never bump.
+    // Pushing into a truck, obstacle, fence or wrong gate is a bump. Open gates never bump.
     const push = this.cell * BUMP_PUSH;
     const bumpLo = !exitLo && raw < lo - push;
     const bumpHi = !exitHi && raw > hi + push;
