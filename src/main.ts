@@ -3,6 +3,11 @@ import { REGIONS } from './levels/regions.ts';
 import { GameView } from './ui/game-view.ts';
 import { hatsHtml } from './ui/hats.ts';
 import { hardHats, loadProgress } from './ui/progress.ts';
+import { sceneryHtml } from './ui/scenery.ts';
+import { THEMES, applyTheme, themeOverride } from './ui/themes.ts';
+
+/** The region's season, unless ?theme=… overrides it for previewing. */
+const themeFor = (regionIndex: number) => THEMES[themeOverride(location.search) ?? REGIONS[regionIndex].theme];
 
 const app = document.querySelector<HTMLElement>('#app')!;
 const REGION_KEY = 'rush-hour-rigs:region';
@@ -28,7 +33,9 @@ function showLevels(regionIndex = savedRegion()): void {
   const progress = loadProgress();
   const screen = document.createElement('div');
   screen.className = 'screen levels';
+  applyTheme(screen, themeFor(regionIndex));
   screen.innerHTML = `
+    <div class="scenery" aria-hidden="true"></div>
     <header class="brand">
       <h1>Rush Hour Rigs</h1>
       <p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>
@@ -70,12 +77,23 @@ function showLevels(regionIndex = savedRegion()): void {
     if (btn) showGame(regionIndex, Number(btn.dataset.index));
   });
   app.replaceChildren(screen);
+
+  // A tree line along the horizon under the title.
+  const rect = screen.getBoundingClientRect();
+  const horizon = screen.querySelector('.brand')!.getBoundingClientRect().bottom - rect.top + 8;
+  screen.style.setProperty('--horizon', `${Math.round(horizon)}px`);
+  screen.querySelector('.scenery')!.innerHTML = sceneryHtml(themeFor(regionIndex), rect.width, horizon + 40, {
+    x: 0,
+    y: horizon,
+    width: rect.width,
+    height: 0,
+  }, false, 64);
 }
 
 function showGame(regionIndex: number, index: number): void {
   const region = REGIONS[regionIndex];
   const hasNext = index + 1 < region.levels.length;
-  game = new GameView(region.levels[index], region.name, index, {
+  game = new GameView(region.levels[index], region.name, index, themeFor(regionIndex), {
     onLevels: () => showLevels(regionIndex),
     onNext: hasNext ? () => showGame(regionIndex, index + 1) : null,
   });
@@ -84,4 +102,5 @@ function showGame(regionIndex: number, index: number): void {
 }
 
 window.addEventListener('resize', () => game?.fit());
+document.fonts?.ready.then(() => game?.fit());
 showLevels();

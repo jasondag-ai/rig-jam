@@ -1,5 +1,9 @@
 import { SolverLimitError, canUndo, getMoveRange, isWon, newGame, nextMove, tryMove, undo, type GameState, type Level, type Move } from '../engine/index.ts';
+import { seedFrom } from '../engine/rng.ts';
 import { BoardView } from './board-view.ts';
+import { padDecor } from './pad-decor.ts';
+import { sceneryHtml } from './scenery.ts';
+import { applyTheme, type Theme } from './themes.ts';
 import { hatsHtml } from './hats.ts';
 import { hardHats, loadProgress, recordWin, saveProgress, spendHint } from './progress.ts';
 
@@ -28,9 +32,12 @@ export class GameView {
   private hintStep: 0 | 1 | 2 = 0;
   private hint: Move | null = null;
   private noteTimer = 0;
+  private theme: Theme;
+  private scenery: HTMLElement;
 
-  constructor(level: Level, regionName: string, index: number, handlers: GameViewHandlers) {
+  constructor(level: Level, regionName: string, index: number, theme: Theme, handlers: GameViewHandlers) {
     this.level = level;
+    this.theme = theme;
     this.handlers = handlers;
     this.state = newGame(level);
     this.board = new BoardView(
@@ -41,6 +48,7 @@ export class GameView {
     this.el = document.createElement('div');
     this.el.className = 'screen game';
     this.el.innerHTML = `
+      <div class="scenery" aria-hidden="true"></div>
       <header class="hud">
         <button class="link" data-act="levels" aria-label="Back to levels">‹ Levels</button>
         <div class="title"><span class="num"></span><span class="name"></span></div>
@@ -62,8 +70,11 @@ export class GameView {
     this.noteEl = this.el.querySelector('.note')!;
     this.winEl = this.el.querySelector('.win')!;
     this.stage = this.el.querySelector('.stage')!;
+    this.scenery = this.el.querySelector('.scenery')!;
+    applyTheme(this.el, theme);
     this.stage.append(this.board.el);
     this.board.setLevel(level);
+    this.board.setDecor(padDecor(theme.ground, seedFrom(level.id), level.obstacles));
     this.showLevelHint();
 
     this.el.addEventListener('click', (e) => {
@@ -81,6 +92,13 @@ export class GameView {
   fit(): void {
     const r = this.stage.getBoundingClientRect();
     this.board.resize(r.width, r.height);
+    // Sky meets the ground just above the board; trees stand around it.
+    const screen = this.el.getBoundingClientRect();
+    const b = this.board.el.getBoundingClientRect();
+    const box = { x: b.left - screen.left, y: b.top - screen.top, width: b.width, height: b.height };
+    const controlsTop = this.el.querySelector('.note')!.getBoundingClientRect().top - screen.top;
+    this.el.style.setProperty('--horizon', `${Math.round(box.y - 4)}px`);
+    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box);
   }
 
   private move(id: string, delta: number): void {

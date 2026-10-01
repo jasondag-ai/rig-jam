@@ -292,6 +292,12 @@ export class BoardView {
     setTimeout(() => b.remove(), BUBBLE_MS);
   }
 
+  /** Paints the ground (gravel, mud, snow) under everything else on the pad. */
+  setDecor(svg: string): void {
+    this.pad.querySelector('.pad-decor')?.remove();
+    this.pad.insertAdjacentHTML('afterbegin', svg);
+  }
+
   // ---------- Hints ----------
 
   /** Step 1: highlight the truck to move. */
