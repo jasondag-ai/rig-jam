@@ -1,22 +1,34 @@
+@import '@fontsource/fredoka/500.css';
+@import '@fontsource/fredoka/600.css';
+@import '@fontsource/fredoka/700.css';
+
+/* Seasonal colors (--sky-*, --ground*, --fence-*, --pad*, --tree-*, --accent ...) are set per screen
+   by themes.ts. Everything here that is not seasonal lives in :root. */
 :root {
-  --bg: #2f2820;
-  --panel: #3b3226;
-  --ink: #f6efe3;
-  --ink-dim: #b9ab95;
-  --gravel: #c9a66b;
-  --gravel-dark: #b38f55;
-  --fence: #5b554c;
-  --accent: #f5a524;
+  --outline: #2a1a0c; /* toy outline around pieces and outlined text */
+  --cream: #fff7e6; /* panels and cards */
+  --cream-dark: #f0dfbd;
+  --ink: #3a2412; /* text on cream */
+  --ink-dim: #7a5a3c;
 
-  --red: #e5484d;
-  --blue: #3e7bfa;
-  --yellow: #f5c518;
-  --green: #30a46c;
-  --orange: #f76b15;
-  --purple: #9b5de5;
+  /* Truck and gate colors: saturated and cheerful. Keep in sync with themes.test.ts. */
+  --red: #ff4747;
+  --blue: #2f8bff;
+  --yellow: #ffd21f;
+  --green: #22c55e;
+  --orange: #ff8a00;
+  --purple: #a55cff;
 
-  color-scheme: dark;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Fallbacks so a screen without a theme still looks right. */
+  --sky-top: #4fb0ff;
+  --sky-bottom: #c4ecff;
+  --ground: #6cc24a;
+  --ground-dark: #4c9a32;
+  --accent: #ffc21a;
+  --horizon: 120px;
+
+  color-scheme: light;
+  font-family: 'Fredoka', ui-rounded, system-ui, -apple-system, sans-serif;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -28,7 +40,7 @@ html,
 body {
   margin: 0;
   height: 100%;
-  background: var(--bg);
+  background: var(--ground-dark);
   color: var(--ink);
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
@@ -50,30 +62,221 @@ button {
   cursor: pointer;
 }
 
+/* Bold rounded lettering with a dark outline, for titles and buttons. */
+.outlined,
+.brand h1,
+.hud .name,
+.hud .num,
+.hud .moves,
+.hud .par,
+.hud .link,
+.note,
+.btn,
+.card h2,
+.region-blurb,
+.hint-balance {
+  color: #fff;
+  text-shadow:
+    -2px -2px 0 var(--outline), 2px -2px 0 var(--outline), -2px 2px 0 var(--outline), 2px 2px 0 var(--outline),
+    0 -2px 0 var(--outline), 0 2px 0 var(--outline), -2px 0 0 var(--outline), 2px 0 0 var(--outline),
+    0 4px 0 var(--outline);
+}
+
 .screen {
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
   padding: max(12px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom));
+  /* Sky down to the horizon, then the season's ground. */
+  background:
+    radial-gradient(ellipse 60% 18px at 20% calc(var(--horizon) + 60px), rgba(0, 0, 0, 0.06), transparent),
+    radial-gradient(ellipse 50% 14px at 80% calc(var(--horizon) + 160px), rgba(0, 0, 0, 0.06), transparent),
+    linear-gradient(
+      to bottom,
+      var(--sky-top) 0,
+      var(--sky-bottom) var(--horizon),
+      var(--ground) var(--horizon),
+      var(--ground-dark) 100%
+    );
+  overflow: hidden;
+}
+
+.screen > *:not(.scenery):not(.overlay) {
+  position: relative;
+  z-index: 1;
+}
+
+.scenery {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.trees {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+}
+
+.tr-spruce { fill: var(--tree-spruce); stroke: var(--outline); stroke-width: 2; stroke-linejoin: round; }
+.tr-spruce-dark { fill: var(--tree-spruce-dark); }
+.tr-aspen { fill: var(--tree-aspen); stroke: var(--outline); stroke-width: 2; }
+.tr-aspen-dark { fill: var(--tree-aspen-dark); }
+.tr-bark { fill: var(--tree-bark); stroke: var(--outline); stroke-width: 1.8; }
+.tr-bark-mark { stroke: var(--outline); stroke-width: 1.6; stroke-linecap: round; }
+.tr-trunk { fill: #7a4a22; stroke: var(--outline); stroke-width: 1.8; }
+.tr-frost { fill: var(--tree-frost); }
+
+/* ---------- Toy panels and buttons ---------- */
+
+.panel,
+.level-btn,
+.regions,
+.card {
+  background: var(--cream);
+  border: 3px solid var(--outline);
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -5px 0 var(--cream-dark),
+    0 4px 0 var(--outline);
+}
+
+.btn {
+  --btn: var(--cream);
+  min-height: 58px;
+  border: 3px solid var(--outline);
+  border-radius: 18px;
+  background: var(--btn);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow:
+    inset 0 4px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -6px 0 rgba(0, 0, 0, 0.2),
+    0 5px 0 var(--outline);
+  transition: transform 80ms, box-shadow 80ms;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 4px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.2),
+    0 1px 0 var(--outline);
+}
+
+.btn:disabled {
+  --btn: #b9b2a6;
+  cursor: default;
+  opacity: 0.85;
+}
+
+.btn[data-act='undo'] { --btn: #43a8ff; }
+.btn[data-act='restart'] { --btn: #ff7a45; }
+.hint-btn { --btn: var(--accent); }
+.btn.primary { --btn: #2fcf5f; }
+.card .btn[data-act='restart'] { --btn: #43a8ff; }
+
+.hint-btn .count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  margin-left: 4px;
+  padding: 0 7px;
+  border: 2.5px solid var(--outline);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 16px;
+  text-shadow: none;
+}
+
+.hint-btn.empty .count {
+  background: #d8d2c7;
+}
+
+.link {
+  background: none;
+  border: 0;
+  padding: 10px 4px;
+  font-weight: 600;
 }
 
 /* ---------- Level list ---------- */
 
 .levels {
   overflow-y: auto;
+  padding-bottom: 24px;
 }
 
 .brand h1 {
-  margin: 12px 0 4px;
-  font-size: 30px;
+  margin: 10px 0 6px;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.05;
   letter-spacing: 0.5px;
   color: var(--accent);
 }
 
 .brand p {
-  margin: 0 0 16px;
-  color: var(--ink-dim);
-  line-height: 1.4;
+  margin: 0 0 14px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  border: 2.5px solid var(--outline);
+  background: var(--cream);
+  color: var(--ink);
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.regions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 5px;
+  margin: 26px 0 8px;
+  border-radius: 18px;
+}
+
+.region-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 54px;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.region-tab[aria-selected='true'] {
+  background: var(--accent);
+  box-shadow: inset 0 0 0 2.5px var(--outline), inset 0 -4px 0 rgba(0, 0, 0, 0.15);
+}
+
+.region-tab .rdone {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.region-blurb,
+.hint-balance {
+  margin: 6px 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.hint-balance {
+  margin-top: 18px;
+  text-align: center;
 }
 
 .level-list {
@@ -81,7 +284,7 @@ button {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .level-btn {
@@ -89,31 +292,32 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--panel);
+  padding: 12px 14px;
+  border-radius: 16px;
   text-align: left;
-  min-height: 56px;
+  min-height: 60px;
+  color: var(--ink);
 }
 
 .level-btn:active {
-  transform: scale(0.98);
+  transform: translateY(3px);
 }
 
 .level-btn .n {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
-  border-radius: 8px;
-  background: var(--gravel);
-  color: #2b2319;
+  border: 2.5px solid var(--outline);
+  border-radius: 10px;
+  background: var(--accent);
   font-weight: 700;
+  font-size: 18px;
 }
 
 .level-btn .label {
   flex: 1;
+  font-size: 18px;
   font-weight: 600;
 }
 
@@ -123,73 +327,26 @@ button {
 }
 
 .level-btn .hat {
-  width: 20px;
-  height: 20px;
-}
-
-/* Region picker */
-.regions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  padding: 4px;
-  margin-bottom: 8px;
-  border-radius: 14px;
-  background: var(--panel);
-}
-
-.region-tab {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  min-height: 52px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  font-weight: 700;
-}
-
-.region-tab[aria-selected='true'] {
-  background: var(--gravel);
-  color: #2b2319;
-}
-
-.region-tab .rdone {
-  font-size: 12px;
-  font-weight: 600;
-  opacity: 0.7;
-}
-
-.region-blurb,
-.hint-balance {
-  margin: 4px 0 12px;
-  color: var(--ink-dim);
-  font-size: 14px;
-}
-
-.hint-balance {
-  margin-top: 16px;
-  text-align: center;
+  width: 22px;
+  height: 22px;
 }
 
 /* Hard hats */
 .hat {
   display: block;
   fill: currentColor;
+  stroke: var(--outline);
+  stroke-width: 1.4;
 }
 
 .hat .ridge {
   fill: rgba(0, 0, 0, 0.18);
+  stroke: none;
 }
 
-.on {
-  color: var(--yellow);
-}
-
-.off {
-  color: rgba(255, 255, 255, 0.14);
-}
+.on { color: var(--yellow); }
+.off { color: rgba(58, 36, 18, 0.15); }
+.off .hat { stroke: rgba(58, 36, 18, 0.25); }
 
 .hats {
   display: flex;
@@ -201,39 +358,46 @@ button {
 }
 
 .hats.big .hat {
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
 }
 
 /* ---------- Game screen ---------- */
 
 .hud {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 8px;
-  min-height: 48px;
+  min-height: 52px;
+}
+
+.hud .link {
+  justify-self: start;
+  font-size: 17px;
 }
 
 .hud .title {
   display: flex;
   flex-direction: column;
   align-items: center;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .hud .num {
-  font-size: 12px;
-  color: var(--ink-dim);
+  font-size: 13px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
 }
 
 .hud .name {
+  font-size: 22px;
   font-weight: 700;
 }
 
 .hud .score {
+  justify-self: end;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -241,20 +405,14 @@ button {
 }
 
 .hud .moves {
+  font-size: 20px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 .hud .par {
-  font-size: 12px;
-  color: var(--ink-dim);
-}
-
-.link {
-  background: none;
-  border: 0;
-  padding: 10px 4px;
-  color: var(--ink-dim);
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .stage {
@@ -262,120 +420,111 @@ button {
   min-height: 0;
   display: grid;
   place-items: center;
-  padding: 8px 0;
+  padding: 10px 0;
 }
 
 .note {
   margin: 0 0 12px;
   min-height: 1.3em;
   text-align: center;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 600;
   line-height: 1.3;
-  color: var(--ink-dim);
 }
 
 .controls {
   display: grid;
   grid-template-columns: 1fr 1.2fr 1fr;
   gap: 10px;
+  padding-bottom: 4px;
 }
 
-.hint-btn {
-  background: color-mix(in srgb, var(--accent) 30%, var(--panel));
-}
-
-.hint-btn .count {
-  display: inline-grid;
-  place-items: center;
-  min-width: 24px;
-  height: 24px;
-  margin-left: 4px;
-  padding: 0 6px;
-  border-radius: 12px;
-  background: var(--accent);
-  color: #2b2319;
-  font-size: 14px;
-}
-
-.hint-btn.empty .count {
-  background: rgba(255, 255, 255, 0.2);
-  color: var(--ink);
-}
-
-.btn {
-  min-height: 56px;
-  border: 0;
-  border-radius: 14px;
-  background: var(--panel);
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.btn:active:not(:disabled) {
-  transform: scale(0.97);
-}
-
-.btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.btn.primary {
-  background: var(--accent);
-  color: #2b2319;
-}
-
-/* ---------- Board ---------- */
+/* ---------- Board: fence, gates, pad ---------- */
 
 .board {
   position: relative;
   touch-action: none;
+  filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.18));
 }
 
-/* The yard clips trucks as they drive out. */
+/* The yard clips trucks as they drive out. Boards between posts, with snow on top in winter. */
 .yard {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  border-radius: 10px;
+  border: 3px solid var(--outline);
+  border-radius: 16px;
   background:
-    repeating-linear-gradient(90deg, transparent 0 calc(var(--fence) - 4px), rgba(0, 0, 0, 0.25) 0 var(--fence)),
-    var(--fence);
+    repeating-linear-gradient(90deg, transparent 0 calc(var(--fence) - 6px), var(--fence-post) 0 var(--fence)),
+    linear-gradient(var(--fence-cap), var(--fence-cap)) top / 100% 5px no-repeat,
+    linear-gradient(rgba(255, 255, 255, 0.18), transparent 40%, rgba(0, 0, 0, 0.18)),
+    var(--fence-color);
 }
 
 .pad {
   position: absolute;
+  overflow: hidden;
+  border-radius: 6px;
   background:
-    linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px) 0 0 / var(--cell) var(--cell),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.06) 1px, transparent 1px) 0 0 / var(--cell) var(--cell),
-    radial-gradient(circle at 30% 40%, var(--gravel) 0 40%, var(--gravel-dark) 100%);
-  border-radius: 4px;
+    linear-gradient(var(--pad-grid) 1.5px, transparent 1.5px) 0 0 / var(--cell) var(--cell),
+    linear-gradient(90deg, var(--pad-grid) 1.5px, transparent 1.5px) 0 0 / var(--cell) var(--cell),
+    radial-gradient(ellipse at 30% 25%, var(--pad-light), transparent 60%),
+    var(--pad);
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.25), inset 0 6px 10px rgba(0, 0, 0, 0.25);
 }
+
+.pad-decor {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Gravel */
+.pd-speck-dark { fill: var(--pad-dark); opacity: 0.55; }
+.pd-speck-light { fill: var(--pad-light); opacity: 0.9; }
+.pd-track-light { fill: none; stroke: var(--pad-light); stroke-width: 14; opacity: 0.55; stroke-linecap: round; }
+
+/* Mud: wet sheen, ruts with lit ridges, sky-blue puddles, glossy flecks */
+.pd-wet { fill: var(--pad-light); opacity: 0.35; }
+.pd-rut-ridge { fill: none; stroke: var(--pad-light); stroke-width: 34; opacity: 0.5; stroke-linecap: round; }
+.pd-rut { fill: none; stroke: var(--pad-dark); stroke-width: 20; opacity: 0.85; stroke-linecap: round; }
+.pd-rut-shine { fill: none; stroke: rgba(255, 255, 255, 0.16); stroke-width: 4; stroke-linecap: round; }
+.pd-sheen { fill: #fff; opacity: 0.15; }
+.pd-clump { fill: var(--pad-dark); opacity: 0.8; }
+.pd-puddle-edge { fill: var(--pad-light); opacity: 0.75; }
+.pd-ripple { fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; opacity: 0.5; }
+.pd-glint { fill: #fff; opacity: 0.85; }
+.pd-gloss { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; opacity: 0.42; }
+
+/* Snow: blue-shadowed drifts, packed tracks with tread, sparkles */
+.pd-drift { fill: var(--pad-dark); opacity: 0.32; }
+.pd-snow-track { fill: none; stroke: var(--pad-dark); stroke-width: 14; opacity: 0.7; stroke-linecap: round; }
+.pd-tread { fill: none; stroke: var(--pad); stroke-width: 10; stroke-dasharray: 3 7; opacity: 0.8; }
+.pd-sparkle { fill: #fff; }
 
 .gate {
   position: absolute;
   display: grid;
   place-items: center;
-  font-size: calc(var(--fence) * 0.62);
+  font-size: calc(var(--fence) * 0.7);
   line-height: 1;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+  color: #fff;
+  text-shadow:
+    -1.5px -1.5px 0 var(--outline), 1.5px -1.5px 0 var(--outline), -1.5px 1.5px 0 var(--outline),
+    1.5px 1.5px 0 var(--outline);
   background: var(--c);
-  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.25);
+  /* Dark outline then a thin cream ring: readable on any fence, any season. */
+  box-shadow:
+    inset 0 0 0 2.5px var(--outline),
+    inset 0 0 0 4px var(--cream);
 }
 
-.gate[data-side='top'] {
-  border-radius: 6px 6px 0 0;
-}
-.gate[data-side='bottom'] {
-  border-radius: 0 0 6px 6px;
-}
-.gate[data-side='left'] {
-  border-radius: 6px 0 0 6px;
-}
-.gate[data-side='right'] {
-  border-radius: 0 6px 6px 0;
-}
+.gate[data-side='top'] { border-radius: 8px 8px 0 0; }
+.gate[data-side='bottom'] { border-radius: 0 0 8px 8px; }
+.gate[data-side='left'] { border-radius: 8px 0 0 8px; }
+.gate[data-side='right'] { border-radius: 0 8px 8px 0; }
 
 .c-red { --c: var(--red); }
 .c-blue { --c: var(--blue); }
@@ -384,7 +533,48 @@ button {
 .c-orange { --c: var(--orange); }
 .c-purple { --c: var(--purple); }
 
-/* ---------- Trucks ---------- */
+/* Boom arm lifts when a truck drives out */
+.gate .boom {
+  position: absolute;
+  background: repeating-linear-gradient(45deg, #fff 0 4px, #e8382b 4px 8px);
+  border: 1px solid var(--outline);
+  border-radius: 3px;
+  transition: transform 240ms cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.gate[data-side='top'] .boom,
+.gate[data-side='bottom'] .boom {
+  left: 0;
+  width: 100%;
+  height: 5px;
+  transform-origin: 3px 50%;
+}
+
+.gate[data-side='top'] .boom { bottom: -1px; }
+.gate[data-side='bottom'] .boom { top: -1px; }
+
+.gate[data-side='left'] .boom,
+.gate[data-side='right'] .boom {
+  top: 0;
+  height: 100%;
+  width: 5px;
+  transform-origin: 50% 3px;
+}
+
+.gate[data-side='left'] .boom { right: -1px; }
+.gate[data-side='right'] .boom { left: -1px; }
+
+.gate[data-side='top'].open .boom,
+.gate[data-side='bottom'].open .boom {
+  transform: rotate(-80deg);
+}
+
+.gate[data-side='left'].open .boom,
+.gate[data-side='right'].open .boom {
+  transform: rotate(80deg);
+}
+
+/* ---------- Trucks: chunky toys ---------- */
 
 .truck {
   position: absolute;
@@ -396,14 +586,14 @@ button {
     opacity 170ms;
   will-change: transform;
   cursor: grab;
-  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 4px 2px rgba(0, 0, 0, 0.32));
 }
 
 .truck.dragging {
   transition: none;
   z-index: 5;
   cursor: grabbing;
-  filter: drop-shadow(0 6px 5px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 9px 5px rgba(0, 0, 0, 0.35));
 }
 
 .truck.no-anim {
@@ -424,57 +614,63 @@ button {
 .truck .bed,
 .truck .cab {
   position: absolute;
-  border-radius: 6px;
+  border: 3px solid var(--outline);
+  border-radius: 9px;
 }
 
-/* Bed: ribbed cargo deck in the truck's color. */
+/* Bed: ribbed cargo deck; light top edge, darker bottom lip. */
 .truck .bed {
   inset: 0;
   display: grid;
   place-items: center;
-  background: var(--c);
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.25);
+  background-color: var(--c);
+  box-shadow:
+    inset 0 4px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -6px 0 color-mix(in srgb, var(--c) 62%, #000);
 }
 
 .truck.horiz .bed {
-  background-image: repeating-linear-gradient(90deg, transparent 0 8px, rgba(0, 0, 0, 0.12) 8px 10px);
-  background-color: var(--c);
+  background-image: repeating-linear-gradient(90deg, transparent 0 9px, rgba(0, 0, 0, 0.1) 9px 12px);
 }
 
 .truck.vert .bed {
-  background-image: repeating-linear-gradient(0deg, transparent 0 8px, rgba(0, 0, 0, 0.12) 8px 10px);
-  background-color: var(--c);
+  background-image: repeating-linear-gradient(0deg, transparent 0 9px, rgba(0, 0, 0, 0.1) 9px 12px);
 }
 
 .truck .sym {
-  font-size: calc(var(--cell) * 0.34);
-  color: rgba(255, 255, 255, 0.9);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+  font-size: calc(var(--cell) * 0.36);
+  color: #fff;
+  text-shadow:
+    -1.5px -1.5px 0 var(--outline), 1.5px -1.5px 0 var(--outline), -1.5px 1.5px 0 var(--outline),
+    1.5px 1.5px 0 var(--outline);
 }
 
-/* Cab: darker block on the gate side, with a windshield on its front edge. */
+/* Cab: deeper shade on the gate side, with a windshield on its front edge. */
 .truck .cab {
-  background: color-mix(in srgb, var(--c) 60%, #000);
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+  background: color-mix(in srgb, var(--c) 72%, #000);
+  box-shadow:
+    inset 0 4px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -5px 0 rgba(0, 0, 0, 0.28);
 }
 
 .truck .cab::after {
   content: '';
   position: absolute;
-  background: #cfeaf6;
-  border-radius: 3px;
-  opacity: 0.9;
+  background: #d9f3ff;
+  border: 2px solid var(--outline);
+  border-radius: 4px;
 }
 
-.truck[data-cab='right'] .cab { top: 0; bottom: 0; right: 0; width: calc(var(--cell) * 0.62); }
-.truck[data-cab='left'] .cab { top: 0; bottom: 0; left: 0; width: calc(var(--cell) * 0.62); }
-.truck[data-cab='top'] .cab { left: 0; right: 0; top: 0; height: calc(var(--cell) * 0.62); }
-.truck[data-cab='bottom'] .cab { left: 0; right: 0; bottom: 0; height: calc(var(--cell) * 0.62); }
+.truck[data-cab='right'] .cab { top: 0; bottom: 0; right: 0; width: calc(var(--cell) * 0.64); }
+.truck[data-cab='left'] .cab { top: 0; bottom: 0; left: 0; width: calc(var(--cell) * 0.64); }
+.truck[data-cab='top'] .cab { left: 0; right: 0; top: 0; height: calc(var(--cell) * 0.64); }
+.truck[data-cab='bottom'] .cab { left: 0; right: 0; bottom: 0; height: calc(var(--cell) * 0.64); }
 
-.truck[data-cab='right'] .cab::after { top: 18%; bottom: 18%; right: 12%; width: 22%; }
-.truck[data-cab='left'] .cab::after { top: 18%; bottom: 18%; left: 12%; width: 22%; }
-.truck[data-cab='top'] .cab::after { left: 18%; right: 18%; top: 12%; height: 22%; }
-.truck[data-cab='bottom'] .cab::after { left: 18%; right: 18%; bottom: 12%; height: 22%; }
+.truck[data-cab='right'] .cab::after { top: 16%; bottom: 16%; right: 9%; width: 26%; }
+.truck[data-cab='left'] .cab::after { top: 16%; bottom: 16%; left: 9%; width: 26%; }
+.truck[data-cab='top'] .cab::after { left: 16%; right: 16%; top: 9%; height: 26%; }
+.truck[data-cab='bottom'] .cab::after { left: 16%; right: 16%; bottom: 9%; height: 26%; }
 
 /* Keep the symbol on the bed, not under the cab. */
 .truck[data-cab='right'] .bed { padding-right: calc(var(--cell) * 0.62); }
@@ -482,110 +678,40 @@ button {
 .truck[data-cab='top'] .bed { padding-top: calc(var(--cell) * 0.62); }
 .truck[data-cab='bottom'] .bed { padding-bottom: calc(var(--cell) * 0.62); }
 
-/* ---------- Win overlay ---------- */
-
-.overlay {
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  background: rgba(20, 16, 12, 0.7);
-  z-index: 10;
-  animation: fade 200ms ease-out;
-}
-
-.overlay[hidden] {
-  display: none;
-}
-
-.card {
-  width: min(360px, 100%);
-  display: grid;
-  gap: 10px;
-  padding: 24px 20px 16px;
-  border-radius: 18px;
-  background: var(--panel);
-  text-align: center;
-  animation: pop 260ms cubic-bezier(0.2, 1.4, 0.4, 1);
-}
-
-.card h2 {
-  margin: 0;
-  font-size: 26px;
-  color: var(--accent);
-}
-
-.card .earned {
-  color: var(--accent);
-  font-weight: 700;
-}
-
-.card p {
-  margin: 0;
-}
-
-.card .result {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.card .verdict {
-  color: var(--ink-dim);
-  margin-bottom: 6px;
-}
-
-@keyframes fade {
-  from { opacity: 0; }
-}
-
-@keyframes pop {
-  from { transform: scale(0.85); opacity: 0; }
-}
-
-/* ---------- Gates: boom arm lifts when a truck drives out ---------- */
-
-.gate .boom {
+/* Season: mud splatter along the lower edge (spring), snow on the cab roof (winter). */
+.truck .body::after {
+  content: '';
   position: absolute;
-  background: repeating-linear-gradient(45deg, #f4f1ea 0 5px, #d9483b 5px 10px);
-  border-radius: 2px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-  transition: transform 240ms cubic-bezier(0.3, 1.4, 0.5, 1);
+  z-index: 2;
+  left: 3px;
+  right: 3px;
+  bottom: 3px;
+  height: 40%;
+  max-height: calc(var(--cell) * 0.4);
+  border-radius: 0 0 7px 7px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 8% 92%, var(--truck-grime) 0 4px, transparent 4.5px),
+    radial-gradient(circle at 22% 70%, var(--truck-grime) 0 2.5px, transparent 3px),
+    radial-gradient(circle at 37% 95%, var(--truck-grime) 0 5px, transparent 5.5px),
+    radial-gradient(circle at 51% 78%, var(--truck-grime) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 64% 92%, var(--truck-grime) 0 4px, transparent 4.5px),
+    radial-gradient(circle at 78% 66%, var(--truck-grime) 0 2.5px, transparent 3px),
+    radial-gradient(circle at 92% 90%, var(--truck-grime) 0 4.5px, transparent 5px),
+    linear-gradient(to top, var(--truck-grime) 0 3px, transparent 3px);
+  opacity: 0.9;
 }
 
-.gate[data-side='top'] .boom,
-.gate[data-side='bottom'] .boom {
-  left: 0;
-  width: 100%;
-  height: 5px;
-  transform-origin: 2px 50%;
+.truck .cab::before {
+  content: '';
+  position: absolute;
+  inset: 12% 14%;
+  border-radius: 8px;
+  background: var(--truck-roof);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--truck-roof) 70%, #6f9fd0);
 }
 
-.gate[data-side='top'] .boom { bottom: 0; }
-.gate[data-side='bottom'] .boom { top: 0; }
-
-.gate[data-side='left'] .boom,
-.gate[data-side='right'] .boom {
-  top: 0;
-  height: 100%;
-  width: 5px;
-  transform-origin: 50% 2px;
-}
-
-.gate[data-side='left'] .boom { right: 0; }
-.gate[data-side='right'] .boom { left: 0; }
-
-.gate[data-side='top'].open .boom,
-.gate[data-side='bottom'].open .boom {
-  transform: rotate(-80deg);
-}
-
-.gate[data-side='left'].open .boom,
-.gate[data-side='right'].open .boom {
-  transform: rotate(80deg);
-}
-
-/* ---------- Obstacles: pumpjacks, tanks, wellheads (art in obstacles.ts) ---------- */
+/* ---------- Obstacles: chunky lease equipment (art in obstacles.ts) ---------- */
 
 .obstacle {
   position: absolute;
@@ -598,20 +724,21 @@ button {
   display: block;
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.3));
+  overflow: visible;
+  filter: drop-shadow(0 3px 1.5px rgba(0, 0, 0, 0.32));
 }
 
-.ob-ground { fill: rgba(70, 52, 28, 0.22); }
-.ob-concrete { fill: #aaa59a; }
-.ob-steel { fill: #4d4b47; }
-.ob-dark { fill: #262422; }
+.ob-ground { fill: var(--ob-ground); }
+.ob-concrete { fill: #c9c4b8; stroke: var(--outline); stroke-width: 2.5; }
+.ob-steel { fill: #55524d; stroke: var(--outline); stroke-width: 2; }
+.ob-dark { fill: #2a2725; }
 
 /* Pumpjack */
-.pj-paint { fill: #c99a2e; stroke: #7a5c17; stroke-width: 1.5; }
-.pj-weight { fill: #6e6a63; stroke: #3a3835; stroke-width: 1.5; }
-.pj-motor { fill: #4f7d5a; stroke: #2c4a34; stroke-width: 1.5; }
-.pj-pitman { stroke: #4d4b47; stroke-width: 3.5; stroke-linecap: round; }
-.pj-rod { stroke: #262422; stroke-width: 2; }
+.pj-paint { fill: #ffbf1f; stroke: var(--outline); stroke-width: 3; }
+.pj-weight { fill: #7d7870; stroke: var(--outline); stroke-width: 2.5; }
+.pj-motor { fill: #36b864; stroke: var(--outline); stroke-width: 2.5; }
+.pj-pitman { stroke: var(--outline); stroke-width: 4; stroke-linecap: round; }
+.pj-rod { stroke: var(--outline); stroke-width: 2.5; }
 
 .pj-beam {
   transform-box: view-box;
@@ -636,23 +763,89 @@ button {
 
 /* 400 bbl tank, top-down */
 .tk-shadow { fill: rgba(0, 0, 0, 0.28); }
-.tk-shell { fill: #c9c0a3; stroke: #6d664f; stroke-width: 3; }
-.tk-ring { fill: none; stroke: rgba(0, 0, 0, 0.2); stroke-width: 2; }
-.tk-seam { stroke: rgba(0, 0, 0, 0.16); stroke-width: 1.5; }
-.tk-shine { fill: none; stroke: rgba(255, 255, 255, 0.5); stroke-width: 4; stroke-linecap: round; }
-.tk-platform { fill: #8a8577; stroke: #3f3c35; stroke-width: 1.5; }
-.tk-hatch { fill: #3a3833; stroke: #1e1d1a; stroke-width: 1.5; }
-.tk-ladder { fill: none; stroke: #3f3c35; stroke-width: 2; }
-.tk-rung { stroke: #3f3c35; stroke-width: 1.5; }
+.tk-shell { fill: #e9e2c8; stroke: var(--outline); stroke-width: 3.5; }
+.tk-ring { fill: none; stroke: rgba(0, 0, 0, 0.18); stroke-width: 2.5; }
+.tk-seam { stroke: rgba(0, 0, 0, 0.14); stroke-width: 1.5; }
+.tk-shine { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; opacity: 0.85; }
+.tk-platform { fill: #9c978a; stroke: var(--outline); stroke-width: 2.5; }
+.tk-hatch { fill: #3a3833; stroke: var(--outline); stroke-width: 2.5; }
+.tk-ladder { fill: none; stroke: var(--outline); stroke-width: 2.5; }
+.tk-rung { stroke: var(--outline); stroke-width: 2; }
 
 /* Wellhead valve tree */
-.wh-body { fill: #c4473a; stroke: #6e2219; stroke-width: 1.5; }
-.wh-flange { fill: #8f3329; }
-.wh-wheel { fill: none; stroke: #262422; stroke-width: 3; }
-.wh-spoke { stroke: #262422; stroke-width: 2; }
-.wh-gauge { fill: #fbfaf6; stroke: #262422; stroke-width: 2.5; }
-.wh-needle { stroke: #c4473a; stroke-width: 2; stroke-linecap: round; }
-.wh-post { fill: #f2c014; stroke: #8a6a00; stroke-width: 1.5; }
+.wh-body { fill: #ff4f3f; stroke: var(--outline); stroke-width: 2.5; }
+.wh-flange { fill: #b8301f; stroke: var(--outline); stroke-width: 1.5; }
+.wh-wheel { fill: none; stroke: var(--outline); stroke-width: 3.2; }
+.wh-spoke { stroke: var(--outline); stroke-width: 2.2; }
+.wh-gauge { fill: #fff; stroke: var(--outline); stroke-width: 3; }
+.wh-needle { stroke: #e8382b; stroke-width: 2.4; stroke-linecap: round; }
+.wh-post { fill: #ffd21f; stroke: var(--outline); stroke-width: 2.5; }
+
+/* ---------- Win overlay ---------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(30, 20, 10, 0.55);
+  z-index: 10;
+  animation: fade 200ms ease-out;
+}
+
+.overlay[hidden] {
+  display: none;
+}
+
+.card {
+  width: min(360px, 100%);
+  display: grid;
+  gap: 10px;
+  padding: 24px 20px 18px;
+  border-radius: 24px;
+  text-align: center;
+  animation: pop 260ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.card h2 {
+  margin: 0 0 4px;
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.card p {
+  margin: 0;
+}
+
+.card .result {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.card .verdict {
+  color: var(--ink-dim);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.card .earned {
+  color: #1e9e4a;
+  font-weight: 700;
+}
+
+.card .link {
+  color: var(--ink-dim);
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+}
+
+@keyframes pop {
+  from { transform: scale(0.85); opacity: 0; }
+}
 
 /* ---------- Drive-out: driver waves, dust flies ---------- */
 
@@ -660,8 +853,8 @@ button {
   position: absolute;
   display: none;
   background: #e8b48a;
+  border: 1.5px solid var(--outline);
   border-radius: 4px;
-  box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.2);
 }
 
 .truck.waving .driver-arm {
@@ -683,7 +876,7 @@ button {
   aspect-ratio: 1;
   border-radius: 50%;
   background: #f0c49c;
-  box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.2);
+  border: 1.5px solid var(--outline);
 }
 
 .truck[data-cab='right'] .driver-arm::after { left: -25%; top: -40%; }
@@ -730,15 +923,16 @@ button {
   top: 50%;
   z-index: 20;
   padding: 6px 14px;
-  border: 4px solid #d9483b;
-  border-radius: 8px;
-  background: rgba(255, 250, 240, 0.9);
-  color: #c53a2e;
+  border: 4px solid #e8382b;
+  border-radius: 10px;
+  background: rgba(255, 250, 240, 0.94);
+  color: #d42e22;
   font-size: calc(var(--cell) * 0.55);
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 3px;
   white-space: nowrap;
   pointer-events: none;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
   transform: translate(-50%, -50%) rotate(-10deg);
   animation: stamp 220ms cubic-bezier(0.2, 1.6, 0.4, 1);
 }
@@ -751,34 +945,50 @@ button {
   position: absolute;
   z-index: 21;
   padding: 8px 12px;
-  border-radius: 14px;
-  background: #fffaf0;
-  color: #2b2319;
-  font-size: 15px;
-  font-weight: 700;
+  border: 3px solid var(--outline);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
   line-height: 1.25;
   text-align: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
   pointer-events: none;
   animation: pop-bubble 200ms cubic-bezier(0.2, 1.5, 0.4, 1);
 }
 
-/* Tail pointing at the cab. */
+/* Tail pointing at the cab: dark outline triangle with a white one inside. */
+.bubble::before,
 .bubble::after {
   content: '';
   position: absolute;
-  left: calc(var(--tail, 50%) - 8px);
-  top: 100%;
-  border: 8px solid transparent;
-  border-top-color: #fffaf0;
+  border: solid transparent;
 }
 
+.bubble::before {
+  left: calc(var(--tail, 50%) - 11px);
+  top: 100%;
+  border-width: 11px;
+  border-top-color: var(--outline);
+}
+
+.bubble::after {
+  left: calc(var(--tail, 50%) - 7px);
+  top: 100%;
+  border-width: 7px;
+  border-top-color: #fff;
+}
+
+.bubble.below::before,
 .bubble.below::after {
   top: auto;
   bottom: 100%;
   border-top-color: transparent;
-  border-bottom-color: #fffaf0;
 }
+
+.bubble.below::before { border-bottom-color: var(--outline); }
+.bubble.below::after { border-bottom-color: #fff; }
 
 @keyframes pop-bubble {
   from { transform: scale(0.5); opacity: 0; }
@@ -787,13 +997,13 @@ button {
 /* ---------- Hints ---------- */
 
 .truck.hinted .body {
-  border-radius: 8px;
+  border-radius: 10px;
   animation: glow 900ms ease-in-out infinite alternate;
 }
 
 @keyframes glow {
-  from { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 0 10px 4px rgba(245, 165, 36, 0.6); }
-  to { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), 0 0 22px 10px rgba(245, 165, 36, 0.9); }
+  from { box-shadow: 0 0 0 4px #fff, 0 0 10px 5px rgba(255, 194, 26, 0.7); }
+  to { box-shadow: 0 0 0 4px #fff, 0 0 22px 11px rgba(255, 194, 26, 0.95); }
 }
 
 .ghost {
@@ -803,12 +1013,15 @@ button {
   z-index: 1;
   display: grid;
   place-items: center;
-  border: 3px dashed var(--c);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--c) 25%, transparent);
-  color: #2b2319;
-  font-weight: 900;
+  border: 4px dashed #fff;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--c) 45%, transparent);
+  color: #fff;
+  font-weight: 700;
   letter-spacing: 1px;
+  text-shadow:
+    -2px -2px 0 var(--outline), 2px -2px 0 var(--outline), -2px 2px 0 var(--outline), 2px 2px 0 var(--outline);
+  box-shadow: 0 0 0 2px var(--outline);
   pointer-events: none;
 }
 
@@ -823,6 +1036,6 @@ button {
   }
 
   .truck.hinted .body {
-    box-shadow: 0 0 0 3px #fff, 0 0 14px 6px rgba(245, 165, 36, 0.8);
+    box-shadow: 0 0 0 4px #fff, 0 0 14px 7px rgba(255, 194, 26, 0.9);
   }
 }
