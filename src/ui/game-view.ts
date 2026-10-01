@@ -9,6 +9,10 @@ import { copyText } from './clipboard.ts';
 import { shareText, streak, zeroIncident } from './daily.ts';
 import { hardHats, loadProgress, recordDailyClear, recordWin, saveProgress, spendHint } from './progress.ts';
 import { streakSignHtml } from './sign.ts';
+import { onTap } from './tap.ts';
+
+/** Screen-changing buttons: act on the first tap, even on iOS (see tap.ts). */
+const TAPPED = '.win [data-act], .hud [data-act="levels"]';
 
 const WIN_DELAY_MS = 900;
 const NOTE_MS = 2600;
@@ -101,16 +105,22 @@ export class GameView {
     this.board.setDecor(padDecor(theme.ground, seedFrom(level.id)), theme.ground);
     this.showLevelHint();
 
+    onTap(this.el, TAPPED, (el) => this.act(el));
     this.el.addEventListener('click', (e) => {
-      const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
-      if (act === 'levels') this.handlers.onLevels();
-      if (act === 'undo') this.undo();
-      if (act === 'hint') this.onHint();
-      if (act === 'restart') this.restart();
-      if (act === 'next') this.handlers.onNext?.();
-      if (act === 'share') void this.share(e.target as HTMLElement);
+      const el = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
+      if (el && !el.matches(TAPPED)) this.act(el); // the rest (Undo, Hint, Restart) use plain clicks
     });
     this.updateHud();
+  }
+
+  private act(el: HTMLElement): void {
+    const act = el.dataset.act;
+    if (act === 'levels') this.handlers.onLevels();
+    if (act === 'undo') this.undo();
+    if (act === 'hint') this.onHint();
+    if (act === 'restart') this.restart();
+    if (act === 'next') this.handlers.onNext?.();
+    if (act === 'share') void this.share(el);
   }
 
   /** Call after the element is in the document and on every resize. */
@@ -272,13 +282,15 @@ export class GameView {
         <h2>Pad cleared!</h2>
         <div class="hats big" aria-label="${hats} of 3 hard hats">${hatsHtml(hats)}</div>
         ${clean ? '<div class="zero-incident">ZERO INCIDENT</div>' : ''}
-        <p class="result">${moves} moves · par ${par}</p>
-        <p class="verdict">${verdict} · ${misses}</p>
+        <p class="result">${moves} moves · par ${par} · ${misses}</p>
+        <p class="verdict">${verdict}</p>
         ${earnedHint ? '<p class="earned">+1 hint for a perfect solve</p>' : ''}
         ${daily}
         ${next}
-        <button class="btn" data-act="restart">Play again</button>
-        <button class="btn quiet" data-act="levels">All levels</button>
+        <div class="btn-row">
+          <button class="btn" data-act="restart">Play again</button>
+          <button class="btn quiet" data-act="levels">All levels</button>
+        </div>
       </div>`;
     this.winEl.hidden = false;
   }

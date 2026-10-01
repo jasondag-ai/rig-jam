@@ -1681,6 +1681,7 @@ input,
 @media (max-height: 700px) {
   .overlay {
     padding-top: max(10px, env(safe-area-inset-top));
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 40px);
   }
 
   .card {
@@ -1694,8 +1695,8 @@ input,
   }
 
   .hats.big .hat {
-    width: 40px;
-    height: 40px;
+    width: 34px;
+    height: 34px;
   }
 
   .card .result {
@@ -1712,7 +1713,8 @@ input,
     font-size: 18px;
   }
 
-  .card .btn.quiet {
+  .card .btn.quiet,
+  .card .btn-row .btn {
     min-height: 48px;
   }
 
@@ -1743,4 +1745,22 @@ input,
   .card .safety-sign .sign-foot {
     display: none;
   }
+}
+
+/* ---------- Win card: Play again + All levels side by side; fits an iPhone without scrolling ---------- */
+
+.card .btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.card .btn-row .btn {
+  min-height: 52px;
+  padding: 0 6px;
+}
+
+/* Nothing in the overlay should ever scroll on a phone: iOS can swallow the next tap after one. */
+.overlay {
+  overscroll-behavior: contain;
 }
