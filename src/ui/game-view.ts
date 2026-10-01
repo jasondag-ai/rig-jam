@@ -278,7 +278,7 @@ export class GameView {
         ${daily}
         ${next}
         <button class="btn" data-act="restart">Play again</button>
-        <button class="link" data-act="levels">All levels</button>
+        <button class="btn quiet" data-act="levels">All levels</button>
       </div>`;
     this.winEl.hidden = false;
   }

@@ -58,8 +58,16 @@ body {
 button {
   font: inherit;
   color: inherit;
-  touch-action: manipulation;
   cursor: pointer;
+}
+
+/* No double-tap-to-zoom delay on anything tappable: one tap is one tap. */
+button,
+a,
+label,
+input,
+[role='button'] {
+  touch-action: manipulation;
 }
 
 /* Bold rounded lettering with a dark outline, for titles and buttons. */
@@ -200,9 +208,13 @@ button {
 }
 
 .link {
+  display: inline-flex;
+  align-items: center;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0 10px;
   background: none;
   border: 0;
-  padding: 10px 4px;
   font-weight: 600;
 }
 
@@ -376,6 +388,7 @@ button {
 
 .hud .link {
   justify-self: start;
+  margin-left: -10px; /* keep the text where it was; the extra tap area extends into the gutter */
   font-size: 17px;
 }
 
@@ -838,7 +851,8 @@ button {
   justify-items: center;
   align-items: start;
   overflow-y: auto;
-  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  /* Plenty of room at the bottom so no button sits where Safari's toolbar grabs the tap. */
+  padding: max(16px, env(safe-area-inset-top)) 16px calc(env(safe-area-inset-bottom, 0px) + 72px);
   background: rgba(30, 20, 10, 0.55);
   z-index: 10;
   animation: fade 200ms ease-out;
@@ -886,8 +900,21 @@ button {
   font-weight: 700;
 }
 
-.card .link {
+/* A quieter full-size button (e.g. "All levels"): outline only, dim text, same tap area. */
+.btn.quiet {
+  --btn: transparent;
+  min-height: 52px;
+  border-color: rgba(42, 26, 12, 0.35);
+  box-shadow: none;
   color: var(--ink-dim);
+  font-size: 18px;
+  text-shadow: none;
+}
+
+.btn.quiet:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: none;
+  background: rgba(42, 26, 12, 0.06);
 }
 
 @keyframes fade {
@@ -1291,8 +1318,8 @@ button {
   right: 0;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   padding: 0;
   border: 3px solid var(--outline);
   border-radius: 50%;
@@ -1647,4 +1674,73 @@ button {
 
 .spray.powder {
   background: radial-gradient(circle, #fff 0 45%, rgba(255, 255, 255, 0) 72%);
+}
+
+/* ---------- Short phones (e.g. iPhone SE): a compact win card that fits above Safari's toolbar ---------- */
+
+@media (max-height: 700px) {
+  .overlay {
+    padding-top: max(10px, env(safe-area-inset-top));
+  }
+
+  .card {
+    gap: 6px;
+    padding: 14px 14px 12px;
+  }
+
+  .card h2 {
+    font-size: 26px;
+    margin: 0;
+  }
+
+  .hats.big .hat {
+    width: 40px;
+    height: 40px;
+  }
+
+  .card .result {
+    font-size: 17px;
+  }
+
+  .card .verdict {
+    margin-bottom: 2px;
+    font-size: 15px;
+  }
+
+  .card .btn {
+    min-height: 50px;
+    font-size: 18px;
+  }
+
+  .card .btn.quiet {
+    min-height: 48px;
+  }
+
+  .zero-incident {
+    font-size: 16px;
+    padding: 2px 12px;
+  }
+
+  .card .safety-sign {
+    margin: 2px 2px 4px;
+    padding: 6px 8px;
+  }
+
+  .card .safety-sign .sign-main {
+    margin: 4px 0 3px;
+  }
+
+  .card .safety-sign .sign-count {
+    font-size: 24px;
+  }
+
+  .card .safety-sign .sign-label {
+    font-size: 14px;
+  }
+
+  /* The full sign (header, stand-down note) is on the level list; the win card keeps the count. */
+  .card .safety-sign .sign-head,
+  .card .safety-sign .sign-foot {
+    display: none;
+  }
 }
