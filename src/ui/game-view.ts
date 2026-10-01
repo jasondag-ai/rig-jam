@@ -31,6 +31,7 @@ export class GameView {
   private state: GameState;
   private board: BoardView;
   private movesEl: HTMLElement;
+  private missesEl: HTMLElement;
   private undoBtn: HTMLButtonElement;
   private hintBtn: HTMLButtonElement;
   private noteEl: HTMLElement;
@@ -58,7 +59,7 @@ export class GameView {
     this.board = new BoardView(
       () => this.state,
       (id, delta) => this.move(id, delta),
-      () => this.bumps++,
+      () => this.onBump(),
     );
 
     this.el = document.createElement('div');
@@ -68,7 +69,13 @@ export class GameView {
       <header class="hud">
         <button class="link" data-act="levels" aria-label="Back to levels">‹ Levels</button>
         <div class="title"><span class="num"></span><span class="name"></span></div>
-        <div class="score"><span class="moves">0</span><span class="par">par ${level.par}</span></div>
+        <div class="score">
+          <span class="score-row">
+            <span class="misses" aria-label="Near misses"><svg class="hazard" viewBox="0 0 24 22" aria-hidden="true"><path d="M12 2 L22.5 20 H1.5 Z"/><rect x="11" y="8" width="2" height="6.5" rx="1"/><circle cx="12" cy="17" r="1.3"/></svg><b>0</b></span>
+            <span class="moves">0</span>
+          </span>
+          <span class="par">par ${level.par}</span>
+        </div>
       </header>
       <main class="stage"></main>
       <p class="note" aria-live="polite"></p>
@@ -81,6 +88,7 @@ export class GameView {
     this.el.querySelector('.num')!.textContent = label;
     this.el.querySelector('.name')!.textContent = level.name;
     this.movesEl = this.el.querySelector('.moves')!;
+    this.missesEl = this.el.querySelector('.misses')!;
     this.undoBtn = this.el.querySelector('[data-act="undo"]')!;
     this.hintBtn = this.el.querySelector('[data-act="hint"]')!;
     this.noteEl = this.el.querySelector('.note')!;
@@ -144,11 +152,27 @@ export class GameView {
   private restart(): void {
     this.state = newGame(this.level);
     this.bumps = 0;
+    this.showMisses();
     this.resetHint();
     this.board.setLevel(this.level);
     this.winEl.hidden = true;
     this.showLevelHint();
     this.updateHud();
+  }
+
+  /** A bump: count it and give the hazard counter a quick shake. */
+  private onBump(): void {
+    this.bumps++;
+    this.showMisses();
+    this.missesEl.classList.remove('tick');
+    void this.missesEl.offsetWidth; // restart the shake
+    this.missesEl.classList.add('tick');
+  }
+
+  private showMisses(): void {
+    this.missesEl.querySelector('b')!.textContent = String(this.bumps);
+    this.missesEl.classList.toggle('some', this.bumps > 0);
+    this.missesEl.setAttribute('aria-label', `${this.bumps} near miss${this.bumps === 1 ? '' : 'es'}`);
   }
 
   // ---------- Hints: tap once for which truck, again for where it goes ----------

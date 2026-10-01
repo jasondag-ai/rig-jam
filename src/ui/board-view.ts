@@ -1,6 +1,6 @@
 import { SIZE, cabSide, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
 import { bumpTarget, pickSpeaker } from './bump.ts';
-import { BUMP_STAMP, pickLine, type BumpHit } from './lines.ts';
+import { pickLine, type BumpHit } from './lines.ts';
 import { OBSTACLE_SVG } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
 import { SYMBOL } from './palette.ts';
@@ -11,7 +11,6 @@ const WAVE_MS = 260; // gate arm lifts and the driver waves before pulling out
 const DRIVE_MS = 460;
 const BUMP_PUSH = 0.25; // cells of push past a blocker before it counts as a bump
 const BUBBLE_MS = 2200;
-const STAMP_MS = 900;
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -49,7 +48,7 @@ export class BoardView {
     this.onBump = onBump;
     this.el = document.createElement('div');
     this.el.className = 'board';
-    // The yard clips trucks driving out; bubbles and stamps sit on the board so they can overhang.
+    // The yard clips trucks driving out; bubbles sit on the board so they can overhang.
     this.yard = document.createElement('div');
     this.yard.className = 'yard';
     this.pad = document.createElement('div');
@@ -61,7 +60,7 @@ export class BoardView {
   setLevel(level: Level): void {
     this.level = level;
     this.drag = null;
-    this.el.querySelectorAll('.gate, .obstacle, .ghost, .bubble, .stamp, .dust').forEach((n) => n.remove());
+    this.el.querySelectorAll('.gate, .obstacle, .ghost, .bubble, .dust').forEach((n) => n.remove());
     this.trucks.forEach((t) => t.remove());
     this.trucks.clear();
     for (const gate of level.gates) {
@@ -244,7 +243,7 @@ export class BoardView {
     }
   }
 
-  // ---------- Bumps: jolt, NEAR MISS stamp, and a word from the driver ----------
+  // ---------- Bumps: jolt, near-miss tick (in the HUD), and a word from the driver ----------
 
   private bump(d: Drag, direction: 1 | -1): void {
     this.onBump();
@@ -258,22 +257,7 @@ export class BoardView {
     const state = this.getState();
     const target = bumpTarget(state, d.id, d.range, direction);
     const speakerEl = this.trucks.get(pickSpeaker(state, d.id, target)) ?? d.el;
-    this.stamp(speakerEl);
     this.speak(speakerEl, target.hit);
-  }
-
-  /** Flashes the stamp on the half of the board away from the speaker, so it doesn't cover the bubble. */
-  private stamp(truckEl: HTMLElement): void {
-    this.el.querySelector('.stamp')?.remove();
-    const s = document.createElement('div');
-    s.className = 'stamp';
-    const board = this.el.getBoundingClientRect();
-    const truck = truckEl.getBoundingClientRect();
-    const truckInTopHalf = truck.top + truck.height / 2 - board.top < board.height / 2;
-    s.style.top = truckInTopHalf ? '74%' : '26%';
-    s.textContent = BUMP_STAMP;
-    this.el.append(s);
-    setTimeout(() => s.remove(), STAMP_MS);
   }
 
   private speak(truckEl: HTMLElement, hit: BumpHit): void {

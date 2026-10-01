@@ -33,8 +33,6 @@ export const BUMP_LINES = {
   pumpjack: ["Pumpjack's undefeated.", "Pumpjack doesn't have a license."],
 };
 
-// The stamp that flashes on the board when a truck bumps something.
-export const BUMP_STAMP = 'NEAR MISS';
 
 /** Lines that fit a bump: the "any" pool plus the pool for what was hit (if it has one). */
 export function linesFor(hit: BumpHit): string[] {

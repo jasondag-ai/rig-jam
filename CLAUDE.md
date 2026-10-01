@@ -60,7 +60,8 @@ something, give exact clicks and one command at a time.
 - `src/ui/obstacles.ts` – SVG art for each obstacle kind (colors and nod/crank motion in style.css).
 - `src/ui/vehicles.ts` – top-down SVG art per truck kind, drawn cab-right and rotated by CSS to face
   the gate. Body panels use the truck color; the gate symbol sits on an upright color badge.
-- `src/ui/lines.ts` – driver bump lines and the NEAR MISS stamp text. Owner edits these freely.
+- `src/ui/lines.ts` – driver bump lines. Owner edits these freely. A bump shows only the speech
+  bubble plus a tick (with a shake) on the hazard near-miss counter next to the move counter.
   Pools by trigger: `any` (every bump; tanks and wellheads use only this), `truck`, `wall` (fence or
   wrong-color gate), `pumpjack`. A bump draws from its pool plus `any`, never repeating the last line.
   Who speaks (`src/ui/bump.ts`): the truck that got hit; for a fence, wrong gate or obstacle, a random
