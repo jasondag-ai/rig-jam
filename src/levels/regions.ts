@@ -2,6 +2,7 @@ import { parseLevels, type Level } from '../engine/index.ts';
 import type { ThemeId } from '../ui/themes.ts';
 import cardium from './cardium.json' with { type: 'json' };
 import montney from './montney.json' with { type: 'json' };
+import daily from './daily.json' with { type: 'json' };
 
 export interface Region {
   id: string;
@@ -17,3 +18,9 @@ export const REGIONS: Region[] = [
   { id: 'cardium', name: 'Cardium', blurb: 'Trucks and gates. Learn the lease.', theme: 'summer', levels: parseLevels(cardium) },
   { id: 'montney', name: 'Montney', blurb: 'Pumpjacks, tanks and wellheads never move. Plan around them.', theme: 'spring', levels: parseLevels(montney) },
 ];
+
+/** 60 pre-generated Daily Pads (medium, mixed obstacles and vehicles). Pad N uses level (N-1) % 60. */
+export const DAILY_LEVELS: Level[] = parseLevels(daily);
+
+/** Daily Pads alternate summer gravel and spring mud. */
+export const dailyTheme = (pad: number): ThemeId => (pad % 2 ? 'summer' : 'spring');

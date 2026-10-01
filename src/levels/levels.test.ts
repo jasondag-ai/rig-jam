@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { OBSTACLE_KINDS, TRUCK_KINDS, solve } from '../engine/index.ts';
 import { everyPumpjackInTheWay } from '../../tools/generator.ts';
-import { REGIONS } from './regions.ts';
+import { DAILY_LEVELS, REGIONS } from './regions.ts';
 
 describe('shipped levels', () => {
   it('has two regions of 10 levels with unique ids', () => {
@@ -81,5 +81,32 @@ describe('vehicle types', () => {
         new Set([...TRUCK_KINDS[2], ...TRUCK_KINDS[3]]),
       );
     }
+  });
+});
+
+describe('Daily Pads', () => {
+  it('has 60 medium pads with unique ids', () => {
+    expect(DAILY_LEVELS).toHaveLength(60);
+    const ids = [...REGIONS.flatMap((r) => r.levels), ...DAILY_LEVELS].map((l) => l.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const l of DAILY_LEVELS) {
+      expect(l.par).toBeGreaterThanOrEqual(6);
+      expect(l.par).toBeLessThanOrEqual(8);
+    }
+  });
+
+  it.each(DAILY_LEVELS.map((l) => [l.id, l] as const))('%s is solvable at its proven par, with obstacles in the way', (_id, level) => {
+    const solution = solve(level);
+    expect(solution?.length).toBe(level.par);
+    expect(level.obstacles.length).toBeGreaterThan(0);
+    expect(everyPumpjackInTheWay(level, solution!)).toBe(true);
+  });
+
+  it('mixes obstacle looks and vehicle types', () => {
+    const obstacleKinds = new Set(DAILY_LEVELS.flatMap((l) => l.obstacles.map((o) => o.kind)));
+    const truckKinds = new Set(DAILY_LEVELS.flatMap((l) => l.trucks.map((t) => t.kind)));
+    expect(obstacleKinds).toEqual(new Set(OBSTACLE_KINDS));
+    expect(truckKinds).toEqual(new Set([...TRUCK_KINDS[2], ...TRUCK_KINDS[3]]));
+    for (const l of DAILY_LEVELS) expect(new Set(l.trucks.map((t) => t.kind)).size).toBeGreaterThanOrEqual(2);
   });
 });

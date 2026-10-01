@@ -31,6 +31,20 @@ const SEARCH: SearchOptions = { restarts: 40, iters: 500, maxStates: 40_000 };
 const LATE: Partial<SearchOptions> = { restarts: 60, iters: 1200, maxStates: 60_000 };
 
 // Difficulty ramps by par and truck count. `minExtra` = forced "make room" moves beyond one per truck.
+// Daily Pads: 60 medium levels with mixed obstacles, cheaper search than the hand-tuned ramps.
+const DAILY: Partial<SearchOptions> = { restarts: 15, iters: 400, maxStates: 30_000 };
+const DAILY_SLOTS: SlotConfig[] = Array.from({ length: 60 }, (_, i) => ({
+  name: `Daily Pad #${i + 1}`,
+  trucks: i % 2 ? 6 : 5,
+  pumpjacks: i % 2 ? 2 : 1,
+  minPar: 6,
+  maxPar: 8,
+  minExtra: 1,
+  decoys: 1,
+  seed: 5000 + i,
+  search: DAILY,
+}));
+
 const REGIONS: RegionConfig[] = [
   {
     id: 'cardium',
@@ -71,6 +85,13 @@ const REGIONS: RegionConfig[] = [
       { name: 'Frost Laws', trucks: 8, pumpjacks: 3, minPar: 12, maxPar: 12, minExtra: 4, decoys: 2, seed: 209, search: LATE },
       { name: 'Last Call', trucks: 8, pumpjacks: 3, minPar: 13, maxPar: 14, minExtra: 5, decoys: 2, seed: 210, search: LATE },
     ],
+  },
+  {
+    id: 'daily',
+    prefix: 'd',
+    kindSeed: 6000,
+    truckKindSeed: 7000,
+    slots: DAILY_SLOTS,
   },
 ];
 

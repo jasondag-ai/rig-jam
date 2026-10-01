@@ -1,0 +1,1352 @@
+[
+  {
+    "id": "d01", "name": "Daily Pad #1", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":2,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"B","color":"blue","row":3,"col":1,"length":2,"orient":"v","kind":"picker"},
+      {"id":"C","color":"yellow","row":2,"col":1,"length":3,"orient":"h","kind":"vac"},
+      {"id":"D","color":"green","row":4,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"E","color":"orange","row":2,"col":0,"length":3,"orient":"v","kind":"frac"}
+    ],
+    "gates": [
+      {"color":"red","side":"bottom","index":4},
+      {"color":"blue","side":"top","index":1},
+      {"color":"yellow","side":"right","index":2},
+      {"color":"green","side":"left","index":4},
+      {"color":"orange","side":"top","index":0},
+      {"color":"blue","side":"top","index":4}
+    ],
+    "obstacles": [
+      {"row":5,"col":1,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d02", "name": "Daily Pad #2", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"B","color":"blue","row":1,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"C","color":"yellow","row":3,"col":3,"length":3,"orient":"h","kind":"frac"},
+      {"id":"D","color":"green","row":1,"col":3,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":0,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"F","color":"purple","row":0,"col":4,"length":2,"orient":"v","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":1},
+      {"color":"blue","side":"right","index":1},
+      {"color":"yellow","side":"left","index":3},
+      {"color":"green","side":"top","index":3},
+      {"color":"orange","side":"right","index":0},
+      {"color":"purple","side":"bottom","index":4},
+      {"color":"red","side":"left","index":0}
+    ],
+    "obstacles": [
+      {"row":5,"col":1,"kind":"wellhead"},
+      {"row":0,"col":0,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d03", "name": "Daily Pad #3", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":2,"col":0,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"B","color":"blue","row":2,"col":1,"length":2,"orient":"v","kind":"picker"},
+      {"id":"C","color":"yellow","row":4,"col":0,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"D","color":"green","row":2,"col":2,"length":2,"orient":"h","kind":"picker"},
+      {"id":"E","color":"orange","row":4,"col":3,"length":2,"orient":"v","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"bottom","index":0},
+      {"color":"blue","side":"bottom","index":1},
+      {"color":"yellow","side":"right","index":4},
+      {"color":"green","side":"left","index":2},
+      {"color":"orange","side":"top","index":3},
+      {"color":"red","side":"right","index":2}
+    ],
+    "obstacles": [
+      {"row":2,"col":4,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d04", "name": "Daily Pad #4", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":2,"length":2,"orient":"v","kind":"picker"},
+      {"id":"B","color":"blue","row":2,"col":4,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"C","color":"yellow","row":2,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":0,"col":0,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"E","color":"orange","row":2,"col":1,"length":2,"orient":"v","kind":"picker"},
+      {"id":"F","color":"purple","row":0,"col":5,"length":2,"orient":"v","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":2},
+      {"color":"blue","side":"left","index":2},
+      {"color":"yellow","side":"bottom","index":3},
+      {"color":"green","side":"right","index":0},
+      {"color":"orange","side":"top","index":1},
+      {"color":"purple","side":"bottom","index":5},
+      {"color":"red","side":"top","index":3}
+    ],
+    "obstacles": [
+      {"row":5,"col":2,"kind":"tank"},
+      {"row":5,"col":1,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d05", "name": "Daily Pad #5", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":4,"col":2,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"B","color":"blue","row":2,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"C","color":"yellow","row":2,"col":5,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"D","color":"green","row":5,"col":3,"length":3,"orient":"h","kind":"water"},
+      {"id":"E","color":"orange","row":3,"col":2,"length":3,"orient":"h","kind":"vac"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":2},
+      {"color":"blue","side":"right","index":2},
+      {"color":"yellow","side":"bottom","index":5},
+      {"color":"green","side":"left","index":5},
+      {"color":"orange","side":"right","index":3},
+      {"color":"red","side":"right","index":5}
+    ],
+    "obstacles": [
+      {"row":0,"col":5,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d06", "name": "Daily Pad #6", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"B","color":"blue","row":0,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":0,"col":2,"length":3,"orient":"h","kind":"water"},
+      {"id":"D","color":"green","row":2,"col":4,"length":2,"orient":"v","kind":"picker"},
+      {"id":"E","color":"orange","row":1,"col":2,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"F","color":"purple","row":2,"col":0,"length":2,"orient":"h","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":3},
+      {"color":"blue","side":"bottom","index":1},
+      {"color":"yellow","side":"left","index":0},
+      {"color":"green","side":"top","index":4},
+      {"color":"orange","side":"left","index":1},
+      {"color":"purple","side":"right","index":2},
+      {"color":"red","side":"left","index":2}
+    ],
+    "obstacles": [
+      {"row":3,"col":0,"kind":"tank"},
+      {"row":5,"col":4,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d07", "name": "Daily Pad #7", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"B","color":"blue","row":4,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":2,"col":5,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":1,"col":1,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"E","color":"orange","row":4,"col":3,"length":3,"orient":"h","kind":"frac"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":3},
+      {"color":"blue","side":"top","index":1},
+      {"color":"yellow","side":"bottom","index":5},
+      {"color":"green","side":"left","index":1},
+      {"color":"orange","side":"left","index":4},
+      {"color":"red","side":"top","index":5}
+    ],
+    "obstacles": [
+      {"row":1,"col":5,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d08", "name": "Daily Pad #8", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":5,"col":0,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":4,"col":2,"length":2,"orient":"v","kind":"picker"},
+      {"id":"C","color":"yellow","row":1,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"D","color":"green","row":1,"col":0,"length":3,"orient":"v","kind":"frac"},
+      {"id":"E","color":"orange","row":2,"col":2,"length":2,"orient":"h","kind":"picker"},
+      {"id":"F","color":"purple","row":3,"col":1,"length":2,"orient":"h","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":5},
+      {"color":"blue","side":"top","index":2},
+      {"color":"yellow","side":"left","index":1},
+      {"color":"green","side":"bottom","index":0},
+      {"color":"orange","side":"right","index":2},
+      {"color":"purple","side":"left","index":3},
+      {"color":"red","side":"right","index":3}
+    ],
+    "obstacles": [
+      {"row":3,"col":3,"kind":"wellhead"},
+      {"row":2,"col":1,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d09", "name": "Daily Pad #9", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":0,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"B","color":"blue","row":1,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"C","color":"yellow","row":4,"col":2,"length":3,"orient":"h","kind":"vac"},
+      {"id":"D","color":"green","row":3,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":0,"col":2,"length":3,"orient":"v","kind":"water"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":0},
+      {"color":"blue","side":"right","index":1},
+      {"color":"yellow","side":"left","index":4},
+      {"color":"green","side":"top","index":1},
+      {"color":"orange","side":"bottom","index":2},
+      {"color":"red","side":"bottom","index":1}
+    ],
+    "obstacles": [
+      {"row":4,"col":5,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d10", "name": "Daily Pad #10", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":4,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"B","color":"blue","row":2,"col":3,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":4,"col":1,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":3,"col":2,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":2,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"F","color":"purple","row":2,"col":4,"length":2,"orient":"v","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":4},
+      {"color":"blue","side":"bottom","index":3},
+      {"color":"yellow","side":"top","index":1},
+      {"color":"green","side":"top","index":2},
+      {"color":"orange","side":"right","index":2},
+      {"color":"purple","side":"bottom","index":4},
+      {"color":"red","side":"left","index":2}
+    ],
+    "obstacles": [
+      {"row":5,"col":2,"kind":"pumpjack"},
+      {"row":2,"col":0,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d11", "name": "Daily Pad #11", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"B","color":"blue","row":3,"col":0,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":4,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":1,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":2,"col":2,"length":2,"orient":"h","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":1},
+      {"color":"blue","side":"top","index":0},
+      {"color":"yellow","side":"left","index":4},
+      {"color":"green","side":"bottom","index":4},
+      {"color":"orange","side":"right","index":2},
+      {"color":"red","side":"left","index":2}
+    ],
+    "obstacles": [
+      {"row":2,"col":1,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d12", "name": "Daily Pad #12", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"B","color":"blue","row":4,"col":2,"length":2,"orient":"h","kind":"picker"},
+      {"id":"C","color":"yellow","row":2,"col":4,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"D","color":"green","row":1,"col":1,"length":2,"orient":"v","kind":"picker"},
+      {"id":"E","color":"orange","row":2,"col":2,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"F","color":"purple","row":1,"col":3,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":4},
+      {"color":"blue","side":"right","index":4},
+      {"color":"yellow","side":"left","index":2},
+      {"color":"green","side":"top","index":1},
+      {"color":"orange","side":"bottom","index":2},
+      {"color":"purple","side":"bottom","index":3},
+      {"color":"blue","side":"bottom","index":4}
+    ],
+    "obstacles": [
+      {"row":4,"col":0,"kind":"pumpjack"},
+      {"row":0,"col":3,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d13", "name": "Daily Pad #13", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":2,"length":3,"orient":"h","kind":"vac"},
+      {"id":"B","color":"blue","row":4,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"C","color":"yellow","row":1,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"D","color":"green","row":3,"col":4,"length":3,"orient":"v","kind":"frac"},
+      {"id":"E","color":"orange","row":3,"col":1,"length":2,"orient":"h","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":1},
+      {"color":"blue","side":"right","index":4},
+      {"color":"yellow","side":"bottom","index":1},
+      {"color":"green","side":"top","index":4},
+      {"color":"orange","side":"right","index":3},
+      {"color":"red","side":"left","index":3}
+    ],
+    "obstacles": [
+      {"row":3,"col":0,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d14", "name": "Daily Pad #14", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":0,"col":0,"length":2,"orient":"v","kind":"picker"},
+      {"id":"B","color":"blue","row":3,"col":4,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"C","color":"yellow","row":5,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":4,"col":2,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":0,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"F","color":"purple","row":1,"col":1,"length":3,"orient":"v","kind":"vac"}
+    ],
+    "gates": [
+      {"color":"red","side":"bottom","index":0},
+      {"color":"blue","side":"left","index":3},
+      {"color":"yellow","side":"right","index":5},
+      {"color":"green","side":"top","index":2},
+      {"color":"orange","side":"left","index":0},
+      {"color":"purple","side":"top","index":1},
+      {"color":"red","side":"bottom","index":1}
+    ],
+    "obstacles": [
+      {"row":0,"col":3,"kind":"pumpjack"},
+      {"row":4,"col":1,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d15", "name": "Daily Pad #15", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":2,"col":3,"length":3,"orient":"v","kind":"vac"},
+      {"id":"B","color":"blue","row":0,"col":2,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":1,"col":3,"length":3,"orient":"h","kind":"water"},
+      {"id":"D","color":"green","row":2,"col":5,"length":2,"orient":"v","kind":"picker"},
+      {"id":"E","color":"orange","row":2,"col":1,"length":2,"orient":"h","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":3},
+      {"color":"blue","side":"bottom","index":2},
+      {"color":"yellow","side":"left","index":1},
+      {"color":"green","side":"top","index":5},
+      {"color":"orange","side":"right","index":2},
+      {"color":"red","side":"bottom","index":5}
+    ],
+    "obstacles": [
+      {"row":2,"col":0,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d16", "name": "Daily Pad #16", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":1,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":3,"col":0,"length":2,"orient":"v","kind":"picker"},
+      {"id":"C","color":"yellow","row":0,"col":2,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"D","color":"green","row":2,"col":3,"length":3,"orient":"v","kind":"water"},
+      {"id":"E","color":"orange","row":2,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"F","color":"purple","row":1,"col":3,"length":2,"orient":"h","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":3},
+      {"color":"blue","side":"bottom","index":0},
+      {"color":"yellow","side":"bottom","index":2},
+      {"color":"green","side":"top","index":3},
+      {"color":"orange","side":"right","index":2},
+      {"color":"purple","side":"left","index":1},
+      {"color":"red","side":"bottom","index":3}
+    ],
+    "obstacles": [
+      {"row":1,"col":5,"kind":"wellhead"},
+      {"row":2,"col":0,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d17", "name": "Daily Pad #17", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":4,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"B","color":"blue","row":2,"col":0,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":4,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":2,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":3,"col":3,"length":3,"orient":"h","kind":"water"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":4},
+      {"color":"blue","side":"bottom","index":0},
+      {"color":"yellow","side":"top","index":3},
+      {"color":"green","side":"bottom","index":1},
+      {"color":"orange","side":"left","index":3},
+      {"color":"red","side":"right","index":3}
+    ],
+    "obstacles": [
+      {"row":0,"col":0,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d18", "name": "Daily Pad #18", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"B","color":"blue","row":2,"col":2,"length":3,"orient":"v","kind":"water"},
+      {"id":"C","color":"yellow","row":2,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"D","color":"green","row":4,"col":1,"length":2,"orient":"v","kind":"picker"},
+      {"id":"E","color":"orange","row":0,"col":1,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"F","color":"purple","row":0,"col":4,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":3},
+      {"color":"blue","side":"top","index":2},
+      {"color":"yellow","side":"left","index":2},
+      {"color":"green","side":"top","index":1},
+      {"color":"orange","side":"right","index":0},
+      {"color":"purple","side":"bottom","index":4},
+      {"color":"red","side":"bottom","index":1}
+    ],
+    "obstacles": [
+      {"row":0,"col":0,"kind":"wellhead"},
+      {"row":3,"col":5,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d19", "name": "Daily Pad #19", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":1,"length":2,"orient":"v","kind":"picker"},
+      {"id":"B","color":"blue","row":5,"col":0,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"C","color":"yellow","row":3,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":4,"col":3,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":1,"col":0,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"bottom","index":1},
+      {"color":"blue","side":"right","index":5},
+      {"color":"yellow","side":"left","index":3},
+      {"color":"green","side":"top","index":3},
+      {"color":"orange","side":"bottom","index":0},
+      {"color":"red","side":"bottom","index":3}
+    ],
+    "obstacles": [
+      {"row":0,"col":0,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d20", "name": "Daily Pad #20", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":0,"col":5,"length":2,"orient":"v","kind":"picker"},
+      {"id":"B","color":"blue","row":5,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"C","color":"yellow","row":0,"col":0,"length":3,"orient":"h","kind":"frac"},
+      {"id":"D","color":"green","row":1,"col":2,"length":2,"orient":"h","kind":"picker"},
+      {"id":"E","color":"orange","row":2,"col":0,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"F","color":"purple","row":2,"col":4,"length":2,"orient":"h","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"bottom","index":5},
+      {"color":"blue","side":"right","index":5},
+      {"color":"yellow","side":"right","index":0},
+      {"color":"green","side":"right","index":1},
+      {"color":"orange","side":"top","index":0},
+      {"color":"purple","side":"left","index":2},
+      {"color":"red","side":"left","index":1}
+    ],
+    "obstacles": [
+      {"row":1,"col":1,"kind":"wellhead"},
+      {"row":5,"col":0,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d21", "name": "Daily Pad #21", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":3,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"B","color":"blue","row":4,"col":2,"length":2,"orient":"h","kind":"picker"},
+      {"id":"C","color":"yellow","row":2,"col":0,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"D","color":"green","row":3,"col":2,"length":2,"orient":"h","kind":"picker"},
+      {"id":"E","color":"orange","row":3,"col":1,"length":2,"orient":"v","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"bottom","index":3},
+      {"color":"blue","side":"right","index":4},
+      {"color":"yellow","side":"right","index":2},
+      {"color":"green","side":"left","index":3},
+      {"color":"orange","side":"top","index":1},
+      {"color":"red","side":"left","index":2}
+    ],
+    "obstacles": [
+      {"row":3,"col":4,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d22", "name": "Daily Pad #22", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":1,"length":2,"orient":"v","kind":"picker"},
+      {"id":"B","color":"blue","row":2,"col":1,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"C","color":"yellow","row":3,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":1,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":1,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"F","color":"purple","row":3,"col":5,"length":3,"orient":"v","kind":"water"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":1},
+      {"color":"blue","side":"right","index":2},
+      {"color":"yellow","side":"left","index":3},
+      {"color":"green","side":"bottom","index":4},
+      {"color":"orange","side":"bottom","index":3},
+      {"color":"purple","side":"top","index":5},
+      {"color":"red","side":"top","index":4}
+    ],
+    "obstacles": [
+      {"row":0,"col":4,"kind":"pumpjack"},
+      {"row":5,"col":1,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d23", "name": "Daily Pad #23", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":5,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"B","color":"blue","row":2,"col":0,"length":3,"orient":"h","kind":"vac"},
+      {"id":"C","color":"yellow","row":3,"col":2,"length":3,"orient":"h","kind":"water"},
+      {"id":"D","color":"green","row":3,"col":1,"length":2,"orient":"v","kind":"picker"},
+      {"id":"E","color":"orange","row":0,"col":4,"length":3,"orient":"v","kind":"frac"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":5},
+      {"color":"blue","side":"right","index":2},
+      {"color":"yellow","side":"left","index":3},
+      {"color":"green","side":"top","index":1},
+      {"color":"orange","side":"bottom","index":4},
+      {"color":"red","side":"left","index":2}
+    ],
+    "obstacles": [
+      {"row":4,"col":5,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d24", "name": "Daily Pad #24", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"B","color":"blue","row":0,"col":2,"length":3,"orient":"h","kind":"vac"},
+      {"id":"C","color":"yellow","row":1,"col":3,"length":3,"orient":"v","kind":"water"},
+      {"id":"D","color":"green","row":3,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":0,"col":5,"length":3,"orient":"v","kind":"frac"},
+      {"id":"F","color":"purple","row":3,"col":4,"length":2,"orient":"h","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":1},
+      {"color":"blue","side":"right","index":0},
+      {"color":"yellow","side":"top","index":3},
+      {"color":"green","side":"top","index":1},
+      {"color":"orange","side":"bottom","index":5},
+      {"color":"purple","side":"left","index":3},
+      {"color":"red","side":"right","index":3}
+    ],
+    "obstacles": [
+      {"row":1,"col":0,"kind":"pumpjack"},
+      {"row":5,"col":1,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d25", "name": "Daily Pad #25", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":0,"col":4,"length":3,"orient":"v","kind":"frac"},
+      {"id":"B","color":"blue","row":3,"col":1,"length":3,"orient":"v","kind":"water"},
+      {"id":"C","color":"yellow","row":2,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":1,"col":5,"length":3,"orient":"v","kind":"vac"},
+      {"id":"E","color":"orange","row":5,"col":3,"length":2,"orient":"h","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"bottom","index":4},
+      {"color":"blue","side":"top","index":1},
+      {"color":"yellow","side":"right","index":2},
+      {"color":"green","side":"bottom","index":5},
+      {"color":"orange","side":"left","index":5},
+      {"color":"red","side":"right","index":5}
+    ],
+    "obstacles": [
+      {"row":0,"col":5,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d26", "name": "Daily Pad #26", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":4,"length":3,"orient":"v","kind":"water"},
+      {"id":"B","color":"blue","row":5,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"C","color":"yellow","row":4,"col":2,"length":3,"orient":"h","kind":"vac"},
+      {"id":"D","color":"green","row":2,"col":1,"length":3,"orient":"v","kind":"frac"},
+      {"id":"E","color":"orange","row":1,"col":1,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"F","color":"purple","row":1,"col":3,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"bottom","index":4},
+      {"color":"blue","side":"right","index":5},
+      {"color":"yellow","side":"left","index":4},
+      {"color":"green","side":"top","index":1},
+      {"color":"orange","side":"right","index":1},
+      {"color":"purple","side":"bottom","index":3},
+      {"color":"red","side":"left","index":5}
+    ],
+    "obstacles": [
+      {"row":4,"col":5,"kind":"pumpjack"},
+      {"row":1,"col":0,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d27", "name": "Daily Pad #27", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":0,"col":3,"length":3,"orient":"h","kind":"vac"},
+      {"id":"B","color":"blue","row":2,"col":5,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":2,"col":4,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":3,"col":2,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"E","color":"orange","row":0,"col":2,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":0},
+      {"color":"blue","side":"bottom","index":5},
+      {"color":"yellow","side":"top","index":4},
+      {"color":"green","side":"right","index":3},
+      {"color":"orange","side":"bottom","index":2},
+      {"color":"red","side":"top","index":5}
+    ],
+    "obstacles": [
+      {"row":1,"col":5,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d28", "name": "Daily Pad #28", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":4,"col":2,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":1,"col":2,"length":2,"orient":"v","kind":"picker"},
+      {"id":"C","color":"yellow","row":5,"col":1,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"D","color":"green","row":2,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"E","color":"orange","row":4,"col":0,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"F","color":"purple","row":3,"col":1,"length":2,"orient":"h","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":4},
+      {"color":"blue","side":"bottom","index":2},
+      {"color":"yellow","side":"left","index":5},
+      {"color":"green","side":"right","index":2},
+      {"color":"orange","side":"top","index":0},
+      {"color":"purple","side":"left","index":3},
+      {"color":"red","side":"top","index":2}
+    ],
+    "obstacles": [
+      {"row":5,"col":3,"kind":"wellhead"},
+      {"row":0,"col":2,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d29", "name": "Daily Pad #29", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":3,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"C","color":"yellow","row":5,"col":4,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"D","color":"green","row":1,"col":5,"length":3,"orient":"v","kind":"vac"},
+      {"id":"E","color":"orange","row":4,"col":2,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":1},
+      {"color":"blue","side":"right","index":3},
+      {"color":"yellow","side":"left","index":5},
+      {"color":"green","side":"bottom","index":5},
+      {"color":"orange","side":"top","index":2},
+      {"color":"blue","side":"left","index":1}
+    ],
+    "obstacles": [
+      {"row":1,"col":0,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d30", "name": "Daily Pad #30", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":0,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"C","color":"yellow","row":2,"col":2,"length":3,"orient":"v","kind":"frac"},
+      {"id":"D","color":"green","row":4,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"E","color":"orange","row":0,"col":3,"length":3,"orient":"v","kind":"water"},
+      {"id":"F","color":"purple","row":3,"col":1,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":3},
+      {"color":"blue","side":"right","index":0},
+      {"color":"yellow","side":"top","index":2},
+      {"color":"green","side":"left","index":4},
+      {"color":"orange","side":"bottom","index":3},
+      {"color":"purple","side":"bottom","index":1},
+      {"color":"blue","side":"right","index":3}
+    ],
+    "obstacles": [
+      {"row":5,"col":2,"kind":"pumpjack"},
+      {"row":0,"col":0,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d31", "name": "Daily Pad #31", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":0,"length":3,"orient":"h","kind":"frac"},
+      {"id":"B","color":"blue","row":3,"col":0,"length":3,"orient":"v","kind":"vac"},
+      {"id":"C","color":"yellow","row":4,"col":1,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":5,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"E","color":"orange","row":1,"col":3,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":1},
+      {"color":"blue","side":"top","index":0},
+      {"color":"yellow","side":"top","index":1},
+      {"color":"green","side":"left","index":5},
+      {"color":"orange","side":"bottom","index":3},
+      {"color":"red","side":"bottom","index":0}
+    ],
+    "obstacles": [
+      {"row":5,"col":5,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d32", "name": "Daily Pad #32", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":3,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"B","color":"blue","row":1,"col":5,"length":3,"orient":"v","kind":"vac"},
+      {"id":"C","color":"yellow","row":1,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":4,"col":2,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"E","color":"orange","row":0,"col":2,"length":2,"orient":"v","kind":"picker"},
+      {"id":"F","color":"purple","row":2,"col":1,"length":3,"orient":"v","kind":"frac"}
+    ],
+    "gates": [
+      {"color":"red","side":"bottom","index":3},
+      {"color":"blue","side":"top","index":5},
+      {"color":"yellow","side":"right","index":1},
+      {"color":"green","side":"left","index":4},
+      {"color":"orange","side":"bottom","index":2},
+      {"color":"purple","side":"top","index":1},
+      {"color":"red","side":"top","index":2}
+    ],
+    "obstacles": [
+      {"row":4,"col":5,"kind":"wellhead"},
+      {"row":5,"col":1,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d33", "name": "Daily Pad #33", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":2,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"B","color":"blue","row":1,"col":2,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":3,"col":4,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":1,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":4,"col":0,"length":3,"orient":"h","kind":"vac"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":2},
+      {"color":"blue","side":"bottom","index":2},
+      {"color":"yellow","side":"top","index":4},
+      {"color":"green","side":"bottom","index":1},
+      {"color":"orange","side":"right","index":4},
+      {"color":"red","side":"top","index":2}
+    ],
+    "obstacles": [
+      {"row":5,"col":4,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d34", "name": "Daily Pad #34", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"B","color":"blue","row":2,"col":3,"length":3,"orient":"h","kind":"vac"},
+      {"id":"C","color":"yellow","row":0,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"D","color":"green","row":3,"col":5,"length":2,"orient":"v","kind":"picker"},
+      {"id":"E","color":"orange","row":2,"col":2,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"F","color":"purple","row":0,"col":2,"length":2,"orient":"h","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":3},
+      {"color":"blue","side":"left","index":2},
+      {"color":"yellow","side":"bottom","index":4},
+      {"color":"green","side":"bottom","index":5},
+      {"color":"orange","side":"top","index":2},
+      {"color":"purple","side":"right","index":0},
+      {"color":"red","side":"top","index":5}
+    ],
+    "obstacles": [
+      {"row":0,"col":1,"kind":"tank"},
+      {"row":5,"col":2,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d35", "name": "Daily Pad #35", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":4,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":2,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"C","color":"yellow","row":3,"col":1,"length":3,"orient":"v","kind":"water"},
+      {"id":"D","color":"green","row":1,"col":3,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":1,"col":4,"length":3,"orient":"v","kind":"vac"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":4},
+      {"color":"blue","side":"right","index":2},
+      {"color":"yellow","side":"top","index":1},
+      {"color":"green","side":"bottom","index":3},
+      {"color":"orange","side":"bottom","index":4},
+      {"color":"red","side":"left","index":2}
+    ],
+    "obstacles": [
+      {"row":2,"col":0,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d36", "name": "Daily Pad #36", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":4,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"B","color":"blue","row":4,"col":4,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"C","color":"yellow","row":1,"col":1,"length":3,"orient":"h","kind":"vac"},
+      {"id":"D","color":"green","row":1,"col":5,"length":2,"orient":"v","kind":"picker"},
+      {"id":"E","color":"orange","row":0,"col":1,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"F","color":"purple","row":2,"col":2,"length":2,"orient":"h","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":3},
+      {"color":"blue","side":"left","index":4},
+      {"color":"yellow","side":"right","index":1},
+      {"color":"green","side":"bottom","index":5},
+      {"color":"orange","side":"right","index":0},
+      {"color":"purple","side":"right","index":2},
+      {"color":"red","side":"left","index":1}
+    ],
+    "obstacles": [
+      {"row":1,"col":0,"kind":"wellhead"},
+      {"row":2,"col":1,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d37", "name": "Daily Pad #37", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":4,"col":0,"length":3,"orient":"h","kind":"water"},
+      {"id":"B","color":"blue","row":3,"col":3,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":0,"col":0,"length":3,"orient":"v","kind":"frac"},
+      {"id":"D","color":"green","row":0,"col":2,"length":3,"orient":"h","kind":"vac"},
+      {"id":"E","color":"orange","row":3,"col":4,"length":3,"orient":"v","kind":"water"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":4},
+      {"color":"blue","side":"bottom","index":3},
+      {"color":"yellow","side":"bottom","index":0},
+      {"color":"green","side":"left","index":0},
+      {"color":"orange","side":"top","index":4},
+      {"color":"blue","side":"left","index":4}
+    ],
+    "obstacles": [
+      {"row":0,"col":5,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d38", "name": "Daily Pad #38", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":2,"col":2,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":0,"col":0,"length":3,"orient":"h","kind":"frac"},
+      {"id":"C","color":"yellow","row":0,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":3,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":3,"col":2,"length":2,"orient":"h","kind":"picker"},
+      {"id":"F","color":"purple","row":2,"col":1,"length":2,"orient":"v","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":2},
+      {"color":"blue","side":"right","index":0},
+      {"color":"yellow","side":"bottom","index":3},
+      {"color":"green","side":"bottom","index":4},
+      {"color":"orange","side":"left","index":3},
+      {"color":"purple","side":"top","index":1},
+      {"color":"red","side":"bottom","index":1}
+    ],
+    "obstacles": [
+      {"row":5,"col":1,"kind":"tank"},
+      {"row":2,"col":5,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d39", "name": "Daily Pad #39", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":0,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":1,"col":4,"length":2,"orient":"v","kind":"picker"},
+      {"id":"C","color":"yellow","row":0,"col":5,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"D","color":"green","row":2,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"E","color":"orange","row":3,"col":4,"length":2,"orient":"h","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":0},
+      {"color":"blue","side":"bottom","index":4},
+      {"color":"yellow","side":"bottom","index":5},
+      {"color":"green","side":"top","index":3},
+      {"color":"orange","side":"left","index":3},
+      {"color":"red","side":"top","index":4}
+    ],
+    "obstacles": [
+      {"row":0,"col":0,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d40", "name": "Daily Pad #40", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":3,"length":3,"orient":"h","kind":"water"},
+      {"id":"B","color":"blue","row":2,"col":1,"length":3,"orient":"v","kind":"frac"},
+      {"id":"C","color":"yellow","row":0,"col":1,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"D","color":"green","row":0,"col":5,"length":2,"orient":"v","kind":"picker"},
+      {"id":"E","color":"orange","row":1,"col":1,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"F","color":"purple","row":2,"col":2,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":3},
+      {"color":"blue","side":"bottom","index":1},
+      {"color":"yellow","side":"right","index":0},
+      {"color":"green","side":"bottom","index":5},
+      {"color":"orange","side":"right","index":1},
+      {"color":"purple","side":"top","index":2},
+      {"color":"red","side":"top","index":5}
+    ],
+    "obstacles": [
+      {"row":5,"col":2,"kind":"tank"},
+      {"row":1,"col":0,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d41", "name": "Daily Pad #41", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":2,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":1,"col":1,"length":3,"orient":"v","kind":"water"},
+      {"id":"C","color":"yellow","row":0,"col":4,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":0,"col":0,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"E","color":"orange","row":0,"col":3,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":2},
+      {"color":"blue","side":"top","index":1},
+      {"color":"yellow","side":"bottom","index":4},
+      {"color":"green","side":"right","index":0},
+      {"color":"orange","side":"bottom","index":3},
+      {"color":"red","side":"left","index":0}
+    ],
+    "obstacles": [
+      {"row":4,"col":1,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d42", "name": "Daily Pad #42", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":0,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"B","color":"blue","row":4,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"C","color":"yellow","row":2,"col":2,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"D","color":"green","row":3,"col":1,"length":2,"orient":"v","kind":"picker"},
+      {"id":"E","color":"orange","row":5,"col":1,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"F","color":"purple","row":3,"col":3,"length":2,"orient":"h","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"bottom","index":0},
+      {"color":"blue","side":"top","index":3},
+      {"color":"yellow","side":"bottom","index":2},
+      {"color":"green","side":"bottom","index":1},
+      {"color":"orange","side":"right","index":5},
+      {"color":"purple","side":"left","index":3},
+      {"color":"red","side":"left","index":5}
+    ],
+    "obstacles": [
+      {"row":0,"col":2,"kind":"wellhead"},
+      {"row":3,"col":5,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d43", "name": "Daily Pad #43", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":0,"col":2,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":4,"col":4,"length":2,"orient":"v","kind":"picker"},
+      {"id":"C","color":"yellow","row":2,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"D","color":"green","row":5,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"E","color":"orange","row":1,"col":1,"length":2,"orient":"v","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":0},
+      {"color":"blue","side":"top","index":4},
+      {"color":"yellow","side":"left","index":2},
+      {"color":"green","side":"right","index":5},
+      {"color":"orange","side":"bottom","index":1},
+      {"color":"blue","side":"left","index":0}
+    ],
+    "obstacles": [
+      {"row":0,"col":1,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d44", "name": "Daily Pad #44", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":4,"col":2,"length":2,"orient":"v","kind":"picker"},
+      {"id":"B","color":"blue","row":3,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":3,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":5,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"E","color":"orange","row":2,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"F","color":"purple","row":1,"col":0,"length":2,"orient":"v","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":2},
+      {"color":"blue","side":"bottom","index":4},
+      {"color":"yellow","side":"right","index":3},
+      {"color":"green","side":"left","index":5},
+      {"color":"orange","side":"bottom","index":3},
+      {"color":"purple","side":"top","index":0},
+      {"color":"red","side":"top","index":4}
+    ],
+    "obstacles": [
+      {"row":0,"col":4,"kind":"wellhead"},
+      {"row":3,"col":0,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d45", "name": "Daily Pad #45", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":1,"length":2,"orient":"v","kind":"picker"},
+      {"id":"B","color":"blue","row":3,"col":4,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"C","color":"yellow","row":4,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":1,"col":1,"length":3,"orient":"h","kind":"frac"},
+      {"id":"E","color":"orange","row":0,"col":4,"length":3,"orient":"v","kind":"vac"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":1},
+      {"color":"blue","side":"left","index":3},
+      {"color":"yellow","side":"left","index":4},
+      {"color":"green","side":"right","index":1},
+      {"color":"orange","side":"bottom","index":4},
+      {"color":"red","side":"right","index":4}
+    ],
+    "obstacles": [
+      {"row":5,"col":1,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d46", "name": "Daily Pad #46", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":2,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"B","color":"blue","row":4,"col":2,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"C","color":"yellow","row":5,"col":2,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":0,"col":2,"length":3,"orient":"v","kind":"vac"},
+      {"id":"E","color":"orange","row":1,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"F","color":"purple","row":4,"col":4,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":2},
+      {"color":"blue","side":"right","index":4},
+      {"color":"yellow","side":"right","index":5},
+      {"color":"green","side":"bottom","index":2},
+      {"color":"orange","side":"top","index":1},
+      {"color":"purple","side":"top","index":4},
+      {"color":"red","side":"left","index":4}
+    ],
+    "obstacles": [
+      {"row":2,"col":5,"kind":"pumpjack"},
+      {"row":5,"col":0,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d47", "name": "Daily Pad #47", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":2,"col":1,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":5,"col":3,"length":3,"orient":"h","kind":"frac"},
+      {"id":"C","color":"yellow","row":3,"col":1,"length":3,"orient":"h","kind":"vac"},
+      {"id":"D","color":"green","row":2,"col":5,"length":3,"orient":"v","kind":"water"},
+      {"id":"E","color":"orange","row":4,"col":2,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":2},
+      {"color":"blue","side":"left","index":5},
+      {"color":"yellow","side":"right","index":3},
+      {"color":"green","side":"bottom","index":5},
+      {"color":"orange","side":"top","index":2},
+      {"color":"blue","side":"left","index":2}
+    ],
+    "obstacles": [
+      {"row":2,"col":0,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d48", "name": "Daily Pad #48", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":2,"col":0,"length":2,"orient":"v","kind":"picker"},
+      {"id":"B","color":"blue","row":1,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":2,"col":2,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":4,"col":0,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"E","color":"orange","row":4,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"F","color":"purple","row":3,"col":5,"length":2,"orient":"v","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"bottom","index":0},
+      {"color":"blue","side":"bottom","index":1},
+      {"color":"yellow","side":"left","index":2},
+      {"color":"green","side":"right","index":4},
+      {"color":"orange","side":"top","index":3},
+      {"color":"purple","side":"bottom","index":5},
+      {"color":"red","side":"left","index":4}
+    ],
+    "obstacles": [
+      {"row":0,"col":5,"kind":"pumpjack"},
+      {"row":2,"col":4,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d49", "name": "Daily Pad #49", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":2,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":4,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"C","color":"yellow","row":1,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"D","color":"green","row":3,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"E","color":"orange","row":1,"col":3,"length":2,"orient":"h","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":2},
+      {"color":"blue","side":"right","index":4},
+      {"color":"yellow","side":"bottom","index":1},
+      {"color":"green","side":"top","index":3},
+      {"color":"orange","side":"left","index":1},
+      {"color":"red","side":"bottom","index":3}
+    ],
+    "obstacles": [
+      {"row":4,"col":0,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d50", "name": "Daily Pad #50", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":5,"length":2,"orient":"v","kind":"picker"},
+      {"id":"B","color":"blue","row":4,"col":3,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":3,"col":1,"length":3,"orient":"h","kind":"vac"},
+      {"id":"D","color":"green","row":5,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"E","color":"orange","row":1,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"F","color":"purple","row":2,"col":3,"length":3,"orient":"h","kind":"frac"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":5},
+      {"color":"blue","side":"top","index":3},
+      {"color":"yellow","side":"right","index":3},
+      {"color":"green","side":"right","index":5},
+      {"color":"orange","side":"bottom","index":1},
+      {"color":"purple","side":"left","index":2},
+      {"color":"red","side":"right","index":2}
+    ],
+    "obstacles": [
+      {"row":0,"col":1,"kind":"tank"},
+      {"row":3,"col":0,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d51", "name": "Daily Pad #51", "par": 6,
+    "trucks": [
+      {"id":"A","color":"red","row":0,"col":3,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"B","color":"blue","row":1,"col":1,"length":3,"orient":"v","kind":"frac"},
+      {"id":"C","color":"yellow","row":2,"col":2,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":0,"col":4,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"E","color":"orange","row":1,"col":5,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"bottom","index":3},
+      {"color":"blue","side":"top","index":1},
+      {"color":"yellow","side":"right","index":2},
+      {"color":"green","side":"left","index":0},
+      {"color":"orange","side":"top","index":5},
+      {"color":"red","side":"right","index":0}
+    ],
+    "obstacles": [
+      {"row":5,"col":5,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d52", "name": "Daily Pad #52", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":5,"length":2,"orient":"v","kind":"picker"},
+      {"id":"B","color":"blue","row":1,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":4,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":3,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":1,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"F","color":"purple","row":1,"col":0,"length":2,"orient":"v","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":5},
+      {"color":"blue","side":"bottom","index":1},
+      {"color":"yellow","side":"right","index":4},
+      {"color":"green","side":"top","index":4},
+      {"color":"orange","side":"left","index":1},
+      {"color":"purple","side":"top","index":0},
+      {"color":"red","side":"right","index":1}
+    ],
+    "obstacles": [
+      {"row":0,"col":1,"kind":"wellhead"},
+      {"row":5,"col":4,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d53", "name": "Daily Pad #53", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":2,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"B","color":"blue","row":1,"col":2,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"C","color":"yellow","row":3,"col":4,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":0,"col":5,"length":3,"orient":"v","kind":"vac"},
+      {"id":"E","color":"orange","row":2,"col":2,"length":2,"orient":"v","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"top","index":3},
+      {"color":"blue","side":"right","index":1},
+      {"color":"yellow","side":"left","index":3},
+      {"color":"green","side":"bottom","index":5},
+      {"color":"orange","side":"top","index":2},
+      {"color":"red","side":"right","index":3}
+    ],
+    "obstacles": [
+      {"row":1,"col":0,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d54", "name": "Daily Pad #54", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"B","color":"blue","row":3,"col":0,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":0,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":2,"col":2,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"E","color":"orange","row":2,"col":1,"length":3,"orient":"v","kind":"vac"},
+      {"id":"F","color":"purple","row":0,"col":1,"length":2,"orient":"h","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":3},
+      {"color":"blue","side":"bottom","index":0},
+      {"color":"yellow","side":"bottom","index":3},
+      {"color":"green","side":"left","index":2},
+      {"color":"orange","side":"top","index":1},
+      {"color":"purple","side":"right","index":0},
+      {"color":"red","side":"top","index":3}
+    ],
+    "obstacles": [
+      {"row":3,"col":5,"kind":"wellhead"},
+      {"row":5,"col":1,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d55", "name": "Daily Pad #55", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":1,"length":3,"orient":"h","kind":"water"},
+      {"id":"B","color":"blue","row":1,"col":4,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"C","color":"yellow","row":0,"col":2,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":3,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":2,"col":5,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"right","index":3},
+      {"color":"blue","side":"left","index":1},
+      {"color":"yellow","side":"bottom","index":2},
+      {"color":"green","side":"top","index":4},
+      {"color":"orange","side":"top","index":5},
+      {"color":"blue","side":"left","index":3}
+    ],
+    "obstacles": [
+      {"row":4,"col":5,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d56", "name": "Daily Pad #56", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":0,"col":0,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"B","color":"blue","row":3,"col":5,"length":3,"orient":"v","kind":"water"},
+      {"id":"C","color":"yellow","row":0,"col":1,"length":3,"orient":"h","kind":"frac"},
+      {"id":"D","color":"green","row":2,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"E","color":"orange","row":1,"col":3,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"F","color":"purple","row":2,"col":2,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"bottom","index":0},
+      {"color":"blue","side":"top","index":5},
+      {"color":"yellow","side":"left","index":0},
+      {"color":"green","side":"right","index":2},
+      {"color":"orange","side":"top","index":3},
+      {"color":"purple","side":"top","index":2},
+      {"color":"red","side":"bottom","index":5}
+    ],
+    "obstacles": [
+      {"row":0,"col":4,"kind":"tank"},
+      {"row":3,"col":3,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d57", "name": "Daily Pad #57", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"B","color":"blue","row":4,"col":0,"length":3,"orient":"h","kind":"frac"},
+      {"id":"C","color":"yellow","row":3,"col":3,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"D","color":"green","row":0,"col":1,"length":3,"orient":"v","kind":"water"},
+      {"id":"E","color":"orange","row":3,"col":4,"length":3,"orient":"v","kind":"vac"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":1},
+      {"color":"blue","side":"right","index":4},
+      {"color":"yellow","side":"top","index":3},
+      {"color":"green","side":"bottom","index":1},
+      {"color":"orange","side":"top","index":4},
+      {"color":"red","side":"bottom","index":3}
+    ],
+    "obstacles": [
+      {"row":1,"col":5,"kind":"pumpjack"}
+    ]
+  },
+  {
+    "id": "d58", "name": "Daily Pad #58", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":1,"col":2,"length":3,"orient":"h","kind":"vac"},
+      {"id":"B","color":"blue","row":1,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":5,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":2,"col":3,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":3,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"F","color":"purple","row":2,"col":4,"length":2,"orient":"v","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":1},
+      {"color":"blue","side":"bottom","index":1},
+      {"color":"yellow","side":"right","index":5},
+      {"color":"green","side":"top","index":3},
+      {"color":"orange","side":"right","index":3},
+      {"color":"purple","side":"top","index":4},
+      {"color":"red","side":"top","index":1}
+    ],
+    "obstacles": [
+      {"row":1,"col":5,"kind":"pumpjack"},
+      {"row":0,"col":1,"kind":"tank"}
+    ]
+  },
+  {
+    "id": "d59", "name": "Daily Pad #59", "par": 7,
+    "trucks": [
+      {"id":"A","color":"red","row":4,"col":4,"length":2,"orient":"h","kind":"picker"},
+      {"id":"B","color":"blue","row":2,"col":5,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":4,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":2,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":3,"col":2,"length":2,"orient":"h","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":4},
+      {"color":"blue","side":"bottom","index":5},
+      {"color":"yellow","side":"top","index":3},
+      {"color":"green","side":"bottom","index":4},
+      {"color":"orange","side":"right","index":3},
+      {"color":"red","side":"top","index":5}
+    ],
+    "obstacles": [
+      {"row":3,"col":1,"kind":"wellhead"}
+    ]
+  },
+  {
+    "id": "d60", "name": "Daily Pad #60", "par": 8,
+    "trucks": [
+      {"id":"A","color":"red","row":3,"col":3,"length":3,"orient":"h","kind":"frac"},
+      {"id":"B","color":"blue","row":2,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"yellow","row":0,"col":4,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":2,"col":4,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"E","color":"orange","row":0,"col":0,"length":3,"orient":"h","kind":"vac"},
+      {"id":"F","color":"purple","row":3,"col":2,"length":2,"orient":"v","kind":"picker"}
+    ],
+    "gates": [
+      {"color":"red","side":"left","index":3},
+      {"color":"blue","side":"top","index":1},
+      {"color":"yellow","side":"bottom","index":4},
+      {"color":"green","side":"left","index":2},
+      {"color":"orange","side":"right","index":0},
+      {"color":"purple","side":"top","index":2},
+      {"color":"red","side":"right","index":2}
+    ],
+    "obstacles": [
+      {"row":4,"col":1,"kind":"tank"},
+      {"row":5,"col":2,"kind":"pumpjack"}
+    ]
+  }
+]
