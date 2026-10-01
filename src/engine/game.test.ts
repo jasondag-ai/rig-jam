@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { mulberry32, seedFrom } from './rng.ts';
 import { canUndo, cabSide, getMoveRange, isWon, newGame, tryMove, undo } from './game.ts';
 import { parseLevel } from './level.ts';
 import { SolverLimitError, nextMove, solve } from './solver.ts';
@@ -208,5 +209,15 @@ describe('obstacle kind is cosmetic', () => {
       // The obstacle at 4,3 stops B one cell down, whatever it looks like.
       expect(getMoveRange(newGame(lv), 'B')).toEqual({ min: -1, max: 1, exitDelta: null });
     }
+  });
+});
+
+describe('rng', () => {
+  it('repeats for a seed and differs between seeds', () => {
+    const a = mulberry32(1);
+    const b = mulberry32(1);
+    expect([a(), a()]).toEqual([b(), b()]);
+    expect(seedFrom('m01')).toBe(seedFrom('m01'));
+    expect(seedFrom('m01')).not.toBe(seedFrom('m02'));
   });
 });
