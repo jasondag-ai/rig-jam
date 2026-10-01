@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { solve } from '../src/engine/index.ts';
-import { assignKinds, buildLevel, everyPumpjackInTheWay, generate, mulberry32, type Slot } from './generator.ts';
+import { TRUCK_KINDS, solve } from '../src/engine/index.ts';
+import { assignKinds, assignTruckKinds, buildLevel, everyPumpjackInTheWay, generate, mulberry32, type Slot } from './generator.ts';
 
 const small = { restarts: 6, iters: 150, maxStates: 20_000 };
 
@@ -52,5 +52,23 @@ describe('assignKinds', () => {
 
   it('uses all three looks before repeating', () => {
     expect(new Set(assignKinds(cells.slice(0, 3), 9).map((c) => c.kind)).size).toBe(3);
+  });
+});
+
+describe('assignTruckKinds', () => {
+  const t = (id: string, length: 2 | 3) => ({ id, color: 'red' as const, row: 0, col: 0, length, orient: 'h' as const });
+  const trucks = [t('A', 2), t('B', 3), t('C', 2), t('D', 3), t('E', 3), t('F', 2)];
+
+  it('is fixed by the seed, suits each length, and keeps everything else', () => {
+    const a = assignTruckKinds(trucks, 5);
+    expect(a).toEqual(assignTruckKinds(trucks, 5));
+    expect(a.map(({ kind: _k, ...rest }) => rest)).toEqual(trucks);
+    for (const x of a) expect((TRUCK_KINDS[x.length] as readonly string[]).includes(x.kind!)).toBe(true);
+  });
+
+  it('uses every type for a length before repeating', () => {
+    const a = assignTruckKinds(trucks, 5);
+    expect(new Set(a.filter((x) => x.length === 2).slice(0, 2).map((x) => x.kind)).size).toBe(2);
+    expect(new Set(a.filter((x) => x.length === 3).map((x) => x.kind)).size).toBe(3);
   });
 });

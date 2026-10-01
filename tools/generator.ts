@@ -2,7 +2,9 @@
 import {
   COLORS,
   OBSTACLE_KINDS,
+  TRUCK_KINDS,
   type Cell,
+  type Truck,
   LevelError,
   SolverLimitError,
   getMoveRange,
@@ -307,4 +309,29 @@ export function assignKinds(obstacles: readonly Cell[], seed: number): Cell[] {
     [kinds[i], kinds[j]] = [kinds[j], kinds[i]];
   }
   return obstacles.map((o, i) => ({ row: o.row, col: o.col, kind: kinds[i % kinds.length] }));
+}
+
+/** Fisher-Yates shuffle driven by `rng`. */
+function shuffled<T>(items: readonly T[], rng: Rng): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = pick(rng, i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/**
+ * Gives each truck a cosmetic vehicle type that suits its length. Within a level the types for
+ * each length don't repeat until all are used, so any level with two or more trucks shows a mix.
+ * Positions are copied unchanged.
+ */
+export function assignTruckKinds(trucks: readonly Truck[], seed: number): Truck[] {
+  const rng = mulberry32(seed);
+  const pools = { 2: shuffled(TRUCK_KINDS[2], rng), 3: shuffled(TRUCK_KINDS[3], rng) };
+  const used = { 2: 0, 3: 0 };
+  return trucks.map((t) => {
+    const pool = pools[t.length];
+    return { ...t, kind: pool[used[t.length]++ % pool.length] };
+  });
 }

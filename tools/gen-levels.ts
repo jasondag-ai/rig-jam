@@ -5,7 +5,7 @@
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
-import { assignKinds, generate, isBetter, type Generated, type SearchOptions, type Slot } from './generator.ts';
+import { assignKinds, assignTruckKinds, generate, isBetter, type Generated, type SearchOptions, type Slot } from './generator.ts';
 import type { Level } from '../src/engine/index.ts';
 
 interface SlotConfig extends Slot {
@@ -20,6 +20,8 @@ interface RegionConfig {
   prefix: string;
   /** Fixed seed for the cosmetic obstacle looks (pumpjack, tank, wellhead). Layouts don't use it. */
   kindSeed: number;
+  /** Fixed seed for the cosmetic vehicle types. Layouts don't use it. */
+  truckKindSeed: number;
   slots: SlotConfig[];
 }
 
@@ -34,6 +36,7 @@ const REGIONS: RegionConfig[] = [
     id: 'cardium',
     prefix: 'c',
     kindSeed: 1000,
+    truckKindSeed: 3000,
     slots: [
       { name: 'Spud Day', trucks: 2, pumpjacks: 0, minPar: 2, maxPar: 2, minExtra: 0, decoys: 0, seed: 101,
         hint: 'Drag a truck along its length. It drives out through the gate with its color and symbol.' },
@@ -54,6 +57,7 @@ const REGIONS: RegionConfig[] = [
     id: 'montney',
     prefix: 'm',
     kindSeed: 2000,
+    truckKindSeed: 4000,
     slots: [
       { name: 'Nodding Donkey', trucks: 3, pumpjacks: 1, minPar: 3, maxPar: 4, minExtra: 0, decoys: 0, seed: 201,
         hint: 'Pumpjacks, tanks and wellheads never move. Drive around them.' },
@@ -181,7 +185,13 @@ async function main() {
   for (const region of REGIONS) {
     const levels = region.slots.map((_, i) => {
       const level = results.get(`${region.prefix}${String(i + 1).padStart(2, '0')}`);
-      return level && { ...level, obstacles: assignKinds(level.obstacles, region.kindSeed + i) };
+      return (
+        level && {
+          ...level,
+          trucks: assignTruckKinds(level.trucks, region.truckKindSeed + i),
+          obstacles: assignKinds(level.obstacles, region.kindSeed + i),
+        }
+      );
     });
     if (levels.some((l) => !l)) {
       failed = true;

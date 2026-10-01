@@ -3,8 +3,8 @@
     "id": "c01", "name": "Spud Day", "par": 2,
     "hint": "Drag a truck along its length. It drives out through the gate with its color and symbol.",
     "trucks": [
-      {"id":"A","color":"red","row":3,"col":2,"length":3,"orient":"v"},
-      {"id":"B","color":"blue","row":4,"col":4,"length":2,"orient":"h"}
+      {"id":"A","color":"red","row":3,"col":2,"length":3,"orient":"v","kind":"water"},
+      {"id":"B","color":"blue","row":4,"col":4,"length":2,"orient":"h","kind":"pickup"}
     ],
     "gates": [
       {"color":"red","side":"top","index":2},
@@ -16,9 +16,9 @@
     "id": "c02", "name": "Wrong Gate", "par": 3,
     "hint": "A gate of the wrong color is just more fence.",
     "trucks": [
-      {"id":"A","color":"red","row":5,"col":1,"length":2,"orient":"h"},
-      {"id":"B","color":"blue","row":0,"col":3,"length":2,"orient":"h"},
-      {"id":"C","color":"yellow","row":2,"col":2,"length":2,"orient":"h"}
+      {"id":"A","color":"red","row":5,"col":1,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":0,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"C","color":"yellow","row":2,"col":2,"length":2,"orient":"h","kind":"pickup"}
     ],
     "gates": [
       {"color":"red","side":"left","index":5},
@@ -31,10 +31,10 @@
   {
     "id": "c03", "name": "Pecking Order", "par": 4,
     "trucks": [
-      {"id":"A","color":"red","row":0,"col":0,"length":3,"orient":"h"},
-      {"id":"B","color":"blue","row":5,"col":3,"length":2,"orient":"h"},
-      {"id":"C","color":"yellow","row":2,"col":1,"length":3,"orient":"v"},
-      {"id":"D","color":"green","row":3,"col":0,"length":2,"orient":"v"}
+      {"id":"A","color":"red","row":0,"col":0,"length":3,"orient":"h","kind":"vac"},
+      {"id":"B","color":"blue","row":5,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"C","color":"yellow","row":2,"col":1,"length":3,"orient":"v","kind":"frac"},
+      {"id":"D","color":"green","row":3,"col":0,"length":2,"orient":"v","kind":"pickup"}
     ],
     "gates": [
       {"color":"red","side":"right","index":0},
@@ -49,10 +49,10 @@
     "id": "c04", "name": "Back It Up", "par": 5,
     "hint": "Sometimes a truck has to back away from its gate to let another one through.",
     "trucks": [
-      {"id":"A","color":"red","row":1,"col":1,"length":2,"orient":"h"},
-      {"id":"B","color":"blue","row":5,"col":3,"length":2,"orient":"h"},
-      {"id":"C","color":"yellow","row":1,"col":3,"length":2,"orient":"v"},
-      {"id":"D","color":"green","row":3,"col":2,"length":3,"orient":"v"}
+      {"id":"A","color":"red","row":1,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"B","color":"blue","row":5,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"C","color":"yellow","row":1,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":3,"col":2,"length":3,"orient":"v","kind":"water"}
     ],
     "gates": [
       {"color":"red","side":"right","index":1},
@@ -66,11 +66,11 @@
   {
     "id": "c05", "name": "Tight Hole", "par": 6,
     "trucks": [
-      {"id":"A","color":"red","row":3,"col":3,"length":2,"orient":"h"},
-      {"id":"B","color":"blue","row":4,"col":3,"length":2,"orient":"v"},
-      {"id":"C","color":"yellow","row":1,"col":0,"length":3,"orient":"v"},
-      {"id":"D","color":"green","row":0,"col":4,"length":2,"orient":"v"},
-      {"id":"E","color":"orange","row":0,"col":0,"length":3,"orient":"h"}
+      {"id":"A","color":"red","row":3,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":4,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"C","color":"yellow","row":1,"col":0,"length":3,"orient":"v","kind":"water"},
+      {"id":"D","color":"green","row":0,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":0,"col":0,"length":3,"orient":"h","kind":"vac"}
     ],
     "gates": [
       {"color":"red","side":"left","index":3},
@@ -85,11 +85,11 @@
   {
     "id": "c06", "name": "Crew Change", "par": 7,
     "trucks": [
-      {"id":"A","color":"red","row":0,"col":5,"length":2,"orient":"v"},
-      {"id":"B","color":"blue","row":2,"col":1,"length":2,"orient":"v"},
-      {"id":"C","color":"yellow","row":1,"col":3,"length":3,"orient":"v"},
-      {"id":"D","color":"green","row":0,"col":1,"length":3,"orient":"h"},
-      {"id":"E","color":"orange","row":2,"col":4,"length":2,"orient":"h"}
+      {"id":"A","color":"red","row":0,"col":5,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"B","color":"blue","row":2,"col":1,"length":2,"orient":"v","kind":"picker"},
+      {"id":"C","color":"yellow","row":1,"col":3,"length":3,"orient":"v","kind":"vac"},
+      {"id":"D","color":"green","row":0,"col":1,"length":3,"orient":"h","kind":"frac"},
+      {"id":"E","color":"orange","row":2,"col":4,"length":2,"orient":"h","kind":"pickup"}
     ],
     "gates": [
       {"color":"red","side":"bottom","index":5},
@@ -105,12 +105,12 @@
   {
     "id": "c07", "name": "Frac Spread", "par": 8,
     "trucks": [
-      {"id":"A","color":"red","row":3,"col":0,"length":3,"orient":"h"},
-      {"id":"B","color":"blue","row":4,"col":1,"length":2,"orient":"h"},
-      {"id":"C","color":"yellow","row":3,"col":4,"length":2,"orient":"v"},
-      {"id":"D","color":"green","row":0,"col":2,"length":2,"orient":"v"},
-      {"id":"E","color":"orange","row":1,"col":4,"length":2,"orient":"h"},
-      {"id":"F","color":"purple","row":0,"col":1,"length":2,"orient":"v"}
+      {"id":"A","color":"red","row":3,"col":0,"length":3,"orient":"h","kind":"frac"},
+      {"id":"B","color":"blue","row":4,"col":1,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"C","color":"yellow","row":3,"col":4,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"green","row":0,"col":2,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":1,"col":4,"length":2,"orient":"h","kind":"picker"},
+      {"id":"F","color":"purple","row":0,"col":1,"length":2,"orient":"v","kind":"pickup"}
     ],
     "gates": [
       {"color":"red","side":"right","index":3},
@@ -127,12 +127,12 @@
   {
     "id": "c08", "name": "Night Shift", "par": 9,
     "trucks": [
-      {"id":"A","color":"red","row":2,"col":1,"length":2,"orient":"v"},
-      {"id":"B","color":"blue","row":0,"col":3,"length":2,"orient":"v"},
-      {"id":"C","color":"yellow","row":2,"col":0,"length":3,"orient":"v"},
-      {"id":"D","color":"green","row":0,"col":0,"length":3,"orient":"h"},
-      {"id":"E","color":"orange","row":4,"col":1,"length":3,"orient":"h"},
-      {"id":"F","color":"purple","row":2,"col":3,"length":3,"orient":"h"}
+      {"id":"A","color":"red","row":2,"col":1,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"B","color":"blue","row":0,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"C","color":"yellow","row":2,"col":0,"length":3,"orient":"v","kind":"frac"},
+      {"id":"D","color":"green","row":0,"col":0,"length":3,"orient":"h","kind":"water"},
+      {"id":"E","color":"orange","row":4,"col":1,"length":3,"orient":"h","kind":"vac"},
+      {"id":"F","color":"purple","row":2,"col":3,"length":3,"orient":"h","kind":"frac"}
     ],
     "gates": [
       {"color":"red","side":"top","index":1},
@@ -149,13 +149,13 @@
   {
     "id": "c09", "name": "Rig Move", "par": 10,
     "trucks": [
-      {"id":"A","color":"red","row":3,"col":2,"length":2,"orient":"v"},
-      {"id":"B","color":"blue","row":2,"col":1,"length":2,"orient":"h"},
-      {"id":"C","color":"yellow","row":4,"col":3,"length":2,"orient":"h"},
-      {"id":"D","color":"green","row":4,"col":0,"length":2,"orient":"v"},
-      {"id":"E","color":"orange","row":1,"col":4,"length":3,"orient":"v"},
-      {"id":"F","color":"purple","row":5,"col":2,"length":3,"orient":"h"},
-      {"id":"G","color":"red","row":1,"col":0,"length":2,"orient":"h"}
+      {"id":"A","color":"red","row":3,"col":2,"length":2,"orient":"v","kind":"picker"},
+      {"id":"B","color":"blue","row":2,"col":1,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"C","color":"yellow","row":4,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"green","row":4,"col":0,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"E","color":"orange","row":1,"col":4,"length":3,"orient":"v","kind":"water"},
+      {"id":"F","color":"purple","row":5,"col":2,"length":3,"orient":"h","kind":"vac"},
+      {"id":"G","color":"red","row":1,"col":0,"length":2,"orient":"h","kind":"picker"}
     ],
     "gates": [
       {"color":"red","side":"top","index":2},
@@ -173,14 +173,14 @@
   {
     "id": "c10", "name": "Turnaround", "par": 12,
     "trucks": [
-      {"id":"A","color":"red","row":0,"col":1,"length":3,"orient":"v"},
-      {"id":"B","color":"blue","row":4,"col":0,"length":3,"orient":"h"},
-      {"id":"C","color":"yellow","row":1,"col":2,"length":3,"orient":"h"},
-      {"id":"D","color":"green","row":0,"col":3,"length":3,"orient":"h"},
-      {"id":"E","color":"orange","row":3,"col":4,"length":2,"orient":"v"},
-      {"id":"F","color":"purple","row":3,"col":0,"length":3,"orient":"h"},
-      {"id":"G","color":"red","row":3,"col":5,"length":2,"orient":"v"},
-      {"id":"H","color":"blue","row":2,"col":3,"length":2,"orient":"v"}
+      {"id":"A","color":"red","row":0,"col":1,"length":3,"orient":"v","kind":"frac"},
+      {"id":"B","color":"blue","row":4,"col":0,"length":3,"orient":"h","kind":"water"},
+      {"id":"C","color":"yellow","row":1,"col":2,"length":3,"orient":"h","kind":"vac"},
+      {"id":"D","color":"green","row":0,"col":3,"length":3,"orient":"h","kind":"frac"},
+      {"id":"E","color":"orange","row":3,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"F","color":"purple","row":3,"col":0,"length":3,"orient":"h","kind":"water"},
+      {"id":"G","color":"red","row":3,"col":5,"length":2,"orient":"v","kind":"picker"},
+      {"id":"H","color":"blue","row":2,"col":3,"length":2,"orient":"v","kind":"pickup"}
     ],
     "gates": [
       {"color":"red","side":"bottom","index":1},

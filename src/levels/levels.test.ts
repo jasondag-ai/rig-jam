@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { OBSTACLE_KINDS, solve } from '../engine/index.ts';
+import { OBSTACLE_KINDS, TRUCK_KINDS, solve } from '../engine/index.ts';
 import { everyPumpjackInTheWay } from '../../tools/generator.ts';
 import { REGIONS } from './regions.ts';
 
@@ -59,6 +59,27 @@ describe('obstacle looks', () => {
     for (const l of montney) {
       const own = l.obstacles.map((o) => o.kind);
       expect(new Set(own).size).toBe(Math.min(own.length, OBSTACLE_KINDS.length));
+    }
+  });
+});
+
+describe('vehicle types', () => {
+  const all = REGIONS.flatMap((r) => r.levels);
+
+  it.each(all.map((l) => [l.id, l] as const))('%s: truck kind never changes solver results', (_id, level) => {
+    const expected = solve(level);
+    const stripped = level.trucks.map(({ kind: _k, ...t }) => t);
+    expect(solve({ ...level, trucks: stripped })).toEqual(expected);
+    const swapped = level.trucks.map((t) => ({ ...t, kind: TRUCK_KINDS[t.length].at(-1)! }));
+    expect(solve({ ...level, trucks: swapped })).toEqual(expected);
+  });
+
+  it('shows a mix in every level and all five types in every region', () => {
+    for (const l of all) expect(new Set(l.trucks.map((t) => t.kind)).size).toBeGreaterThanOrEqual(2);
+    for (const r of REGIONS) {
+      expect(new Set(r.levels.flatMap((l) => l.trucks.map((t) => t.kind)))).toEqual(
+        new Set([...TRUCK_KINDS[2], ...TRUCK_KINDS[3]]),
+      );
     }
   });
 });
