@@ -32,6 +32,8 @@ export interface Slot {
   minExtra: number;
   /** Wrong-color gates added in line with trucks, as decoys. */
   decoys: number;
+  /** Convoy pairs (numbered 1 and 2, same color). Their order must raise par. */
+  convoys?: number;
 }
 
 export interface SearchOptions {
@@ -54,6 +56,8 @@ interface Piece {
 interface Layout {
   pieces: Piece[];
   pumpjacks: { row: number; col: number }[];
+  /** Convoy pairs as piece indices: [number 1, number 2]. */
+  convoys: [number, number][];
 }
 
 type Rng = () => number;
@@ -106,12 +110,27 @@ function randomLayout(slot: Slot, rng: Rng): Layout | null {
     if (!free.length) return null;
     pumpjacks.push(free.splice(pick(rng, free.length), 1)[0]);
   }
-  return { pieces, pumpjacks };
+  return { pieces, pumpjacks, convoys: randomConvoys(slot.convoys ?? 0, pieces.length, rng) };
+}
+
+/** Picks `count` disjoint pairs of piece indices. */
+function randomConvoys(count: number, pieces: number, rng: Rng): [number, number][] {
+  if (count === 0) return []; // don't touch rng: keeps convoy-free slots generating as before
+  const order = Array.from({ length: pieces }, (_, i) => i).sort(() => rng() - 0.5);
+  return Array.from({ length: count }, (_, i) => [order[i * 2], order[i * 2 + 1]] as [number, number]);
 }
 
 function mutate(layout: Layout, rng: Rng): Layout {
   const pieces = layout.pieces.map((p) => ({ ...p }));
   const pumpjacks = layout.pumpjacks.map((c) => ({ ...c }));
+  let convoys = layout.convoys.map(([a, b]) => [a, b] as [number, number]);
+  // Sometimes rework a convoy: swap who goes first, or pick a new pair.
+  if (convoys.length && pick(rng, 5) === 0) {
+    const i = pick(rng, convoys.length);
+    if (pick(rng, 2)) convoys[i] = [convoys[i][1], convoys[i][0]];
+    else convoys = randomConvoys(convoys.length, pieces.length, rng);
+    return { pieces, pumpjacks, convoys };
+  }
   const roll = pick(rng, pumpjacks.length ? 4 : 3);
   const k = pick(rng, pieces.length);
   if (roll === 0) pieces[k] = randomPiece(rng);
@@ -125,24 +144,38 @@ function mutate(layout: Layout, rng: Rng): Layout {
     if (pick(rng, 2)) p.row += d;
     else p.col += d;
   } else pumpjacks[pick(rng, pumpjacks.length)] = randomCell(rng);
-  return { pieces, pumpjacks };
+  return { pieces, pumpjacks, convoys };
 }
 
 const lineOf = (p: Piece) => `${p.orient}${p.orient === 'h' ? p.row : p.col}`;
 const gateIndex = (p: Piece) => (p.orient === 'h' ? p.row : p.col);
 
-/** Colors: spread evenly, and never two same-color trucks sharing a lane (that would give one two gates). */
-function assignColors(pieces: Piece[]): Color[] | null {
+/**
+ * Colors: spread evenly, and never two same-color trucks sharing a lane (that would give one two
+ * gates). Each convoy gets its own color that no other truck uses.
+ */
+function assignColors(pieces: Piece[], convoys: [number, number][] = []): Color[] | null {
   const used = new Map<Color, number>();
-  const colors: Color[] = [];
+  const colors: (Color | undefined)[] = new Array(pieces.length);
+  const reserved = new Set<Color>();
+  for (const [a, b] of convoys) {
+    if (lineOf(pieces[a]) === lineOf(pieces[b])) return null; // same lane: the order would be automatic
+    const color = COLORS.find((c) => !reserved.has(c));
+    if (!color) return null;
+    reserved.add(color);
+    colors[a] = colors[b] = color;
+  }
   for (let i = 0; i < pieces.length; i++) {
-    const taken = new Set(colors.filter((_, j) => lineOf(pieces[j]) === lineOf(pieces[i])));
-    const options = COLORS.filter((c) => !taken.has(c)).sort((a, b) => (used.get(a) ?? 0) - (used.get(b) ?? 0));
+    if (colors[i]) continue;
+    const taken = new Set(colors.filter((c, j) => c && lineOf(pieces[j]) === lineOf(pieces[i])));
+    const options = COLORS.filter((c) => !taken.has(c) && !reserved.has(c)).sort(
+      (a, b) => (used.get(a) ?? 0) - (used.get(b) ?? 0),
+    );
     if (!options.length) return null;
-    colors.push(options[0]);
+    colors[i] = options[0];
     used.set(options[0], (used.get(options[0]) ?? 0) + 1);
   }
-  return colors;
+  return colors as Color[];
 }
 
 /** Builds and validates the level JSON for a layout, or returns null if the layout is illegal. */
@@ -151,8 +184,13 @@ export function buildLevel(layout: Layout, id = 'gen', name = 'Generated'): Leve
   if (spots.size !== layout.pieces.length) return null; // two trucks sharing one gate
   // A pumpjack between a truck and its gate can never move, so the level could never be won.
   if (layout.pieces.some((p) => layout.pumpjacks.some((c) => inLane(p, c)))) return null;
-  const colors = assignColors(layout.pieces);
+  const colors = assignColors(layout.pieces, layout.convoys);
   if (!colors) return null;
+  const convoyOf = new Map<number, 1 | 2>();
+  for (const [a, b] of layout.convoys) {
+    convoyOf.set(a, 1);
+    convoyOf.set(b, 2);
+  }
   try {
     return parseLevel({
       id,
@@ -165,6 +203,7 @@ export function buildLevel(layout: Layout, id = 'gen', name = 'Generated'): Leve
         col: p.col,
         length: p.length,
         orient: p.orient,
+        ...(convoyOf.has(i) ? { convoy: convoyOf.get(i) } : {}),
       })),
       gates: layout.pieces.map((p, i) => ({ color: colors[i], side: p.side, index: gateIndex(p) })),
       obstacles: layout.pumpjacks,
@@ -185,6 +224,17 @@ function solution(level: Level, maxStates: number): Move[] | null {
 }
 
 const sameRange = (a: MoveRange, b: MoveRange) => a.min === b.min && a.max === b.max;
+
+/** The same level with the convoy numbers taken off (every gate open). */
+export function withoutConvoys(level: Level): Level {
+  return { ...level, trucks: level.trucks.map(({ convoy: _c, ...t }) => t) };
+}
+
+/** True when the convoy order makes the best solution longer. */
+export function convoyRaisesPar(level: Level, par: number, maxStates = 500_000): boolean {
+  const free = solution(withoutConvoys(level), maxStates);
+  return free !== null && free.length < par;
+}
 
 /** True if every pumpjack cuts short some truck's slide at some point along the solution. */
 export function everyPumpjackInTheWay(level: Level, moves: Move[]): boolean {
@@ -221,7 +271,9 @@ function addDecoys(level: Level, count: number, rng: Rng): Level {
     const index = own.index;
     if (gates.some((g) => g.side === side && g.index === index)) continue;
     const lane = level.trucks.filter((o) => o.orient === t.orient && (o.orient === 'h' ? o.row : o.col) === index);
-    const color = COLORS.find((c) => lane.every((o) => o.color !== c));
+    // Never a convoy color: those gates show a waiting number, so a decoy would confuse the rule.
+    const convoyColors = new Set(level.trucks.filter((o) => o.convoy).map((o) => o.color));
+    const color = COLORS.find((c) => !convoyColors.has(c) && lane.every((o) => o.color !== c));
     if (color) gates.push({ color, side, index });
   }
   return parseLevel({ ...level, gates });
@@ -265,7 +317,16 @@ export function generate(slot: Slot, seed: number, opts: SearchOptions): Generat
       const bare = solution({ ...level, obstacles: [] }, opts.maxStates);
       raisesPar = bare !== null && bare.length < par;
     }
-    return { level, par, matters, raisesPar, value: par * 4 + (matters ? 2 : 0) + (raisesPar ? 1 : 0) };
+    // Convoys must earn their place too: without the order rule the level has to get easier.
+    const convoyMatters = !slot.convoys || convoyRaisesPar(level, par, opts.maxStates);
+    return {
+      level,
+      par,
+      matters,
+      raisesPar,
+      convoyMatters,
+      value: par * 4 + (convoyMatters ? 3 : 0) + (matters ? 2 : 0) + (raisesPar ? 1 : 0),
+    };
   };
 
   for (let r = 0; r < opts.restarts && !done(); r++) {
@@ -277,7 +338,7 @@ export function generate(slot: Slot, seed: number, opts: SearchOptions): Generat
     }
     if (!cur || !curScore) continue;
 
-    for (let i = 0; i < opts.iters && !(curScore.par === slot.maxPar && curScore.matters && (slot.pumpjacks === 0 || curScore.raisesPar)); i++) {
+    for (let i = 0; i < opts.iters && !(curScore.par === slot.maxPar && curScore.matters && curScore.convoyMatters && (slot.pumpjacks === 0 || curScore.raisesPar)); i++) {
       const next = mutate(cur, rng);
       const s = score(next);
       if (s && s.value >= curScore.value) {
@@ -286,8 +347,8 @@ export function generate(slot: Slot, seed: number, opts: SearchOptions): Generat
       }
     }
 
-    const { level, par, matters, raisesPar } = curScore;
-    if (!matters || par < slot.minPar || par - slot.trucks < slot.minExtra) continue;
+    const { level, par, matters, raisesPar, convoyMatters } = curScore;
+    if (!matters || !convoyMatters || par < slot.minPar || par - slot.trucks < slot.minExtra) continue;
     const candidate = { level, par, raisesPar, free: freeAtStart(level) };
     if (isBetter(candidate, best)) best = candidate;
   }

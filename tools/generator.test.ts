@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TRUCK_KINDS, solve } from '../src/engine/index.ts';
-import { assignKinds, assignTruckKinds, buildLevel, everyPumpjackInTheWay, generate, mulberry32, type Slot } from './generator.ts';
+import { assignKinds, assignTruckKinds, buildLevel, convoyRaisesPar, withoutConvoys, everyPumpjackInTheWay, generate, mulberry32, type Slot } from './generator.ts';
 
 const small = { restarts: 6, iters: 150, maxStates: 20_000 };
 
@@ -38,7 +38,7 @@ describe('generator', () => {
 
   it('rejects two trucks sharing one gate', () => {
     const piece = { orient: 'h', length: 2, col: 0, side: 'right' } as const;
-    expect(buildLevel({ pieces: [{ ...piece, row: 1 }, { ...piece, row: 1, col: 2 }], pumpjacks: [] })).toBeNull();
+    expect(buildLevel({ pieces: [{ ...piece, row: 1 }, { ...piece, row: 1, col: 2 }], pumpjacks: [], convoys: [] })).toBeNull();
   });
 });
 
@@ -70,5 +70,19 @@ describe('assignTruckKinds', () => {
     const a = assignTruckKinds(trucks, 5);
     expect(new Set(a.filter((x) => x.length === 2).slice(0, 2).map((x) => x.kind)).size).toBe(2);
     expect(new Set(a.filter((x) => x.length === 3).map((x) => x.kind)).size).toBe(3);
+  });
+});
+
+describe('convoys', () => {
+  it('only keeps convoys whose order raises par', () => {
+    const slot: Slot = { trucks: 3, pumpjacks: 0, minPar: 3, maxPar: 6, minExtra: 0, decoys: 0, convoys: 1 };
+    const result = generate(slot, 21, { restarts: 10, iters: 200, maxStates: 20_000 })!;
+    expect(result).not.toBeNull();
+    const convoy = result.level.trucks.filter((t) => t.convoy);
+    expect(convoy.map((t) => t.convoy).sort()).toEqual([1, 2]);
+    expect(convoy[0].color).toBe(convoy[1].color);
+    expect(result.level.trucks.filter((t) => t.color === convoy[0].color)).toHaveLength(2);
+    expect(convoyRaisesPar(result.level, result.par)).toBe(true);
+    expect(solve(withoutConvoys(result.level))!.length).toBeLessThan(result.par);
   });
 });
