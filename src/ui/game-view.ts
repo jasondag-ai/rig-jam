@@ -5,7 +5,10 @@ import { padDecor } from './pad-decor.ts';
 import { sceneryHtml } from './scenery.ts';
 import { applyTheme, type Theme } from './themes.ts';
 import { hatsHtml } from './hats.ts';
-import { hardHats, loadProgress, recordWin, saveProgress, spendHint } from './progress.ts';
+import { copyText } from './clipboard.ts';
+import { shareText, streak, zeroIncident } from './daily.ts';
+import { hardHats, loadProgress, recordDailyClear, recordWin, saveProgress, spendHint } from './progress.ts';
+import { streakSignHtml } from './sign.ts';
 
 const WIN_DELAY_MS = 900;
 const NOTE_MS = 2600;
@@ -13,6 +16,13 @@ const NOTE_MS = 2600;
 export interface GameViewHandlers {
   onLevels: () => void;
   onNext: (() => void) | null;
+}
+
+/** Set when this game is today's Daily Pad. */
+export interface DailyInfo {
+  pad: number;
+  /** Local date the pad belongs to ('YYYY-MM-DD'). */
+  day: string;
 }
 
 /** One level in play: HUD, board, undo/hint/restart, and the win screen. */
@@ -33,16 +43,22 @@ export class GameView {
   private hint: Move | null = null;
   private noteTimer = 0;
   private theme: Theme;
+  private daily: DailyInfo | null;
+  /** Bumps (near misses) this attempt. */
+  private bumps = 0;
+  private shareMessage = '';
   private scenery: HTMLElement;
 
-  constructor(level: Level, regionName: string, index: number, theme: Theme, handlers: GameViewHandlers) {
+  constructor(level: Level, label: string, theme: Theme, handlers: GameViewHandlers, daily: DailyInfo | null = null) {
     this.level = level;
     this.theme = theme;
+    this.daily = daily;
     this.handlers = handlers;
     this.state = newGame(level);
     this.board = new BoardView(
       () => this.state,
       (id, delta) => this.move(id, delta),
+      () => this.bumps++,
     );
 
     this.el = document.createElement('div');
@@ -62,7 +78,7 @@ export class GameView {
         <button class="btn" data-act="restart">Restart</button>
       </footer>
       <div class="overlay win" hidden></div>`;
-    this.el.querySelector('.num')!.textContent = `${regionName} ${index + 1}`;
+    this.el.querySelector('.num')!.textContent = label;
     this.el.querySelector('.name')!.textContent = level.name;
     this.movesEl = this.el.querySelector('.moves')!;
     this.undoBtn = this.el.querySelector('[data-act="undo"]')!;
@@ -84,6 +100,7 @@ export class GameView {
       if (act === 'hint') this.onHint();
       if (act === 'restart') this.restart();
       if (act === 'next') this.handlers.onNext?.();
+      if (act === 'share') void this.share(e.target as HTMLElement);
     });
     this.updateHud();
   }
@@ -126,6 +143,7 @@ export class GameView {
 
   private restart(): void {
     this.state = newGame(this.level);
+    this.bumps = 0;
     this.resetHint();
     this.board.setLevel(this.level);
     this.winEl.hidden = true;
@@ -203,22 +221,47 @@ export class GameView {
   private showWin(): void {
     const { moves } = this.state;
     const { par } = this.level;
-    const { progress, earnedHint } = recordWin(loadProgress(), this.level.id, moves, par);
+    let { progress, earnedHint } = recordWin(loadProgress(), this.level.id, moves, par);
+    if (this.daily) progress = recordDailyClear(progress, this.daily.day);
     saveProgress(progress);
     this.updateHud();
     const hats = hardHats(moves, par);
+    const clean = zeroIncident(moves, par, this.bumps);
     const verdict = moves === par ? 'Right on par. Textbook.' : `${moves - par} over par`;
+    const misses = `${this.bumps} near miss${this.bumps === 1 ? '' : 'es'}`;
+
+    let daily = '';
+    if (this.daily) {
+      const s = streak(progress.dailyCleared, this.daily.day);
+      this.shareMessage = shareText({ pad: this.daily.pad, moves, par, hats, zeroIncident: clean, streak: s.days });
+      daily = `${streakSignHtml(s, true)}<button class="btn primary share" data-act="share">Share result</button>`;
+    }
+    const next = this.daily
+      ? ''
+      : this.handlers.onNext
+        ? '<button class="btn primary" data-act="next">Next level ›</button>'
+        : '<p class="verdict">That was the last level in this field. Nice work!</p>';
+
     this.winEl.innerHTML = `
       <div class="card">
         <h2>Pad cleared!</h2>
         <div class="hats big" aria-label="${hats} of 3 hard hats">${hatsHtml(hats)}</div>
+        ${clean ? '<div class="zero-incident">ZERO INCIDENT</div>' : ''}
         <p class="result">${moves} moves · par ${par}</p>
-        <p class="verdict">${verdict}</p>
+        <p class="verdict">${verdict} · ${misses}</p>
         ${earnedHint ? '<p class="earned">+1 hint for a perfect solve</p>' : ''}
-        ${this.handlers.onNext ? '<button class="btn primary" data-act="next">Next level ›</button>' : '<p class="verdict">That was the last level in this field. Nice work!</p>'}
+        ${daily}
+        ${next}
         <button class="btn" data-act="restart">Play again</button>
         <button class="link" data-act="levels">All levels</button>
       </div>`;
     this.winEl.hidden = false;
+  }
+
+  /** One tap: copy the spoiler-free result, ready to paste into Messages. */
+  private async share(button: HTMLElement): Promise<void> {
+    const ok = await copyText(this.shareMessage);
+    button.textContent = ok ? 'Copied! Paste it in Messages' : 'Could not copy';
+    button.classList.toggle('done', ok);
   }
 }

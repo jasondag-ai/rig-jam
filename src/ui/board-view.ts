@@ -41,10 +41,12 @@ export class BoardView {
   private lastLine: string | null = null;
   private getState: () => GameState;
   private onMove: (id: string, delta: number) => void;
+  private onBump: () => void;
 
-  constructor(getState: () => GameState, onMove: (id: string, delta: number) => void) {
+  constructor(getState: () => GameState, onMove: (id: string, delta: number) => void, onBump: () => void = () => {}) {
     this.getState = getState;
     this.onMove = onMove;
+    this.onBump = onBump;
     this.el = document.createElement('div');
     this.el.className = 'board';
     // The yard clips trucks driving out; bubbles and stamps sit on the board so they can overhang.
@@ -245,6 +247,7 @@ export class BoardView {
   // ---------- Bumps: jolt, NEAR MISS stamp, and a word from the driver ----------
 
   private bump(d: Drag, direction: 1 | -1): void {
+    this.onBump();
     const body = d.el.querySelector<HTMLElement>('.body')!;
     body.style.setProperty('--jx', d.horizontal ? `${direction * 5}px` : '0px');
     body.style.setProperty('--jy', d.horizontal ? '0px' : `${direction * 5}px`);

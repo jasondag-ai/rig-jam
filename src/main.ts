@@ -1,6 +1,8 @@
 import './ui/style.css';
-import { REGIONS } from './levels/regions.ts';
+import { DAILY_LEVELS, REGIONS, dailyTheme } from './levels/regions.ts';
+import { dayKey, padLevelIndex, padNumber, streak } from './ui/daily.ts';
 import { GameView } from './ui/game-view.ts';
+import { streakSignHtml } from './ui/sign.ts';
 import { hatsHtml } from './ui/hats.ts';
 import { hardHats, loadProgress } from './ui/progress.ts';
 import { sceneryHtml } from './ui/scenery.ts';
@@ -40,6 +42,7 @@ function showLevels(regionIndex = savedRegion()): void {
       <h1>Rush Hour Rigs</h1>
       <p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>
     </header>
+    <div class="daily-block"></div>
     <div class="regions" role="tablist"></div>
     <p class="region-blurb"></p>
     <ol class="level-list"></ol>
@@ -58,6 +61,20 @@ function showLevels(regionIndex = savedRegion()): void {
     tabs.append(tab);
   });
   screen.querySelector('.region-blurb')!.textContent = region.blurb;
+
+  // Today's Daily Pad and the streak sign, above the regions.
+  const today = dayKey(new Date());
+  const pad = padNumber(today);
+  const daily = DAILY_LEVELS[padLevelIndex(pad, DAILY_LEVELS.length)];
+  const s = streak(progress.dailyCleared, today);
+  const block = screen.querySelector('.daily-block')!;
+  block.innerHTML = `
+    ${streakSignHtml(s)}
+    <button class="daily-btn${s.clearedToday ? ' done' : ''}">
+      <span class="daily-title">Daily Pad #${pad}</span>
+      <span class="daily-sub">${s.clearedToday ? 'Cleared today ✓ Come back tomorrow' : `Today's pad · par ${daily.par} · same for everyone`}</span>
+    </button>`;
+  block.querySelector('.daily-btn')!.addEventListener('click', () => showDaily());
 
   const list = screen.querySelector('.level-list')!;
   region.levels.forEach((level, i) => {
@@ -93,7 +110,7 @@ function showLevels(regionIndex = savedRegion()): void {
 function showGame(regionIndex: number, index: number): void {
   const region = REGIONS[regionIndex];
   const hasNext = index + 1 < region.levels.length;
-  game = new GameView(region.levels[index], region.name, index, themeFor(regionIndex), {
+  game = new GameView(region.levels[index], `${region.name} ${index + 1}`, themeFor(regionIndex), {
     onLevels: () => showLevels(regionIndex),
     onNext: hasNext ? () => showGame(regionIndex, index + 1) : null,
   });
@@ -101,6 +118,22 @@ function showGame(regionIndex: number, index: number): void {
   game.fit();
 }
 
+/** Today's Daily Pad, picked by the phone's local date. */
+function showDaily(): void {
+  const day = dayKey(new Date());
+  const pad = padNumber(day);
+  const level = { ...DAILY_LEVELS[padLevelIndex(pad, DAILY_LEVELS.length)], name: `Daily Pad #${pad}` };
+  const theme = THEMES[themeOverride(location.search) ?? dailyTheme(pad)];
+  game = new GameView(level, "Today's pad", theme, { onLevels: () => showLevels(), onNext: null }, { pad, day });
+  app.replaceChildren(game.el);
+  game.fit();
+}
+
 window.addEventListener('resize', () => game?.fit());
 document.fonts?.ready.then(() => game?.fit());
+
+// Offline play and Add to Home Screen. Only in the built site, so dev reloads stay simple.
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => void navigator.serviceWorker.register('./sw.js'));
+}
 showLevels();

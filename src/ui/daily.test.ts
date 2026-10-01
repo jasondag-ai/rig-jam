@@ -97,3 +97,13 @@ describe('share text', () => {
     expect(text).toContain('👷👷▫️ 10 moves · par 8');
   });
 });
+
+describe('safety sign', () => {
+  it('says whether this week\'s stand-down is ready or used', async () => {
+    const { standDownText } = await import('./sign.ts');
+    expect(standDownText(streak(['2026-09-30'], '2026-09-30'))).toBe('Safety Stand-Down ready this week');
+    expect(standDownText(streak(['2026-09-30', '2026-10-01', '2026-10-03'], '2026-10-03'))).toBe(
+      'Safety Stand-Down used Fri · streak saved',
+    );
+  });
+});
