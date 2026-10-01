@@ -50,11 +50,14 @@ something, give exact clicks and one command at a time.
   scaled to speed (measured between actual movements). Mud: clumps plus splats that sit on the pad
   ~2 s; gravel: dust; snow: powder. Capped (`MAX_PARTICLES`, `MAX_PER_FRAME`); none with reduced motion.
 - Tap targets: every button/link is at least 48px (44px absolute minimum) with
-  `touch-action: manipulation`. Win-card buttons (incl. the quieter "All levels", `.btn.quiet`) are
-  full width; overlays keep `env(safe-area-inset-bottom) + 72px` free at the bottom so nothing sits
-  where Safari's toolbar grabs taps; short screens (max-height 700px) get a compact win card.
-  `npm run test:e2e` (Playwright, iPhone 13 + SE, Chromium + WebKit, needs a running dev server or
-  `URL=…`) audits sizes and checks one touch tap on "All levels" opens the list. Not run in CI.
+  `touch-action: manipulation`. Screen-changing controls (win-card buttons, "‹ Levels", gear, region
+  tabs) use `onTap` (`src/ui/tap.ts`): act on pointerup under 10px movement, click as fallback, once
+  per tap, and swallow only the browser's echo click (same spot, <450ms, no new touch) so it can't
+  ghost-click the next screen. The win card must fit an iPhone with no scrolling (iOS can swallow the
+  first tap after a scroll): "Play again" and "All levels" share a row; short screens (max-height
+  700px) get a compact card. `npm run test:e2e` (Playwright, Chromium + WebKit, 375x667, 375x553,
+  390x844, 390x664; needs a running dev server or `URL=…`) checks no-scroll, the button row, one-tap
+  actions with no ghost click, and tap-target sizes. Not run in CI.
 - Touch tests: `setPointerCapture` is wrapped in try/catch so synthetic/edge-case pointers can't
   kill a drag. Playwright iPhone emulation: Chromium with real touch events (CDP
   `Input.dispatchTouchEvent`); WebKit with touch-type PointerEvents (its build has no touch drag API).
