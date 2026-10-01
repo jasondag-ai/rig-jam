@@ -4,8 +4,10 @@
 //   truck    – bumped another truck
 //   wall     – the fence or a wrong-color gate
 //   pumpjack – a pumpjack obstacle
+//   convoy   – a convoy truck driving at its gate out of order. Uses only this pool, so the
+//              line always explains the rule.
 
-export type BumpHit = 'truck' | 'wall' | 'pumpjack' | 'tank' | 'wellhead';
+export type BumpHit = 'truck' | 'wall' | 'pumpjack' | 'tank' | 'wellhead' | 'convoy';
 
 export const BUMP_LINES = {
   any: [
@@ -31,11 +33,13 @@ export const BUMP_LINES = {
   ],
   wall: ["That's a wall, not a gate."],
   pumpjack: ["Pumpjack's undefeated.", "Pumpjack doesn't have a license."],
+  convoy: ['Wait your turn, Sonny.', "Convoy order! I'm number one."],
 };
 
 
-/** Lines that fit a bump: the "any" pool plus the pool for what was hit (if it has one). */
+/** Lines that fit a bump: the "any" pool plus the pool for what was hit (convoy: its own pool only). */
 export function linesFor(hit: BumpHit): string[] {
+  if (hit === 'convoy') return [...BUMP_LINES.convoy];
   const own = hit === 'truck' || hit === 'wall' || hit === 'pumpjack' ? BUMP_LINES[hit] : [];
   return [...BUMP_LINES.any, ...own];
 }

@@ -65,3 +65,33 @@ describe('who speaks', () => {
     expect(pickSpeaker(game, 'B', push(game, 'B', -1))).toBe('B');
   });
 });
+
+describe('convoy bumps', () => {
+  // Orange convoy: 1 (A) in row 1 and 2 (B) in row 3, each with an orange gate on the right.
+  const convoy = parseLevel({
+    id: 'cv',
+    name: 'Convoy',
+    par: 1,
+    trucks: [
+      { id: 'A', color: 'orange', row: 1, col: 0, length: 2, orient: 'h', convoy: 1 },
+      { id: 'B', color: 'orange', row: 3, col: 2, length: 2, orient: 'h', convoy: 2 },
+      { id: 'C', color: 'red', row: 5, col: 0, length: 2, orient: 'h' },
+    ],
+    gates: [
+      { color: 'orange', side: 'right', index: 1 },
+      { color: 'orange', side: 'right', index: 3 },
+      { color: 'red', side: 'right', index: 5 },
+    ],
+  });
+
+  it('number 2 at its closed gate is a convoy bump, and number 1 speaks', () => {
+    const game = newGame(convoy);
+    const target = push(game, 'B', 1);
+    expect(target).toEqual({ hit: 'convoy', truckId: 'A' });
+    expect(pickSpeaker(game, 'B', target)).toBe('A');
+  });
+
+  it('the far end of the lane is still just a wall', () => {
+    expect(push(newGame(convoy), 'B', -1)).toEqual({ hit: 'wall', truckId: null });
+  });
+});
