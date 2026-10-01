@@ -1,5 +1,6 @@
-// Ground detail painted on the pad under the trucks: gravel speckle, wet mud with ruts and
-// puddles, or packed snow with tracks. Purely cosmetic; seeded per level so it never flickers.
+// Ground detail painted on the pad under the trucks: gravel speckle, wet mud with puddles, or
+// packed snow with drifts. Every level starts with no tire tracks: those are laid by your moves
+// (tracks.ts). Purely cosmetic; seeded per level so it never flickers.
 import type { Cell } from '../engine/index.ts';
 import { mulberry32 } from '../engine/rng.ts';
 import type { Ground } from './themes.ts';
@@ -11,29 +12,6 @@ type Rng = () => number;
 const between = (rng: Rng, lo: number, hi: number) => lo + rng() * (hi - lo);
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
-/** A wavy line across the pad (a tire track), along a row or column at `at` px. */
-function wavyLine(rng: Rng, horizontal: boolean, at: number): string {
-  const pts = Array.from({ length: 5 }, (_, i) => [i * 150, at + between(rng, -14, 14)]);
-  const xy = ([a, b]: number[]) => (horizontal ? `${r1(a)} ${r1(b)}` : `${r1(b)} ${r1(a)}`);
-  let d = `M${xy([-20, pts[0][1]])}`;
-  for (let i = 1; i < pts.length; i++) {
-    const mid = [(pts[i - 1][0] + pts[i][0]) / 2, (pts[i - 1][1] + pts[i][1]) / 2];
-    d += ` Q${xy(pts[i - 1])} ${xy(mid)}`;
-  }
-  return `${d} T${xy([SIZE + 20, pts[4][1]])}`;
-}
-
-/** A pair of parallel tire tracks, 34px apart. */
-function trackPair(rng: Rng): { horizontal: boolean; lines: string[] } {
-  const horizontal = rng() < 0.5;
-  const at = between(rng, 120, 480);
-  const seed = Math.floor(rng() * 1e9);
-  return {
-    horizontal,
-    lines: [0, 34].map((offset) => wavyLine(mulberry32(seed), horizontal, at + offset)),
-  };
-}
-
 function speckles(rng: Rng, count: number, cls: string, rMin: number, rMax: number): string {
   let out = '';
   for (let i = 0; i < count; i++) {
@@ -43,9 +21,7 @@ function speckles(rng: Rng, count: number, cls: string, rMin: number, rMax: numb
 }
 
 function gravel(rng: Rng): string {
-  const t = trackPair(rng);
   return [
-    ...t.lines.map((d) => `<path class="pd-track-light" d="${d}"/>`),
     speckles(rng, 170, 'pd-speck-dark', 1.5, 4),
     speckles(rng, 110, 'pd-speck-light', 1.5, 3.5),
   ].join('');
@@ -95,14 +71,6 @@ function mud(rng: Rng, avoid: readonly Cell[], id: string): string {
       `<ellipse class="pd-wet" cx="${r1(rng() * SIZE)}" cy="${r1(rng() * SIZE)}" rx="${r1(between(rng, 50, 110))}" ry="${r1(between(rng, 20, 45))}" transform="rotate(${r1(between(rng, -30, 30))})"/>`,
     );
   }
-  // Two sets of ruts, each a soft dark groove between lit ridges, with a wet shine in the bottom.
-  const ruts: string[] = [];
-  for (let k = 0; k < 2; k++) {
-    for (const d of trackPair(rng).lines) {
-      ruts.push(`<path class="pd-rut-ridge" d="${d}"/><path class="pd-rut" d="${d}"/><path class="pd-rut-shine" d="${d}"/>`);
-    }
-  }
-  parts.push(`<g filter="url(#${id}-soft)">${ruts.join('')}</g>`);
   parts.push(speckles(rng, 70, 'pd-clump', 2, 5));
   // Puddles: flat, irregular pools of sky-colored water ringed by wet, shiny mud.
   for (const c of puddleCells(rng, avoid, 3)) {
@@ -128,7 +96,7 @@ function mud(rng: Rng, avoid: readonly Cell[], id: string): string {
   const defs =
     `<defs><linearGradient id="${id}-water" x1="0" y1="0" x2="0" y2="1">` +
     `<stop offset="0" stop-color="#cfe6f2"/><stop offset="0.55" stop-color="#8fb3c8"/><stop offset="1" stop-color="#5d7f94"/>` +
-    `</linearGradient><filter id="${id}-soft" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2.2"/></filter></defs>`;
+    `</linearGradient></defs>`;
   return defs + parts.join('');
 }
 
@@ -138,9 +106,6 @@ function snow(rng: Rng): string {
     parts.push(
       `<ellipse class="pd-drift" cx="${r1(rng() * SIZE)}" cy="${r1(rng() * SIZE)}" rx="${r1(between(rng, 50, 120))}" ry="${r1(between(rng, 18, 40))}"/>`,
     );
-  }
-  for (let k = 0; k < 2; k++) {
-    for (const d of trackPair(rng).lines) parts.push(`<path class="pd-snow-track" d="${d}"/><path class="pd-tread" d="${d}"/>`);
   }
   parts.push(speckles(rng, 60, 'pd-sparkle', 1, 2.2));
   return parts.join('');

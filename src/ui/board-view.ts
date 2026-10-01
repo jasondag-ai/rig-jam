@@ -3,6 +3,8 @@ import { bumpTarget, pickSpeaker } from './bump.ts';
 import { pickLine, type BumpHit } from './lines.ts';
 import { OBSTACLE_SVG } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
+import { trackLines, trackOpacity } from './tracks.ts';
+import type { Ground } from './themes.ts';
 import { SYMBOL } from './palette.ts';
 
 const FENCE_RATIO = 0.42;
@@ -38,6 +40,8 @@ export class BoardView {
   private fence = 20;
   private drag: Drag | null = null;
   private lastLine: string | null = null;
+  /** Tire tracks laid by moves, under obstacles and trucks. One <g> per move. */
+  private tracks: SVGSVGElement;
   private getState: () => GameState;
   private onMove: (id: string, delta: number) => void;
   private onBump: () => void;
@@ -55,6 +59,11 @@ export class BoardView {
     this.pad.className = 'pad';
     this.yard.append(this.pad);
     this.el.append(this.yard);
+    this.tracks = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    this.tracks.setAttribute('class', 'tracks');
+    this.tracks.setAttribute('viewBox', `0 0 ${SIZE * 100} ${SIZE * 100}`);
+    this.tracks.setAttribute('preserveAspectRatio', 'none');
+    this.tracks.setAttribute('aria-hidden', 'true');
   }
 
   setLevel(level: Level): void {
@@ -63,6 +72,9 @@ export class BoardView {
     this.el.querySelectorAll('.gate, .obstacle, .ghost, .bubble, .dust').forEach((n) => n.remove());
     this.trucks.forEach((t) => t.remove());
     this.trucks.clear();
+    // A clean pad: the track layer goes in first so obstacles and trucks sit on top of it.
+    this.tracks.replaceChildren();
+    this.pad.append(this.tracks);
     for (const gate of level.gates) {
       const g = document.createElement('div');
       g.className = `gate c-${gate.color}`;
@@ -310,9 +322,41 @@ export class BoardView {
   }
 
   /** Paints the ground (gravel, mud, snow) under everything else on the pad. */
-  setDecor(svg: string): void {
+  setDecor(svg: string, ground: Ground): void {
     this.pad.querySelector('.pad-decor')?.remove();
     this.pad.insertAdjacentHTML('afterbegin', svg);
+    this.tracks.dataset.ground = ground;
+  }
+
+  /** Lays the tire tracks for one move (`truck` is where it was before the move). */
+  addTrack(truck: Truck, delta: number, exited: boolean): void {
+    const ns = 'http://www.w3.org/2000/svg';
+    const g = document.createElementNS(ns, 'g');
+    // Each wheel line is drawn as three strokes; the ground style decides which show (style.css).
+    for (const l of trackLines(truck, delta, exited)) {
+      for (const part of ['tt-edge', 'tt-mark', 'tt-tread']) {
+        const line = document.createElementNS(ns, 'line');
+        line.setAttribute('class', part);
+        line.setAttribute('x1', String(l.x1 * 100));
+        line.setAttribute('y1', String(l.y1 * 100));
+        line.setAttribute('x2', String(l.x2 * 100));
+        line.setAttribute('y2', String(l.y2 * 100));
+        g.append(line);
+      }
+    }
+    this.tracks.append(g);
+    this.fadeTracks();
+  }
+
+  /** Undo: the last move's tracks go away. */
+  removeLastTrack(): void {
+    this.tracks.lastElementChild?.remove();
+    this.fadeTracks();
+  }
+
+  private fadeTracks(): void {
+    const groups = [...this.tracks.children] as SVGGElement[];
+    groups.forEach((g, i) => g.setAttribute('opacity', String(trackOpacity(groups.length - 1 - i))));
   }
 
   // ---------- Hints ----------

@@ -98,7 +98,7 @@ export class GameView {
     applyTheme(this.el, theme);
     this.stage.append(this.board.el);
     this.board.setLevel(level);
-    this.board.setDecor(padDecor(theme.ground, seedFrom(level.id), level.obstacles));
+    this.board.setDecor(padDecor(theme.ground, seedFrom(level.id), level.obstacles), theme.ground);
     this.showLevelHint();
 
     this.el.addEventListener('click', (e) => {
@@ -132,6 +132,8 @@ export class GameView {
       this.board.sync(this.state);
       return;
     }
+    const before = this.state.trucks.find((t) => t.id === id)!;
+    this.board.addTrack(before, delta, result.exited);
     this.state = result.state;
     this.resetHint();
     this.showLevelHint();
@@ -143,6 +145,7 @@ export class GameView {
   private undo(): void {
     if (!canUndo(this.state) || isWon(this.state)) return;
     this.state = undo(this.state);
+    this.board.removeLastTrack();
     this.resetHint();
     this.showLevelHint();
     this.board.sync(this.state);

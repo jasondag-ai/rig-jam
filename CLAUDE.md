@@ -38,6 +38,10 @@ something, give exact clicks and one command at a time.
   trees, truck grime/roof snow) plus a pad ground style. A region picks its theme in
   `src/levels/regions.ts`. Tests check every theme is complete and every gate color has at least
   1.8:1 contrast with every fence.
+- Tire tracks (`src/ui/tracks.ts`): every level starts clean; each move lays a pair of wheel marks
+  along the path travelled (to the fence on an exit), under obstacles and trucks. Older moves fade
+  (`FADE_STEP`) down to `FADE_FLOOR`. Undo removes that move's tracks; Restart clears them. Style per
+  ground in style.css ("Tire tracks"): faint on gravel, deep ruts in mud, crisp impressions in snow.
 - `src/ui/scenery.ts` (border trees) and `src/ui/pad-decor.ts` (gravel/mud/snow detail) are seeded,
   cosmetic, and never affect play. `--fence` is the fence thickness in px; its color is `--fence-color`.
 
