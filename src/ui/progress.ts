@@ -1,29 +1,63 @@
-// Best move counts per level, kept in this browser only.
-const KEY = 'rush-hour-rigs:best';
+// Player progress (best scores, hint balance), kept in this browser only.
+const KEY = 'rush-hour-rigs:v2';
+export const START_HINTS = 3;
 
-export function loadBest(): Record<string, number> {
+export interface Progress {
+  /** Best move count per level id. */
+  best: Record<string, number>;
+  hints: number;
+  /** Levels that already paid out their perfect-solve hint. */
+  perfect: string[];
+}
+
+export const freshProgress = (): Progress => ({ best: {}, hints: START_HINTS, perfect: [] });
+
+/** Hard hats earned: 3 at par, 2 within three moves of par, otherwise 1. */
+export function hardHats(moves: number, par: number): 1 | 2 | 3 {
+  if (moves <= par) return 3;
+  if (moves <= par + 3) return 2;
+  return 1;
+}
+
+/** Records a finished level. A perfect solve (at par) earns one hint, once per level. */
+export function recordWin(p: Progress, levelId: string, moves: number, par: number): { progress: Progress; earnedHint: boolean } {
+  const prev = p.best[levelId];
+  const best = prev === undefined || moves < prev ? { ...p.best, [levelId]: moves } : p.best;
+  const earnedHint = moves <= par && !p.perfect.includes(levelId);
+  return {
+    progress: {
+      best,
+      hints: p.hints + (earnedHint ? 1 : 0),
+      perfect: earnedHint ? [...p.perfect, levelId] : p.perfect,
+    },
+    earnedHint,
+  };
+}
+
+/** Takes one hint, or returns null when there are none left. */
+export function spendHint(p: Progress): Progress | null {
+  return p.hints > 0 ? { ...p, hints: p.hints - 1 } : null;
+}
+
+export function loadProgress(): Progress {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as Record<string, number>) : {};
+    if (!raw) return freshProgress();
+    const p = JSON.parse(raw) as Partial<Progress>;
+    return {
+      best: p.best ?? {},
+      hints: Number.isInteger(p.hints) ? (p.hints as number) : START_HINTS,
+      perfect: Array.isArray(p.perfect) ? p.perfect : [],
+    };
   } catch {
-    return {};
+    return freshProgress();
   }
 }
 
-export function saveBest(levelId: string, moves: number): void {
-  const best = loadBest();
-  if (best[levelId] !== undefined && best[levelId] <= moves) return;
-  best[levelId] = moves;
+export function saveProgress(p: Progress): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(best));
+    localStorage.setItem(KEY, JSON.stringify(p));
   } catch {
     // Storage blocked (private mode): progress just won't persist.
   }
-}
-
-/** 3 stars at or under par, 2 within two moves of par, otherwise 1. */
-export function stars(moves: number, par: number): number {
-  if (moves <= par) return 3;
-  if (moves <= par + 2) return 2;
-  return 1;
 }
