@@ -109,16 +109,17 @@ something, give exact clicks and one command at a time.
 - Wildlife and traffic. Touches never cancel them; each waits while another gag is on stage (and the
   landowner or biffy wait for them). Reduced motion: skipped entirely. Once per level each:
   - Bear (Montney, `bear-scene.ts`): after 15s idle or a random moment 20-50s in. A bush stands at
-    the bottom from level start (placed clear of the biffy). About 70% bigger than the strip, so he
-    rises over the bottom fence (never over the buttons). Beats (`data-beat`): walk (alternating
+    the bottom from level start (placed clear of the biffy). A background gag: 90% of the strip's
+    height at his tallest (sitting, ear tips to paws), never over the board or the buttons (checked
+    at 375px wide too). Beats (`data-beat`): walk (alternating
     legs) > squat > strain (quiver, eyes shut, sweat) > rabbit hops in > sniff > notice (eyes pop,
     slow head turn, hold) > windup > grab (jointed shoulder/elbow/wrist; rabbit squashed in his
     paw, held by the scruff) > wipe (two, behind his rump, ears flapping, fur frazzled) > setdown >
     freeze > shake (wet dog) > bolt (rabbit right with flat ears and speed lines, bear left after a
     satisfied hop). The hint line fades while he's on.
-  - Moose (Duvernay, `moose-scene.ts`): same timing. Behind the HUD and the board: antlers up behind
-    the title, eyes and chewing muzzle in the gap, chin and shoulders hidden behind the top fence
-    (sized so his eyes clear the HUD). Rise > lean in > chew (grass sprig) > stare 2s + groan > back.
+  - Moose (Duvernay, `moose-scene.ts`): same timing. A small, quick peekaboo behind the board: only
+    his head and antlers pop up over the top fence (chin hidden behind it). Up > chew (blinks, chews
+    once) > stare (short, + groan) > down, under 3 seconds (`PEEK`).
   - Hot shot (all regions): random moment 8-45s in. Pickup screams across the bottom in <1s in
     dust/mud/snow.
 - Preview/test hooks: `?gag=bear`, `?gag=moose`, `?gag=biffy` open a suitable level and play that

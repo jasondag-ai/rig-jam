@@ -288,13 +288,8 @@ const play = async (page, touch, level) => {
   await browser.close();
 }
 
-// ---------------- Wildlife and traffic (puppet-rig scenes) ----------------
-{
-  const { browser, page, touch } = await open('no-preference', ROOT + '?idle=0.1&audiolog');
-  console.log('\nchromium iPhone 13, wildlife and hot shot (idle x0.1)');
-  /** Watches the stage every 30ms: the beats each scene goes through, where things are, and overlaps. */
-  const watch = () =>
-    page.evaluate(() => {
+/** In the page: watches the stage every 30ms (beats, bounds on real outlines, overlaps). Read it back with stopWatch. */
+function watchStage() {
       const w = { beats: { bear: [], moose: [] }, wipes: 0, beatAt: {}, overlap: [], onBoard: [], onButtons: [], hotshot: [], eyesHidden: [], noteShown: [], since: null };
       window.__wild = w;
       let hsStart = null;
@@ -316,9 +311,10 @@ const play = async (page, touch, level) => {
           }
           if (st?.dataset.wipes) w.wipes = Math.max(w.wipes, Number(st.dataset.wipes));
         }
-        // The bear and rabbit stay above the buttons (he may rise over the bottom fence: he's 70% bigger).
+        // The bear and rabbit stay in the strip: never over the board or the buttons.
         // Measured on the actual outlines: a rotated part's bounding box reaches well past its shape.
-        const lowest = (g) => {
+        const extent = (g) => {
+          let top = Infinity;
           let m = -Infinity;
           for (const el of g.querySelectorAll('path, ellipse, rect, circle')) {
             try {
@@ -327,20 +323,24 @@ const play = async (page, touch, level) => {
               const len = el.getTotalLength();
               for (let i = 0; i <= 24; i++) {
                 const p = el.getPointAtLength((len * i) / 24);
-                m = Math.max(m, ctm.b * p.x + ctm.d * p.y + ctm.f);
+                const y = ctm.b * p.x + ctm.d * p.y + ctm.f;
+                m = Math.max(m, y);
+                top = Math.min(top, y);
               }
             } catch {
               // Hidden or not drawable: skip it.
             }
           }
-          return m;
+          return { top, bottom: m };
         };
         for (const el of document.querySelectorAll('.bear-stage .bear, .bear-stage .rabbit, .hotshot')) {
-          const bottom = el.classList.contains('hotshot') ? R(el).bottom : lowest(el);
+          const { top, bottom } = el.classList.contains('hotshot') ? R(el) : extent(el);
+          if (top < b.bottom - 1) w.onBoard.push(`${el.getAttribute('class')} at ${document.querySelector('.bear-stage')?.dataset.beat} top ${Math.round(top)} < board ${Math.round(b.bottom)}`);
           if (bottom > c.top + 2) w.onButtons.push(`${el.getAttribute('class')} at ${document.querySelector('.bear-stage')?.dataset.beat} bottom ${Math.round(bottom)} > buttons ${Math.round(c.top)}`);
         }
-        // The moose stays above the fence line; his eyes stay clear of the HUD text.
+        // The moose stays above the fence line, behind the board; his eyes stay clear of the HUD text.
         const peek = document.querySelector('.moose-peek');
+        if (!peek && w.beats.moose.length && !w.mooseGone) w.mooseGone = performance.now();
         if (peek) {
           const r = R(peek);
           if (r.bottom > b.top + fence + 1) w.onBoard.push(`moose bottom ${Math.round(r.bottom)} > fence ${Math.round(b.top + fence)}`);
@@ -363,7 +363,14 @@ const play = async (page, touch, level) => {
         w.since = bottom ? (w.since ?? performance.now()) : null;
         if (w.since && performance.now() - w.since > 350 && note && Number(getComputedStyle(note).opacity) > 0.05) w.noteShown.push('note visible');
       }, 30);
-    });
+    }
+
+// ---------------- Wildlife and traffic (puppet-rig scenes) ----------------
+{
+  const { browser, page, touch } = await open('no-preference', ROOT + '?idle=0.1&audiolog');
+  console.log('\nchromium iPhone 13, wildlife and hot shot (idle x0.1)');
+  /** Watches the stage every 30ms: the beats each scene goes through, where things are, and overlaps. */
+  const watch = () => page.evaluate(watchStage);
   const stopWatch = () => page.evaluate(() => (clearInterval(window.__wildTimer), window.__wild));
   const heardNow = () => page.evaluate(() => { const a = window.__rhrAudio; const l = a ? [...a.log] : []; if (a) a.log.length = 0; return l; });
   const BEAR_BEATS = ['walk', 'squat', 'strain', 'rabbit', 'sniff', 'notice', 'windup', 'grab', 'wipe', 'setdown', 'freeze', 'shake', 'bolt'];
@@ -415,11 +422,13 @@ const play = async (page, touch, level) => {
   await page.waitForSelector('.moose-peek', { state: 'detached', timeout: 15000 }).catch(() => {});
   w = await stopWatch();
   log = await heardNow();
-  check(JSON.stringify(w.beats.moose) === JSON.stringify(['rise', 'lean', 'chew', 'stare', 'back']), `rises, leans in, chews, stares, pulls back (${w.beats.moose.join(' > ')})`);
-  const stare = w.beatAt['moose:back'] - w.beatAt['moose:stare'];
-  check(stare >= 1900 && stare <= 2300, `stares for 2 seconds (${Math.round(stare)}ms)`);
+  check(JSON.stringify(w.beats.moose) === JSON.stringify(['up', 'chew', 'stare', 'down']), `peekaboo: pops up, blinks and chews, stares, ducks out (${w.beats.moose.join(' > ')})`);
+  const stare = w.beatAt['moose:down'] - w.beatAt['moose:stare'];
+  const total = w.mooseGone - w.beatAt['moose:up'];
+  check(stare >= 500 && stare <= 1000, `a short stare (${Math.round(stare)}ms)`);
+  check(total < 3000, `under 3 seconds in all (${Math.round(total)}ms)`);
   check(log.includes('moose-groan'), 'sound: low moose groan');
-  check(w.onBoard.length === 0, `only head, antlers and shoulders, above the fence (${w.onBoard[0] ?? 'clear'})`);
+  check(w.onBoard.length === 0, `only his head and antlers, above the fence (${w.onBoard[0] ?? 'clear'})`);
   check(w.eyesHidden.length === 0, `his eyes stay clear of the HUD (${w.eyesHidden[0] ?? 'clear'})`);
   check(w.beats.bear.length === 0, 'no bear in Duvernay');
 
@@ -430,6 +439,25 @@ const play = async (page, touch, level) => {
   await wait(4000);
   w = await stopWatch();
   check(w.hotshot.length === 1 && !w.beats.bear.length && !w.beats.moose.length, 'Cardium: hot shot, no bear or moose');
+  await browser.close();
+}
+
+// On 375px-wide screens (iPhone SE, and with Safari's bars showing) neither covers the board or buttons.
+for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }]) {
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ ...devices['iPhone 13'], viewport });
+  const page = await context.newPage();
+  console.log(`\n${viewport.width}x${viewport.height}`);
+  for (const [gag, sel] of [['bear', '.bear-stage'], ['moose', '.moose-peek']]) {
+    await page.goto(`${ROOT}?gag=${gag}`, { waitUntil: 'networkidle' });
+    await page.evaluate(watchStage);
+    await page.waitForSelector(sel, { timeout: 3000 }).catch(() => {});
+    await page.waitForSelector(sel, { state: 'detached', timeout: 25000 }).catch(() => {});
+    const w = await page.evaluate(() => (clearInterval(window.__wildTimer), window.__wild));
+    const size = await page.evaluate(() => document.querySelector('.board').getBoundingClientRect().width);
+    check(w.beats[gag].length >= 4, `${gag}: plays (${w.beats[gag].join(' > ')})`);
+    check(w.onBoard.length === 0 && w.onButtons.length === 0, `${gag}: never over the board or the buttons (${w.onBoard[0] ?? w.onButtons[0] ?? `clear; board ${Math.round(size)}px`})`);
+  }
   await browser.close();
 }
 
