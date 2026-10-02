@@ -111,7 +111,7 @@ something, give exact clicks and one command at a time.
 ## Sound (M4)
 
 - `src/audio`, Web Audio only, no audio files. `synth.ts` (tone/noise building blocks), `sfx.ts` (every
-  effect as a recipe; diesel and quad are held sounds), `music.ts` (80s Synth, Country Twang, Chill Lo-fi
+  effect as a recipe; diesel and quad are held sounds), `music.ts` (80s Synth, Chill Lo-fi
   as 16-step patterns + a lookahead Sequencer), `cues.ts` (pure timing rules: exit chain, win jingle),
   `settings.ts` (localStorage `rush-hour-rigs-audio`, separate so Reset progress keeps it), `engine.ts`.
 - `engine.ts`: the AudioContext is made on the first tap (iOS rule); `navigator.audioSession.type =

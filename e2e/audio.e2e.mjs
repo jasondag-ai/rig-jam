@@ -207,7 +207,8 @@ await sw('music');
 await wait(200);
 log = await heard();
 check(log.includes('music:synth'), `Music on: 80s Synth plays (${list(log)})`);
-for (const [id, name] of [['country', 'Country Twang'], ['lofi', 'Chill Lo-fi']]) {
+check((await page.$$eval('.style-pick', (b) => b.map((x) => x.textContent))).join(',') === '80s Synth,Chill Lo-fi', 'Settings offers 80s Synth and Chill Lo-fi only (no Country Twang)');
+for (const [id, name] of [['lofi', 'Chill Lo-fi']]) {
   const label = await page.$eval(`.style-pick[data-style="${id}"]`, (b) => b.textContent);
   const box = await (await page.$(`.style-pick[data-style="${id}"]`)).boundingBox();
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: tp(box.x + box.width / 2, box.y + box.height / 2) });
@@ -236,12 +237,12 @@ const after = await page.evaluate(() => ({
 check(!after.sfx && after.music && after.style === 'lofi', `settings survive a reload (${JSON.stringify(after)})`);
 await page.evaluate(() => localStorage.clear());
 
-// 8. The three music styles sound clearly different (rendered offline, dev server only).
+// 8. The two music styles sound clearly different (rendered offline, dev server only).
 if (!LIVE) {
   const feats = await page.evaluate(async () => {
     const m = await import(`${location.origin}/src/audio/music.ts`);
     const out = {};
-    for (const id of ['synth', 'country', 'lofi']) {
+    for (const id of ['synth', 'lofi']) {
       const rate = 22050;
       const ctx = new OfflineAudioContext(1, rate * 8, rate);
       m.renderStyle(ctx, ctx.destination, m.STYLES[id], 8);

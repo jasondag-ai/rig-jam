@@ -2111,10 +2111,10 @@ input,
   }
 }
 
-/* Music style picker: three buttons in a row, the chosen one lit. */
+/* Music style picker: the styles side by side, the chosen one lit. */
 .music-styles {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 6px;
 }
 

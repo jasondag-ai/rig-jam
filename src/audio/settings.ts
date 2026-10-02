@@ -1,10 +1,9 @@
 // Sound settings, saved on this phone. Kept under their own key (not the `rush-hour-rigs:` prefix),
 // so "Reset progress" wipes levels and streak but leaves sound choices alone.
-export type MusicStyle = 'synth' | 'country' | 'lofi';
+export type MusicStyle = 'synth' | 'lofi';
 
 export const MUSIC_STYLES: { id: MusicStyle; name: string }[] = [
   { id: 'synth', name: '80s Synth' },
-  { id: 'country', name: 'Country Twang' },
   { id: 'lofi', name: 'Chill Lo-fi' },
 ];
 
@@ -17,7 +16,8 @@ export interface AudioSettings {
 export const DEFAULT_AUDIO: AudioSettings = { sfx: true, music: false, style: 'synth' };
 export const AUDIO_KEY = 'rush-hour-rigs-audio';
 
-/** Reads saved settings, falling back to the defaults for anything missing or odd. */
+/** Reads saved settings, falling back to the defaults for anything missing or odd (a style that's
+ * since been retired, like Country Twang, falls back to 80s Synth). */
 export function parseAudioSettings(raw: string | null): AudioSettings {
   try {
     const v = raw ? (JSON.parse(raw) as Partial<AudioSettings>) : {};

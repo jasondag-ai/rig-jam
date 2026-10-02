@@ -15,7 +15,9 @@ describe('sound settings', () => {
   });
 
   it('offers three music styles', () => {
-    expect(MUSIC_STYLES.map((s) => s.name)).toEqual(['80s Synth', 'Country Twang', 'Chill Lo-fi']);
+    expect(MUSIC_STYLES.map((s) => s.name)).toEqual(['80s Synth', 'Chill Lo-fi']);
+    // Country Twang was retired: a phone that saved it gets 80s Synth (and keeps its other choices).
+    expect(parseAudioSettings(JSON.stringify({ sfx: false, music: true, style: 'country' }))).toEqual({ sfx: false, music: true, style: 'synth' });
   });
 });
 
