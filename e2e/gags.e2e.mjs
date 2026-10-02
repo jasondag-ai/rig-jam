@@ -290,7 +290,7 @@ const play = async (page, touch, level) => {
 
 /** In the page: watches the stage every 30ms (beats, bounds on real outlines, overlaps). Read it back with stopWatch. */
 function watchStage() {
-      const w = { beats: { bear: [], moose: [] }, wipes: 0, beatAt: {}, overlap: [], onBoard: [], onButtons: [], hotshot: [], eyesHidden: [], noteShown: [], since: null };
+      const w = { beats: { bear: [], moose: [], gopher: [], geese: [], pumper: [] }, wipes: 0, beatAt: {}, overlap: [], onBoard: [], onButtons: [], hotshot: [], eyesHidden: [], noteShown: [], since: null };
       window.__wild = w;
       let hsStart = null;
       const R = (e) => e.getBoundingClientRect();
@@ -301,7 +301,7 @@ function watchStage() {
         const b = R(board);
         const c = R(buttons);
         const fence = parseFloat(board.style.getPropertyValue('--fence')) || 20;
-        for (const [key, sel] of [['bear', '.bear-stage'], ['moose', '.moose-peek']]) {
+        for (const [key, sel] of [['bear', '.bear-stage'], ['moose', '.moose-peek'], ['gopher', '.gopher-stage'], ['geese', '.geese-stage'], ['pumper', '.pumper-stage']]) {
           const st = document.querySelector(sel);
           const beat = st?.dataset.beat;
           const list = w.beats[key];
@@ -349,7 +349,18 @@ function watchStage() {
           if (eyes && title && R(eyes).top < R(title).bottom - 1) w.eyesHidden.push(`eyes ${Math.round(R(eyes).top)} < title ${Math.round(R(title).bottom)}`);
         }
         const others = ['.magpie', '.spotter', '.landowner', '.worker-bent'].filter((s) => document.querySelector(s));
-        const kinds = ['.bear-stage', '.moose-peek', '.hotshot'].filter((s) => document.querySelector(s));
+        // Gopher and pumper stay in the bottom strip; the geese stay above the board.
+        for (const el of document.querySelectorAll('.gopher-stage, .pumper-stage > div')) {
+          const r = R(el);
+          if (!r.width || getComputedStyle(el).opacity === '0') continue;
+          if (r.top < b.bottom - 1) w.onBoard.push(`${el.className} top ${Math.round(r.top)} < board ${Math.round(b.bottom)}`);
+          if (r.bottom > c.top + 2) w.onButtons.push(`${el.className} bottom ${Math.round(r.bottom)} > buttons ${Math.round(c.top)}`);
+        }
+        for (const el of document.querySelectorAll('.geese-stage .goose')) {
+          const r = R(el);
+          if (r.right > 0 && r.left < innerWidth && r.bottom > b.top + 1) w.onBoard.push(`goose bottom ${Math.round(r.bottom)} > board top ${Math.round(b.top)}`);
+        }
+        const kinds = ['.bear-stage', '.moose-peek', '.hotshot', '.gopher-stage', '.geese-stage', '.pumper-stage'].filter((s) => document.querySelector(s));
         if (kinds.length && kinds.length + others.length > 1) w.overlap.push([...kinds, ...others].join('+'));
         const hs = document.querySelector('.gag.hotshot');
         if (hs && hsStart === null) hsStart = performance.now();
@@ -432,13 +443,21 @@ function watchStage() {
   check(w.eyesHidden.length === 0, `his eyes stay clear of the HUD (${w.eyesHidden[0] ?? 'clear'})`);
   check(w.beats.bear.length === 0, 'no bear in Duvernay');
 
-  // Cardium: hot shot only, no animal.
+  // Cardium: the gopher, the hot shot, and a visitor (geese or the pumper); no bear or moose.
   await enter(page, 1, 3);
   await watch();
-  await page.waitForSelector('.hotshot', { timeout: 15000 }).catch(() => {});
-  await wait(4000);
+  await page.waitForSelector('.gopher-stage', { timeout: 15000 }).catch(() => {});
+  await page.waitForSelector('.gopher-stage', { state: 'detached', timeout: 10000 }).catch(() => {});
+  await page.waitForFunction(() => window.__wild.hotshot.length && (window.__wild.beats.geese.length || window.__wild.beats.pumper.length), null, { timeout: 15000 }).catch(() => {});
+  await page.waitForSelector('.geese-stage, .pumper-stage', { state: 'detached', timeout: 15000 }).catch(() => {});
   w = await stopWatch();
-  check(w.hotshot.length === 1 && !w.beats.bear.length && !w.beats.moose.length, 'Cardium: hot shot, no bear or moose');
+  log = await heardNow();
+  check(JSON.stringify(w.beats.gopher) === JSON.stringify(['hole', 'peek', 'up', 'whistle', 'down']), `Cardium: gopher pops out, peeks, stands, whistles, drops back (${w.beats.gopher.join(' > ')})`);
+  check(log.includes('whistle'), 'sound: gopher whistle');
+  check(w.hotshot.length === 1 && !w.beats.bear.length && !w.beats.moose.length, 'hot shot too; no bear or moose');
+  check(w.beats.geese.length + w.beats.pumper.length > 0, `a visitor drops by (${w.beats.geese.length ? 'geese' : w.beats.pumper.length ? 'pumper' : 'none'})`);
+  check(w.overlap.length === 0, `one gag at a time (${w.overlap[0] ?? 'never together'})`);
+  check(w.onBoard.length === 0 && w.onButtons.length === 0, `never over the board or the buttons (${w.onBoard[0] ?? w.onButtons[0] ?? 'clear'})`);
   await browser.close();
 }
 
@@ -448,14 +467,14 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }
   const context = await browser.newContext({ ...devices['iPhone 13'], viewport });
   const page = await context.newPage();
   console.log(`\n${viewport.width}x${viewport.height}`);
-  for (const [gag, sel] of [['bear', '.bear-stage'], ['moose', '.moose-peek']]) {
+  for (const [gag, sel] of [['bear', '.bear-stage'], ['moose', '.moose-peek'], ['gopher', '.gopher-stage'], ['geese', '.geese-stage'], ['pumper', '.pumper-stage']]) {
     await page.goto(`${ROOT}?gag=${gag}`, { waitUntil: 'networkidle' });
     await page.evaluate(watchStage);
     await page.waitForSelector(sel, { timeout: 3000 }).catch(() => {});
     await page.waitForSelector(sel, { state: 'detached', timeout: 25000 }).catch(() => {});
     const w = await page.evaluate(() => (clearInterval(window.__wildTimer), window.__wild));
     const size = await page.evaluate(() => document.querySelector('.board').getBoundingClientRect().width);
-    check(w.beats[gag].length >= 4, `${gag}: plays (${w.beats[gag].join(' > ')})`);
+    check(w.beats[gag].length >= (gag === 'geese' ? 1 : 4), `${gag}: plays (${w.beats[gag].join(' > ')})`);
     check(w.onBoard.length === 0 && w.onButtons.length === 0, `${gag}: never over the board or the buttons (${w.onBoard[0] ?? w.onButtons[0] ?? `clear; board ${Math.round(size)}px`})`);
   }
   await browser.close();
@@ -467,11 +486,25 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }
   const context = await browser.newContext({ ...devices['iPhone 13'] });
   const page = await context.newPage();
   console.log('\n?gag= links');
-  for (const [gag, sel] of [['bear', '.bear-stage'], ['moose', '.moose-peek'], ['biffy', '.worker-bent']]) {
+  for (const [gag, sel] of [['bear', '.bear-stage'], ['moose', '.moose-peek'], ['biffy', '.worker-bent'], ['gopher', '.gopher-stage'], ['geese', '.geese-stage'], ['pumper', '.pumper-stage']]) {
     const t0 = Date.now();
     await page.goto(`${ROOT}?gag=${gag}`, { waitUntil: 'networkidle' });
     const ok = await page.waitForSelector(sel, { timeout: 3000 }).then(() => true).catch(() => false);
     check(ok, `?gag=${gag} starts at once (${((Date.now() - t0) / 1000).toFixed(1)}s after load)`);
+    if (gag === 'geese') {
+      await page.waitForFunction(() => Number(document.querySelector('.geese-stage')?.dataset.honks) >= 2, null, { timeout: 6000 }).catch(() => {});
+      const flock = await page.evaluate(() => ({ geese: document.querySelectorAll('.geese-stage .goose').length, straggler: !!document.querySelector('.geese-stage .straggler'), honks: Number(document.querySelector('.geese-stage')?.dataset.honks ?? 0) }));
+      check(flock.geese === 8 && flock.straggler && flock.honks >= 2, `a V of 7 and a straggler honking to catch up (${JSON.stringify(flock)})`);
+    }
+    if (gag === 'pumper') {
+      const beats = [];
+      for (let i = 0; i < 60 && !beats.includes('leave'); i++) {
+        const b = await page.evaluate(() => document.querySelector('.pumper-stage')?.dataset.beat);
+        if (b && beats.at(-1) !== b) beats.push(b);
+        await wait(150);
+      }
+      check(beats.join(' > ') === 'arrive > out > walk > check > write > back > leave', `the pumper rolls up, gets out, checks the gauge, writes it down, drives off (${beats.join(' > ')})`);
+    }
     if (gag === 'biffy') {
       const rig = await page.evaluate(() => {
         const g = document.querySelector('.worker-bent');

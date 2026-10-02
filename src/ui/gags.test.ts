@@ -3,11 +3,14 @@ import { parseLevel } from '../engine/index.ts';
 import { mulberry32 } from '../engine/rng.ts';
 import {
   ANIMAL_IDLE_MS,
+  WILD_GAP_MS,
+  type WildState,
   MAGPIE_IDLE_MS,
   animalFor,
   dueWildlife,
   planWildlife,
   fitSpan,
+  freeSpot,
   SPOTTER_IDLE_MS,
   biffySpot,
   companyLine,
@@ -126,39 +129,57 @@ describe('magpie', () => {
 });
 
 describe('wildlife and traffic', () => {
-  it('bear in Montney, moose in Duvernay, no animal elsewhere', () => {
+  it('gopher in Cardium, bear in Montney, moose in Duvernay, no animal elsewhere', () => {
     expect(animalFor('montney')).toBe('bear');
     expect(animalFor('duvernay')).toBe('moose');
-    expect(animalFor('cardium')).toBeNull();
+    expect(animalFor('cardium')).toBe('gopher');
     expect(animalFor('daily')).toBeNull();
   });
 
   it('random moments stay mid-level and well apart', () => {
     const rand = mulberry32(7);
+    const visitors = new Set<string>();
     for (let i = 0; i < 500; i++) {
       const p = planWildlife(rand);
       expect(p.animalAt).toBeGreaterThanOrEqual(20_000);
       expect(p.animalAt).toBeLessThanOrEqual(50_000);
       expect(p.hotshotAt).toBeGreaterThanOrEqual(8_000);
-      expect(p.hotshotAt).toBeLessThanOrEqual(60_000);
-      expect(Math.abs(p.hotshotAt - p.animalAt)).toBeGreaterThanOrEqual(10_000 - 1e-6);
+      expect(p.hotshotAt).toBeLessThanOrEqual(70_000);
+      expect(p.visitorAt).toBeGreaterThanOrEqual(12_000);
+      expect(p.visitorAt).toBeLessThanOrEqual(90_000);
+      const at = [p.animalAt, p.hotshotAt, p.visitorAt];
+      for (let a = 0; a < 3; a++) for (let b = a + 1; b < 3; b++) expect(Math.abs(at[a] - at[b])).toBeGreaterThanOrEqual(WILD_GAP_MS - 1e-6);
+      visitors.add(p.visitor);
     }
+    expect([...visitors].sort()).toEqual(['geese', 'pumper']);
+  });
+
+  const plan = (o: Partial<WildState>): WildState => ({
+    animalAt: 30_000,
+    hotshotAt: 50_000,
+    visitorAt: 70_000,
+    visitor: 'geese',
+    animalDone: false,
+    hotshotDone: false,
+    visitorDone: false,
+    ...o,
   });
 
   it('the animal comes after 15s idle, or at its moment even while you play', () => {
-    const s = { animalAt: 30_000, hotshotAt: 50_000, animalDone: false, hotshotDone: false };
+    const s = plan({});
     expect(dueWildlife(10_000, 5_000, s, 'bear')).toBeNull();
-    expect(dueWildlife(16_000, ANIMAL_IDLE_MS, s, 'bear')).toBe('animal');
+    expect(dueWildlife(16_000, ANIMAL_IDLE_MS, s, 'gopher')).toBe('animal');
     expect(dueWildlife(30_000, 200, s, 'moose')).toBe('animal');
     expect(dueWildlife(30_000, 200, { ...s, animalDone: true }, 'moose')).toBeNull();
     expect(dueWildlife(30_000, 20_000, s, null)).toBeNull();
   });
 
-  it('the hot shot comes once, at its moment, in every region', () => {
-    const s = { animalAt: 30_000, hotshotAt: 12_000, animalDone: false, hotshotDone: false };
+  it('the hot shot and the visitor come once each, at their moments, in every region', () => {
+    const s = plan({ hotshotAt: 12_000, visitorAt: 24_000 });
     expect(dueWildlife(11_000, 0, s, null)).toBeNull();
     expect(dueWildlife(12_000, 0, s, null)).toBe('hotshot');
-    expect(dueWildlife(40_000, 0, { ...s, hotshotDone: true, animalDone: true }, 'bear')).toBeNull();
+    expect(dueWildlife(24_000, 0, { ...s, hotshotDone: true }, null)).toBe('visitor');
+    expect(dueWildlife(90_000, 0, { ...s, hotshotDone: true, animalDone: true, visitorDone: true }, 'bear')).toBeNull();
   });
 
   it('the bear scene fits clear of the biffy', () => {
@@ -175,4 +196,19 @@ describe('wildlife and traffic', () => {
     expect(fitSpan(0, 100, span, null)).toBeNull();
   });
 
+
+  it('free spots along the bottom stay clear of the biffy and the bush', () => {
+    const avoid = [
+      { left: 150, right: 184 },
+      { left: 20, right: 90 },
+    ];
+    for (const pick of [0, 0.3, 0.7, 1]) {
+      const x = freeSpot(0, 358, 60, avoid, pick)!;
+      expect(x).toBeGreaterThanOrEqual(0);
+      expect(x + 60).toBeLessThanOrEqual(358);
+      for (const a of avoid) expect(x + 60 <= a.left || x >= a.right, `pick ${pick}: ${x}`).toBe(true);
+    }
+    expect(freeSpot(0, 100, 150, [], 0.5)).toBeNull();
+    expect(freeSpot(0, 358, 60, [], 0.5)).toBeCloseTo(149);
+  });
 });

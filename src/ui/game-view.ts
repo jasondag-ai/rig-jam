@@ -101,12 +101,13 @@ export class GameView {
     board.onWear = (lvl) => this.gags.worn(lvl);
     // The Wildlife Log collects each gag the first time it plays all the way through.
     this.gags.onSeen = (id) => {
-      const r = record(loadLog(), id);
+      const before = loadLog();
+      const r = record(before, id);
       if (!r.isNew) return;
       saveLog(r.log);
       void toast(sightingToast(id, r.count));
       if (r.completed) {
-        void toast('Wildlife Log complete!', { sub: 'Camo pickups unlocked', big: true, ms: 3200 });
+        void toast('Wildlife Log complete!', { sub: before.camoEarned ? 'Every sighting found' : 'Camo pickups unlocked', big: true, ms: 3200 });
         applyCamo(r.log);
       }
     };

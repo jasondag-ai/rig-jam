@@ -118,38 +118,57 @@ export function magpieTarget(trucks: readonly Truck[], random: () => number = Ma
 
 // ---------- Wildlife and traffic (outside the fence, along the bottom) ----------
 
-/** Montney has a bear, Duvernay a moose; every region gets the hot shot pickup. */
-export type Animal = 'bear' | 'moose';
-export const animalFor = (regionId: string): Animal | null => (regionId === 'montney' ? 'bear' : regionId === 'duvernay' ? 'moose' : null);
+/** Cardium has a gopher, Montney a bear, Duvernay a moose; every region gets the hot shot and a visitor. */
+export type Animal = 'gopher' | 'bear' | 'moose';
+export const animalFor = (regionId: string): Animal | null =>
+  regionId === 'cardium' ? 'gopher' : regionId === 'montney' ? 'bear' : regionId === 'duvernay' ? 'moose' : null;
+
+/** Once per level, one of these drops by (any region): geese overhead, or the pumper on his rounds. */
+export type Visitor = 'geese' | 'pumper';
 
 /** The animal comes after this long with no touch or move, or at its random moment, whichever is first. */
 export const ANIMAL_IDLE_MS = 15_000;
-/** At least this far apart, so the hot shot never crowds the animal. */
-const WILD_GAP_MS = 10_000;
+/** At least this far apart, so nothing crowds anything else. */
+export const WILD_GAP_MS = 8_000;
 
 export interface WildState {
-  /** Level time (ms) when the animal shows up even if you're busy playing, and when the hot shot does. */
+  /** Level time (ms) when the animal shows up even if you're busy playing, the hot shot, the visitor. */
   animalAt: number;
   hotshotAt: number;
+  visitorAt: number;
+  visitor: Visitor;
   animalDone: boolean;
   hotshotDone: boolean;
+  visitorDone: boolean;
 }
 
-/** This level's random moments: the animal 20-50s in, the hot shot 8-45s in, kept apart. */
+/** This level's random moments: animal 20-50s in, hot shot 8-45s, visitor 12-55s, kept apart. */
 export function planWildlife(random: () => number = Math.random): WildState {
   const animalAt = 20_000 + random() * 30_000;
-  let hotshotAt = 8_000 + random() * 37_000;
-  if (Math.abs(hotshotAt - animalAt) < WILD_GAP_MS) hotshotAt = animalAt - WILD_GAP_MS >= 8_000 ? animalAt - WILD_GAP_MS : animalAt + WILD_GAP_MS;
-  return { animalAt, hotshotAt, animalDone: false, hotshotDone: false };
+  const apart = (at: number, taken: number[], lo: number) => {
+    // Nudge forward past anything too close (then it's never earlier than `lo`).
+    let t = Math.max(lo, at);
+    for (let i = 0; i < 4; i++) {
+      const clash = taken.find((x) => Math.abs(t - x) < WILD_GAP_MS);
+      if (clash === undefined) break;
+      t = clash + WILD_GAP_MS;
+    }
+    return t;
+  };
+  const hotshotAt = apart(8_000 + random() * 37_000, [animalAt], 8_000);
+  const visitorAt = apart(12_000 + random() * 43_000, [animalAt, hotshotAt], 12_000);
+  const visitor: Visitor = random() < 0.5 ? 'geese' : 'pumper';
+  return { animalAt, hotshotAt, visitorAt, visitor, animalDone: false, hotshotDone: false, visitorDone: false };
 }
 
 /**
  * Which outside gag is due, `levelMs` into the level with `idleMs` since the last touch.
  * The caller only asks when nothing else is playing; each one runs once per level.
  */
-export function dueWildlife(levelMs: number, idleMs: number, s: WildState, animal: Animal | null): 'animal' | 'hotshot' | null {
+export function dueWildlife(levelMs: number, idleMs: number, s: WildState, animal: Animal | null): 'animal' | 'hotshot' | 'visitor' | null {
   if (animal && !s.animalDone && (idleMs >= ANIMAL_IDLE_MS || levelMs >= s.animalAt)) return 'animal';
   if (!s.hotshotDone && levelMs >= s.hotshotAt) return 'hotshot';
+  if (!s.visitorDone && levelMs >= s.visitorAt) return 'visitor';
   return null;
 }
 
@@ -164,4 +183,21 @@ export function fitSpan(lo: number, hi: number, span: number, biffy: { left: num
   const b = { from: biffy.right + 8, to: hi };
   const best = a.to - a.from >= b.to - b.from ? a : b;
   return best.to - best.from >= span ? best.from + (best.to - best.from - span) / 2 : null;
+}
+
+/**
+ * Room for something `span` px wide between `lo` and `hi`, clear of things already standing along
+ * the bottom (the biffy, the bush): the widest free stretch, `pick` 0..1 along it. Null if none fits.
+ */
+export function freeSpot(lo: number, hi: number, span: number, avoid: { left: number; right: number }[], pick = 0.5): number | null {
+  const gaps: { from: number; to: number }[] = [];
+  let from = lo;
+  for (const a of [...avoid].sort((x, y) => x.left - y.left)) {
+    if (a.left - 8 - from >= span) gaps.push({ from, to: a.left - 8 });
+    from = Math.max(from, a.right + 8);
+  }
+  if (hi - from >= span) gaps.push({ from, to: hi });
+  if (!gaps.length) return null;
+  const g = gaps.reduce((a, b) => (b.to - b.from > a.to - a.from ? b : a));
+  return g.from + (g.to - g.from - span) * Math.min(1, Math.max(0, pick));
 }

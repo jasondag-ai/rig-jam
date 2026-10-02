@@ -77,3 +77,25 @@ export function reparent(el: SVGGraphicsElement, parent: SVGGraphicsElement): vo
   const m = to.inverse().multiply(from);
   el.transform.baseVal.initialize(svg.createSVGTransformFromMatrix(m));
 }
+
+/**
+ * Plays GSAP timelines one after another for a scene, stopping cleanly if `signal` aborts (a new
+ * level): `run` resolves when an animation completes, `hold` waits, `stop` kills anything left.
+ */
+export function sceneRunner(signal: AbortSignal) {
+  const live = new Set<gsap.core.Animation>();
+  const run = (t: gsap.core.Animation): Promise<void> =>
+    new Promise((resolve, reject) => {
+      if (signal.aborted) return (t.kill(), reject(new Error('aborted')));
+      live.add(t);
+      t.eventCallback('onComplete', () => (live.delete(t), resolve()));
+      signal.addEventListener('abort', () => (t.kill(), reject(new Error('aborted'))), { once: true });
+    });
+  return {
+    run,
+    hold: (s: number) => run(gsap.delayedCall(s, () => {})),
+    /** Keeps a looping animation (wing flaps, walk cycles) to kill at the end. */
+    keep: <T extends gsap.core.Animation>(t: T): T => (live.add(t), t),
+    stop: () => live.forEach((t) => t.kill()),
+  };
+}

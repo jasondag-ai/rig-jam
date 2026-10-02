@@ -229,3 +229,117 @@ export const MOOSE_RIG = `
   </g>
 </g>
 </svg>`;
+
+const GOPHER = '#b8976a';
+const GOPHER_DK = '#8f714a';
+const GOPHER_LT = '#e6d3b0';
+
+/**
+ * Richardson's ground squirrel ("gopher"), standing bolt upright like a picket pin, facing a little
+ * to the right; feet on y = 60 (the hole's rim). Joints: root (rise from the hole, squash and
+ * stretch; pivot at his feet), body, head, paws (clasped at his chest), tail. Mouth: shut or
+ * whistle (pursed, with a note).
+ */
+export const GOPHER_RIG = `
+<svg viewBox="-6 -10 52 72" overflow="visible" aria-hidden="true">
+<g data-j="root" data-p="20 60">
+  <g data-j="tail" data-p="12 52"><path d="M12 52 Q2 50 2 42 Q4 38 8 40 Q8 48 14 48 Z" fill="${GOPHER_DK}" ${OL} stroke-width="1.8"/><path d="M3 43 Q4 39 7 40" stroke="#3a2a18" stroke-width="2.2" stroke-linecap="round"/></g>
+  <g data-j="body" data-p="20 58">
+    <path d="M10 58 Q6 40 12 30 Q20 22 28 30 Q34 40 30 58 Z" fill="${GOPHER}" ${OL} stroke-width="2.2"/>
+    <path d="M15 56 Q13 42 18 34 Q24 34 26 42 Q27 50 25 56 Z" fill="${GOPHER_LT}"/>
+    <g data-j="paws" data-p="21 38"><ellipse cx="18.5" cy="40" rx="3" ry="2.4" fill="${GOPHER_DK}" ${OL} stroke-width="1.4"/><ellipse cx="23.5" cy="40" rx="3" ry="2.4" fill="${GOPHER_DK}" ${OL} stroke-width="1.4"/></g>
+    <g data-j="head" data-p="21 28">
+      <circle cx="15" cy="12" r="3.2" fill="${GOPHER}" ${OL} stroke-width="1.6"/><circle cx="26" cy="12" r="3.2" fill="${GOPHER}" ${OL} stroke-width="1.6"/>
+      <path d="M11 20 Q11 9 21 9 Q31 9 31 20 Q31 29 21 29 Q11 29 11 20 Z" fill="${GOPHER}" ${OL} stroke-width="2.2"/>
+      <ellipse cx="23" cy="23" rx="5.5" ry="4" fill="${GOPHER_LT}"/>
+      <circle cx="17.5" cy="17" r="1.9" fill="#111"/><circle cx="26.5" cy="17" r="1.9" fill="#111"/>
+      <circle cx="17" cy="16.4" r="0.6" fill="#fff"/><circle cx="26" cy="16.4" r="0.6" fill="#fff"/>
+      <ellipse cx="23" cy="21.2" rx="1.6" ry="1.1" fill="#3a2a18"/>
+      <g data-alt="mouth" data-v="shut"><path d="M21 24.5 Q23 25.8 25 24.5" fill="none" stroke="#3a2a18" stroke-width="1.1" stroke-linecap="round"/></g>
+      <g data-alt="mouth" data-v="whistle" style="display:none"><ellipse cx="23" cy="25" rx="1.4" ry="1.7" fill="#3a2a18"/></g>
+    </g>
+  </g>
+  <g data-j="note" data-p="35 8" data-alt="note" data-v="on" style="display:none"><path d="M33 12 v-9 l6 -2 v8" fill="none" stroke="#2a1a0c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="31.6" cy="12.3" rx="2.2" ry="1.6" fill="#2a1a0c"/><ellipse cx="37.6" cy="9.3" rx="2.2" ry="1.6" fill="#2a1a0c"/></g>
+</g>
+</svg>`;
+
+/** The gopher's hole: a dark oval with a lip of dug-up dirt (drawn in front of his feet). */
+export const GOPHER_HOLE = `
+<svg viewBox="0 0 40 12" overflow="visible" aria-hidden="true">
+  <ellipse cx="20" cy="6" rx="18" ry="5.5" fill="#7a5a36" ${OL} stroke-width="2"/>
+  <ellipse cx="20" cy="5.5" rx="12" ry="3.4" fill="#2a1a0c"/>
+</svg>`;
+
+/** A Canada goose in flight, side view facing right. Joint: wing (pivot at the shoulder). */
+export const GOOSE_RIG = `
+<svg viewBox="-4 -14 64 40" overflow="visible" aria-hidden="true">
+  <g data-j="wingF" data-p="26 12"><path d="M24 12 Q30 -2 40 -8 Q36 6 30 13 Z" fill="#6b5a46" ${OL} stroke-width="1.6"/></g>
+  <path d="M8 14 Q4 10 6 8 Q12 10 16 10 L40 9 Q48 11 46 16 Q40 20 22 19 Q12 19 8 14 Z" fill="#8a7458" ${OL} stroke-width="1.8"/>
+  <path d="M22 18 Q32 20 42 16" fill="none" stroke="#e8dfcf" stroke-width="3" stroke-linecap="round"/>
+  <path d="M6 9 L1 7 L2 12 Z" fill="#1c1c1c" ${OL} stroke-width="1.2"/>
+  <path d="M44 12 Q48 6 50 2" fill="none" stroke="#2a1a0c" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M44 12 Q48 6 50 2" fill="none" stroke="#1c1c1c" stroke-width="3.2" stroke-linecap="round"/>
+  <ellipse cx="52" cy="1" rx="4.6" ry="3.2" fill="#1c1c1c" ${OL} stroke-width="1.4"/>
+  <path d="M49.5 2.4 Q51.5 4 54 2.6" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M56 0.5 L60 1.4 L56 2.4 Z" fill="#1c1c1c"/>
+  <g data-j="wing" data-p="26 12"><path d="M22 12 Q28 -4 40 -10 Q38 6 30 14 Z" fill="#7d6a52" ${OL} stroke-width="1.8"/><path d="M28 6 Q32 0 37 -5" fill="none" stroke="#5a4a38" stroke-width="1.2"/></g>
+</svg>`;
+
+/**
+ * The pumper (lease operator): side view facing right, FR coveralls and a ball cap, clipboard in
+ * hand, feet on y = 70. Joints: root (bob), legB/legF (walk, pivot at the hip), head, arm (holds the
+ * clipboard; pivot at the shoulder), hand (the pencil hand, scribbling).
+ */
+export const PUMPER_RIG = `
+<svg viewBox="-4 -4 44 76" overflow="visible" aria-hidden="true">
+<g data-j="root" data-p="18 70">
+  <g data-j="legB" data-p="17 44"><rect x="13" y="42" width="8" height="24" rx="3.5" fill="#1d3f73" ${OL} stroke-width="2"/><ellipse cx="19" cy="67.5" rx="6" ry="3" fill="#3b2614" ${OL} stroke-width="1.8"/></g>
+  <path d="M10 22 Q10 16 18 16 Q26 16 26 22 L27 46 L9 46 Z" fill="#2f5d9e" ${OL} stroke-width="2.2"/>
+  <path d="M10 33 H26 M10 37 H26" stroke="#d9e3ee" stroke-width="2.4"/>
+  <g data-j="legF" data-p="19 44"><rect x="15" y="42" width="8" height="24" rx="3.5" fill="#2f5d9e" ${OL} stroke-width="2"/><ellipse cx="21" cy="67.5" rx="6" ry="3" fill="#4a2f16" ${OL} stroke-width="1.8"/></g>
+  <g data-j="head" data-p="18 15">
+    <circle cx="19" cy="9" r="6.5" fill="#f0c49c" ${OL} stroke-width="2"/>
+    <path d="M12 7 Q13 1 19 1 Q25 1 25.5 6 L31 7 Q31 9 25 9 L12.5 9 Z" fill="#c0392b" ${OL} stroke-width="1.8"/>
+    <circle cx="22" cy="10" r="1.1" fill="#2a1a0c"/>
+    <path d="M21 13.5 q1.6 0.8 3 0" fill="none" stroke="#a0442a" stroke-width="1.2" stroke-linecap="round"/>
+  </g>
+  <g data-j="arm" data-p="17 20">
+    <path d="M17 20 Q22 28 28 30" fill="none" stroke="#2a1a0c" stroke-width="6.4" stroke-linecap="round"/>
+    <path d="M17 20 Q22 28 28 30" fill="none" stroke="#2f5d9e" stroke-width="4" stroke-linecap="round"/>
+    <rect x="25" y="20" width="10" height="13" rx="1.5" fill="#c9a56a" ${OL} stroke-width="1.6" transform="rotate(-12 30 27)"/>
+    <rect x="27" y="23" width="6" height="8" fill="#fbfbf6" transform="rotate(-12 30 27)"/>
+    <path d="M28 25 h4 M28 27.4 h4 M28 29.8 h3" stroke="#8a8a8a" stroke-width="0.8" transform="rotate(-12 30 27)"/>
+    <circle cx="28" cy="30" r="2.6" fill="#f0c49c" ${OL} stroke-width="1.4"/>
+  </g>
+  <g data-j="hand" data-p="20 22">
+    <path d="M20 22 Q24 25 28.5 25" fill="none" stroke="#2a1a0c" stroke-width="6" stroke-linecap="round"/>
+    <path d="M20 22 Q24 25 28.5 25" fill="none" stroke="#2f5d9e" stroke-width="3.6" stroke-linecap="round"/>
+    <path d="M29 26 L33 20" stroke="#e8b22a" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="29" cy="25.5" r="2.3" fill="#f0c49c" ${OL} stroke-width="1.3"/>
+  </g>
+</g>
+</svg>`;
+
+/** The pumper's company pickup, side view facing right, wheels on y = 50. Joint: door (swings open). */
+export const PUMPER_TRUCK = `
+<svg viewBox="0 0 120 52" overflow="visible" aria-hidden="true">
+  <path d="M4 22 L4 40 L114 40 L114 30 Q114 24 106 23 L92 21 L82 8 Q80 6 76 6 L56 6 Q52 6 52 10 L52 22 Z" fill="#f4f4f0" ${OL} stroke-width="2.6"/>
+  <path d="M58 10 L76 10 L84 21 L58 21 Z" fill="#7fc4e8" ${OL} stroke-width="2"/>
+  <rect x="4" y="31" width="110" height="4" fill="#2e8b57"/>
+  <path d="M8 22 L48 22" stroke="#cfcfc8" stroke-width="2"/>
+  <rect x="108" y="25" width="6" height="5" rx="1.5" fill="#fff6b0" ${OL} stroke-width="1.4"/>
+  <g data-j="door" data-p="84 22"><path d="M57 22 L84 22 L84 36 L57 36 Z" fill="#ececE6" ${OL} stroke-width="1.8"/><circle cx="70" cy="28" r="3.4" fill="#2e8b57"/><rect x="77" y="25" width="4" height="1.8" rx="0.9" fill="#8a8a8a"/></g>
+  <circle cx="26" cy="41" r="9.5" fill="#2a2725" ${OL} stroke-width="2.5"/><circle cx="26" cy="41" r="3.6" fill="#9a9a9a"/>
+  <circle cx="94" cy="41" r="9.5" fill="#2a2725" ${OL} stroke-width="2.5"/><circle cx="94" cy="41" r="3.6" fill="#9a9a9a"/>
+</svg>`;
+
+/** A gauge on a short riser outside the fence (what the pumper checks). Joint: needle. */
+export const GAUGE_RIG = `
+<svg viewBox="0 0 24 44" overflow="visible" aria-hidden="true">
+  <rect x="9" y="16" width="6" height="26" rx="1.5" fill="#8a8f96" ${OL} stroke-width="1.8"/>
+  <rect x="5" y="38" width="14" height="5" rx="1.5" fill="#6d727a" ${OL} stroke-width="1.6"/>
+  <circle cx="12" cy="11" r="9" fill="#fbfbf6" ${OL} stroke-width="2.2"/>
+  <path d="M6 13 A7 7 0 0 1 18 13" fill="none" stroke="#c0392b" stroke-width="1.6"/>
+  <g data-j="needle" data-p="12 11"><path d="M12 11 L7.5 7" stroke="#2a1a0c" stroke-width="1.6" stroke-linecap="round"/></g>
+  <circle cx="12" cy="11" r="1.4" fill="#2a1a0c"/>
+</svg>`;

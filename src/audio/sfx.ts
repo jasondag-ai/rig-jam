@@ -335,6 +335,42 @@ export const shake: Recipe = (ctx, out, t) => {
   for (let i = 0; i < 7; i++) noise(ctx, out, { t: t + i * 0.055, dur: 0.04, gain: 0.09, filter: { type: 'bandpass', f: 1400 + (i % 2) * 700, q: 1.5 } });
 };
 
+/** Gopher whistle: a sharp, high "tseep" that rises and falls (the engine plays it twice). */
+export const whistle: Recipe = (ctx, out, t) => {
+  tone(ctx, out, { f: 2600, f2: 3700, t, dur: 0.12, gain: 0.1, attack: 0.01 });
+  tone(ctx, out, { f: 3700, f2: 2900, t: t + 0.11, dur: 0.16, gain: 0.08 });
+};
+
+/** Canada goose: a nasal two-part "ha-onk". */
+export const honk: Recipe = (ctx, out, t) => {
+  for (const [f, at, d] of [
+    [420, 0, 0.09],
+    [330, 0.1, 0.16],
+  ] as const)
+    for (const [form, g] of [
+      [900, 0.09],
+      [1900, 0.05],
+    ])
+      tone(ctx, out, { type: 'sawtooth', f, f2: f * 0.92, t: t + at, dur: d, gain: g, attack: 0.01, filter: { type: 'bandpass', f: form, q: 5 } });
+};
+
+/** A pickup door: latch click, then the thunk. */
+export const carDoor: Recipe = (ctx, out, t) => {
+  noise(ctx, out, { t, dur: 0.03, gain: 0.08, filter: { type: 'bandpass', f: 3000, q: 3 } });
+  tone(ctx, out, { f: 120, f2: 70, t: t + 0.03, dur: 0.15, gain: 0.35 });
+  noise(ctx, out, { t: t + 0.03, dur: 0.12, gain: 0.12, filter: { type: 'lowpass', f: 700 } });
+};
+
+/** Pencil on a clipboard: a few quick scratchy strokes. */
+export const scribble: Recipe = (ctx, out, t) => {
+  for (let i = 0; i < 5; i++) noise(ctx, out, { t: t + i * 0.11 + Math.random() * 0.03, dur: 0.07, gain: 0.05, attack: 0.01, filter: { type: 'bandpass', f: 4200 + Math.random() * 1200, q: 2 } });
+};
+
+/** The pumper's pickup idling up or pulling away: a soft diesel putter for `dur` seconds. */
+export function putter(ctx: Ctx, out: AudioNode, t: number, dur = 1.4): void {
+  for (let i = 0; i * 0.07 < dur; i++) tone(ctx, out, { f: 70, f2: 60, t: t + i * 0.07, dur: 0.06, gain: 0.08 * Math.min(1, (dur - i * 0.07) / 0.4), filter: { type: 'lowpass', f: 400 } });
+}
+
 /**
  * Hot shot pickup screaming past: engine roar that drops in pitch as it passes (doppler), a whoosh
  * of air, panned left to right (or right to left) across `dur` seconds.

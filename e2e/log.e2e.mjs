@@ -12,7 +12,8 @@ const check = (ok, text) => {
   if (!ok) failures++;
   console.log(`   ${ok ? 'ok  ' : 'FAIL'} ${text}`);
 };
-const ALL = ['magpie', 'spotter', 'biffy', 'landowner', 'bear', 'moose', 'hotshot'];
+const ALL = ['magpie', 'spotter', 'biffy', 'landowner', 'bear', 'moose', 'hotshot', 'gopher', 'geese', 'pumper'];
+const SEVEN = ALL.slice(0, 7);
 const PROGRESS = JSON.stringify({ best: {}, hints: 3, perfect: [], dailyCleared: [], demo: true, announced: [] });
 
 const browser = await chromium.launch();
@@ -67,8 +68,8 @@ const btn = await page.$eval('.binoculars', (b) => {
 });
 check(btn.w >= 44 && btn.h >= 44 && btn.beside, `binoculars button next to the gear (${btn.w}x${btn.h}, "${btn.label}")`);
 let log = await openLog();
-check(log.count === '0/7' && log.cards.length === 7 && log.cards.every((c) => !c.found && c.title === '???'), `7 cards, none found (${log.count})`);
-check(log.cards.find((c) => c.id === 'bear').text === 'Seen in Montney' && log.cards.find((c) => c.id === 'magpie').text === 'Watch the roofs' && log.cards.find((c) => c.id === 'spotter').text === 'Try waiting', 'unfound cards show hints');
+check(log.count === '0/10' && log.cards.length === 10 && log.cards.every((c) => !c.found && c.title === '???'), `10 cards, none found (${log.count})`);
+check(log.cards.find((c) => c.id === 'bear').text === 'Seen in Montney' && log.cards.find((c) => c.id === 'gopher').text === 'Seen in Cardium' && log.cards.find((c) => c.id === 'geese').text === 'Look up' && log.cards.find((c) => c.id === 'pumper').text === 'Making his rounds', 'unfound cards show hints');
 const silhouette = await page.$eval('.log-card.unfound .art', (a) => getComputedStyle(a).filter);
 check(silhouette.includes('brightness(0)'), `as dark silhouettes (${silhouette})`);
 await page.$eval('.log-head .back', (b) => b.click());
@@ -82,36 +83,46 @@ await watchToasts();
 await page.waitForSelector('.spotter.asleep', { timeout: 12000 }).catch(() => {});
 await wait(2600);
 let t = await toasts();
-check(t[0]?.text === 'New sighting! Magpie (1/7)', `toast: "${t[0]?.text}"`);
-check(t[1]?.text === 'New sighting! Sleeping Spotter (2/7)', `toast: "${t[1]?.text}"`);
+check(t[0]?.text === 'New sighting! Magpie (1/10)', `toast: "${t[0]?.text}"`);
+check(t[1]?.text === 'New sighting! Sleeping Spotter (2/10)', `toast: "${t[1]?.text}"`);
 check(t.length >= 1 && t.every((x) => x.bottom <= x.boardTop), `toasts sit above the board (${t.map((x) => `${Math.round(x.bottom)}<=${Math.round(x.boardTop)}`).join(', ')})`);
 check(t.length >= 1 && t.every((x) => x.ms && x.ms >= 1900 && x.ms <= 2300), `each disappears after 2 seconds (${t.map((x) => Math.round(x.ms)).join(', ')}ms)`);
 await page.$eval('.hud [data-act="levels"]', (b) => b.click());
 await wait(200);
 log = await openLog();
 const magpie = log.cards.find((c) => c.id === 'magpie');
-check(log.count === '2/7' && magpie.found && magpie.title === 'Magpie' && magpie.text === 'Never park under a tree.', `the log fills in: ${log.count}, "${magpie.title}: ${magpie.text}"`);
+check(log.count === '2/10' && magpie.found && magpie.title === 'Magpie' && magpie.text === 'Never park under a tree.', `the log fills in: ${log.count}, "${magpie.title}: ${magpie.text}"`);
 check(log.cards.find((c) => c.id === 'spotter').text === 'On the clock. Allegedly.', 'Spotter: "On the clock. Allegedly."');
 
 // 3. The seventh sighting: celebration, and every pickup goes camo.
-await fresh('', JSON.stringify({ found: ALL.filter((x) => x !== 'bear'), camo: true }));
-check(!(await page.evaluate(() => document.body.classList.contains('camo-pickups'))), 'no camo with 6 of 7');
+await fresh('', JSON.stringify({ v: 2, found: ALL.filter((x) => x !== 'bear'), camo: true }));
+check(!(await page.evaluate(() => document.body.classList.contains('camo-pickups'))), 'no camo with 9 of 10');
 await page.goto(ROOT + '?gag=bear', { waitUntil: 'networkidle' });
 await watchToasts();
 await page.waitForSelector('.bear-stage', { timeout: 4000 }).catch(() => {});
 await page.waitForSelector('.bear-stage', { state: 'detached', timeout: 25000 }).catch(() => {});
 await wait(400);
 t = await toasts();
-check(t[0]?.text === 'New sighting! Bear (7/7)', `toast: "${t[0]?.text}"`);
+check(t[0]?.text === 'New sighting! Bear (10/10)', `toast: "${t[0]?.text}"`);
 await wait(2200);
 t = await toasts();
 check(/Wildlife Log complete!.*Camo pickups unlocked/.test(t[1]?.text ?? ''), `then the celebration: "${t[1]?.text}"`);
 check(t[1] && t[1].bottom <= t[1].boardTop, 'which stays above the board too');
 check(await page.evaluate(() => document.body.classList.contains('camo-pickups')), 'camo pickups on');
 const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('rush-hour-rigs:log')));
-check(saved.found.length === 7, `saved: ${saved.found.length}/7`);
+check(saved.found.length === 10, `saved: ${saved.found.length}/10`);
+
+// 3b. A player who found all 7 before entries 8 to 10 arrived keeps camo; the log shows 7/10.
+await fresh('', JSON.stringify({ found: SEVEN, camo: true }));
+check(await page.evaluate(() => document.body.classList.contains('camo-pickups')), 'all 7 found before the update: camo kept');
+log = await openLog();
+check(log.count === '7/10' && log.cards.filter((c) => !c.found).map((c) => c.id).join() === 'gopher,geese,pumper', `log shows ${log.count}, with the three new ones to find`);
+// 3c. But finding those seven now isn't enough.
+await fresh('', JSON.stringify({ v: 2, found: SEVEN, camo: true, camoEarned: false }));
+check(!(await page.evaluate(() => document.body.classList.contains('camo-pickups'))), 'the same seven found after the update: no camo yet');
 
 // 4. Settings switch: on by default once earned; off hides the camo, and it's remembered.
+await fresh('', JSON.stringify({ v: 2, found: ALL, camo: true, camoEarned: true }));
 await page.goto(ROOT + '?gag=none', { waitUntil: 'networkidle' });
 await page.$eval('.region-tab:nth-child(1)', (b) => b.click());
 await page.$eval('.level-btn[data-index="0"]', (b) => b.click());
@@ -136,12 +147,12 @@ await fresh();
 await page.$eval('.gear', (g) => g.click());
 await wait(200);
 const locked = await page.$eval('[data-act="camo"]', (i) => ({ disabled: i.disabled, label: i.closest('label').textContent.trim() }));
-check(locked.disabled && /Find all 7/.test(locked.label), `locked until the log is complete ("${locked.label.replace(/\s+/g, ' ')}")`);
+check(locked.disabled && /Find all 10/.test(locked.label), `locked until the log is complete ("${locked.label.replace(/\s+/g, ' ')}")`);
 
 // 6. ?log=all previews the full log and camo, without touching the saved log.
 await fresh('?log=all', JSON.stringify({ found: ['magpie'], camo: true }));
 log = await openLog();
-check(log.count === '7/7' && log.cards.every((c) => c.found), `?log=all: ${log.count}, every card found`);
+check(log.count === '10/10' && log.cards.every((c) => c.found), `?log=all: ${log.count}, every card found`);
 check(log.cards.find((c) => c.id === 'moose').text === 'Just checking in.' && log.cards.find((c) => c.id === 'hotshot').text === 'Late for something.', 'with captions');
 check(await page.evaluate(() => document.body.classList.contains('camo-pickups')), 'and camo pickups');
 check((await page.evaluate(() => JSON.parse(localStorage.getItem('rush-hour-rigs:log')).found)).join() === 'magpie', 'the real log is untouched');

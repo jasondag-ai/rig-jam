@@ -122,7 +122,15 @@ something, give exact clicks and one command at a time.
     once) > stare (short, + groan) > down, under 3 seconds (`PEEK`).
   - Hot shot (all regions): random moment 8-45s in. Pickup screams across the bottom in <1s in
     dust/mud/snow.
-- Preview/test hooks: `?gag=bear`, `?gag=moose`, `?gag=biffy` open a suitable level and play that
+  - Gopher (Cardium's animal, `visitor-scenes.ts`): same timing as the bear/moose. A hole opens by
+    the bottom fence (clear of the biffy); he peeks, looks around, pops up, whistles twice, drops back.
+  - Visitor (any region, one per level, random moment 12-55s in, kept 8s from the others):
+    Canada geese (a V of 7 across the sky above the board, behind the HUD, a straggler flapping hard
+    and honking to catch up) or the pumper (his pickup rolls up in the bottom strip, he checks a
+    gauge, writes on his clipboard, drives off). Mirror figures via their inner svg (GSAP owns the
+    element's transform and resets the CSS `scale` property).
+- Preview/test hooks: `?gag=bear`, `?gag=moose`, `?gag=biffy`, `?gag=gopher`, `?gag=geese`,
+  `?gag=pumper` open a suitable level and play that
   scene at once, then again 1.5s after it ends (nothing else plays). `?idle=0.1` makes idle gags
   (and wildlife) come 10x sooner; `?wild=0` turns wildlife off. `npm run test:e2e:gags` tests them.
 
@@ -139,12 +147,15 @@ something, give exact clicks and one command at a time.
 - Test hook: `?audiolog` exposes `window.__rhrAudio` (its `log` lists cues as they fire).
 
 ## Wildlife Log
-- `src/ui/wildlife-log.ts` (pure + storage, tested): 7 entries (Magpie, Sleeping Spotter, Biffy
-  Surprise, Angry Landowner, Bear, Moose, Hot Shot) with captions and hints. An entry unlocks the
+- `src/ui/wildlife-log.ts` (pure + storage, tested): 10 entries (Magpie, Sleeping Spotter, Biffy
+  Surprise, Angry Landowner, Bear, Moose, Hot Shot, Gopher, Canada Geese, The Pumper) with captions
+  and hints. An entry unlocks the
   first time its gag fully plays (`GagLayer.onSeen`; the spotter counts once he's asleep). Saved in
   `rush-hour-rigs:log`, so Reset progress clears it.
 - New sighting: a toast at the very top (`toast.ts`, 2s, one at a time, never over the board):
-  "New sighting! Bear (3/7)". The 7th adds a celebration toast and turns on camo pickups.
+  "New sighting! Bear (3/10)". The 10th adds a celebration toast and turns on camo pickups.
+- Camo is earned (`camoEarned`) by finding all 10; a log saved before entries 8-10 existed (no `v`)
+  that had all of the original 7 keeps its camo. Saved logs carry `v: 2`.
 - Log page: binoculars button beside the gear on the level list. Found cards: art + caption;
   unfound: dark silhouette (CSS brightness(0)) + hint.
 - Camo pickups: `.v-camo` blotches in the pickup SVG over the truck's own paint (color stays

@@ -9,7 +9,7 @@ import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } fro
 import { onTap } from './ui/tap.ts';
 import { animalFor, biffySpot } from './ui/gags.ts';
 import { BIFFY, HOTSHOT, LANDOWNER, MAGPIE, SPOTTER_SIT } from './ui/cast.ts';
-import { BEAR_RIG, MOOSE_RIG, WORKER_RIG } from './ui/rigs.ts';
+import { BEAR_RIG, GAUGE_RIG, GOOSE_RIG, GOPHER_HOLE, GOPHER_RIG, MOOSE_RIG, PUMPER_RIG, PUMPER_TRUCK, WORKER_RIG } from './ui/rigs.ts';
 import { LOG_ENTRIES, applyCamo, complete, loadLog, saveLog, type Sighting } from './ui/wildlife-log.ts';
 import type { ForcedGag } from './ui/gag-layer.ts';
 import { sceneryHtml } from './ui/scenery.ts';
@@ -33,6 +33,9 @@ const LOG_ART: Record<Sighting, string> = {
   bear: BEAR_RIG,
   moose: MOOSE_RIG,
   hotshot: HOTSHOT,
+  gopher: `<div class="stack">${GOPHER_RIG}${GOPHER_HOLE}</div>`,
+  geese: `<div class="vee">${GOOSE_RIG.repeat(3)}</div>`,
+  pumper: `<div class="pair">${PUMPER_TRUCK}${PUMPER_RIG}${GAUGE_RIG}</div>`,
 };
 
 /** The region's season, unless ?theme=… overrides it for previewing. */
@@ -229,10 +232,10 @@ function showSettings(screen: HTMLElement): void {
             (m) => `<button class="btn style-pick" role="radio" data-style="${m.id}" aria-checked="${audio.settings.style === m.id}">${m.name}</button>`,
           ).join('')}
         </div>
-        <label class="switch${complete(loadLog()) ? '' : ' locked'}">
-          <input type="checkbox" role="switch" data-act="camo" ${complete(loadLog()) ? '' : 'disabled'} ${complete(loadLog()) && loadLog().camo ? 'checked' : ''} />
+        <label class="switch${loadLog().camoEarned ? '' : ' locked'}">
+          <input type="checkbox" role="switch" data-act="camo" ${loadLog().camoEarned ? '' : 'disabled'} ${loadLog().camoEarned && loadLog().camo ? 'checked' : ''} />
           <span class="track" aria-hidden="true"><span class="knob"></span></span>
-          <span class="switch-label">Camo pickups${complete(loadLog()) ? '' : '<small>Find all 7 in the Wildlife Log</small>'}</span>
+          <span class="switch-label">Camo pickups${loadLog().camoEarned ? '' : `<small>Find all ${LOG_ENTRIES.length} in the Wildlife Log</small>`}</span>
         </label>
         <label class="switch">
           <input type="checkbox" role="switch" data-act="demo" ${loadProgress().demo ? 'checked' : ''} />
@@ -318,8 +321,10 @@ function showLog(regionIndex: number): void {
     list.append(li);
   }
   screen.querySelector('.log-reward')!.textContent = complete(log)
-    ? 'All 7 found! Camo pickups unlocked (switch them off in Settings).'
-    : `Find all ${LOG_ENTRIES.length} to unlock camo pickups.`;
+    ? `All ${LOG_ENTRIES.length} found! Camo pickups unlocked (switch them off in Settings).`
+    : log.camoEarned
+      ? `Camo pickups unlocked. ${LOG_ENTRIES.length - log.found.length} new sightings to find.`
+      : `Find all ${LOG_ENTRIES.length} to unlock camo pickups.`;
   onTap(screen.querySelector('.log-head')!, '.back', () => showLevels(regionIndex));
   app.replaceChildren(screen);
   // A tree line along the horizon under the title, as on the level list.
@@ -348,12 +353,13 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => void navigator.serviceWorker.register('./sw.js'));
 }
 /**
- * Test/preview links: ?gag=bear (Montney), ?gag=moose (Duvernay) or ?gag=biffy (a level with the
- * biffy below the board) opens that level and plays the scene straight away, over and over.
+ * Test/preview links: ?gag=bear (Montney), ?gag=moose (Duvernay), ?gag=gopher|geese|pumper (Cardium)
+ * or ?gag=biffy (a level with the biffy below the board) opens that level and plays the scene straight away, over and over.
  */
 function forcedGag(): boolean {
   const gag = new URLSearchParams(location.search).get('gag');
   if (gag === 'bear') showGame(REGIONS.findIndex((r) => r.id === 'montney'), 0, 'bear');
+  else if (gag === 'gopher' || gag === 'geese' || gag === 'pumper') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 0, gag);
   else if (gag === 'moose') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 0, 'moose');
   else if (gag === 'biffy') {
     for (const [ri, region] of REGIONS.entries()) {

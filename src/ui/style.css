@@ -2358,6 +2358,51 @@ input,
   width: 120px;
 }
 
+.log-card .art .stack {
+  display: grid;
+  justify-items: center;
+  height: 84px;
+}
+
+.log-card .art .stack svg:first-child {
+  height: 66px;
+  width: auto;
+}
+
+.log-card .art .stack svg:last-child {
+  width: 56px;
+  height: auto;
+  margin-top: -14px;
+}
+
+.log-card .art .vee {
+  position: relative;
+  width: 130px;
+  height: 84px;
+}
+
+.log-card .art .vee svg {
+  position: absolute;
+  width: 54px;
+  height: auto;
+}
+
+.log-card .art .vee svg:nth-child(1) { left: 70px; top: 20px; }
+.log-card .art .vee svg:nth-child(2) { left: 30px; top: 2px; }
+.log-card .art .vee svg:nth-child(3) { left: 30px; top: 44px; }
+
+.log-card .art-pumper .pair svg:first-child {
+  height: 40px;
+}
+
+.log-card .art-pumper .pair svg:nth-child(2) {
+  height: 56px;
+}
+
+.log-card .art-pumper .pair svg:nth-child(3) {
+  height: 34px;
+}
+
 .log-card h2 {
   margin: 0;
   font-size: 17px;

@@ -11,6 +11,7 @@ import { Rig } from './rig.ts';
 import { WORKER_RIG } from './rigs.ts';
 import { bearLayout, playBear, type BearLayout } from './bear-scene.ts';
 import { MOOSE_H, playMoose } from './moose-scene.ts';
+import { playGeese, playGopher, playPumper, type Strip } from './visitor-scenes.ts';
 import {
   biffySpot,
   cordFor,
@@ -23,6 +24,7 @@ import {
   touched,
   type Animal,
   type BiffySpot,
+  type Visitor,
   type Cord,
   type IdleState,
   type WildState,
@@ -68,7 +70,7 @@ export interface GagOptions {
   force?: ForcedGag | null;
 }
 
-export type ForcedGag = 'bear' | 'biffy' | 'moose';
+export type ForcedGag = 'bear' | 'biffy' | 'moose' | 'gopher' | 'geese' | 'pumper';
 
 /** Free space above and below the board, in px, for characters outside the fence. */
 export interface Bands {
@@ -679,10 +681,11 @@ export class GagLayer {
     const due = dueWildlife((now - this.levelStart) / this.opts.idleScale, (now - this.lastActivity) / this.opts.idleScale, this.wild, this.opts.animal);
     if (!due) return;
     if (due === 'animal') this.wild = { ...this.wild, animalDone: true };
-    else this.wild = { ...this.wild, hotshotDone: true };
+    else if (due === 'hotshot') this.wild = { ...this.wild, hotshotDone: true };
+    else this.wild = { ...this.wild, visitorDone: true };
     const ctl = new AbortController();
     this.wildGag = ctl;
-    const play = due === 'hotshot' ? this.hotshot(ctl.signal) : this.opts.animal === 'bear' ? this.bear(ctl.signal) : this.moose(ctl.signal);
+    const play = this.play(due === 'hotshot' ? 'hotshot' : due === 'visitor' ? this.wild.visitor : this.opts.animal!, ctl.signal);
     play
       .catch(() => {})
       .finally(() => {
@@ -697,6 +700,46 @@ export class GagLayer {
           void this.biffyGag();
         }
       });
+  }
+
+  /** Plays one of the outside scenes. */
+  private play(gag: Animal | Visitor | 'hotshot', signal: AbortSignal): Promise<void> {
+    if (gag === 'hotshot') return this.hotshot(signal);
+    if (gag === 'bear') return this.bear(signal);
+    if (gag === 'moose') return this.moose(signal);
+    if (gag === 'gopher') return this.gopher(signal);
+    if (gag === 'geese') return this.geese(signal);
+    return this.pumper(signal);
+  }
+
+  /** The bottom strip, with what already stands in it (biffy, bush), for the gopher and the pumper. */
+  private strip(): Strip {
+    const s = this.groundStrip();
+    const e = this.screenEdges();
+    const avoid = [this.biffyBelow(), this.bush && this.bearPlan ? { left: this.bearPlan.bushX, right: this.bearPlan.bushX + this.bearPlan.bushW } : null];
+    return { base: s.base, h: s.h, screenL: e.left, screenR: e.right, cell: this.host.cellPx, avoid: avoid.filter((a) => a !== null) };
+  }
+
+  /** Gopher (Cardium): pops out of a hole by the bottom fence, whistles, drops back down. */
+  private async gopher(signal: AbortSignal): Promise<void> {
+    await playGopher(this.sceneLayer('front'), this.strip(), signal);
+    this.onSeen('gopher');
+  }
+
+  /** Canada geese (any region): a V across the sky above the board, behind the HUD. */
+  private async geese(signal: AbortSignal): Promise<void> {
+    const board = this.host.el.getBoundingClientRect();
+    const e = this.screenEdges();
+    // From just under the top of the screen (board px are negative up there) to just above the fence.
+    const top = -board.top + Math.max(6, parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat')) || 6);
+    await playGeese(this.sceneLayer('back'), { top, bottom: -4, screenL: e.left, screenR: e.right, cell: this.host.cellPx }, signal);
+    this.onSeen('geese');
+  }
+
+  /** The pumper (any region): drives up outside the fence, checks a gauge, writes it down, drives off. */
+  private async pumper(signal: AbortSignal): Promise<void> {
+    await playPumper(this.sceneLayer('front'), this.strip(), signal);
+    this.onSeen('pumper');
   }
 
   /** The strip between the board and the buttons, in board px: top edge and the ground line. */
@@ -730,7 +773,7 @@ export class GagLayer {
       this.biffy.done = false;
       this.wildGag = null; // the biffy guards itself with biffyPlaying
       play = this.biffyGag();
-    } else play = gag === 'bear' ? this.bear(ctl.signal) : this.moose(ctl.signal);
+    } else play = this.play(gag, ctl.signal);
     play
       .catch(() => {})
       .finally(() => {

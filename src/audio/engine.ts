@@ -263,6 +263,11 @@ export const sound = {
   pop: () => audio.play('pop', fx.pop),
   swish: () => audio.play('swish', fx.swish),
   shakeOff: () => audio.play('shake', fx.shake),
+  whistle: (delay = 0) => audio.play('whistle', fx.whistle, delay),
+  honk: () => audio.play('honk', fx.honk),
+  carDoor: () => audio.play('car-door', fx.carDoor),
+  scribble: () => audio.play('scribble', fx.scribble),
+  putter: (seconds: number) => audio.play('putter', (c, o, t) => fx.putter(c, o, t, seconds)),
   /** The hot shot passing: `seconds` long, panned the way it drives. */
   hotshot: (seconds: number, leftToRight: boolean) => audio.play('hotshot', (c, o, t) => fx.hotshot(c, o, t, seconds, leftToRight)),
   cordSnap(): void {

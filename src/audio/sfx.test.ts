@@ -57,7 +57,7 @@ function fakeCtx() {
 describe('sound recipes', () => {
   it('every one-shot effect schedules some sound', () => {
     const recipes = Object.entries(fx).filter(
-      ([name, f]) => typeof f === 'function' && !['diesel', 'quad', 'unlockBlip', 'noiseBuffer', 'hornChord', 'clink', 'hotshot'].includes(name),
+      ([name, f]) => typeof f === 'function' && !['diesel', 'quad', 'unlockBlip', 'noiseBuffer', 'hornChord', 'clink', 'hotshot', 'putter'].includes(name),
     ) as [string, (c: BaseAudioContext, o: AudioNode, t: number) => void][];
     expect(recipes.length).toBeGreaterThan(15);
     for (const [name, play] of recipes) {
@@ -71,6 +71,7 @@ describe('sound recipes', () => {
     for (let i = 0; i < 3; i++) fx.clink(ctx, out, 0, i);
     fx.hotshot(ctx, out, 0, 0.8, true);
     fx.hotshot(ctx, out, 0, 0.6, false);
+    fx.putter(ctx, out, 0, 1.2);
   });
 
   it('held sounds start, follow their control and stop', () => {
