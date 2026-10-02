@@ -4,13 +4,13 @@ import { mulberry32 } from '../engine/rng.ts';
 import {
   MAGPIE_IDLE_MS,
   SPOTTER_IDLE_MS,
-  biffyColumn,
+  biffySpot,
   companyLine,
   cordFor,
   dueGag,
   freshIdle,
   magpieTarget,
-  nearBiffy,
+  reverseDirection,
   tierFor,
   touched,
 } from './gags.ts';
@@ -85,14 +85,22 @@ const level = parseLevel({
 });
 
 describe('biffy', () => {
-  it('stands by a bottom corner with no gate', () => {
-    expect(biffyColumn(level)).toBe(0); // col 5 has a gate
+  it('stands just outside the fence behind a truck tailgate that faces plain fence', () => {
+    // A's rear faces the left fence (row 2, no gate); B's rear faces the bottom fence (col 4, no
+    // gate). Below the board is preferred.
+    expect(biffySpot(level)).toEqual({ truckId: 'B', side: 'bottom', index: 4 });
   });
 
-  it('counts bumps from trucks touching the cells beside it', () => {
-    expect(nearBiffy([[5, 1], [5, 2]], 0)).toBe(true);
-    expect(nearBiffy([[2, 0], [2, 1]], 0)).toBe(false);
-    expect(nearBiffy([[4, 4], [5, 4]], 0)).toBe(false);
+  it('never stands where the fence behind the truck has a gate', () => {
+    const gated = { ...level, gates: [...level.gates, { color: 'green' as const, side: 'bottom' as const, index: 4 }] };
+    expect(biffySpot(gated)).toEqual({ truckId: 'A', side: 'left', index: 2 });
+    const allGated = { ...gated, gates: [...gated.gates, { color: 'green' as const, side: 'left' as const, index: 2 }] };
+    expect(biffySpot(allGated)).toBeNull();
+  });
+
+  it('knows which way each truck reverses', () => {
+    expect(reverseDirection(level, level.trucks[0])).toBe(-1); // gate on the right: backs up left
+    expect(reverseDirection(level, level.trucks[1])).toBe(1); // gate on top: backs up down
   });
 });
 

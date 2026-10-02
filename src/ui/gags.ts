@@ -47,21 +47,41 @@ export function companyLine(moves: number, par: number, random: () => number = M
   return line;
 }
 
+const opposite: Record<Side, Side> = { left: 'right', right: 'left', top: 'bottom', bottom: 'top' };
+
 // ---------- Biffy ----------
 
-/**
- * The biffy stands just outside the bottom fence, by a column with no gate there (a corner if it
- * can). Returns that column.
- */
-export function biffyColumn(level: Level): number {
-  const gated = new Set(level.gates.filter((g) => g.side === 'bottom').map((g) => g.index));
-  for (const col of [5, 0, 4, 1, 3, 2]) if (!gated.has(col)) return col;
-  return 5;
+export interface BiffySpot {
+  /** The truck whose tailgate the biffy stands behind. */
+  truckId: string;
+  /** Fence side behind that truck's rear, and the row/column there. */
+  side: Side;
+  index: number;
 }
 
-/** A bump counts as "next to the biffy" when the truck is touching the cells beside it. */
-export function nearBiffy(cells: readonly [number, number][], col: number): boolean {
-  return cells.some(([r, c]) => r >= SIZE - 2 && Math.abs(c - col) <= 1);
+/** Below the board has the most room, then above; the side gutters are tight on a phone. */
+const SIDE_PREFERENCE: Side[] = ['bottom', 'top', 'left', 'right'];
+
+/**
+ * Where the biffy goes this level: just outside the fence directly behind one truck's rear
+ * (tailgate end), where that fence has no gate. Null if every rear faces a gate.
+ */
+export function biffySpot(level: Level): BiffySpot | null {
+  const spots = level.trucks
+    .map((t) => {
+      const side = opposite[gateFor(level, t).side];
+      const index = t.orient === 'h' ? t.row : t.col;
+      return { truckId: t.id, side, index };
+    })
+    .filter((s) => !level.gates.some((g) => g.side === s.side && g.index === s.index));
+  spots.sort((a, b) => SIDE_PREFERENCE.indexOf(a.side) - SIDE_PREFERENCE.indexOf(b.side));
+  return spots[0] ?? null;
+}
+
+/** +1 or -1: the direction (along its lane) a truck backs up in, away from its gate. */
+export function reverseDirection(level: Level, t: Truck): 1 | -1 {
+  const side = gateFor(level, t).side;
+  return side === 'right' || side === 'bottom' ? -1 : 1;
 }
 
 // ---------- Block heater cords (Duvernay) ----------
@@ -75,8 +95,6 @@ export interface Cord {
   from: { x: number; y: number };
   to: { x: number; y: number };
 }
-
-const opposite: Record<Side, Side> = { left: 'right', right: 'left', top: 'bottom', bottom: 'top' };
 
 /** Where a truck's block heater cord runs: from a post in the fence behind it to its rear. */
 export function cordFor(level: Level, t: Truck): Cord {
