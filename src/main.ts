@@ -8,6 +8,9 @@ import { hardHats, loadProgress, resetProgress, saveProgress } from './ui/progre
 import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } from './ui/unlocks.ts';
 import { onTap } from './ui/tap.ts';
 import { animalFor, biffySpot } from './ui/gags.ts';
+import { BIFFY, HOTSHOT, LANDOWNER, MAGPIE, SPOTTER_SIT } from './ui/cast.ts';
+import { BEAR_RIG, MOOSE_RIG, WORKER_RIG } from './ui/rigs.ts';
+import { LOG_ENTRIES, applyCamo, complete, loadLog, saveLog, type Sighting } from './ui/wildlife-log.ts';
 import type { ForcedGag } from './ui/gag-layer.ts';
 import { sceneryHtml } from './ui/scenery.ts';
 import { THEMES, applyTheme, themeOverride } from './ui/themes.ts';
@@ -16,6 +19,21 @@ import { MUSIC_STYLES, type MusicStyle } from './audio/settings.ts';
 
 // Sound starts on the first tap anywhere (iOS won't play audio before a gesture).
 audio.install();
+// Camo pickups, if the Wildlife Log is complete (and they're switched on).
+applyCamo();
+
+const BINOCULARS = `<svg viewBox="0 0 28 24" aria-hidden="true"><path d="M5 6 Q6 2 10 2 L11 9 M23 6 Q22 2 18 2 L17 9" fill="none" stroke-width="2.6"/><rect x="11" y="7" width="6" height="6" rx="2"/><circle cx="7.5" cy="15" r="6.5"/><circle cx="20.5" cy="15" r="6.5"/><circle class="lens" cx="7.5" cy="15" r="3.4"/><circle class="lens" cx="20.5" cy="15" r="3.4"/></svg>`;
+
+/** Card art for each Wildlife Log entry (found: in color; not yet: a dark silhouette). */
+const LOG_ART: Record<Sighting, string> = {
+  magpie: MAGPIE,
+  spotter: SPOTTER_SIT,
+  biffy: `<div class="pair">${BIFFY}${WORKER_RIG}</div>`,
+  landowner: LANDOWNER,
+  bear: BEAR_RIG,
+  moose: MOOSE_RIG,
+  hotshot: HOTSHOT,
+};
 
 /** The region's season, unless ?theme=… overrides it for previewing. */
 const themeFor = (regionIndex: number) => THEMES[themeOverride(location.search) ?? REGIONS[regionIndex].theme];
@@ -60,6 +78,7 @@ function showLevels(requested = savedRegion()): void {
   screen.innerHTML = `
     <div class="scenery" aria-hidden="true"></div>
     <header class="brand">
+      <button class="binoculars" aria-label="Wildlife Log">${BINOCULARS}</button>
       <button class="gear" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 2h3.4l.5 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.7c.1.6.1 1.2 0 1.8l2 1.7-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.5 2.6h-3.4l-.5-2.6c-.6-.2-1.2-.5-1.7-.9l-2.5.9-1.7-2.9 2-1.7c-.1-.6-.1-1.2 0-1.8l-2-1.7 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9z"/><circle cx="12" cy="10.8" r="3"/></svg></button>
       <h1>Rush Hour Rigs</h1>
       <p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>
@@ -111,6 +130,7 @@ function showLevels(requested = savedRegion()): void {
     </button>`;
   block.querySelector('.daily-btn')!.addEventListener('click', () => showDaily());
   onTap(screen.querySelector('.brand')!, '.gear', () => showSettings(screen));
+  onTap(screen.querySelector('.brand')!, '.binoculars', () => showLog(regionIndex));
 
   const list = screen.querySelector('.level-list')!;
   region.levels.forEach((level, i) => {
@@ -209,6 +229,11 @@ function showSettings(screen: HTMLElement): void {
             (m) => `<button class="btn style-pick" role="radio" data-style="${m.id}" aria-checked="${audio.settings.style === m.id}">${m.name}</button>`,
           ).join('')}
         </div>
+        <label class="switch${complete(loadLog()) ? '' : ' locked'}">
+          <input type="checkbox" role="switch" data-act="camo" ${complete(loadLog()) ? '' : 'disabled'} ${complete(loadLog()) && loadLog().camo ? 'checked' : ''} />
+          <span class="track" aria-hidden="true"><span class="knob"></span></span>
+          <span class="switch-label">Camo pickups${complete(loadLog()) ? '' : '<small>Find all 7 in the Wildlife Log</small>'}</span>
+        </label>
         <label class="switch">
           <input type="checkbox" role="switch" data-act="demo" ${loadProgress().demo ? 'checked' : ''} />
           <span class="track" aria-hidden="true"><span class="knob"></span></span>
@@ -235,8 +260,14 @@ function showSettings(screen: HTMLElement): void {
     }
     if (act === 'wipe') {
       resetProgress();
+      applyCamo(); // the Wildlife Log went with it
       showLevels(0); // a brand-new player
     }
+  });
+  panel.querySelector<HTMLInputElement>('[data-act="camo"]')!.addEventListener('change', (e) => {
+    const log = { ...loadLog(), camo: (e.target as HTMLInputElement).checked };
+    saveLog(log);
+    applyCamo(log);
   });
   // Demo mode only flips a flag: scores, hard hats and streak stay exactly as they are.
   panel.querySelector<HTMLInputElement>('[data-act="demo"]')!.addEventListener('change', (e) => {
@@ -256,6 +287,46 @@ function showSettings(screen: HTMLElement): void {
     panel.querySelectorAll('.style-pick').forEach((b) => b.setAttribute('aria-checked', String(b === btn)));
   });
   screen.append(panel);
+}
+
+/** The Wildlife Log: a card per gag. Found ones show the character and a caption; the rest a silhouette and a hint. */
+function showLog(regionIndex: number): void {
+  game = null;
+  sound.quiet();
+  const log = loadLog();
+  const screen = document.createElement('div');
+  screen.className = 'screen log';
+  applyTheme(screen, themeFor(regionIndex));
+  screen.innerHTML = `
+    <div class="scenery" aria-hidden="true"></div>
+    <header class="log-head">
+      <button class="link back">‹ Levels</button>
+      <h1>Wildlife Log</h1>
+      <span class="log-count" aria-label="${log.found.length} of ${LOG_ENTRIES.length} found">${log.found.length}/${LOG_ENTRIES.length}</span>
+    </header>
+    <ul class="log-cards"></ul>
+    <p class="log-reward"></p>`;
+  const list = screen.querySelector('.log-cards')!;
+  for (const e of LOG_ENTRIES) {
+    const found = log.found.includes(e.id);
+    const li = document.createElement('li');
+    li.className = `log-card ${found ? 'found' : 'unfound'}`;
+    li.dataset.id = e.id;
+    li.innerHTML = `<div class="art art-${e.id}" aria-hidden="true">${LOG_ART[e.id]}</div><h2></h2><p></p>`;
+    li.querySelector('h2')!.textContent = found ? e.name : '???';
+    li.querySelector('p')!.textContent = found ? e.caption : e.hint;
+    list.append(li);
+  }
+  screen.querySelector('.log-reward')!.textContent = complete(log)
+    ? 'All 7 found! Camo pickups unlocked (switch them off in Settings).'
+    : `Find all ${LOG_ENTRIES.length} to unlock camo pickups.`;
+  onTap(screen.querySelector('.log-head')!, '.back', () => showLevels(regionIndex));
+  app.replaceChildren(screen);
+  // A tree line along the horizon under the title, as on the level list.
+  const rect = screen.getBoundingClientRect();
+  const horizon = screen.querySelector('.log-head')!.getBoundingClientRect().bottom - rect.top + 8;
+  screen.style.setProperty('--horizon', `${Math.round(horizon)}px`);
+  screen.querySelector('.scenery')!.innerHTML = sceneryHtml(themeFor(regionIndex), rect.width, horizon + 40, { x: 0, y: horizon, width: rect.width, height: 0 }, false, 64);
 }
 
 /** Today's Daily Pad, picked by the phone's local date. */

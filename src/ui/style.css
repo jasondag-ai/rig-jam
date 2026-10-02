@@ -73,6 +73,9 @@ input,
 /* Bold rounded lettering with a dark outline, for titles and buttons. */
 .outlined,
 .brand h1,
+.log-head h1,
+.log-head .link,
+.log-count,
 .hud .name,
 .hud .num,
 .hud .moves,
@@ -1344,9 +1347,42 @@ input,
   transform: translateY(2px);
 }
 
-/* Keep the title clear of the gear. */
+/* The Wildlife Log button sits beside the gear: same chunky round button. */
+.binoculars {
+  position: absolute;
+  top: 8px;
+  right: 56px;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 3px solid var(--outline);
+  border-radius: 50%;
+  background: var(--cream);
+  box-shadow: inset 0 -4px 0 var(--cream-dark), 0 3px 0 var(--outline);
+}
+
+.binoculars svg {
+  width: 28px;
+  height: 24px;
+  fill: #3d6b4a;
+  stroke: var(--outline);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.binoculars svg .lens {
+  fill: #9fd3ea;
+}
+
+.binoculars:active {
+  transform: translateY(2px);
+}
+
+/* Keep the title clear of the gear and binoculars. */
 .brand h1 {
-  padding-right: 52px;
+  padding-right: 108px;
 }
 
 .settings .step {
@@ -2174,3 +2210,219 @@ input,
 @keyframes hs-flash {
   50% { fill: #fff3b0; }
 }
+
+/* ---------- Toasts (toast.ts): a small notice at the very top, never over the board ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  top: max(8px, env(safe-area-inset-top));
+  z-index: 40;
+  display: grid;
+  justify-items: center;
+  max-width: calc(100vw - 32px);
+  padding: 6px 16px 7px;
+  border: 3px solid var(--outline);
+  border-radius: 14px;
+  background: var(--cream);
+  box-shadow: 0 4px 0 var(--outline);
+  transform: translateX(-50%);
+  animation: toast var(--toast-ms, 2000ms) ease-out forwards;
+  pointer-events: none;
+}
+
+.toast .t-main {
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.toast.big {
+  padding: 8px 22px 10px;
+  background: repeating-linear-gradient(-45deg, #6f7f3a 0 12px, #5a6a2e 12px 24px, #8a7a48 24px 36px);
+}
+
+.toast.big .t-main {
+  font-size: 20px;
+  color: #fff;
+  text-shadow: -2px -2px 0 var(--outline), 2px -2px 0 var(--outline), -2px 2px 0 var(--outline), 2px 2px 0 var(--outline), 0 3px 0 var(--outline);
+}
+
+.toast .t-sub {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffe9a8;
+  text-shadow: 0 1px 0 var(--outline);
+}
+
+@keyframes toast {
+  0% { transform: translate(-50%, -24px) scale(0.85); opacity: 0; }
+  10% { transform: translate(-50%, 3px) scale(1.04); opacity: 1; }
+  16%, 85% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -8px) scale(1); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+}
+
+/* ---------- Wildlife Log page ---------- */
+
+.log {
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+.log-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.log-head .link {
+  margin-left: -10px;
+  font-size: 17px;
+}
+
+.log-head h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.log-count {
+  min-width: 48px;
+  text-align: right;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.log-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.log-card {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 4px;
+  padding: 10px 8px 12px;
+  border: 3px solid var(--outline);
+  border-radius: 16px;
+  background: var(--cream);
+  box-shadow: inset 0 -4px 0 var(--cream-dark), 0 4px 0 var(--outline);
+  text-align: center;
+}
+
+.log-card .art {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 84px;
+}
+
+.log-card .art svg {
+  max-width: 100%;
+  max-height: 84px;
+  overflow: visible;
+}
+
+.log-card .art .pair {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  height: 84px;
+}
+
+.log-card .art .pair svg:first-child {
+  height: 72px;
+  width: auto;
+}
+
+.log-card .art .pair svg:last-child {
+  height: 62px;
+  width: auto;
+}
+
+.log-card .art-hotshot svg {
+  width: 120px;
+}
+
+.log-card h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.log-card p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+/* Not seen yet: a dark silhouette, and the hint in italics. */
+.log-card.unfound .art {
+  filter: brightness(0) opacity(0.55);
+}
+
+.log-card.unfound {
+  background: #d9d2c3;
+}
+
+.log-card.unfound p {
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.log-reward {
+  margin: 18px 4px 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--ink);
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Settings: a switch that isn't earned yet. */
+.switch.locked {
+  opacity: 0.6;
+}
+
+.switch-label small {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ---------- Camo pickups (Wildlife Log reward): blotches over the paint; color still reads ---------- */
+
+.v-camo {
+  display: none;
+}
+
+body.camo-pickups .truck[data-kind='pickup'] .v-camo {
+  display: inline;
+}
+
+.v-camo path {
+  stroke: none;
+}
+
+.v-camo .cm-dk { fill: rgba(30, 40, 14, 0.66); }
+.v-camo .cm-lt { fill: rgba(226, 212, 150, 0.6); }
+.v-camo .cm-br { fill: rgba(96, 62, 26, 0.6); }
