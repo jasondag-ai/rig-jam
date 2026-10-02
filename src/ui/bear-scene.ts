@@ -13,7 +13,7 @@ import { BEAR_RIG, RABBIT_RIG } from './rigs.ts';
 
 /** Bear art: feet centre, sitting height, rump (left edge sitting) and reach (right edge reaching), in art units. */
 const BEAR_FEET = { x: 100, y: 191 }; // bottom of his paws, outline included
-const BEAR_SIT_H = 145;
+const BEAR_SIT_H = 191; // sitting, ear tips to paws (measured)
 const BEAR_RUMP = 26;
 const BEAR_REACH = 236;
 /** His own right edge sitting (head and paw), without the rabbit's patch in front of him. */
@@ -38,9 +38,14 @@ export interface BearLayout {
 }
 
 /**
+ * How big the scene is next to the original bear (who filled the strip). A touch smaller, so even
+ * his satisfied hop stays inside the strip: a background gag, never over the board or the buttons.
+ */
+export const BEAR_SCALE = 0.9;
+
+/**
  * Sizes and places the scene along the bottom strip: bush, then the bear sitting with his rump
- * against it, then room for the rabbit, kept clear of a biffy below the board. About 70% bigger than
- * the old bear (which filled the strip), so he rises over the bottom fence while he sits.
+ * against it, then room for the rabbit, kept clear of a biffy below the board.
  */
 export function bearLayout(o: {
   screenL: number;
@@ -49,14 +54,14 @@ export function bearLayout(o: {
   stripH: number;
   biffy: { left: number; right: number } | null;
 }): BearLayout {
-  const old = Math.max(o.cell * 0.9, Math.min(o.cell * 2, o.stripH)) * 0.95;
+  const old = Math.min(o.cell * 2, o.stripH) * 0.95; // the original bear filled the strip
   const hi = o.screenR - 6;
   // Biggest first; if the biffy leaves too little room, a smaller bear; then let only the rabbit's
   // patch cross in front of the biffy; last resort, ignore it.
   const tries: [number, number][] = [1, 0.85, 0.72].map((f) => [f, BEAR_REACH] as [number, number]);
   tries.push([0.85, BEAR_BODY_R], [0.72, BEAR_BODY_R], [0.6, BEAR_BODY_R], [0, 0]);
   for (const [f, reach] of tries) {
-    const sitH = old * 1.7 * (f || 0.72);
+    const sitH = old * BEAR_SCALE * (f || 0.72);
     const k = sitH / BEAR_SIT_H;
     const bushH = Math.max(18, Math.min(sitH * 0.5, o.stripH - 4));
     const bushW = bushH * BUSH_RATIO;
@@ -65,7 +70,7 @@ export function bearLayout(o: {
     const lo = o.screenL - bushW * 0.5;
     const left = f ? fitSpan(lo, hi, span, o.biffy) : lo;
     if (left === null) continue;
-    return { k, kr: (sitH * 0.46) / RABBIT_H, bushX: left, bushW, bushH, sitX: left + bushW * 0.7 + (BEAR_FEET.x - BEAR_RUMP) * k };
+    return { k, kr: (sitH * 0.35) / RABBIT_H, bushX: left, bushW, bushH, sitX: left + bushW * 0.7 + (BEAR_FEET.x - BEAR_RUMP) * k };
   }
   throw new Error('unreachable');
 }

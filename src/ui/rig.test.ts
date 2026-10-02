@@ -45,10 +45,13 @@ describe('puppet rigs', () => {
 
 describe('bear scene layout', () => {
   const phone = { screenL: -16, screenR: 374, cell: 52, stripH: 99 };
-  it('the bear is about 70% bigger than the old one (which filled the strip)', () => {
+  it('the bear is back to the original size, a touch smaller: even his hop stays in the strip', () => {
     const L = bearLayout({ ...phone, biffy: null });
     const oldSitting = Math.min(52 * 2, 99) * 0.95;
-    expect((145 * L.k) / oldSitting).toBeCloseTo(1.7, 1);
+    expect((191 * L.k) / oldSitting).toBeCloseTo(0.9, 2);
+    // Tallest moment: sitting, ear tips to paws, 191 art units (standing mid-hop is less).
+    expect(191 * L.k).toBeLessThanOrEqual(99);
+    expect(141 * 1.08 * L.k).toBeLessThanOrEqual(191 * L.k);
   });
 
   it('bush, bear and rabbit fit on screen and clear of a biffy below the board', () => {
