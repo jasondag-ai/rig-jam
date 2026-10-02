@@ -110,7 +110,7 @@ input,
   overflow: hidden;
 }
 
-.screen > *:not(.scenery):not(.overlay) {
+.screen > *:not(.scenery):not(.overlay):not(.scene-layer) {
   position: relative;
   z-index: 1;
 }
@@ -2052,56 +2052,13 @@ input,
   100% { opacity: 0; transform: translate(8px, -14px) scale(1.1); }
 }
 
-/* Biffy worker: bent over, shuffling off, hauling his coveralls up */
+/* Biffy worker (a puppet rig, animated by GSAP in gag-layer.ts): flipped to face left when he goes left. */
 .worker-bent {
   z-index: 7;
 }
 
 .worker-bent.facing-left svg {
   transform: scaleX(-1);
-}
-
-.worker-bent.shuffling svg {
-  animation: shuffle 110ms ease-in-out infinite alternate;
-}
-
-.worker-bent.facing-left.shuffling svg {
-  animation-name: shuffle-left;
-}
-
-.worker-bent .wb-arms {
-  transform-box: view-box;
-  transform-origin: 42px 17px;
-  animation: haul 260ms ease-in-out infinite alternate;
-}
-
-/* Tiny, quick shuffle steps: the feet scoot back and forth under the bunched coveralls. */
-.worker-bent.shuffling .wb-foot-front {
-  animation: scoot 110ms ease-in-out infinite alternate;
-}
-
-.worker-bent.shuffling .wb-foot-back {
-  animation: scoot 110ms ease-in-out infinite alternate-reverse;
-}
-
-@keyframes scoot {
-  from { transform: translateX(-2.5px); }
-  to { transform: translateX(2.5px); }
-}
-
-@keyframes shuffle {
-  from { transform: translateY(0); }
-  to { transform: translateY(-2%); }
-}
-
-@keyframes shuffle-left {
-  from { transform: scaleX(-1) translateY(0); }
-  to { transform: scaleX(-1) translateY(-2%); }
-}
-
-@keyframes haul {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(-9deg); }
 }
 
 /* Reduced motion: the Zzz stay put and readable. */
@@ -2138,10 +2095,6 @@ input,
   z-index: 8;
 }
 
-.wild.bush {
-  z-index: 7;
-}
-
 .screen.game .note {
   transition: opacity 0.25s;
 }
@@ -2164,123 +2117,44 @@ input,
   box-shadow: inset -2px -3px 0 rgba(0, 0, 0, 0.08);
 }
 
-/* Bear: walk or squat pose; while squatting his arm is out front, or round the back to wipe. */
-.bear .pose,
-.bear .bs-arm-back,
-.bear .bs-sweat {
-  display: none;
+/* Big animated scenes live on layers outside the board (gag-layer.ts sceneLayer), stacked:
+   scenery, moose (back, z 0), then the HUD, board and controls (z 1), then the bear (front). */
+.scene-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
 }
 
-.bear.walking .pose.walk,
-.bear.squatting .pose.squat,
-.bear.wiping .bs-arm-back,
-.bear.straining .bs-sweat {
-  display: inline;
+.scene-back {
+  z-index: 0;
 }
 
-.bear.wiping .bs-arm-front {
-  display: none;
+.scene-front {
+  z-index: 4;
 }
 
-.bear .bw-leg,
-.moose .mw-leg {
-  transform-box: fill-box;
-  transform-origin: 50% 0;
+/* Bear scene (bear-scene.ts): one stage for the bear and rabbit rigs, over the bottom fence. */
+.bear-stage {
+  z-index: 9;
 }
 
-.bear.walking .bw-leg-a {
-  animation: leg-swing 280ms ease-in-out infinite alternate;
+/* No filter on the big stage (too costly to redraw every frame on a phone): ground shadows instead. */
+.bear-stage svg {
+  filter: none;
 }
 
-.bear.walking .bw-leg-b {
-  animation: leg-swing 280ms ease-in-out infinite alternate-reverse;
+/* The Montney bush stands at the bottom from the start of the level, behind the bear. */
+.gag.bush {
+  z-index: 5;
 }
 
-.bear.running .bw-leg-a,
-.bear.running .bw-leg-b {
-  animation-duration: 120ms;
-}
-
-@keyframes leg-swing {
-  from { transform: rotate(-16deg); }
-  to { transform: rotate(16deg); }
-}
-
-/* Straining: a trembling squat and sweat drops. */
-.bear.straining .pose.squat {
-  animation: strain 70ms linear infinite alternate;
-}
-
-@keyframes strain {
-  from { transform: translate(-0.8px, 0.5px); }
-  to { transform: translate(0.8px, -0.5px); }
-}
-
-.bear.straining .bs-sweat {
-  animation: sweat 600ms ease-in infinite;
-}
-
-@keyframes sweat {
-  from { transform: translateY(-2px); opacity: 1; }
-  to { transform: translateY(6px); opacity: 0.2; }
-}
-
-/* Rabbit: shocked eyes when grabbed, ears flat back as he bolts. */
-.rabbit .rb-eye-big {
-  display: none;
-}
-
-.rabbit.shock .rb-eye-big {
-  display: inline;
-}
-
-.rabbit.shock .rb-eye {
-  display: none;
-}
-
-.rabbit .rb-ears {
-  transform-box: view-box;
-  transform-origin: 16px 14px;
-  transition: transform 120ms ease-out;
-}
-
-.rabbit.flat .rb-ears {
-  transform: rotate(70deg);
-}
-
-/* Moose: slow plodding legs; the front-on head shows while he stares. */
-.moose.walking .mw-leg-a {
-  animation: leg-swing 620ms ease-in-out infinite alternate;
-}
-
-.moose.walking .mw-leg-b {
-  animation: leg-swing 620ms ease-in-out infinite alternate-reverse;
-}
-
-.moose .mh-front {
-  display: none;
-}
-
-.moose.staring .mh-front {
-  display: inline;
-}
-
-.moose.staring .mh-side {
-  display: none;
-}
-
-.moose.staring .mh-eyes {
-  animation: blink 2000ms steps(1) 1;
-}
-
-@keyframes blink {
-  0%, 48%, 56%, 100% { transform: none; }
-  50% { transform: scaleY(0.1); }
-}
-
-.moose .mh-eyes {
-  transform-box: fill-box;
-  transform-origin: 50% 50%;
+/* Moose (moose-scene.ts): a window clipped just inside the top fence, so he's hidden below it. */
+.moose-peek {
+  overflow: hidden;
+  z-index: 9;
 }
 
 /* Hot shot: amber light flashing; the lettering stays readable when he drives right to left. */

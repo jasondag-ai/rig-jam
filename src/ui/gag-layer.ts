@@ -5,15 +5,18 @@
 // Reduced motion: still frames only.
 import { sound } from '../audio/engine.ts';
 import { SIZE, type GameState, type Level, type Side } from '../engine/index.ts';
-import { BIFFY, BUSH, DROPPING, HOTSHOT, LANDOWNER, MAGPIE, MOOSE_SVG, PLUG_POST, SPOTTER_SIT, SPOTTER_WALK, WORKER_BENT } from './cast.ts';
+import { gsap } from 'gsap';
+import { BIFFY, BUSH, DROPPING, HOTSHOT, LANDOWNER, MAGPIE, PLUG_POST, SPOTTER_SIT, SPOTTER_WALK } from './cast.ts';
+import { Rig } from './rig.ts';
+import { WORKER_RIG } from './rigs.ts';
 import { bearLayout, playBear, type BearLayout } from './bear-scene.ts';
+import { MOOSE_EYES, MOOSE_H, playMoose } from './moose-scene.ts';
 import {
   biffySpot,
   cordFor,
   dueGag,
   dueWildlife,
   planWildlife,
-  fitSpan,
   freshIdle,
   magpieTarget,
   reverseDirection,
@@ -431,9 +434,11 @@ export class GagLayer {
     el.classList.add('open');
     sound.doorBang();
     const r = { left: parseFloat(el.style.left), top: parseFloat(el.style.top), w: parseFloat(el.style.width), h: parseFloat(el.style.height) };
-    const ww = r.h;
-    const wh = r.h * 0.88;
-    const guy = this.figure('gag worker-bent', WORKER_BENT, ww, wh);
+    const wh = r.h * 1.4;
+    const ww = (wh * 92) / 84;
+    const guy = this.figure('gag worker-bent', WORKER_RIG, ww, wh);
+    const rig = new Rig(guy);
+    const shuffle = this.shuffle(guy, rig);
     const start = { x: r.left + r.w / 2 - ww / 2, y: r.top + r.h - wh };
     // He shuffles off whichever screen edge is nearer.
     const board = this.host.el.getBoundingClientRect();
@@ -448,19 +453,58 @@ export class GagLayer {
         sound.feet(true);
         await sleep(2200);
       } else {
-        await this.animate(guy, [{ transform: at(start.x, start.y), opacity: 0 }, { transform: at(start.x, outY), opacity: 1 }], 280, 'ease-out');
-        guy.classList.add('shuffling');
+        // Out of the door with a little hop (squash, stretch, land), then tiny quick steps off screen.
+        const hopOut = gsap.timeline();
+        hopOut.to(rig.get('root'), { sy: 0.88, sx: 1.08, duration: 0.08, ease: 'power2.out' });
+        hopOut.to(rig.get('root'), { sy: 1.08, sx: 0.95, duration: 0.12, ease: 'power2.out' });
+        hopOut.to(rig.get('root'), { sy: 1, sx: 1, duration: 0.25, ease: 'back.out(3)' });
+        await this.animate(guy, [{ transform: at(start.x, start.y), opacity: 0 }, { transform: at(start.x, outY - r.h * 0.06), opacity: 1, offset: 0.6 }, { transform: at(start.x, outY), opacity: 1 }], 320, 'ease-out');
+        shuffle.play();
         sound.feet(true);
-        await this.animate(guy, [{ transform: at(start.x, outY) }, { transform: at(offX, outY) }], 3000, 'linear');
+        await this.animate(guy, [{ transform: at(start.x, outY) }, { transform: at(offX, outY) }], 3200, 'linear');
       }
     } catch {
       // Stage cleared.
     } finally {
       sound.feet(false);
+      shuffle.kill();
+      rig.destroy();
       guy.remove();
       el.classList.remove('open');
       this.biffyPlaying = false;
     }
+  }
+
+  /**
+   * The worker's shuffle: tiny quick alternating steps (his coveralls hobble him), a bob on every
+   * step, a little sway, and the toilet paper streamer fluttering out behind. Paused until played.
+   */
+  private shuffle(guy: HTMLElement, rig: Rig): gsap.core.Timeline {
+    const step = 0.12;
+    const tl = gsap.timeline({ repeat: -1, paused: true });
+    for (const [n, a] of [
+      ['legN', 1],
+      ['legF', -1],
+    ] as const) {
+      tl.to(rig.get(n), { rot: -10 * a, duration: step, ease: 'sine.inOut' }, 0);
+      tl.to(rig.get(n), { rot: 10 * a, duration: step, ease: 'sine.inOut' }, step);
+    }
+    tl.to(rig.get('root'), { y: -1.6, duration: step / 2, repeat: 3, yoyo: true, ease: 'sine.out' }, 0);
+    tl.to(rig.get('upper'), { rot: 3, duration: step, repeat: 1, yoyo: true, ease: 'sine.inOut' }, 0);
+    tl.to(rig.get('head'), { rot: -4, duration: step, repeat: 1, yoyo: true, ease: 'sine.inOut' }, step * 0.3);
+    // Streamer: a wave travelling along it, wider towards the loose end.
+    const tp = guy.querySelectorAll<SVGPathElement>('.tp, .tp-edge');
+    const flutter = () => {
+      const t = performance.now() / 1000;
+      const pts = Array.from({ length: 7 }, (_, i) => [45 - i * 11, 47 + i * 1.2 + Math.sin(t * 13 - i * 0.9) * i * 0.9]);
+      let d = `M${pts[0][0]} ${pts[0][1]}`;
+      for (let i = 1; i < pts.length - 1; i++) d += ` Q${pts[i][0]} ${pts[i][1]} ${(pts[i][0] + pts[i + 1][0]) / 2} ${(pts[i][1] + pts[i + 1][1]) / 2}`;
+      d += ` L${pts.at(-1)![0]} ${pts.at(-1)![1]}`;
+      tp.forEach((p) => p.setAttribute('d', d));
+    };
+    tl.eventCallback('onUpdate', flutter);
+    flutter();
+    return tl;
   }
 
   // ---------- Block heater cords ----------
@@ -686,6 +730,26 @@ export class GagLayer {
     this.forceAt = Infinity;
   }
 
+  /**
+   * A layer on the game screen lined up with the board, for the big animated scenes. They live
+   * outside the board (its drop-shadow filter would make the phone redraw it every frame):
+   * 'back' sits behind the HUD and the board (the moose, peeking over the fence), 'front' over
+   * the board (the bear). Positions inside are in board px, like everything else here.
+   */
+  private sceneLayer(z: 'front' | 'back'): HTMLElement {
+    const screen = this.host.el.closest<HTMLElement>('.screen') ?? this.host.el.parentElement!;
+    let layer = screen.querySelector<HTMLElement>(`:scope > .scene-${z}`);
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.className = `scene-layer scene-${z}`;
+      screen.append(layer);
+    }
+    const b = this.host.el.getBoundingClientRect();
+    const s = screen.getBoundingClientRect();
+    layer.style.transform = `translate(${b.left - s.left}px, ${b.top - s.top}px)`;
+    return layer;
+  }
+
   /** Where the Montney bush stands (and so where the bear will squat), worked out from the screen. */
   private placeBush(el: HTMLElement): void {
     const strip = this.groundStrip();
@@ -699,40 +763,18 @@ export class GagLayer {
   private async bear(signal: AbortSignal): Promise<void> {
     if (!this.bush || !this.bearPlan) return;
     const edges = this.screenEdges();
-    await playBear(this.host.el, this.bearPlan, { ground: this.groundStrip().base, screenL: edges.left, screenR: edges.right }, signal);
+    await playBear(this.sceneLayer('front'), this.bearPlan, { ground: this.groundStrip().base, screenL: edges.left, screenR: edges.right }, signal);
   }
 
-  /** Moose (Duvernay): plods along the bottom, stops, turns his head and stares at you, plods off. */
+  /** Moose (Duvernay): peeks in over the top fence, chews, stares at you, pulls back (moose-scene.ts). */
   private async moose(signal: AbortSignal): Promise<void> {
-    const { cellPx: cell } = this.host;
-    const strip = this.groundStrip();
-    const size = cell * SIZE + this.host.fencePx * 2;
-    // The antlers reach a little above the drawing's box: keep them clear of the fence.
-    const h = Math.max(cell * 1.1, Math.min(cell * 2.4, strip.h * 0.94));
-    const w = (h * 140) / 120;
-    const edges = this.screenEdges();
-    const stopX = fitSpan(size * 0.06, size * 0.94, w, this.biffyBelow()) ?? size / 2 - w / 2;
-    const y = strip.base - h;
-    const at = (x: number) => `translate(${x}px, ${y}px)`;
-    const moose = this.figure('gag wild moose walking', MOOSE_SVG, w, h);
-    moose.style.transform = at(edges.left - w);
-    signal.addEventListener('abort', () => moose.remove(), { once: true });
-    try {
-      await this.animate(moose, [{ transform: at(edges.left - w) }, { transform: at(stopX) }], 3400, 'cubic-bezier(0.3, 0.1, 0.6, 1)', signal);
-      moose.style.transform = at(stopX);
-      moose.classList.remove('walking');
-      await sleep(350, signal);
-      // Slowly turns his head... and stares right at you.
-      moose.classList.add('staring');
-      sound.mooseGroan();
-      await sleep(2000, signal);
-      moose.classList.remove('staring');
-      await sleep(300, signal);
-      moose.classList.add('walking');
-      await this.animate(moose, [{ transform: at(stopX) }, { transform: at(edges.right + w * 0.2) }], 3400, 'cubic-bezier(0.4, 0, 0.7, 0.9)', signal);
-    } finally {
-      moose.remove();
-    }
+    const { cellPx: cell, fencePx: fence } = this.host;
+    const size = cell * SIZE + fence * 2;
+    // He stands behind the HUD and the board: antlers up behind the title, eyes and chewing muzzle in
+    // the gap between, chin and shoulders hidden behind the fence. Sized so his eyes clear the HUD.
+    const clipY = fence * 0.5;
+    const h = MOOSE_H * Math.max(0.5, Math.min((cell * 2.2) / MOOSE_H, (this.bands.above + clipY - 10) / MOOSE_EYES));
+    await playMoose(this.sceneLayer('back'), { cx: size * 0.5, clipY, h }, signal);
   }
 
   /** Hot shot (every region): a pickup screams across the bottom in a cloud of dust, mud or snow. Under a second. */

@@ -130,3 +130,102 @@ export const RABBIT_RIG = `
   </g>
 </g>
 </svg>`;
+
+const SKIN = '#f0c49c';
+const SKIN_DK = '#d9a77c';
+const NAVY = '#1f3c6e';
+const SHIRT = '#e9e4da';
+
+/**
+ * The biffy worker, strict side profile facing right, feet on y = 78. One connected body: shirt
+ * down over his hips, a round bare cheek at the back, bare thighs into the coveralls bunched round
+ * his knees, shins and boots. One hand holds a toilet roll; `.tp` is the streamer trailing behind
+ * (the scene redraws it as it flutters). Joints: root (bob, pivot at his feet), legF and legN
+ * (pivot at the hip), upper (torso sway), head, arm.
+ */
+export const WORKER_RIG = `
+<svg viewBox="-30 -4 92 84" overflow="visible" aria-hidden="true">
+<g data-j="root" data-p="34 78">
+  <path class="tp" d="M45 46 Q30 52 14 48" fill="none" stroke="#fbfbf6" stroke-width="5" stroke-linecap="round"/>
+  <path class="tp-edge" d="M45 46 Q30 52 14 48" fill="none" stroke="#b9b6ac" stroke-width="1" stroke-dasharray="2 3"/>
+  <g data-j="legF" data-p="30 44">
+    <rect x="25.5" y="40" width="9" height="20" rx="4" fill="${SKIN_DK}" ${OL} stroke-width="2"/>
+    <rect x="26.5" y="58" width="7" height="16" rx="3" fill="${NAVY}" ${OL} stroke-width="2"/>
+    <ellipse cx="32" cy="75" rx="7.5" ry="3.6" fill="#4a2f16" ${OL} stroke-width="2"/>
+  </g>
+  <g data-j="upper" data-p="32 46">
+    <path d="M21 36 Q17 44 22 50 Q28 55 34 50 L38 40 Z" fill="${SKIN}" ${OL} stroke-width="2.2"/>
+    <path d="M23 47 Q27 50 31 48" fill="none" stroke="${SKIN_DK}" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M24 20 Q22 32 23 40 Q30 44 42 49 Q46 50 46 44 L46 24 Q44 18 34 17 Z" fill="${SHIRT}" ${OL} stroke-width="2.2"/>
+    <path d="M28 40 Q34 43 42 46" fill="none" stroke="#c9c3b6" stroke-width="1.4"/>
+    <g data-j="head" data-p="40 18">
+      <circle cx="44" cy="12" r="7.5" fill="${SKIN}" ${OL} stroke-width="2.2"/>
+      <path d="M46 10.5 l2.4 0.6" stroke="#2a1a0c" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M50.5 13 q1.6 1 0 2.2" fill="none" stroke="#2a1a0c" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M47 16.8 q1.8 -1.2 3.4 0" fill="none" stroke="#a0442a" stroke-width="1.4" stroke-linecap="round"/>
+      <path d="M36 8 Q37 0 45 0 Q52 1 52 8 Z" fill="#ffd21f" ${OL} stroke-width="2.2"/>
+      <path d="M34 8.5 H54" stroke="#2a1a0c" stroke-width="2.2" stroke-linecap="round"/>
+    </g>
+    <g data-j="arm" data-p="40 24">
+      <path d="M40 24 Q42 34 45 41" fill="none" stroke="#2a1a0c" stroke-width="7.5" stroke-linecap="round"/>
+      <path d="M40 24 Q42 34 45 41" fill="none" stroke="${SHIRT}" stroke-width="4.5" stroke-linecap="round"/>
+      <rect x="41" y="41" width="9" height="8" rx="2.5" fill="#fbfbf6" ${OL} stroke-width="1.8"/>
+      <ellipse cx="45.5" cy="45" rx="1.6" ry="2.6" fill="#b9b6ac"/>
+      <circle cx="45" cy="41.5" r="3" fill="${SKIN}" ${OL} stroke-width="1.6"/>
+    </g>
+  </g>
+  <g data-j="legN" data-p="35 44">
+    <rect x="31" y="41" width="9.5" height="19" rx="4" fill="${SKIN}" ${OL} stroke-width="2"/>
+    <rect x="32" y="58" width="7.5" height="16" rx="3" fill="${NAVY}" ${OL} stroke-width="2"/>
+    <ellipse cx="38" cy="75" rx="7.5" ry="3.6" fill="#5a3a1c" ${OL} stroke-width="2"/>
+  </g>
+  <path d="M21 58 Q22 52 33 53 Q44 52 46 58 Q47 65 34 65 Q20 65 21 58 Z" fill="${NAVY}" ${OL} stroke-width="2.2"/>
+  <path d="M25 57 Q30 55 34 58 Q38 55 43 58" fill="none" stroke="#2b4a80" stroke-width="1.5"/>
+  <rect x="38" y="55" width="3" height="5" rx="1" fill="#c9a227"/>
+</g>
+</svg>`;
+
+const MOOSE = '#5b3a22';
+const MOOSE_DK = '#3f2716';
+const MOOSE_HI = '#7a5233';
+const ANTLER = '#e9d6a6';
+
+/**
+ * Bull moose, front on, from the shoulders up (the shoulder line is y = 140; everything below is
+ * behind the fence). Joints: lean (the whole moose, pivot at his shoulders), head (pivot at the
+ * neck), antlerL/antlerR and earL/earR (pivot at their base), jaw (chewing), bell (the dewlap),
+ * grass (a sprig he's chewing). Eyes: open, shut (blink) or stare.
+ */
+export const MOOSE_RIG = `
+<svg viewBox="-10 -6 180 150" overflow="visible" aria-hidden="true">
+<g data-j="lean" data-p="80 140">
+  <path d="M8 140 Q12 104 46 96 Q80 84 114 96 Q148 104 152 140 Z" fill="${MOOSE}" ${OL} stroke-width="3.2"/>
+  <path d="M40 104 Q80 92 120 104" fill="none" stroke="${MOOSE_HI}" stroke-width="6" stroke-linecap="round"/>
+  <path d="M62 110 L64 76 L96 76 L98 110 Z" fill="${MOOSE_DK}" ${OL} stroke-width="3"/>
+  <g data-j="head" data-p="80 78">
+    <g data-j="antlerL" data-p="66 40">
+      <path d="M66 42 Q50 40 40 34 Q30 40 18 36 Q22 30 16 22 Q26 24 28 16 Q34 22 38 14 Q42 22 48 18 Q50 28 58 30 Q62 34 68 36 Z" fill="${ANTLER}" ${OL} stroke-width="2.6"/>
+    </g>
+    <g data-j="antlerR" data-p="94 40">
+      <path d="M94 42 Q110 40 120 34 Q130 40 142 36 Q138 30 144 22 Q134 24 132 16 Q126 22 122 14 Q118 22 112 18 Q110 28 102 30 Q98 34 92 36 Z" fill="${ANTLER}" ${OL} stroke-width="2.6"/>
+    </g>
+    <g data-j="earL" data-p="64 48"><path d="M64 46 Q50 40 44 46 Q50 54 64 52 Z" fill="${MOOSE}" ${OL} stroke-width="2.4"/><path d="M60 48 Q52 46 49 47" stroke="#c98f6a" stroke-width="2" stroke-linecap="round"/></g>
+    <g data-j="earR" data-p="96 48"><path d="M96 46 Q110 40 116 46 Q110 54 96 52 Z" fill="${MOOSE}" ${OL} stroke-width="2.4"/><path d="M100 48 Q108 46 111 47" stroke="#c98f6a" stroke-width="2" stroke-linecap="round"/></g>
+    <path d="M62 44 Q80 32 98 44 L100 78 Q100 96 92 104 L68 104 Q60 96 60 78 Z" fill="${MOOSE}" ${OL} stroke-width="3"/>
+    <path d="M72 46 Q80 42 88 46 L86 76 L74 76 Z" fill="${MOOSE_HI}" opacity="0.55"/>
+    <g data-j="bell" data-p="80 112"><path d="M75 108 Q72 128 80 134 Q88 128 85 108 Z" fill="${MOOSE_DK}" ${OL} stroke-width="2.4"/></g>
+    <g data-j="jaw" data-p="80 104">
+      <path d="M65 98 Q80 128 95 98 Q80 106 65 98 Z" fill="${MOOSE_DK}" ${OL} stroke-width="2.6"/>
+      <path d="M74 112 Q80 116 86 112" fill="none" stroke="#2a1a0c" stroke-width="1.8" stroke-linecap="round"/>
+      <g data-j="grass" data-p="90 108">
+        <path d="M89 109 Q100 104 106 96 M90 109 Q101 108 109 103 M90 110 Q99 114 106 113" fill="none" stroke="#5aa83c" stroke-width="2.6" stroke-linecap="round"/>
+      </g>
+    </g>
+    <ellipse cx="80" cy="96" rx="17" ry="13" fill="${MOOSE_DK}" ${OL} stroke-width="2.8"/>
+    <ellipse cx="74" cy="97" rx="2.6" ry="3.6" fill="#120b06"/><ellipse cx="86" cy="97" rx="2.6" ry="3.6" fill="#120b06"/>
+    <g data-alt="eye" data-v="open"><circle cx="68" cy="60" r="4.5" fill="#fff" ${OL} stroke-width="1.6"/><circle cx="92" cy="60" r="4.5" fill="#fff" ${OL} stroke-width="1.6"/><circle cx="69" cy="61" r="2.3" fill="#111"/><circle cx="91" cy="61" r="2.3" fill="#111"/></g>
+    <g data-alt="eye" data-v="shut" style="display:none"><path d="M63.5 60 Q68 63 72.5 60 M87.5 60 Q92 63 96.5 60" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"/></g>
+    <g data-alt="eye" data-v="stare" style="display:none"><circle cx="68" cy="60" r="6.5" fill="#fff" ${OL} stroke-width="1.8"/><circle cx="92" cy="60" r="6.5" fill="#fff" ${OL} stroke-width="1.8"/><circle cx="68" cy="60.5" r="1.8" fill="#111"/><circle cx="92" cy="60.5" r="1.8" fill="#111"/><path d="M61 51 L73 53 M99 51 L87 53" stroke="#2a1a0c" stroke-width="2.4" stroke-linecap="round"/></g>
+  </g>
+</g>
+</svg>`;
