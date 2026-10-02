@@ -50,3 +50,21 @@ export function pickLine(hit: BumpHit, last: string | null, random: () => number
   const choices = pool.length > 1 ? pool.filter((l) => l !== last) : pool;
   return choices[Math.floor(random() * choices.length)];
 }
+
+// Company Man on the win screen: one line by result, never the same line twice in a row.
+//   par   – cleared at par
+//   close – one to three moves over par
+//   over  – worse than that
+export const COMPANY_LINES = {
+  par: ["Textbook. I'll tell head office.", 'Not a scratch on the lease. Beautiful.', 'Frame that one for the lunch trailer.'],
+  close: ['Good enough for government work.', "She'll do. Write it up.", 'Not pretty, but the trucks are out.'],
+  over: [
+    "We'll talk about this at the safety meeting.",
+    "I'm putting this in my report.",
+    'Tailgate meeting. Tomorrow. Six sharp.',
+  ],
+};
+
+// Gag lines.
+export const MAGPIE_LINE = 'Seriously?';
+export const LANDOWNER_LINE = "Who's paying for these ruts?";
