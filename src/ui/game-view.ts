@@ -69,7 +69,7 @@ export class GameView {
     theme: Theme,
     handlers: GameViewHandlers,
     daily: DailyInfo | null = null,
-    gagOptions: Omit<GagOptions, 'idleScale' | 'ground' | 'wildlife'> = { cords: false, landowner: false, animal: null },
+    gagOptions: Omit<GagOptions, 'idleScale' | 'ground' | 'wildlife' | 'demo' | 'found'> = { cords: false, landowner: false, regionId: 'daily', levelIndex: 0 },
   ) {
     this.level = level;
     this.theme = theme;
@@ -82,6 +82,7 @@ export class GameView {
       (id, direction, hit) => this.onBump(id, direction, hit),
     );
     const board = this.board;
+    const demo = loadProgress().demo;
     this.gags = new GagLayer(
       {
         el: board.el,
@@ -96,17 +97,27 @@ export class GameView {
         addGround: (el) => board.addGround(el),
         state: () => this.state,
       },
-      { ...gagOptions, ground: theme.ground, idleScale: idleScale(), wildlife: new URLSearchParams(location.search).get('wild') !== '0' },
+      {
+        ...gagOptions,
+        ground: theme.ground,
+        idleScale: idleScale(),
+        wildlife: new URLSearchParams(location.search).get('wild') !== '0',
+        demo,
+        found: () => new Set(loadLog(demo).found),
+      },
     );
     board.onWear = (lvl) => this.gags.worn(lvl);
     // The Wildlife Log collects each gag the first time it plays all the way through.
+    // In demo mode they go to the separate demo log, never the real one (and never earn camo).
     this.gags.onSeen = (id) => {
-      const before = loadLog();
+      const before = loadLog(demo);
       const r = record(before, id);
       if (!r.isNew) return;
-      saveLog(r.log);
-      void toast(sightingToast(id, r.count));
-      if (r.completed) {
+      saveLog(r.log, demo);
+      void toast(sightingToast(id, r.count, demo));
+      if (demo) {
+        if (r.completed) void toast('Demo log complete!', { sub: 'Your real log is unchanged', big: true, ms: 3200 });
+      } else if (r.completed) {
         void toast('Wildlife Log complete!', { sub: before.camoEarned ? 'Every sighting found' : 'Camo pickups unlocked', big: true, ms: 3200 });
         applyCamo(r.log);
       }

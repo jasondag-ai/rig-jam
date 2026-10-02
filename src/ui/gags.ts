@@ -118,58 +118,122 @@ export function magpieTarget(trucks: readonly Truck[], random: () => number = Ma
 
 // ---------- Wildlife and traffic (outside the fence, along the bottom) ----------
 
-/** Cardium has a gopher, Montney a bear, Duvernay a moose; every region gets the hot shot and a visitor. */
-export type Animal = 'gopher' | 'bear' | 'moose';
-export const animalFor = (regionId: string): Animal | null =>
-  regionId === 'cardium' ? 'gopher' : regionId === 'montney' ? 'bear' : regionId === 'duvernay' ? 'moose' : null;
+/** The scenes that drop by on their own: region animals, the legendary bear, traffic and visitors. */
+export type WildGag = 'gopher' | 'moose' | 'bear' | 'hotshot' | 'geese' | 'pumper';
 
-/** Once per level, one of these drops by (any region): geese overhead, or the pumper on his rounds. */
-export type Visitor = 'geese' | 'pumper';
-
-/** The animal comes after this long with no touch or move, or at its random moment, whichever is first. */
+/** Unfound Wildlife Log entries are this much more likely to be picked than found ones. */
+export const UNFOUND_WEIGHT = 3;
+/** Scenes per level visit (drawn from the pool, so found ones turn up less and less). */
+export const WILD_SLOTS = 2;
+/** The first one comes after this long with no touch or move, or at its random moment, whichever is first. */
 export const ANIMAL_IDLE_MS = 15_000;
 /** At least this far apart, so nothing crowds anything else. */
-export const WILD_GAP_MS = 8_000;
+export const WILD_GAP_MS = 12_000;
+/** The bear is legendary: only Duvernay levels 8 to 10, and only about one visit in three. */
+export const BEAR_CHANCE = 1 / 3;
 
-export interface WildState {
-  /** Level time (ms) when the animal shows up even if you're busy playing, the hot shot, the visitor. */
-  animalAt: number;
-  hotshotAt: number;
-  visitorAt: number;
-  visitor: Visitor;
-  animalDone: boolean;
-  hotshotDone: boolean;
-  visitorDone: boolean;
+export interface Where {
+  regionId: string;
+  /** 0-based level number within its region. */
+  levelIndex: number;
+  /** Demo mode: the bear may turn up anywhere. */
+  demo: boolean;
 }
 
-/** This level's random moments: animal 20-50s in, hot shot 8-45s, visitor 12-55s, kept apart. */
-export function planWildlife(random: () => number = Math.random): WildState {
-  const animalAt = 20_000 + random() * 30_000;
-  const apart = (at: number, taken: number[], lo: number) => {
-    // Nudge forward past anything too close (then it's never earlier than `lo`).
-    let t = Math.max(lo, at);
-    for (let i = 0; i < 4; i++) {
-      const clash = taken.find((x) => Math.abs(t - x) < WILD_GAP_MS);
-      if (clash === undefined) break;
-      t = clash + WILD_GAP_MS;
-    }
-    return t;
-  };
-  const hotshotAt = apart(8_000 + random() * 37_000, [animalAt], 8_000);
-  const visitorAt = apart(12_000 + random() * 43_000, [animalAt, hotshotAt], 12_000);
-  const visitor: Visitor = random() < 0.5 ? 'geese' : 'pumper';
-  return { animalAt, hotshotAt, visitorAt, visitor, animalDone: false, hotshotDone: false, visitorDone: false };
+/** Where the bear may appear at all (a bush stands waiting there). */
+export const bearEligible = (w: Where) => w.demo || (w.regionId === 'duvernay' && w.levelIndex >= 7 && w.levelIndex <= 9);
+/** Rolled once per level visit. */
+export const bearComes = (w: Where, random: () => number = Math.random) => bearEligible(w) && random() < BEAR_CHANCE;
+
+/** What can drop by here, not counting the bear: Cardium's gopher, Duvernay's moose, and the rest anywhere. */
+export function wildPool(regionId: string): WildGag[] {
+  const pool: WildGag[] = ['hotshot', 'geese', 'pumper'];
+  if (regionId === 'cardium') pool.unshift('gopher');
+  if (regionId === 'duvernay') pool.unshift('moose');
+  return pool;
+}
+
+/** One pick: every unfound entry is UNFOUND_WEIGHT times as likely as a found one. */
+export function weightedPick<T extends string>(candidates: readonly T[], found: ReadonlySet<string>, random: () => number = Math.random): T {
+  const weights = candidates.map((c) => (found.has(c) ? 1 : UNFOUND_WEIGHT));
+  let r = random() * weights.reduce((a, b) => a + b, 0);
+  for (const [i, w] of weights.entries()) {
+    r -= w;
+    if (r < 0) return candidates[i];
+  }
+  return candidates[candidates.length - 1];
+}
+
+export interface WildState {
+  /** This visit's scenes, in order, with the level time (ms) each is due. */
+  queue: { gag: WildGag; at: number }[];
+  /** How many have played. */
+  next: number;
 }
 
 /**
- * Which outside gag is due, `levelMs` into the level with `idleMs` since the last touch.
- * The caller only asks when nothing else is playing; each one runs once per level.
+ * This visit's scenes: WILD_SLOTS weighted picks (no repeats) from the pool, the bear first if he's
+ * coming. The first is due 10-30s in, each later one 12-30s after the one before.
  */
-export function dueWildlife(levelMs: number, idleMs: number, s: WildState, animal: Animal | null): 'animal' | 'hotshot' | 'visitor' | null {
-  if (animal && !s.animalDone && (idleMs >= ANIMAL_IDLE_MS || levelMs >= s.animalAt)) return 'animal';
-  if (!s.hotshotDone && levelMs >= s.hotshotAt) return 'hotshot';
-  if (!s.visitorDone && levelMs >= s.visitorAt) return 'visitor';
-  return null;
+export function planWildlife(pool: readonly WildGag[], found: ReadonlySet<string>, bear: boolean, random: () => number = Math.random): WildState {
+  const picks: WildGag[] = bear ? ['bear'] : [];
+  let left = pool.filter((g) => g !== 'bear');
+  while (picks.length < WILD_SLOTS && left.length) {
+    const g = weightedPick(left, found, random);
+    picks.push(g);
+    left = left.filter((x) => x !== g);
+  }
+  let at = 10_000 + random() * 20_000;
+  const queue = picks.map((gag) => {
+    const item = { gag, at };
+    at += WILD_GAP_MS + random() * 18_000;
+    return item;
+  });
+  return { queue, next: 0 };
+}
+
+/**
+ * The scene that's due, `levelMs` into the level with `idleMs` since the last touch (or null).
+ * The caller only asks when nothing else is playing.
+ */
+export function dueWildlife(levelMs: number, idleMs: number, s: WildState): WildGag | null {
+  const item = s.queue[s.next];
+  if (!item) return null;
+  return levelMs >= item.at || (s.next === 0 && idleMs >= ANIMAL_IDLE_MS) ? item.gag : null;
+}
+
+// ---------- Demo mode: everything turns up fast, unfound first ----------
+
+/** Demo mode: the first gag about 5s in, then one about every 15s. */
+export const DEMO_FIRST_MS = 5_000;
+export const DEMO_EVERY_MS = 15_000;
+
+/** Any gag the demo can set off: the Wildlife Log's ten. */
+export type DemoGag = WildGag | 'magpie' | 'spotter' | 'biffy' | 'landowner';
+
+/** What demo mode can play on this level (the bear anywhere; the others where they live). */
+export function demoPool(regionId: string, hasBiffy: boolean): DemoGag[] {
+  const pool: DemoGag[] = ['magpie', 'spotter'];
+  if (hasBiffy) pool.push('biffy');
+  if (regionId === 'montney') pool.push('landowner');
+  return [...pool, 'bear', ...wildPool(regionId)];
+}
+
+/**
+ * Demo mode's next gag: unfound ones first (ones not yet tried this visit before ones that were
+ * tried and cut short), then found ones at random, never the same twice running.
+ */
+export function demoNext(pool: readonly DemoGag[], found: ReadonlySet<string>, tried: readonly DemoGag[], random: () => number = Math.random): DemoGag | null {
+  if (!pool.length) return null;
+  const unfound = pool.filter((g) => !found.has(g));
+  const fresh = unfound.filter((g) => !tried.includes(g));
+  if (fresh.length) return fresh[0];
+  const last = tried[tried.length - 1];
+  const again = unfound.filter((g) => g !== last);
+  if (again.length) return again[0];
+  if (unfound.length) return unfound[0];
+  const rest = pool.filter((g) => g !== last);
+  return (rest.length ? rest : pool)[Math.floor(random() * (rest.length || pool.length))];
 }
 
 /**

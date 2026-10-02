@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { STORAGE_PREFIX } from './progress.ts';
-import { LOG_ENTRIES, LOG_KEY, camoOn, complete, parseLog, previewAll, record, sightingToast } from './wildlife-log.ts';
+import { DEMO_LOG_KEY, LOG_ENTRIES, LOG_KEY, camoOn, complete, parseLog, previewAll, record, sightingToast } from './wildlife-log.ts';
 
 describe('Wildlife Log', () => {
   it('ten entries, each with a name, caption and hint', () => {
@@ -55,7 +55,18 @@ describe('Wildlife Log', () => {
     expect(parseLog(JSON.stringify({ found: seven.slice(1), camo: true })).camoEarned).toBe(false);
   });
 
-  it('lives under the progress prefix, so Reset progress clears it', () => {
+  it('the Bear is the one legendary entry, only deep in the Duvernay', () => {
+    expect(LOG_ENTRIES.filter((e) => e.legendary).map((e) => e.id)).toEqual(['bear']);
+    expect(LOG_ENTRIES.find((e) => e.id === 'bear')!.hint).toBe('Only deep in the Duvernay.');
+  });
+
+  it('demo sightings are worded differently', () => {
+    expect(sightingToast('bear', 3, true)).toBe('Demo sighting! Bear (3/10)');
+  });
+
+  it('both logs live under the progress prefix (separate keys), so Reset progress clears both', () => {
+    expect(DEMO_LOG_KEY.startsWith(STORAGE_PREFIX)).toBe(true);
+    expect(DEMO_LOG_KEY).not.toBe(LOG_KEY);
     expect(LOG_KEY.startsWith(STORAGE_PREFIX)).toBe(true);
   });
 

@@ -7,6 +7,7 @@
 //  - every button/link is at least 44x44 with touch-action set
 // Run: npm run dev -- --host   (in one terminal), then:  npm run test:e2e
 // Or against the live site:  URL=https://jasondag-ai.github.io/rush-hour-rigs/ npm run test:e2e
+import { UNLOCKED } from './progress.mjs';
 import { chromium, webkit, devices } from 'playwright';
 import { DAILY_LEVELS, REGIONS } from '../src/levels/regions.ts';
 import { solve } from '../src/engine/index.ts';
@@ -100,10 +101,10 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
     });
     const page = await context.newPage();
     await page.goto(BASE, { waitUntil: 'networkidle' });
-    await page.evaluate(() => {
+    await page.evaluate((p) => {
       localStorage.clear();
-      localStorage.setItem('rush-hour-rigs:v2', JSON.stringify({ best: {}, hints: 3, perfect: [], dailyCleared: [], demo: true, announced: [] }));
-    });
+      localStorage.setItem('rush-hour-rigs:v2', p);
+    }, UNLOCKED);
     await page.reload({ waitUntil: 'networkidle' });
     console.log(`\n${engineName} ${vp.name}`);
     const small = [];

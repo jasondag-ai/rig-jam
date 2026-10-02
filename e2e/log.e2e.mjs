@@ -3,6 +3,7 @@
 // (art + caption) and silhouettes (hint); all seven unlock camo pickups with a Settings switch;
 // ?log=all previews everything without saving; Reset progress clears the log.
 // Run: npm run dev -- --host   (in one terminal), then:  npm run test:e2e:log
+import { DEMO, UNLOCKED } from './progress.mjs';
 import { chromium, devices } from 'playwright';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
@@ -14,7 +15,7 @@ const check = (ok, text) => {
 };
 const ALL = ['magpie', 'spotter', 'biffy', 'landowner', 'bear', 'moose', 'hotshot', 'gopher', 'geese', 'pumper'];
 const SEVEN = ALL.slice(0, 7);
-const PROGRESS = JSON.stringify({ best: {}, hints: 3, perfect: [], dailyCleared: [], demo: true, announced: [] });
+const PROGRESS = UNLOCKED;
 
 const browser = await chromium.launch();
 const context = await browser.newContext({ ...devices['iPhone 13'] });
@@ -69,8 +70,13 @@ const btn = await page.$eval('.binoculars', (b) => {
 check(btn.w >= 44 && btn.h >= 44 && btn.beside, `binoculars button next to the gear (${btn.w}x${btn.h}, "${btn.label}")`);
 let log = await openLog();
 check(log.count === '0/10' && log.cards.length === 10 && log.cards.every((c) => !c.found && c.title === '???'), `10 cards, none found (${log.count})`);
-check(log.cards.find((c) => c.id === 'bear').text === 'Seen in Montney' && log.cards.find((c) => c.id === 'gopher').text === 'Seen in Cardium' && log.cards.find((c) => c.id === 'geese').text === 'Look up' && log.cards.find((c) => c.id === 'pumper').text === 'Making his rounds', 'unfound cards show hints');
+check(log.cards.find((c) => c.id === 'bear').text === 'Only deep in the Duvernay.' && log.cards.find((c) => c.id === 'gopher').text === 'Seen in Cardium' && log.cards.find((c) => c.id === 'geese').text === 'Look up' && log.cards.find((c) => c.id === 'pumper').text === 'Making his rounds', 'unfound cards show hints');
 const silhouette = await page.$eval('.log-card.unfound .art', (a) => getComputedStyle(a).filter);
+const legend = await page.evaluate(() => {
+  const cards = [...document.querySelectorAll('.log-card.legendary')];
+  return { ids: cards.map((c) => c.dataset.id).join(), tag: cards[0]?.querySelector('.legend-tag')?.textContent, border: cards[0] ? getComputedStyle(cards[0]).borderTopColor : '' };
+});
+check(legend.ids === 'bear' && legend.tag === 'LEGENDARY' && legend.border === 'rgb(184, 134, 11)', `the Bear's card: gold frame and "${legend.tag}" tag, even unfound`);
 check(silhouette.includes('brightness(0)'), `as dark silhouettes (${silhouette})`);
 await page.$eval('.log-head .back', (b) => b.click());
 await wait(200);
@@ -166,6 +172,76 @@ await page.$eval('[data-act="wipe"]', (b) => b.click());
 await wait(250);
 check((await page.evaluate(() => localStorage.getItem('rush-hour-rigs:log'))) === null, 'Reset progress clears the log');
 check(!(await page.evaluate(() => document.body.classList.contains('camo-pickups'))), 'and the camo');
+
+// 8. Demo mode: gags come fast, unfound first, the bear anywhere; sightings go to a separate demo log.
+console.log('\ndemo mode (times x0.1)');
+const REAL = JSON.stringify({ v: 2, found: ['magpie'], camo: true, camoEarned: false });
+await page.goto(ROOT + '?idle=0.1', { waitUntil: 'networkidle' });
+await page.evaluate(([p, l]) => {
+  localStorage.clear();
+  localStorage.setItem('rush-hour-rigs:v2', p);
+  localStorage.setItem('rush-hour-rigs:log', l);
+}, [DEMO, REAL]);
+await page.reload({ waitUntil: 'networkidle' });
+const demoLog = () => page.evaluate(() => JSON.parse(localStorage.getItem('rush-hour-rigs:demo-log') ?? '{"found":[]}').found);
+const SCENES = '.magpie, .spotter, .worker-bent, .landowner, .bear-stage, .moose-peek, .gopher-stage, .geese-stage, .pumper-stage, .hotshot';
+/** Opens a level in demo mode and waits until the demo log holds `want` entries. */
+const demoVisit = async (tab, index, want, ms) => {
+  await page.evaluate(() => (document.querySelector('.win:not([hidden]) [data-act="levels"]') ?? document.querySelector('.hud [data-act="levels"]'))?.click());
+  await wait(200);
+  await page.$eval(`.region-tab:nth-child(${tab})`, (t) => t.click());
+  await wait(150);
+  await page.$eval(`.level-btn[data-index="${index}"]`, (b) => b.click());
+  const t0 = Date.now();
+  const first = await page.waitForSelector(SCENES, { state: 'attached', timeout: 5000 }).then(() => Date.now() - t0).catch(() => null);
+  while (Date.now() - t0 < ms && (await demoLog()).length < want) await wait(300);
+  return { first, secs: (Date.now() - t0) / 1000 };
+};
+await page.$eval('.region-tab:nth-child(1)', (t) => t.click());
+await page.$eval('.level-btn[data-index="0"]', (b) => b.click());
+await watchToasts();
+await page.$eval('.hud [data-act="levels"]', (b) => b.click());
+let v = await demoVisit(1, 0, 8, 90000);
+let found = await demoLog();
+check(v.first !== null && v.first < 1500, `the first gag comes fast (${v.first}ms at x0.1, so about 5s for real)`);
+check(found.slice(0, 4).join() === 'magpie,spotter,biffy,bear', `unfound first, in order: ${found.join(', ')}`);
+check(found.length === 8 && found.includes('bear') && found.includes('gopher'), `Cardium 1 fills 8 of 10 in ${Math.round(v.secs)}s, the Bear among them (he can appear in any level)`);
+v = await demoVisit(2, 0, 9, 30000);
+check((await demoLog()).at(-1) === 'landowner', `Montney: the unfound landowner comes first (${Math.round(v.secs)}s)`);
+t = await toasts();
+v = await demoVisit(3, 0, 10, 30000);
+found = await demoLog();
+check(found.at(-1) === 'moose' && found.length === 10, `Duvernay: the moose completes the demo log (${found.length}/10)`);
+await wait(2500);
+t = await page.evaluate(() => window.__toasts.map((x) => x.text));
+check(t.every((x) => !/New sighting/.test(x)) && t.some((x) => /^Demo sighting! Bear \(4\/10\)$/.test(x)), `toasts say "Demo sighting!" (${t.find((x) => /Bear/.test(x))})`);
+check(t.some((x) => /Demo log complete!.*real log is unchanged/i.test(x)), `and at the end: "${t.at(-1)}"`);
+check((await page.evaluate(() => localStorage.getItem('rush-hour-rigs:log'))) === REAL, 'the real log is exactly as it was (1/10)');
+check(!(await page.evaluate(() => document.body.classList.contains('camo-pickups'))), 'a full demo log does not unlock camo');
+await page.$eval('.hud [data-act="levels"]', (b) => b.click());
+await wait(200);
+log = await openLog();
+const tag = await page.$eval('.log-head h1', (h) => h.textContent);
+check(log.count === '10/10' && /DEMO/.test(tag) && /don't count/.test(await page.$eval('.log-reward', (p) => p.textContent)), `demo mode on: the log page shows the demo log (${tag}, ${log.count})`);
+await page.$eval('.log-head .back', (b) => b.click());
+await wait(200);
+await page.$eval('.gear', (g) => g.click());
+await wait(200);
+check(await page.$eval('[data-act="camo"]', (i) => i.disabled), 'Settings: camo still locked');
+await page.$eval('[data-act="demo"]', (i) => i.click());
+await page.$eval('[data-act="close"]', (b) => b.click());
+await wait(250);
+log = await openLog();
+check(log.count === '1/10' && !/DEMO/.test(await page.$eval('.log-head h1', (h) => h.textContent)) && log.cards.find((c) => c.id === 'magpie').found, `demo mode off: the real log is back (${log.count}), demo log hidden`);
+check((await demoLog()).length === 10, 'the demo log is kept for next time');
+await page.$eval('.log-head .back', (b) => b.click());
+await wait(200);
+await page.$eval('.gear', (g) => g.click());
+await wait(150);
+await page.$eval('[data-act="reset"]', (b) => b.click());
+await page.$eval('[data-act="wipe"]', (b) => b.click());
+await wait(250);
+check((await page.evaluate(() => [localStorage.getItem('rush-hour-rigs:log'), localStorage.getItem('rush-hour-rigs:demo-log')])).every((x) => x === null), 'Reset progress clears both logs');
 
 await browser.close();
 console.log(failures ? `\nFAILED: ${failures} check(s)` : '\nPASS');

@@ -4,6 +4,7 @@
 // win clinks, ditty and sad trombone, the streak stamp, ground sounds, and the Settings switches.
 // On the dev server it also renders the three music styles offline and checks they sound different.
 // Run: npm run dev -- --host   (in one terminal), then:  npm run test:e2e:audio
+import { UNLOCKED } from './progress.mjs';
 import { chromium, devices } from 'playwright';
 import { DAILY_LEVELS, REGIONS } from '../src/levels/regions.ts';
 import { cabSide, getMoveRange, newGame, solve, tryMove } from '../src/engine/index.ts';
@@ -23,10 +24,10 @@ const browser = await chromium.launch();
 const context = await browser.newContext({ ...devices['iPhone 13'] });
 const page = await context.newPage();
 await page.goto(BASE, { waitUntil: 'networkidle' });
-await page.evaluate(() => {
+await page.evaluate((p) => {
   localStorage.clear();
-  localStorage.setItem('rush-hour-rigs:v2', JSON.stringify({ best: {}, hints: 3, perfect: [], dailyCleared: [], demo: true, announced: [] }));
-});
+  localStorage.setItem('rush-hour-rigs:v2', p);
+}, UNLOCKED);
 await page.reload({ waitUntil: 'networkidle' });
 const cdp = await context.newCDPSession(page);
 const tp = (x, y) => [{ x, y, id: 1, radiusX: 4, radiusY: 4, force: 1 }];

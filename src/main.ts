@@ -7,7 +7,7 @@ import { hatsHtml } from './ui/hats.ts';
 import { hardHats, loadProgress, resetProgress, saveProgress } from './ui/progress.ts';
 import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } from './ui/unlocks.ts';
 import { onTap } from './ui/tap.ts';
-import { animalFor, biffySpot } from './ui/gags.ts';
+import { biffySpot } from './ui/gags.ts';
 import { BIFFY, HOTSHOT, LANDOWNER, MAGPIE, SPOTTER_SIT } from './ui/cast.ts';
 import { BEAR_RIG, GAUGE_RIG, GOOSE_RIG, GOPHER_HOLE, GOPHER_RIG, MOOSE_RIG, PUMPER_RIG, PUMPER_TRUCK, WORKER_RIG } from './ui/rigs.ts';
 import { LOG_ENTRIES, applyCamo, complete, loadLog, saveLog, type Sighting } from './ui/wildlife-log.ts';
@@ -202,8 +202,8 @@ function showGame(regionIndex: number, index: number, force: ForcedGag | null = 
       onNext: hasNext ? () => showGame(regionIndex, index + 1) : null,
     },
     null,
-    // Block heater cords in Duvernay's cold; the landowner minds his Montney mud. Bear in Montney, moose in Duvernay.
-    { cords: region.id === 'duvernay', landowner: region.id === 'montney', animal: animalFor(region.id), force },
+    // Block heater cords in Duvernay's cold; the landowner minds his Montney mud. Wildlife goes by region and level.
+    { cords: region.id === 'duvernay', landowner: region.id === 'montney', regionId: region.id, levelIndex: index, force },
   );
   app.replaceChildren(game.el);
   game.fit();
@@ -296,15 +296,17 @@ function showSettings(screen: HTMLElement): void {
 function showLog(regionIndex: number): void {
   game = null;
   sound.quiet();
-  const log = loadLog();
+  // Demo mode shows its own log; the real one comes back when demo mode is switched off.
+  const demo = loadProgress().demo;
+  const log = loadLog(demo);
   const screen = document.createElement('div');
-  screen.className = 'screen log';
+  screen.className = `screen log${demo ? ' demo-log' : ''}`;
   applyTheme(screen, themeFor(regionIndex));
   screen.innerHTML = `
     <div class="scenery" aria-hidden="true"></div>
     <header class="log-head">
       <button class="link back">‹ Levels</button>
-      <h1>Wildlife Log</h1>
+      <h1>Wildlife Log${demo ? '<span class="demo-tag">DEMO</span>' : ''}</h1>
       <span class="log-count" aria-label="${log.found.length} of ${LOG_ENTRIES.length} found">${log.found.length}/${LOG_ENTRIES.length}</span>
     </header>
     <ul class="log-cards"></ul>
@@ -313,14 +315,16 @@ function showLog(regionIndex: number): void {
   for (const e of LOG_ENTRIES) {
     const found = log.found.includes(e.id);
     const li = document.createElement('li');
-    li.className = `log-card ${found ? 'found' : 'unfound'}`;
+    li.className = `log-card ${found ? 'found' : 'unfound'}${e.legendary ? ' legendary' : ''}`;
     li.dataset.id = e.id;
-    li.innerHTML = `<div class="art art-${e.id}" aria-hidden="true">${LOG_ART[e.id]}</div><h2></h2><p></p>`;
+    li.innerHTML = `${e.legendary ? '<span class="legend-tag">LEGENDARY</span>' : ''}<div class="art art-${e.id}" aria-hidden="true">${LOG_ART[e.id]}</div><h2></h2><p></p>`;
     li.querySelector('h2')!.textContent = found ? e.name : '???';
     li.querySelector('p')!.textContent = found ? e.caption : e.hint;
     list.append(li);
   }
-  screen.querySelector('.log-reward')!.textContent = complete(log)
+  screen.querySelector('.log-reward')!.textContent = demo
+    ? `Demo log: ${log.found.length} of ${LOG_ENTRIES.length}. These sightings don't count toward your real log or camo.`
+    : complete(log)
     ? `All ${LOG_ENTRIES.length} found! Camo pickups unlocked (switch them off in Settings).`
     : log.camoEarned
       ? `Camo pickups unlocked. ${LOG_ENTRIES.length - log.found.length} new sightings to find.`
@@ -358,8 +362,8 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
  */
 function forcedGag(): boolean {
   const gag = new URLSearchParams(location.search).get('gag');
-  if (gag === 'bear') showGame(REGIONS.findIndex((r) => r.id === 'montney'), 0, 'bear');
-  else if (gag === 'gopher' || gag === 'geese' || gag === 'pumper') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 0, gag);
+  if (gag === 'bear') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 7, 'bear');
+  else if (gag === 'gopher' || gag === 'geese' || gag === 'pumper' || gag === 'hotshot') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 0, gag);
   else if (gag === 'moose') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 0, 'moose');
   else if (gag === 'biffy') {
     for (const [ri, region] of REGIONS.entries()) {

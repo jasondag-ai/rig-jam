@@ -11,6 +11,8 @@ export interface LogEntry {
   caption: string;
   /** Shown on the card until it's found. */
   hint: string;
+  /** The rare one: gold frame and a LEGENDARY tag on its card, found or not. */
+  legendary?: boolean;
 }
 
 export const LOG_ENTRIES: LogEntry[] = [
@@ -18,7 +20,7 @@ export const LOG_ENTRIES: LogEntry[] = [
   { id: 'spotter', name: 'Sleeping Spotter', caption: 'On the clock. Allegedly.', hint: 'Try waiting' },
   { id: 'biffy', name: 'Biffy Surprise', caption: 'Occupied.', hint: 'Back a truck up to the biffy' },
   { id: 'landowner', name: 'Angry Landowner', caption: 'Wants a word about the ruts.', hint: 'Seen in Montney. Mind the mud' },
-  { id: 'bear', name: 'Bear', caption: 'Does what bears do in the woods.', hint: 'Seen in Montney' },
+  { id: 'bear', name: 'Bear', caption: 'Does what bears do in the woods.', hint: 'Only deep in the Duvernay.', legendary: true },
   { id: 'moose', name: 'Moose', caption: 'Just checking in.', hint: 'Seen in Duvernay' },
   { id: 'hotshot', name: 'Hot Shot', caption: 'Late for something.', hint: "Seen everywhere. Don't blink" },
   { id: 'gopher', name: 'Gopher', caption: 'Owns the lease. Pays no rent.', hint: 'Seen in Cardium' },
@@ -30,6 +32,9 @@ export const LOG_ENTRIES: LogEntry[] = [
 const ORIGINAL: Sighting[] = ['magpie', 'spotter', 'biffy', 'landowner', 'bear', 'moose', 'hotshot'];
 
 export const LOG_KEY = `${STORAGE_PREFIX}log`;
+/** Demo mode keeps its own log: its sightings never count toward the real log or camo. Reset clears both. */
+export const DEMO_LOG_KEY = `${STORAGE_PREFIX}demo-log`;
+const keyFor = (demo: boolean) => (demo ? DEMO_LOG_KEY : LOG_KEY);
 
 export interface WildlifeLog {
   /** Sightings in the order they were found. */
@@ -61,10 +66,13 @@ export function parseLog(raw: string | null): WildlifeLog {
 /** `?log=all` shows a full log (for previewing the page and the camo skin) without saving it. */
 export const previewAll = (search: string) => new URLSearchParams(search).get('log') === 'all';
 
-export function loadLog(): WildlifeLog {
+/** The real log, or (with `demo`) the separate demo-mode log. */
+export function loadLog(demo = false): WildlifeLog {
   let log: WildlifeLog;
   try {
-    log = parseLog(localStorage.getItem(LOG_KEY));
+    log = parseLog(localStorage.getItem(keyFor(demo)));
+    // A demo log never earns camo, whatever it holds.
+    if (demo) log = { ...log, camoEarned: false };
   } catch {
     log = parseLog(null);
   }
@@ -72,10 +80,11 @@ export function loadLog(): WildlifeLog {
 }
 
 /** Saves the log (in preview mode only the camo switch is kept; the real sightings stay as they were). */
-export function saveLog(log: WildlifeLog): void {
+export function saveLog(log: WildlifeLog, demo = false): void {
   try {
+    if (demo && previewAll(location.search)) return;
     const stored = previewAll(location.search) ? { ...parseLog(localStorage.getItem(LOG_KEY)), camo: log.camo } : log;
-    localStorage.setItem(LOG_KEY, JSON.stringify({ v: VERSION, ...stored }));
+    localStorage.setItem(keyFor(demo), JSON.stringify({ v: VERSION, ...stored, ...(demo ? { camoEarned: false } : {}) }));
   } catch {
     // Storage blocked: the log lasts for this visit only.
   }
@@ -94,7 +103,8 @@ export function record(log: WildlifeLog, id: Sighting): { log: WildlifeLog; isNe
   return { log: next, isNew: true, count: found.length, completed: done };
 }
 
-export const sightingToast = (id: Sighting, count: number) => `New sighting! ${LOG_ENTRIES.find((e) => e.id === id)!.name} (${count}/${LOG_ENTRIES.length})`;
+export const sightingToast = (id: Sighting, count: number, demo = false) =>
+  `${demo ? 'Demo' : 'New'} sighting! ${LOG_ENTRIES.find((e) => e.id === id)!.name} (${count}/${LOG_ENTRIES.length})`;
 
 /** Every pickup in the game wears camo (a class on <body>; style.css draws it). */
 export function applyCamo(log: WildlifeLog = loadLog()): void {

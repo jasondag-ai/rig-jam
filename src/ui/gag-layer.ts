@@ -22,9 +22,16 @@ import {
   magpieTarget,
   reverseDirection,
   touched,
-  type Animal,
+  DEMO_EVERY_MS,
+  DEMO_FIRST_MS,
+  bearComes,
+  bearEligible,
+  demoNext,
+  demoPool,
+  wildPool,
   type BiffySpot,
-  type Visitor,
+  type DemoGag,
+  type WildGag,
   type Cord,
   type IdleState,
   type WildState,
@@ -58,8 +65,13 @@ export interface GagOptions {
   cords: boolean;
   /** Montney: the landowner shows up once a lane wears to the deepest rut. */
   landowner: boolean;
-  /** Montney's bear or Duvernay's moose walks along the bottom once per level. */
-  animal: Animal | null;
+  /** Region and level: decides which wildlife lives here, and whether the bear might come. */
+  regionId: string;
+  levelIndex: number;
+  /** Demo mode: gags come fast, unfound first, and the bear may appear anywhere. */
+  demo: boolean;
+  /** Wildlife Log entries found so far (unfound ones are picked more often). */
+  found: () => ReadonlySet<string>;
   /** What the hot shot kicks up: dust, mud or snow. */
   ground: 'gravel' | 'mud' | 'snow';
   /** Multiplies the idle times (tests and previews use ?idle=0.1). */
@@ -70,7 +82,7 @@ export interface GagOptions {
   force?: ForcedGag | null;
 }
 
-export type ForcedGag = 'bear' | 'biffy' | 'moose' | 'gopher' | 'geese' | 'pumper';
+export type ForcedGag = 'bear' | 'biffy' | 'moose' | 'gopher' | 'geese' | 'pumper' | 'hotshot';
 
 /** Free space above and below the board, in px, for characters outside the fence. */
 export interface Bands {
@@ -93,7 +105,15 @@ export class GagLayer {
   private timer = 0;
   private stopped = false;
   private bands: Bands = { above: 60, below: 60, ground: 100 };
-  private wild: WildState = planWildlife();
+  private wild: WildState = { queue: [], next: 0 };
+  /** The bear's roll for this visit (once, however often the level restarts), and whether he's been.
+   */
+  private bearVisit: boolean;
+  private bearDone = false;
+  /** Demo mode: when the next gag may start, what's been tried this visit, when the spotter dozed off. */
+  private demoAt = 0;
+  private demoTried: DemoGag[] = [];
+  private asleepAt = 0;
   private levelStart = performance.now();
   /** The bear, moose or hot shot playing right now. Touches never cancel it; a new level does. */
   private wildGag: AbortController | null = null;
@@ -109,7 +129,7 @@ export class GagLayer {
   private cords = new Map<string, { cord: Cord; post: HTMLElement; line: SVGPathElement | null }>();
   private cordLayer: SVGSVGElement | null = null;
   private landownerDone = false;
-  /** Montney: the bush the bear will squat beside stands there from the start of the level. */
+  /** The bush the bear would squat beside stands there from the start of the level. */
   private bush: HTMLElement | null = null;
   private bearPlan: BearLayout | null = null;
   /** ?gag=: when the forced scene may play next. */
@@ -120,6 +140,7 @@ export class GagLayer {
   constructor(host: GagHost, opts: GagOptions) {
     this.host = host;
     this.opts = opts;
+    this.bearVisit = bearComes(opts);
   }
 
   /** New level (or restart): plug the trucks in, put the biffy out, restart the idle clock. */
@@ -130,7 +151,9 @@ export class GagLayer {
     this.landownerDone = false;
     this.wildGag?.abort();
     this.wildGag = null;
-    this.wild = planWildlife();
+    this.wild = planWildlife(wildPool(this.opts.regionId), this.opts.found(), this.bearVisit && !this.bearDone);
+    this.demoAt = performance.now() + DEMO_FIRST_MS * this.opts.idleScale;
+    this.demoTried = [];
     this.levelStart = performance.now();
     this.landownerPending = false;
     this.biffyPending = false;
@@ -141,7 +164,8 @@ export class GagLayer {
     this.cords.clear();
     const spot = biffySpot(level);
     this.biffy = spot ? { el: this.figure('gag biffy', BIFFY), spot, done: false } : null;
-    this.bush = this.opts.animal === 'bear' ? this.figure('gag bush', BUSH) : null;
+    // A bush stands waiting wherever the bear might come (so it never gives away whether he will).
+    this.bush = bearEligible(this.opts) || this.opts.force === 'bear' ? this.figure('gag bush', BUSH) : null;
     this.forceAt = performance.now() + 600;
     if (this.opts.cords) this.plugIn(level);
     this.layout(this.bands);
@@ -208,6 +232,7 @@ export class GagLayer {
     if (!this.host.el.isConnected) return this.stop();
     if (this.stopped || document.hidden) return;
     if (this.opts.force) return this.tickForced(this.opts.force);
+    if (this.opts.demo && !reducedMotion()) return this.tickDemo();
     this.tickWild();
     if (this.idleGag || this.spotter || this.wildGag) return;
     const due = dueGag((performance.now() - this.lastActivity) / this.opts.idleScale, this.idle);
@@ -678,14 +703,47 @@ export class GagLayer {
   private tickWild(): void {
     if (!this.opts.wildlife || reducedMotion() || this.busy()) return;
     const now = performance.now();
-    const due = dueWildlife((now - this.levelStart) / this.opts.idleScale, (now - this.lastActivity) / this.opts.idleScale, this.wild, this.opts.animal);
+    const due = dueWildlife((now - this.levelStart) / this.opts.idleScale, (now - this.lastActivity) / this.opts.idleScale, this.wild);
     if (!due) return;
-    if (due === 'animal') this.wild = { ...this.wild, animalDone: true };
-    else if (due === 'hotshot') this.wild = { ...this.wild, hotshotDone: true };
-    else this.wild = { ...this.wild, visitorDone: true };
+    this.wild = { ...this.wild, next: this.wild.next + 1 };
+    this.startWild(due);
+  }
+
+  /**
+   * Demo mode: a gag about every 15 seconds (the first about 5 seconds in), unfound ones first.
+   * It sets off the idle and triggered gags too (magpie, spotter, biffy, landowner).
+   */
+  private tickDemo(): void {
+    const now = performance.now();
+    const scale = this.opts.idleScale;
+    // Nobody's going to wake the spotter in a demo: after a short doze he startles himself.
+    if (this.spotter?.state === 'asleep') {
+      if (!this.asleepAt) this.asleepAt = now;
+      else if (now - this.asleepAt > 2500 * scale) void this.wakeSpotter();
+    } else this.asleepAt = 0;
+    if (this.busy()) {
+      this.demoAt = Math.max(this.demoAt, now + 1500 * scale); // a breath between gags
+      return;
+    }
+    if (now < this.demoAt) return;
+    const pool = demoPool(this.opts.regionId, !!this.biffy).filter((g) => g !== 'magpie' || this.host.state().trucks.length > 0);
+    const gag = demoNext(pool, this.opts.found(), this.demoTried);
+    if (!gag) return;
+    this.demoTried.push(gag);
+    this.demoAt = now + DEMO_EVERY_MS * scale;
+    if (gag === 'magpie') this.runIdleGag((s) => this.magpie(s));
+    else if (gag === 'spotter') this.runIdleGag((s) => this.spotterWalksOn(s));
+    else if (gag === 'landowner') void this.landowner();
+    else if (gag === 'biffy') {
+      this.biffy!.done = false;
+      void this.biffyGag();
+    } else this.startWild(gag);
+  }
+
+  private startWild(gag: WildGag): void {
     const ctl = new AbortController();
     this.wildGag = ctl;
-    const play = this.play(due === 'hotshot' ? 'hotshot' : due === 'visitor' ? this.wild.visitor : this.opts.animal!, ctl.signal);
+    const play = this.play(gag, ctl.signal);
     play
       .catch(() => {})
       .finally(() => {
@@ -703,7 +761,7 @@ export class GagLayer {
   }
 
   /** Plays one of the outside scenes. */
-  private play(gag: Animal | Visitor | 'hotshot', signal: AbortSignal): Promise<void> {
+  private play(gag: WildGag, signal: AbortSignal): Promise<void> {
     if (gag === 'hotshot') return this.hotshot(signal);
     if (gag === 'bear') return this.bear(signal);
     if (gag === 'moose') return this.moose(signal);
@@ -812,9 +870,10 @@ export class GagLayer {
     Object.assign(el.style, { width: `${bushW}px`, height: `${bushH}px`, transform: `translate(${bushX}px, ${strip.base - bushH}px)` });
   }
 
-  /** Bear (Montney): the full puppet-rig scene beside the bush (bear-scene.ts). */
+  /** The legendary bear: the full puppet-rig scene beside the bush (bear-scene.ts). */
   private async bear(signal: AbortSignal): Promise<void> {
     if (!this.bush || !this.bearPlan) return;
+    this.bearDone = true;
     const edges = this.screenEdges();
     await playBear(this.sceneLayer('front'), this.bearPlan, { ground: this.groundStrip().base, screenL: edges.left, screenR: edges.right }, signal);
     this.onSeen('bear');

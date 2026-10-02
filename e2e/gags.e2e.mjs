@@ -2,6 +2,7 @@
 // comes after 1s and the spotter after 2s. Checks each gag fires at the right moment, stays off
 // the 6x6 grid (or on a truck roof), never blocks a touch, and shows still under reduced motion.
 // Run: npm run dev -- --host   (in one terminal), then:  npm run test:e2e:gags
+import { UNLOCKED } from './progress.mjs';
 import { chromium, devices } from 'playwright';
 import { REGIONS } from '../src/levels/regions.ts';
 import { getMoveRange, newGame, solve } from '../src/engine/index.ts';
@@ -23,10 +24,10 @@ async function open(reducedMotion, base = BASE) {
   const context = await browser.newContext({ ...devices['iPhone 13'], reducedMotion });
   const page = await context.newPage();
   await page.goto(base, { waitUntil: 'networkidle' });
-  await page.evaluate(() => {
+  await page.evaluate((p) => {
     localStorage.clear();
-    localStorage.setItem('rush-hour-rigs:v2', JSON.stringify({ best: {}, hints: 3, perfect: [], dailyCleared: [], demo: true, announced: [] }));
-  });
+    localStorage.setItem('rush-hour-rigs:v2', p);
+  }, UNLOCKED);
   await page.reload({ waitUntil: 'networkidle' });
   const cdp = await context.newCDPSession(page);
   const tp = (x, y) => [{ x, y, id: 1, radiusX: 4, radiusY: 4, force: 1 }];
@@ -377,87 +378,119 @@ function watchStage() {
     }
 
 // ---------------- Wildlife and traffic (puppet-rig scenes) ----------------
+const stopWatchOn = (page) => page.evaluate(() => (clearInterval(window.__wildTimer), window.__wild));
+const played = (w) => [...Object.keys(w.beats).filter((k) => w.beats[k].length), ...(w.hotshot.length || w.hotshotOn ? ['hotshot'] : [])];
+
+// Each scene on its own (?gag= link), watched on its second run so nothing is missed.
 {
-  const { browser, page, touch } = await open('no-preference', ROOT + '?idle=0.1&audiolog');
-  console.log('\nchromium iPhone 13, wildlife and hot shot (idle x0.1)');
-  /** Watches the stage every 30ms: the beats each scene goes through, where things are, and overlaps. */
-  const watch = () => page.evaluate(watchStage);
-  const stopWatch = () => page.evaluate(() => (clearInterval(window.__wildTimer), window.__wild));
-  const heardNow = () => page.evaluate(() => { const a = window.__rhrAudio; const l = a ? [...a.log] : []; if (a) a.log.length = 0; return l; });
-  const BEAR_BEATS = ['walk', 'squat', 'strain', 'rabbit', 'sniff', 'notice', 'windup', 'grab', 'wipe', 'setdown', 'freeze', 'shake', 'bolt'];
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ ...devices['iPhone 13'] });
+  const page = await context.newPage();
+  const cdp = await context.newCDPSession(page);
+  console.log('\nchromium iPhone 13, each scene (?gag= links)');
+  const scene = async (gag, sel, during = async () => {}) => {
+    await page.goto(`${ROOT}?gag=${gag}&audiolog`, { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.body.click()); // a tap starts the audio
+    await page.waitForSelector(sel, { state: 'attached', timeout: 4000 }).catch(() => {});
+    await page.waitForSelector(sel, { state: 'detached', timeout: 25000 }).catch(() => {});
+    await page.evaluate(() => (window.__rhrAudio.log.length = 0));
+    await page.evaluate(watchStage);
+    await page.waitForSelector(sel, { state: 'attached', timeout: 5000 }).catch(() => {});
+    const extra = await during();
+    await page.waitForSelector(sel, { state: 'detached', timeout: 25000 }).catch(() => {});
+    await wait(150);
+    return { w: await stopWatchOn(page), log: await page.evaluate(() => [...window.__rhrAudio.log]), extra };
+  };
 
-  // Montney: the bush is there from the start; the bear's whole scene, then the hot shot.
-  await enter(page, 2, 0);
-  const bush = await page.evaluate(() => {
-    const b = document.querySelector('.gag.bush');
-    if (!b) return null;
-    const r = b.getBoundingClientRect();
-    return { top: r.top, board: document.querySelector('.board').getBoundingClientRect().bottom };
+  // The bear (legendary; this link opens Duvernay 8).
+  let r = await scene('bear', '.bear-stage', async () => {
+    const where = await page.$eval('.hud .num', (n) => n.textContent);
+    const bush = await page.evaluate(() => {
+      const b = document.querySelector('.gag.bush');
+      return b ? { top: b.getBoundingClientRect().top, board: document.querySelector('.board').getBoundingClientRect().bottom } : null;
+    });
+    await page.waitForSelector('.bear-stage[data-beat="strain"]', { timeout: 15000 }).catch(() => {});
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 195, y: 300, id: 1 }] });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await wait(150);
+    return { where, bush, alive: !!(await page.$('.bear-stage')) };
   });
-  check(!!bush && bush.top >= bush.board - 1, 'Montney: a bush stands at the bottom from the start of the level');
-  await watch();
-  await page.waitForSelector('.bear-stage[data-beat="strain"]', { timeout: 15000 }).catch(() => {});
-  await touch.tapAt(195, 300);
-  await wait(150);
-  check(!!(await page.$('.bear-stage')), 'a touch mid-scene does not cancel the bear');
-  await page.waitForSelector('.bear-stage', { state: 'detached', timeout: 25000 }).catch(() => {});
-  await page.waitForSelector('.hotshot', { timeout: 15000 }).catch(() => {});
-  await page.waitForSelector('.hotshot', { state: 'detached', timeout: 3000 }).catch(() => {});
-  await wait(200);
-  let w = await stopWatch();
-  let log = await heardNow();
-  check(JSON.stringify(w.beats.bear) === JSON.stringify(BEAR_BEATS), `every beat, in order: ${w.beats.bear.join(' > ')}`);
-  check(w.wipes === 2, `two wipes (${w.wipes})`);
-  const notice = w.beatAt['bear:windup'] - w.beatAt['bear:notice'];
+  check(/duvernay 8/i.test(r.extra.where), `?gag=bear opens ${r.extra.where}`);
+  check(!!r.extra.bush && r.extra.bush.top >= r.extra.bush.board - 1, 'a bush stands at the bottom');
+  check(r.extra.alive, 'a touch mid-scene does not cancel the bear');
+  check(r.w.beats.bear.join(' > ') === 'walk > squat > strain > rabbit > sniff > notice > windup > grab > wipe > setdown > freeze > shake > bolt', `every beat, in order: ${r.w.beats.bear.join(' > ')}`);
+  check(r.w.wipes === 2, `two wipes (${r.w.wipes})`);
+  const notice = r.w.beatAt['bear:windup'] - r.w.beatAt['bear:notice'];
   check(notice >= 1200, `eyes pop, slow head turn and a hold before the grab (${Math.round(notice)}ms)`);
-  check(['bear-grunt', 'bear-huff', 'rabbit-squeak', 'pop', 'swish', 'shake'].every((n) => log.includes(n)), `sounds: grunt, huff, squeak, pop, swish, shake (${[...new Set(log)].join(' ')})`);
-  check(w.onButtons.length === 0, `never over the buttons (${w.onButtons[0] ?? 'clear'})`);
-  check(w.hotshot.length === 1 && w.hotshot[0] < 1000, `hot shot screams past in under a second (${w.hotshot.map(Math.round).join(', ')}ms)`);
-  check(log.includes('hotshot'), 'sound: hot shot roar');
-  check(w.overlap.length === 0, `one gag at a time (${w.overlap[0] ?? 'never together'})`);
-  check(w.noteShown.length === 0, 'the hint line steps aside while they pass');
-  check(w.beats.moose.length === 0, 'no moose in Montney');
+  check(['bear-grunt', 'bear-huff', 'rabbit-squeak', 'pop', 'swish', 'shake'].every((n) => r.log.includes(n)), `sounds: grunt, huff, squeak, pop, swish, shake (${[...new Set(r.log)].join(' ')})`);
+  check(r.w.onBoard.length === 0 && r.w.onButtons.length === 0, `never over the board or the buttons (${r.w.onBoard[0] ?? r.w.onButtons[0] ?? 'clear'})`);
+  check(r.w.noteShown.length === 0, 'the hint line steps aside while he is on');
 
-  // Duvernay: the moose peeks in over the top fence, chews, stares for 2 seconds, pulls back.
-  await enter(page, 3, 0);
-  await watch();
-  await page.waitForSelector('.moose-peek[data-beat="stare"]', { timeout: 15000 }).catch(() => {});
-  const behind = await page.evaluate(() => {
-    const m = document.querySelector('.moose-peek');
-    const hud = document.querySelector('.hud');
-    if (!m) return null;
-    const z = (e) => Number(getComputedStyle(e).zIndex) || 0;
-    return { mooseZ: z(m.parentElement), hudZ: z(hud), stageZ: z(document.querySelector('.stage')) };
-  });
-  check(!!behind && behind.mooseZ < behind.hudZ && behind.mooseZ < behind.stageZ, `Duvernay: the moose is behind the HUD and the board (${JSON.stringify(behind)})`);
-  await page.waitForSelector('.moose-peek', { state: 'detached', timeout: 15000 }).catch(() => {});
-  w = await stopWatch();
-  log = await heardNow();
-  check(JSON.stringify(w.beats.moose) === JSON.stringify(['up', 'chew', 'stare', 'down']), `peekaboo: pops up, blinks and chews, stares, ducks out (${w.beats.moose.join(' > ')})`);
-  const stare = w.beatAt['moose:down'] - w.beatAt['moose:stare'];
-  const total = w.mooseGone - w.beatAt['moose:up'];
+  // The moose: a quick peekaboo behind the HUD and the board.
+  r = await scene('moose', '.moose-peek', () =>
+    page.evaluate(() => {
+      const m = document.querySelector('.moose-peek');
+      if (!m) return null;
+      const z = (e) => Number(getComputedStyle(e).zIndex) || 0;
+      return { mooseZ: z(m.parentElement), hudZ: z(document.querySelector('.hud')), stageZ: z(document.querySelector('.stage')) };
+    }),
+  );
+  check(!!r.extra && r.extra.mooseZ < r.extra.hudZ && r.extra.mooseZ < r.extra.stageZ, `the moose is behind the HUD and the board (${JSON.stringify(r.extra)})`);
+  check(r.w.beats.moose.join(' > ') === 'up > chew > stare > down', `peekaboo: pops up, blinks and chews, stares, ducks out (${r.w.beats.moose.join(' > ')})`);
+  const stare = r.w.beatAt['moose:down'] - r.w.beatAt['moose:stare'];
+  const total = r.w.mooseGone - r.w.beatAt['moose:up'];
   check(stare >= 500 && stare <= 1000, `a short stare (${Math.round(stare)}ms)`);
   check(total < 3000, `under 3 seconds in all (${Math.round(total)}ms)`);
-  check(log.includes('moose-groan'), 'sound: low moose groan');
-  check(w.onBoard.length === 0, `only his head and antlers, above the fence (${w.onBoard[0] ?? 'clear'})`);
-  check(w.eyesHidden.length === 0, `his eyes stay clear of the HUD (${w.eyesHidden[0] ?? 'clear'})`);
-  check(w.beats.bear.length === 0, 'no bear in Duvernay');
+  check(r.log.includes('moose-groan'), 'sound: low moose groan');
+  check(r.w.onBoard.length === 0, `only his head and antlers, above the fence (${r.w.onBoard[0] ?? 'clear'})`);
+  check(r.w.eyesHidden.length === 0, `his eyes stay clear of the HUD (${r.w.eyesHidden[0] ?? 'clear'})`);
 
-  // Cardium: the gopher, the hot shot, and a visitor (geese or the pumper); no bear or moose.
-  await enter(page, 1, 3);
-  await watch();
-  await page.waitForSelector('.gopher-stage', { timeout: 15000 }).catch(() => {});
-  await page.waitForSelector('.gopher-stage', { state: 'detached', timeout: 10000 }).catch(() => {});
-  await page.waitForFunction(() => window.__wild.hotshot.length && (window.__wild.beats.geese.length || window.__wild.beats.pumper.length), null, { timeout: 15000 }).catch(() => {});
-  await page.waitForSelector('.geese-stage, .pumper-stage', { state: 'detached', timeout: 15000 }).catch(() => {});
-  w = await stopWatch();
-  log = await heardNow();
-  check(JSON.stringify(w.beats.gopher) === JSON.stringify(['hole', 'peek', 'up', 'whistle', 'down']), `Cardium: gopher pops out, peeks, stands, whistles, drops back (${w.beats.gopher.join(' > ')})`);
-  check(log.includes('whistle'), 'sound: gopher whistle');
-  check(w.hotshot.length === 1 && !w.beats.bear.length && !w.beats.moose.length, 'hot shot too; no bear or moose');
-  check(w.beats.geese.length + w.beats.pumper.length > 0, `a visitor drops by (${w.beats.geese.length ? 'geese' : w.beats.pumper.length ? 'pumper' : 'none'})`);
-  check(w.overlap.length === 0, `one gag at a time (${w.overlap[0] ?? 'never together'})`);
-  check(w.onBoard.length === 0 && w.onButtons.length === 0, `never over the board or the buttons (${w.onBoard[0] ?? w.onButtons[0] ?? 'clear'})`);
+  // The gopher and the hot shot.
+  r = await scene('gopher', '.gopher-stage');
+  check(r.w.beats.gopher.join(' > ') === 'hole > peek > up > whistle > down', `gopher pops out, peeks, stands, whistles, drops back (${r.w.beats.gopher.join(' > ')})`);
+  check(r.log.includes('whistle'), 'sound: gopher whistle');
+  r = await scene('hotshot', '.hotshot');
+  check(r.w.hotshot.length === 1 && r.w.hotshot[0] < 1000, `hot shot screams past in under a second (${r.w.hotshot.map(Math.round).join(', ')}ms)`);
+  check(r.log.includes('hotshot'), 'sound: hot shot roar');
+  await browser.close();
+}
+
+// Normal play (idle x0.1): two scenes a visit from the level's own pool; the bear only deep in the Duvernay.
+{
+  const { browser, page, touch } = await open('no-preference', ROOT + '?idle=0.1&audiolog');
+  console.log('\nchromium iPhone 13, wildlife in normal play (idle x0.1)');
+  /** Plays a visit until two scenes have come and gone (a tap now and then wakes the spotter, who'd hold things up). */
+  const visit = async (tab, index) => {
+    await enter(page, tab, index);
+    const bush = !!(await page.$('.gag.bush'));
+    await page.evaluate(watchStage);
+    const t0 = Date.now();
+    while (Date.now() - t0 < 45000) {
+      const n = await page.evaluate(() => {
+        const w = window.__wild;
+        const on = document.querySelector('.bear-stage, .moose-peek, .gopher-stage, .geese-stage, .pumper-stage, .hotshot');
+        return on ? -1 : Object.values(w.beats).filter((b) => b.length).length + w.hotshot.length;
+      });
+      if (n >= 2) break;
+      if (await page.$('.spotter.asleep')) await touch.tapAt(20, 60);
+      await wait(400);
+    }
+    await wait(2500); // and nothing more after the second
+    const w = await stopWatchOn(page);
+    return { w, bush, kinds: played(w) };
+  };
+  for (const [tab, index, name, pool, bushHere] of [
+    [1, 3, 'Cardium 4', ['gopher', 'hotshot', 'geese', 'pumper'], false],
+    [2, 0, 'Montney 1', ['hotshot', 'geese', 'pumper'], false],
+    [3, 0, 'Duvernay 1', ['moose', 'hotshot', 'geese', 'pumper'], false],
+    [3, 8, 'Duvernay 9', ['bear', 'moose', 'hotshot', 'geese', 'pumper'], true],
+  ]) {
+    const v = await visit(tab, index);
+    check(v.kinds.length === 2 && v.kinds.every((k) => pool.includes(k)), `${name}: two scenes from its pool (${v.kinds.join(', ')})`);
+    check(v.bush === bushHere, bushHere ? `${name}: a bush waits for the bear (he comes about 1 visit in 3${v.kinds.includes('bear') ? '; he came' : ''})` : `${name}: no bush, no bear`);
+    check(v.w.overlap.length === 0, `one gag at a time (${v.w.overlap[0] ?? 'never together'})`);
+    check(v.w.onBoard.length === 0 && v.w.onButtons.length === 0, `never over the board or the buttons (${v.w.onBoard[0] ?? v.w.onButtons[0] ?? 'clear'})`);
+  }
   await browser.close();
 }
 
@@ -486,7 +519,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }
   const context = await browser.newContext({ ...devices['iPhone 13'] });
   const page = await context.newPage();
   console.log('\n?gag= links');
-  for (const [gag, sel] of [['bear', '.bear-stage'], ['moose', '.moose-peek'], ['biffy', '.worker-bent'], ['gopher', '.gopher-stage'], ['geese', '.geese-stage'], ['pumper', '.pumper-stage']]) {
+  for (const [gag, sel] of [['bear', '.bear-stage'], ['moose', '.moose-peek'], ['biffy', '.worker-bent'], ['gopher', '.gopher-stage'], ['geese', '.geese-stage'], ['pumper', '.pumper-stage'], ['hotshot', '.hotshot']]) {
     const t0 = Date.now();
     await page.goto(`${ROOT}?gag=${gag}`, { waitUntil: 'networkidle' });
     const ok = await page.waitForSelector(sel, { timeout: 3000 }).then(() => true).catch(() => false);
@@ -525,10 +558,13 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }
 // Reduced motion: none of them.
 {
   const { browser, page } = await open('reduce', ROOT + '?idle=0.1');
-  await enter(page, 2, 0);
-  await wait(8000);
-  const any = await page.evaluate(() => document.querySelectorAll('.gag.wild').length);
-  check(any === 0, 'reduced motion: no bear, moose or hot shot');
+  await enter(page, 1, 0);
+  let any = 0;
+  for (let i = 0; i < 16; i++) {
+    any += await page.evaluate(() => document.querySelectorAll('.gag.wild, .geese-stage, .moose-peek').length);
+    await wait(500);
+  }
+  check(any === 0, 'reduced motion: no wildlife scenes');
   await browser.close();
 }
 

@@ -3,10 +3,21 @@ import { parseLevel } from '../engine/index.ts';
 import { mulberry32 } from '../engine/rng.ts';
 import {
   ANIMAL_IDLE_MS,
+  BEAR_CHANCE,
+  DEMO_EVERY_MS,
+  DEMO_FIRST_MS,
+  UNFOUND_WEIGHT,
   WILD_GAP_MS,
+  WILD_SLOTS,
+  bearComes,
+  bearEligible,
+  demoNext,
+  demoPool,
+  weightedPick,
+  wildPool,
+  type DemoGag,
   type WildState,
   MAGPIE_IDLE_MS,
-  animalFor,
   dueWildlife,
   planWildlife,
   fitSpan,
@@ -129,57 +140,121 @@ describe('magpie', () => {
 });
 
 describe('wildlife and traffic', () => {
-  it('gopher in Cardium, bear in Montney, moose in Duvernay, no animal elsewhere', () => {
-    expect(animalFor('montney')).toBe('bear');
-    expect(animalFor('duvernay')).toBe('moose');
-    expect(animalFor('cardium')).toBe('gopher');
-    expect(animalFor('daily')).toBeNull();
+  const where = (regionId: string, levelIndex: number, demo = false) => ({ regionId, levelIndex, demo });
+
+  it('gopher in Cardium, moose in Duvernay; hot shot, geese and pumper everywhere; the bear in no pool', () => {
+    expect(wildPool('cardium')).toEqual(['gopher', 'hotshot', 'geese', 'pumper']);
+    expect(wildPool('montney')).toEqual(['hotshot', 'geese', 'pumper']);
+    expect(wildPool('duvernay')).toEqual(['moose', 'hotshot', 'geese', 'pumper']);
+    expect(wildPool('daily')).toEqual(['hotshot', 'geese', 'pumper']);
   });
 
-  it('random moments stay mid-level and well apart', () => {
-    const rand = mulberry32(7);
-    const visitors = new Set<string>();
-    for (let i = 0; i < 500; i++) {
-      const p = planWildlife(rand);
-      expect(p.animalAt).toBeGreaterThanOrEqual(20_000);
-      expect(p.animalAt).toBeLessThanOrEqual(50_000);
-      expect(p.hotshotAt).toBeGreaterThanOrEqual(8_000);
-      expect(p.hotshotAt).toBeLessThanOrEqual(70_000);
-      expect(p.visitorAt).toBeGreaterThanOrEqual(12_000);
-      expect(p.visitorAt).toBeLessThanOrEqual(90_000);
-      const at = [p.animalAt, p.hotshotAt, p.visitorAt];
-      for (let a = 0; a < 3; a++) for (let b = a + 1; b < 3; b++) expect(Math.abs(at[a] - at[b])).toBeGreaterThanOrEqual(WILD_GAP_MS - 1e-6);
-      visitors.add(p.visitor);
+  it('the bear is eligible only in Duvernay levels 8 to 10 (anywhere in demo mode)', () => {
+    for (const region of ['cardium', 'montney', 'duvernay', 'daily'])
+      for (let i = 0; i < 10; i++) expect(bearEligible(where(region, i)), `${region} ${i + 1}`).toBe(region === 'duvernay' && i >= 7);
+    expect(bearEligible(where('cardium', 0, true))).toBe(true);
+    expect(bearEligible(where('daily', 0, true))).toBe(true);
+    // Never comes where he isn't eligible, whatever the dice say.
+    expect(bearComes(where('montney', 8), () => 0)).toBe(false);
+    expect(bearComes(where('duvernay', 6), () => 0)).toBe(false);
+  });
+
+  it('where eligible, he comes about one visit in three', () => {
+    const rand = mulberry32(11);
+    let n = 0;
+    for (let i = 0; i < 6000; i++) if (bearComes(where('duvernay', 8), rand)) n++;
+    expect(n / 6000).toBeGreaterThan(0.3);
+    expect(n / 6000).toBeLessThan(0.37);
+    expect(BEAR_CHANCE).toBeCloseTo(1 / 3);
+  });
+
+  it('an unfound entry is picked about 3x as often as a found one', () => {
+    const rand = mulberry32(5);
+    const count = { geese: 0, pumper: 0, hotshot: 0 };
+    for (let i = 0; i < 10_000; i++) count[weightedPick(['geese', 'pumper', 'hotshot'] as const, new Set(['geese', 'hotshot']), rand)]++;
+    expect(count.pumper / count.geese).toBeGreaterThan(2.6);
+    expect(count.pumper / count.geese).toBeLessThan(3.4);
+    expect(count.pumper / count.hotshot).toBeGreaterThan(2.6);
+    expect(count.pumper / count.hotshot).toBeLessThan(3.4);
+    expect(UNFOUND_WEIGHT).toBe(3);
+    // Found ones still appear.
+    expect(count.geese).toBeGreaterThan(1000);
+  });
+
+  it('with nothing found, or everything found, the picks are even', () => {
+    const rand = mulberry32(9);
+    for (const found of [new Set<string>(), new Set(['geese', 'pumper'])]) {
+      let geese = 0;
+      for (let i = 0; i < 4000; i++) if (weightedPick(['geese', 'pumper'] as const, found, rand) === 'geese') geese++;
+      expect(geese / 4000).toBeGreaterThan(0.46);
+      expect(geese / 4000).toBeLessThan(0.54);
     }
-    expect([...visitors].sort()).toEqual(['geese', 'pumper']);
   });
 
-  const plan = (o: Partial<WildState>): WildState => ({
-    animalAt: 30_000,
-    hotshotAt: 50_000,
-    visitorAt: 70_000,
-    visitor: 'geese',
-    animalDone: false,
-    hotshotDone: false,
-    visitorDone: false,
-    ...o,
+  it('a visit plays two different scenes, unfound ones far more often, well apart in time', () => {
+    const rand = mulberry32(7);
+    const seen = { gopher: 0, hotshot: 0, geese: 0, pumper: 0 } as Record<string, number>;
+    for (let i = 0; i < 3000; i++) {
+      const p = planWildlife(wildPool('cardium'), new Set(['hotshot', 'geese', 'pumper']), false, rand);
+      expect(p.queue).toHaveLength(WILD_SLOTS);
+      expect(new Set(p.queue.map((q) => q.gag)).size).toBe(WILD_SLOTS);
+      expect(p.queue[0].at).toBeGreaterThanOrEqual(10_000);
+      expect(p.queue[0].at).toBeLessThanOrEqual(30_000);
+      expect(p.queue[1].at - p.queue[0].at).toBeGreaterThanOrEqual(WILD_GAP_MS);
+      for (const q of p.queue) seen[q.gag]++;
+    }
+    // The one unfound entry (the gopher) is in most visits; each found one in far fewer.
+    expect(seen.gopher / 3000).toBeGreaterThan(0.7);
+    for (const g of ['hotshot', 'geese', 'pumper']) expect(seen[g]).toBeLessThan(seen.gopher * 0.65);
+    for (const g of ['hotshot', 'geese', 'pumper']) expect(seen[g]).toBeGreaterThan(300);
   });
 
-  it('the animal comes after 15s idle, or at its moment even while you play', () => {
-    const s = plan({});
-    expect(dueWildlife(10_000, 5_000, s, 'bear')).toBeNull();
-    expect(dueWildlife(16_000, ANIMAL_IDLE_MS, s, 'gopher')).toBe('animal');
-    expect(dueWildlife(30_000, 200, s, 'moose')).toBe('animal');
-    expect(dueWildlife(30_000, 200, { ...s, animalDone: true }, 'moose')).toBeNull();
-    expect(dueWildlife(30_000, 20_000, s, null)).toBeNull();
+  it('when the bear comes he goes first, and only then', () => {
+    const rand = mulberry32(3);
+    for (let i = 0; i < 200; i++) {
+      const withBear = planWildlife(wildPool('duvernay'), new Set(), true, rand);
+      expect(withBear.queue[0].gag).toBe('bear');
+      expect(withBear.queue).toHaveLength(WILD_SLOTS);
+      expect(planWildlife(wildPool('duvernay'), new Set(), false, rand).queue.some((q) => q.gag === 'bear')).toBe(false);
+    }
   });
 
-  it('the hot shot and the visitor come once each, at their moments, in every region', () => {
-    const s = plan({ hotshotAt: 12_000, visitorAt: 24_000 });
-    expect(dueWildlife(11_000, 0, s, null)).toBeNull();
-    expect(dueWildlife(12_000, 0, s, null)).toBe('hotshot');
-    expect(dueWildlife(24_000, 0, { ...s, hotshotDone: true }, null)).toBe('visitor');
-    expect(dueWildlife(90_000, 0, { ...s, hotshotDone: true, animalDone: true, visitorDone: true }, 'bear')).toBeNull();
+  it('the first scene comes after 15s idle or at its moment; later ones only at theirs', () => {
+    const s: WildState = { queue: [{ gag: 'moose', at: 30_000 }, { gag: 'geese', at: 50_000 }], next: 0 };
+    expect(dueWildlife(10_000, 5_000, s)).toBeNull();
+    expect(dueWildlife(16_000, ANIMAL_IDLE_MS, s)).toBe('moose');
+    expect(dueWildlife(30_000, 200, s)).toBe('moose');
+    expect(dueWildlife(40_000, 20_000, { ...s, next: 1 })).toBeNull();
+    expect(dueWildlife(50_000, 0, { ...s, next: 1 })).toBe('geese');
+    expect(dueWildlife(90_000, 90_000, { ...s, next: 2 })).toBeNull();
+  });
+
+  it('demo mode: the bear anywhere, others where they live', () => {
+    expect(demoPool('cardium', true)).toEqual(['magpie', 'spotter', 'biffy', 'bear', 'gopher', 'hotshot', 'geese', 'pumper']);
+    expect(demoPool('montney', false)).toEqual(['magpie', 'spotter', 'landowner', 'bear', 'hotshot', 'geese', 'pumper']);
+    expect(demoPool('duvernay', true)).toContain('moose');
+    expect(DEMO_FIRST_MS).toBe(5_000);
+    expect(DEMO_EVERY_MS).toBe(15_000);
+  });
+
+  it('demo mode plays unfound gags first, then found ones without repeating itself', () => {
+    const pool = demoPool('cardium', true);
+    const found = new Set<string>(['magpie', 'spotter']);
+    const tried: DemoGag[] = [];
+    const order: DemoGag[] = [];
+    for (let i = 0; i < 6; i++) {
+      const g = demoNext(pool, found, tried)!;
+      order.push(g);
+      tried.push(g);
+      found.add(g);
+    }
+    expect(order).toEqual(['biffy', 'bear', 'gopher', 'hotshot', 'geese', 'pumper']);
+    // A gag that was cut short (still unfound) is tried again, after the other unfound ones.
+    expect(demoNext(['magpie', 'spotter'], new Set(), ['magpie'])).toBe('spotter');
+    expect(demoNext(['magpie', 'spotter'], new Set(), ['magpie', 'spotter'])).toBe('magpie');
+    // Everything found: any of them, but not the last one again.
+    const rand = mulberry32(2);
+    for (let i = 0; i < 50; i++) expect(demoNext(pool, new Set(pool), ['geese'], rand)).not.toBe('geese');
   });
 
   it('the bear scene fits clear of the biffy', () => {

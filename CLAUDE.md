@@ -107,8 +107,22 @@ something, give exact clicks and one command at a time.
   board (`sceneLayer`: the board's drop-shadow filter would force a redraw every frame); no CSS
   filters on them (ground-shadow ellipses instead). Must hold 60fps (checked with 4x CPU throttle).
 - Wildlife and traffic. Touches never cancel them; each waits while another gag is on stage (and the
-  landowner or biffy wait for them). Reduced motion: skipped entirely. Once per level each:
-  - Bear (Montney, `bear-scene.ts`): after 15s idle or a random moment 20-50s in. A bush stands at
+  landowner or biffy wait for them; a sleeping spotter holds them up until he's woken). Reduced
+  motion: skipped entirely.
+- Rarity (`gags.ts`, tested): each level visit plays `WILD_SLOTS` (2) scenes drawn without repeats
+  from the level's pool (`wildPool`: Cardium gopher, Duvernay moose, plus hot shot, geese, pumper
+  anywhere). Unfound Wildlife Log entries weigh `UNFOUND_WEIGHT` (3x) found ones (`weightedPick`).
+  The first comes after 15s idle or 10-30s in; the second 12-30s after that.
+- The Bear is legendary: eligible only in Duvernay levels 8-10 (`bearEligible`), rolled once per
+  level visit at `BEAR_CHANCE` (1 in 3; restarts don't re-roll); when he comes he takes the first
+  slot. A bush stands in every eligible level whether he comes or not. Not in Montney any more.
+- Demo mode (Settings → Unlock everything): `tickDemo` plays a gag about 5s in, then about every
+  15s (`DEMO_FIRST_MS`, `DEMO_EVERY_MS`), unfound first (`demoNext`), from `demoPool` (magpie,
+  spotter, biffy, Montney's landowner, the Bear in ANY level, plus the level's pool). The spotter
+  wakes himself after a short doze. Demo sightings go to a separate demo log (see Wildlife Log).
+  E2E tests therefore use `e2e/progress.mjs` (`UNLOCKED`: all levels cleared, demo off).
+- The scenes:
+  - Bear (`bear-scene.ts`): a bush stands at
     the bottom from level start (placed clear of the biffy). A background gag: 90% of the strip's
     height at his tallest (sitting, ear tips to paws), never over the board or the buttons (checked
     at 375px wide too). Beats (`data-beat`): walk (alternating
@@ -117,20 +131,20 @@ something, give exact clicks and one command at a time.
     paw, held by the scruff) > wipe (two, behind his rump, ears flapping, fur frazzled) > setdown >
     freeze > shake (wet dog) > bolt (rabbit right with flat ears and speed lines, bear left after a
     satisfied hop). The hint line fades while he's on.
-  - Moose (Duvernay, `moose-scene.ts`): same timing. A small, quick peekaboo behind the board: only
+  - Moose (Duvernay, `moose-scene.ts`). A small, quick peekaboo behind the board: only
     his head and antlers pop up over the top fence (chin hidden behind it). Up > chew (blinks, chews
     once) > stare (short, + groan) > down, under 3 seconds (`PEEK`).
-  - Hot shot (all regions): random moment 8-45s in. Pickup screams across the bottom in <1s in
+  - Hot shot (all regions). Pickup screams across the bottom in <1s in
     dust/mud/snow.
-  - Gopher (Cardium's animal, `visitor-scenes.ts`): same timing as the bear/moose. A hole opens by
+  - Gopher (Cardium, `visitor-scenes.ts`). A hole opens by
     the bottom fence (clear of the biffy); he peeks, looks around, pops up, whistles twice, drops back.
-  - Visitor (any region, one per level, random moment 12-55s in, kept 8s from the others):
+  - Canada geese and the pumper (any region):
     Canada geese (a V of 7 across the sky above the board, behind the HUD, a straggler flapping hard
     and honking to catch up) or the pumper (his pickup rolls up in the bottom strip, he checks a
     gauge, writes on his clipboard, drives off). Mirror figures via their inner svg (GSAP owns the
     element's transform and resets the CSS `scale` property).
-- Preview/test hooks: `?gag=bear`, `?gag=moose`, `?gag=biffy`, `?gag=gopher`, `?gag=geese`,
-  `?gag=pumper` open a suitable level and play that
+- Preview/test hooks: `?gag=bear` (opens Duvernay 8), `?gag=moose`, `?gag=biffy`, `?gag=gopher`,
+  `?gag=geese`, `?gag=pumper`, `?gag=hotshot` open a suitable level and play that
   scene at once, then again 1.5s after it ends (nothing else plays). `?idle=0.1` makes idle gags
   (and wildlife) come 10x sooner; `?wild=0` turns wildlife off. `npm run test:e2e:gags` tests them.
 
@@ -161,6 +175,11 @@ something, give exact clicks and one command at a time.
 - Camo pickups: `.v-camo` blotches in the pickup SVG over the truck's own paint (color stays
   readable, badge on top), shown by `body.camo-pickups`. On once earned; switch in Settings
   (locked until then).
+- The Bear's entry is `legendary`: gold frame and LEGENDARY tag on its card, found or not; hint
+  "Only deep in the Duvernay."
+- Demo log: with demo mode on, sightings are saved to `rush-hour-rigs:demo-log` instead, toasts say
+  "Demo sighting!", and the log page shows the demo log (DEMO tag). It never counts toward the real
+  log or camo. Demo off shows the real log again (the demo log is kept); Reset clears both.
 - `?log=all` previews a full log and camo without changing the saved log.
   `npm run test:e2e:log` tests it all.
 
