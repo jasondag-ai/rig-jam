@@ -247,7 +247,8 @@ export const sound = {
   },
   quad(state: 'start' | 'idle' | 'rev' | 'stop'): void {
     if (state === 'stop') return audio.release('quad');
-    const h = audio.hold('quad', fx.quad);
+    // Only 'start' turns the engine over, so a ride that outlives its screen can't restart it.
+    const h = state === 'start' ? audio.hold('quad', fx.quad) : audio.heldNow('quad');
     h?.set(state === 'idle' ? 0 : state === 'rev' ? 1 : 0.6);
   },
   snore(on: boolean): void {

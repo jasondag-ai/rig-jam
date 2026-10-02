@@ -76,14 +76,14 @@ const country: Style = {
   play(ctx, out, bar, step, t, s16) {
     const chord = this.chords[bar % 4];
     const root = this.roots[bar % 4];
-    if (step === 0) tone(ctx, out, { type: 'triangle', f: midi(root), t, dur: s16 * 3.5, gain: 0.22 });
-    if (step === 8) tone(ctx, out, { type: 'triangle', f: midi(root + 7 - (root >= 48 ? 12 : 0)), t, dur: s16 * 3.5, gain: 0.2 });
+    if (step === 0) tone(ctx, out, { type: 'triangle', f: midi(root), t, dur: s16 * 3.5, gain: 0.3 });
+    if (step === 8) tone(ctx, out, { type: 'triangle', f: midi(root + 7 - (root >= 48 ? 12 : 0)), t, dur: s16 * 3.5, gain: 0.28 });
     if (step === 4 || step === 12) {
-      chord.forEach((n, i) => twang(ctx, out, n, t + i * 0.012, 0.035));
+      chord.forEach((n, i) => twang(ctx, out, n, t + i * 0.012, 0.05));
       noise(ctx, out, { t, dur: 0.12, gain: 0.08, attack: 0.01, filter: { type: 'bandpass', f: 3200, q: 0.6 } });
     }
     if (step % 2 === 0) noise(ctx, out, { t, dur: 0.05, gain: 0.025, attack: 0.01, filter: { type: 'highpass', f: 6000 } });
-    if (bar % 4 === 3 && step >= 8 && step % 2 === 0) twang(ctx, out, [67, 69, 71, 74][(step - 8) / 2], t, 0.05, 0.22);
+    if (bar % 4 === 3 && step >= 8 && step % 2 === 0) twang(ctx, out, [67, 69, 71, 74][(step - 8) / 2], t, 0.07, 0.22);
   },
 };
 
