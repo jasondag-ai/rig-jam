@@ -5,7 +5,7 @@
 import { SIZE } from '../engine/index.ts';
 import type { Motion } from './spray.ts';
 import type { Ground } from './themes.ts';
-import { DragPath, addWear, removeWear, sweepCells, sweepSegments, trackOpacity, type Sweep, type Wear } from './tracks.ts';
+import { DragPath, addWear, removeWear, sweepCells, sweepSegments, trackOpacity, wearLevel, type Sweep, type Wear } from './tracks.ts';
 
 const NS = 'http://www.w3.org/2000/svg';
 const PARTS = ['tt-edge', 'tt-mark', 'tt-tread'];
@@ -41,6 +41,8 @@ export class TrackLayer {
   private active: Active | null = null;
   private frame = 0;
   private onMotion: (m: Motion) => void;
+  /** Told the deepest wear level reached so far whenever a sweep wears the lane. */
+  onWear: (level: number) => void = () => {};
 
   constructor(onMotion: (m: Motion) => void = () => {}) {
     this.onMotion = onMotion;
@@ -152,6 +154,7 @@ export class TrackLayer {
     this.lines(g, sweepSegments(entry.orient, entry.lane, s, this.wear, 1));
     addWear(this.wear, entry.orient, entry.lane, cells);
     entry.worn.push(cells);
+    if (cells.length) this.onWear(Math.max(...cells.map((c) => wearLevel(this.wear, entry.orient, entry.lane, c))));
     entry.g.insertBefore(g, this.active?.entry === entry ? this.active.live : null);
   }
 

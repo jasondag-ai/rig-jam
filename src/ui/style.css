@@ -1764,3 +1764,262 @@ input,
 .overlay {
   overscroll-behavior: contain;
 }
+
+/* ---------- Gags (gag-layer.ts, art in cast.ts): never take touches, never on the grid ---------- */
+
+.gag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.gag svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 3px 1px rgba(0, 0, 0, 0.25));
+}
+
+/* Magpie */
+/* Above speech bubbles: the driver yells while the bird is still standing on his roof. */
+.magpie {
+  z-index: 25;
+}
+
+.magpie .mp-wing {
+  transform-box: view-box;
+  transform-origin: 32px 22px;
+}
+
+.magpie.flying .mp-wing {
+  animation: flap 150ms ease-in-out infinite alternate;
+}
+
+@keyframes flap {
+  from { transform: rotate(-35deg); }
+  to { transform: rotate(25deg) scaleY(0.6); }
+}
+
+.roof-splat {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.roof-splat svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Spotter: jogs on, flag dance, jogs off */
+.spotter .sp-arm-l {
+  transform-box: view-box;
+  transform-origin: 22px 34px;
+}
+
+.spotter .sp-arm-r {
+  transform-box: view-box;
+  transform-origin: 48px 34px;
+}
+
+.spotter.jogging svg {
+  animation: jog 240ms ease-in-out infinite alternate;
+}
+
+.spotter.dancing svg {
+  animation: jog 300ms ease-in-out infinite alternate;
+}
+
+.spotter.dancing .sp-arm-l {
+  animation: wave-l 300ms ease-in-out infinite alternate;
+}
+
+.spotter.dancing .sp-arm-r {
+  animation: wave-r 300ms ease-in-out infinite alternate;
+}
+
+@keyframes jog {
+  from { transform: translateY(0) rotate(-3deg); }
+  to { transform: translateY(-7%) rotate(3deg); }
+}
+
+@keyframes wave-l {
+  from { transform: rotate(-40deg); }
+  to { transform: rotate(35deg); }
+}
+
+@keyframes wave-r {
+  from { transform: rotate(40deg); }
+  to { transform: rotate(-35deg); }
+}
+
+/* Biffy: the door bangs open, a worker stumbles out hauling his coveralls up, then goes back in */
+.biffy .bf-door {
+  transform-box: view-box;
+  transform-origin: 9px 44px;
+  transition: transform 160ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.biffy.open .bf-door {
+  transform: scaleX(-0.35);
+}
+
+.gag-worker {
+  position: absolute;
+  left: 8%;
+  top: 14%;
+  width: 84%;
+  height: 86%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gag-worker svg {
+  filter: none;
+}
+
+.biffy.open .gag-worker {
+  opacity: 1;
+  transform: translateY(40%);
+  animation: stumble 1.9s ease-out forwards;
+}
+
+.biffy.open .wk-arms {
+  animation: tug 220ms ease-in-out infinite alternate;
+}
+
+@keyframes stumble {
+  0% { opacity: 0; transform: translateY(4%) scale(0.75); }
+  12% { opacity: 1; transform: translateY(34%) rotate(-14deg) scale(1); }
+  24% { transform: translateY(42%) rotate(11deg); }
+  38% { transform: translateY(44%) rotate(-6deg); }
+  72% { opacity: 1; transform: translateY(44%) rotate(0deg); }
+  90% { opacity: 1; transform: translateY(12%) scale(0.85); }
+  100% { opacity: 0; transform: translateY(2%) scale(0.75); }
+}
+
+@keyframes tug {
+  from { transform: translateY(0); }
+  to { transform: translateY(-6%); }
+}
+
+/* Landowner on his quad */
+.landowner .lo-fist {
+  transform-box: view-box;
+  transform-origin: 60px 18px;
+}
+
+.landowner.shaking .lo-fist {
+  animation: fist 140ms ease-in-out infinite alternate;
+}
+
+@keyframes fist {
+  from { transform: rotate(-14deg); }
+  to { transform: rotate(14deg); }
+}
+
+/* Block heater posts and cords (Duvernay) */
+.plug-post {
+  z-index: 2;
+}
+
+.plug-post .pp-plug {
+  display: none;
+}
+
+.plug-post.ripped .pp-plug {
+  display: inline;
+}
+
+.cords {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.cord {
+  fill: none;
+  stroke: #1c1c1c;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.spark {
+  z-index: 7;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffbd0 0 30%, #ffc21a 48%, rgba(255, 140, 0, 0) 72%);
+}
+
+/* Company Man on the win card */
+.company {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.company-man {
+  flex: none;
+  width: 58px;
+  height: 64px;
+}
+
+.company-man svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.company-says {
+  position: relative;
+  flex: 1;
+  margin: 0;
+  padding: 8px 12px;
+  border: 2.5px solid var(--outline);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+/* Tail pointing back at Company Man. */
+.company-says::before,
+.company-says::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  border: solid transparent;
+  transform: translateY(-50%);
+}
+
+.company-says::before {
+  right: 100%;
+  border-width: 9px;
+  border-right-color: var(--outline);
+}
+
+.company-says::after {
+  right: calc(100% - 4px);
+  border-width: 6px;
+  border-right-color: #fff;
+}
+
+@media (max-height: 700px) {
+  .company-man {
+    width: 48px;
+    height: 53px;
+  }
+
+  .company-says {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+}

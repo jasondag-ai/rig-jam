@@ -48,9 +48,9 @@ export class BoardView {
   private grid: HTMLElement;
   private getState: () => GameState;
   private onMove: (id: string, delta: number) => void;
-  private onBump: () => void;
+  private onBump: (truckId: string) => void;
 
-  constructor(getState: () => GameState, onMove: (id: string, delta: number) => void, onBump: () => void = () => {}) {
+  constructor(getState: () => GameState, onMove: (id: string, delta: number) => void, onBump: (truckId: string) => void = () => {}) {
     this.getState = getState;
     this.onMove = onMove;
     this.onBump = onBump;
@@ -275,7 +275,7 @@ export class BoardView {
   // ---------- Bumps: jolt, near-miss tick (in the HUD), and a word from the driver ----------
 
   private bump(d: Drag, direction: 1 | -1): void {
-    this.onBump();
+    this.onBump(d.id);
     const body = d.el.querySelector<HTMLElement>('.body')!;
     body.style.setProperty('--jx', d.horizontal ? `${direction * 5}px` : '0px');
     body.style.setProperty('--jy', d.horizontal ? '0px' : `${direction * 5}px`);
@@ -292,21 +292,26 @@ export class BoardView {
   private speak(truckEl: HTMLElement, hit: BumpHit): void {
     const line = pickLine(hit, this.lastLine);
     this.lastLine = line;
+    const b = this.say(truckEl.querySelector('.cab') ?? truckEl, line);
+    b.dataset.hit = hit;
+    b.dataset.speaker = truckEl.dataset.id ?? '';
+  }
 
+  /**
+   * A speech bubble pointing at `anchor` (a truck's cab, or a character beside the pad): above it if
+   * it fits on screen, otherwise below. Worked out in viewport space so it always stays on screen.
+   */
+  say(anchor: Element, text: string): HTMLElement {
     this.el.querySelector('.bubble')?.remove();
     const b = document.createElement('div');
     b.className = 'bubble';
-    b.textContent = line;
-    b.dataset.hit = hit;
-    b.dataset.speaker = truckEl.dataset.id ?? '';
+    b.textContent = text;
     this.el.append(b);
 
-    // Point the bubble at the speaker's cab: above it if it fits on screen, otherwise below.
-    // Positions are worked out in viewport space so the bubble always stays fully on screen.
     const margin = 8;
     const gap = 10;
     const board = this.el.getBoundingClientRect();
-    const cab = (truckEl.querySelector('.cab') ?? truckEl).getBoundingClientRect();
+    const cab = anchor.getBoundingClientRect();
     const vw = document.documentElement.clientWidth;
     const vh = window.innerHeight;
     b.style.maxWidth = `${Math.min(vw - margin * 2, 240)}px`;
@@ -323,6 +328,31 @@ export class BoardView {
     b.style.top = `${top - board.top}px`;
     b.style.setProperty('--tail', `${Math.max(14, Math.min(bw - 14, cx - left))}px`);
     setTimeout(() => b.remove(), BUBBLE_MS);
+    return b;
+  }
+
+  // ---------- For the gags (gag-layer.ts) ----------
+
+  get cellPx(): number {
+    return this.cell;
+  }
+
+  get fencePx(): number {
+    return this.fence;
+  }
+
+  truckElement(id: string): HTMLElement | undefined {
+    return this.trucks.get(id);
+  }
+
+  /** Puts a ground-level layer (e.g. block heater cords) on the pad, over the tracks, under everything else. */
+  addGround(el: Element): void {
+    this.tracks.svg.after(el);
+  }
+
+  /** Called with the deepest lane wear whenever tracks wear in. */
+  set onWear(cb: (level: number) => void) {
+    this.tracks.onWear = cb;
   }
 
   /** Paints the ground (gravel, mud, snow) under everything else on the pad. */

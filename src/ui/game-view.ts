@@ -9,6 +9,9 @@ import { copyText } from './clipboard.ts';
 import { shareText, streak, zeroIncident } from './daily.ts';
 import { hardHats, loadProgress, recordDailyClear, recordWin, saveProgress, spendHint } from './progress.ts';
 import { streakSignHtml } from './sign.ts';
+import { COMPANY_MAN } from './cast.ts';
+import { GagLayer, type GagOptions } from './gag-layer.ts';
+import { companyLine } from './gags.ts';
 import { onTap } from './tap.ts';
 
 /** Screen-changing buttons: act on the first tap, even on iOS (see tap.ts). */
@@ -54,7 +57,16 @@ export class GameView {
   private shareMessage = '';
   private scenery: HTMLElement;
 
-  constructor(level: Level, label: string, theme: Theme, handlers: GameViewHandlers, daily: DailyInfo | null = null) {
+  private gags: GagLayer;
+
+  constructor(
+    level: Level,
+    label: string,
+    theme: Theme,
+    handlers: GameViewHandlers,
+    daily: DailyInfo | null = null,
+    gagOptions: Omit<GagOptions, 'idleScale'> = { cords: false, landowner: false },
+  ) {
     this.level = level;
     this.theme = theme;
     this.daily = daily;
@@ -63,8 +75,26 @@ export class GameView {
     this.board = new BoardView(
       () => this.state,
       (id, delta) => this.move(id, delta),
-      () => this.onBump(),
+      (id) => this.onBump(id),
     );
+    const board = this.board;
+    this.gags = new GagLayer(
+      {
+        el: board.el,
+        get cellPx() {
+          return board.cellPx;
+        },
+        get fencePx() {
+          return board.fencePx;
+        },
+        truckElement: (id) => board.truckElement(id),
+        say: (anchor, text) => board.say(anchor, text),
+        addGround: (el) => board.addGround(el),
+        state: () => this.state,
+      },
+      { ...gagOptions, idleScale: idleScale() },
+    );
+    board.onWear = (lvl) => this.gags.worn(lvl);
 
     this.el = document.createElement('div');
     this.el.className = 'screen game';
@@ -103,6 +133,9 @@ export class GameView {
     this.stage.append(this.board.el);
     this.board.setLevel(level);
     this.board.setDecor(padDecor(theme.ground, seedFrom(level.id)), theme.ground);
+    this.gags.setLevel(level);
+    // Any touch anywhere on the screen cancels an idle gag and restarts the idle clock.
+    this.el.addEventListener('pointerdown', () => this.gags.touch(), { capture: true });
     this.showLevelHint();
 
     onTap(this.el, TAPPED, (el) => this.act(el));
@@ -134,6 +167,9 @@ export class GameView {
     const controlsTop = this.el.querySelector('.note')!.getBoundingClientRect().top - screen.top;
     this.el.style.setProperty('--horizon', `${Math.round(box.y - 4)}px`);
     this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box);
+    // Room outside the fence for the characters: between the HUD and the board, and below it.
+    const hudBottom = this.el.querySelector('.hud')!.getBoundingClientRect().bottom - screen.top;
+    this.gags.layout({ above: Math.max(0, box.y - hudBottom), below: Math.max(0, controlsTop - (box.y + box.height)) });
   }
 
   private move(id: string, delta: number): void {
@@ -143,11 +179,15 @@ export class GameView {
       return;
     }
     this.state = result.state;
+    this.gags.moved(id);
     this.resetHint();
     this.showLevelHint();
     this.board.sync(this.state, true, result.exited ? id : undefined);
     this.updateHud();
-    if (isWon(this.state)) setTimeout(() => this.showWin(), WIN_DELAY_MS);
+    if (isWon(this.state)) {
+      this.gags.stop();
+      setTimeout(() => this.showWin(), WIN_DELAY_MS);
+    }
   }
 
   private undo(): void {
@@ -166,13 +206,15 @@ export class GameView {
     this.showMisses();
     this.resetHint();
     this.board.setLevel(this.level);
+    this.gags.setLevel(this.level);
     this.winEl.hidden = true;
     this.showLevelHint();
     this.updateHud();
   }
 
   /** A bump: count it and give the hazard counter a quick shake. */
-  private onBump(): void {
+  private onBump(truckId: string): void {
+    this.gags.bumped(truckId);
     this.bumps++;
     this.showMisses();
     this.missesEl.classList.remove('tick');
@@ -283,7 +325,10 @@ export class GameView {
         <div class="hats big" aria-label="${hats} of 3 hard hats">${hatsHtml(hats)}</div>
         ${clean ? '<div class="zero-incident">ZERO INCIDENT</div>' : ''}
         <p class="result">${moves} moves · par ${par} · ${misses}</p>
-        <p class="verdict">${verdict}</p>
+        <div class="company" aria-label="${verdict}">
+          <div class="company-man">${COMPANY_MAN}</div>
+          <p class="company-says"></p>
+        </div>
         ${earnedHint ? '<p class="earned">+1 hint for a perfect solve</p>' : ''}
         ${daily}
         ${next}
@@ -292,6 +337,7 @@ export class GameView {
           <button class="btn quiet" data-act="levels">All levels</button>
         </div>
       </div>`;
+    this.winEl.querySelector('.company-says')!.textContent = companyLine(moves, par);
     this.winEl.hidden = false;
   }
 
@@ -301,4 +347,10 @@ export class GameView {
     button.textContent = ok ? 'Copied! Paste it in Messages' : 'Could not copy';
     button.classList.toggle('done', ok);
   }
+}
+
+/** Preview/test hook: ?idle=0.1 makes the magpie and spotter turn up 10x sooner. */
+function idleScale(): number {
+  const v = Number(new URLSearchParams(location.search).get('idle'));
+  return v > 0 && v <= 1 ? v : 1;
 }

@@ -162,10 +162,18 @@ function showLevels(requested = savedRegion()): void {
 function showGame(regionIndex: number, index: number): void {
   const region = REGIONS[regionIndex];
   const hasNext = index + 1 < region.levels.length;
-  game = new GameView(region.levels[index], `${region.name} ${index + 1}`, themeFor(regionIndex), {
-    onLevels: () => showLevels(regionIndex),
-    onNext: hasNext ? () => showGame(regionIndex, index + 1) : null,
-  });
+  game = new GameView(
+    region.levels[index],
+    `${region.name} ${index + 1}`,
+    themeFor(regionIndex),
+    {
+      onLevels: () => showLevels(regionIndex),
+      onNext: hasNext ? () => showGame(regionIndex, index + 1) : null,
+    },
+    null,
+    // Block heater cords in Duvernay's cold; the landowner minds his Montney mud.
+    { cords: region.id === 'duvernay', landowner: region.id === 'montney' },
+  );
   app.replaceChildren(game.el);
   game.fit();
 }
