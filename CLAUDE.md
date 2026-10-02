@@ -91,22 +91,39 @@ something, give exact clicks and one command at a time.
 - Biffy: just outside the fence directly behind one truck's tailgate, where that fence has no gate
   (`biffySpot`: bottom preferred, then top, then the sides, sized to fit the screen margin). When
   that truck reverses toward it (a move) or backs into the fence (a bump), the door bangs open and a
-  worker shuffles out bent over (cheeky cartoon bum), hauling his coveralls up, and off screen. He
-  doesn't go back in. Once per level.
+  worker hops out and shuffles off screen with tiny quick steps. Strict side profile, one connected
+  body: shirt, a round bare cartoon cheek at the back (intended, no detail), coveralls bunched round
+  his knees, a toilet paper streamer trailing from his hand. Puppet rig (`WORKER_RIG`). He doesn't go
+  back in. Once per level.
 - Block heater cords (Duvernay): each truck plugged into a post in the fence behind it; first move
   rips the cord out (whip + sparks); the post keeps a dangling plug. Restart re-plugs.
 - Landowner (Montney): first time any lane wears to `WEAR_CAP`, he rides along below the board on
   his quad, shakes his fist, "Who's paying for these ruts?", rides off. Once per level.
-- Wildlife and traffic, in the strip between the board and the buttons (the hint line fades while
-  they pass). Touches never cancel them; each waits while another gag is on stage (and the landowner
-  or biffy wait for them). Reduced motion: skipped entirely. Once per level each:
-  - Bear (Montney): after 15s idle or a random moment 20-50s in. Walks in, squats side-on with his
-    back to a bush (placed clear of the biffy), strains, grabs a passing rabbit, wipes with it, and
-    they bolt opposite ways (rabbit's ears flat).
-  - Moose (Duvernay): same timing. Plods in, stops, stares at you front-on for 2s, plods off.
-  - Hot shot (all regions): random moment 8-45s in. Pickup screams across in <1s in dust/mud/snow.
-- Preview/test hooks: `?idle=0.1` makes idle gags (and wildlife) come 10x sooner; `?wild=0` turns
-  wildlife off. `npm run test:e2e:gags` tests them all.
+- Character animation: GSAP on puppet rigs. `src/ui/rig.ts`: each part of a drawing is a group with
+  `data-j` (joint name) and `data-p` (pivot); GSAP tweens plain numbers on the joints and the rig
+  writes SVG transforms about each pivot every frame; `data-alt` groups swap (eyes open/shut/pop).
+  Drawings in `src/ui/rigs.ts` (bear, rabbit, worker, moose). Use anticipation, squash and stretch,
+  easing, overshoot, overlapping action and holds. Big scenes go on screen-level layers outside the
+  board (`sceneLayer`: the board's drop-shadow filter would force a redraw every frame); no CSS
+  filters on them (ground-shadow ellipses instead). Must hold 60fps (checked with 4x CPU throttle).
+- Wildlife and traffic. Touches never cancel them; each waits while another gag is on stage (and the
+  landowner or biffy wait for them). Reduced motion: skipped entirely. Once per level each:
+  - Bear (Montney, `bear-scene.ts`): after 15s idle or a random moment 20-50s in. A bush stands at
+    the bottom from level start (placed clear of the biffy). About 70% bigger than the strip, so he
+    rises over the bottom fence (never over the buttons). Beats (`data-beat`): walk (alternating
+    legs) > squat > strain (quiver, eyes shut, sweat) > rabbit hops in > sniff > notice (eyes pop,
+    slow head turn, hold) > windup > grab (jointed shoulder/elbow/wrist; rabbit squashed in his
+    paw, held by the scruff) > wipe (two, behind his rump, ears flapping, fur frazzled) > setdown >
+    freeze > shake (wet dog) > bolt (rabbit right with flat ears and speed lines, bear left after a
+    satisfied hop). The hint line fades while he's on.
+  - Moose (Duvernay, `moose-scene.ts`): same timing. Behind the HUD and the board: antlers up behind
+    the title, eyes and chewing muzzle in the gap, chin and shoulders hidden behind the top fence
+    (sized so his eyes clear the HUD). Rise > lean in > chew (grass sprig) > stare 2s + groan > back.
+  - Hot shot (all regions): random moment 8-45s in. Pickup screams across the bottom in <1s in
+    dust/mud/snow.
+- Preview/test hooks: `?gag=bear`, `?gag=moose`, `?gag=biffy` open a suitable level and play that
+  scene at once, then again 1.5s after it ends (nothing else plays). `?idle=0.1` makes idle gags
+  (and wildlife) come 10x sooner; `?wild=0` turns wildlife off. `npm run test:e2e:gags` tests them.
 
 ## Sound (M4)
 
@@ -136,7 +153,8 @@ something, give exact clicks and one command at a time.
   registered in dev.
 
 ## Stack
-- TypeScript + Vite, DOM + CSS transforms, Pointer Events. No game engine, no frameworks.
+- TypeScript + Vite, DOM + CSS transforms, Pointer Events. No game engine, no frameworks. GSAP (free
+  standard license) for character animation only.
 - Portrait, one-thumb layout. Main controls live at the bottom of the screen.
 
 ## Structure
