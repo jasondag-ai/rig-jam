@@ -6,7 +6,7 @@ import { chromium, devices } from 'playwright';
 import { REGIONS } from '../src/levels/regions.ts';
 import { getMoveRange, newGame, solve } from '../src/engine/index.ts';
 import { COMPANY_LINES } from '../src/ui/lines.ts';
-import { biffyColumn } from '../src/ui/gags.ts';
+import { biffySpot, reverseDirection } from '../src/ui/gags.ts';
 
 const BASE = (process.env.URL ?? 'http://localhost:5173/') + '?idle=0.1';
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -82,10 +82,11 @@ const play = async (page, touch, level) => {
   await wait(1350);
   const birdMid = await rect(page, '.magpie').catch(() => null);
   check(!!birdMid, 'magpie arrives after the idle time');
-  await page.waitForSelector('.roof-splat', { timeout: 4000 }).catch(() => {});
-  const splatTruck = await page.$eval('.roof-splat', (s) => s.closest('.truck')?.dataset.id).catch(() => null);
+  await page.waitForSelector('.dropping', { timeout: 4000 }).catch(() => {});
+  const drops = await page.$$eval('.dropping', (d) => ({ n: d.length, trucks: [...new Set(d.map((x) => x.closest('.truck')?.dataset.id))] }));
   const bubble = await page.$eval('.bubble', (b) => b.textContent).catch(() => null);
-  check(!!splatTruck, `splat lands on a truck roof (truck ${splatTruck})`);
+  const splatTruck = drops.trucks[0];
+  check(drops.n >= 2 && drops.n <= 3 && drops.trucks.length === 1 && !!splatTruck, `${drops.n} droppings land on one truck roof (truck ${splatTruck})`);
   check(bubble === 'Seriously?', `that driver yells "${bubble}"`);
   const onRoof = await page.evaluate(() => {
     const bird = document.querySelector('.magpie');
@@ -97,23 +98,38 @@ const play = async (page, touch, level) => {
   check(onRoof === 'truck under it gets the touch' || onRoof === 'gone', `the magpie never blocks a touch (${onRoof})`);
   await wait(2500);
   check(!(await page.$('.magpie')), 'magpie flies off');
-  check(!!(await page.$('.roof-splat')), 'the splat stays on the roof');
+  check((await page.$$eval('.dropping', (d) => d.length)) === drops.n, 'the droppings stay on the roof');
   // Splat stays until that truck exits: solve the level and watch it go with the truck.
-  // 2. Spotter after 20s (2s here), outside the fence, then gone.
+  // 2. Spotter after 20s (2s here): walks on below the fence, sits on his pail, dozes off.
   await page.waitForSelector('.spotter', { timeout: 3000 }).catch(() => {});
-  const spotter = await rect(page, '.spotter').catch(() => null);
   const pad = await rect(page, '.pad');
-  check(!!spotter, 'spotter jogs on after the longer idle time');
-  if (spotter) check(!overlaps(spotter, pad), 'spotter stays outside the 6x6 grid');
-  await wait(1200);
-  check(await page.$eval('.spotter', (s) => s.classList.contains('dancing')).catch(() => false), 'spotter does the flag dance');
-  // 3. Any touch cancels instantly and resets the idle clock.
+  const walking = await page.$eval('.spotter', (s) => s.classList.contains('walking')).catch(() => false);
+  check(walking, 'spotter walks on after the longer idle time');
+  await page.waitForSelector('.spotter.asleep', { timeout: 3000 }).catch(() => {});
+  const spotter = await rect(page, '.spotter').catch(() => null);
+  const zzz = await page.$eval('.spotter.asleep .zzz', (z) => getComputedStyle(z).display !== 'none' && z.textContent).catch(() => null);
+  check(!!spotter && spotter.t >= pad.b, 'he sits on his pail below the fence, under the board');
+  check(zzz === 'Zzz', `and falls asleep: "${zzz}"`);
+  // 3. A touch wakes him: he jolts, falls off the pail and scrambles off.
+  await touch.tapAt(20, 400);
+  await wait(120);
+  const startled = await page.$eval('.spotter', (s) => s.className).catch(() => 'gone');
+  check(/startled|fallen/.test(startled), `a touch jolts him awake (${startled})`);
+  await wait(500);
+  check(await page.$eval('.spotter', (s) => s.classList.contains('fallen')).catch(() => false), 'he falls off the pail');
+  const touchedAt = Date.now() - 620;
+  await page.waitForSelector('.spotter', { state: 'detached', timeout: 3000 }).catch(() => {});
+  check(!(await page.$('.spotter')), `and scrambles off (gone ${((Date.now() - touchedAt) / 1000).toFixed(1)}s after the touch)`);
+  // The touch restarted the idle clock: the next spotter takes the full idle time again.
+  await page.waitForSelector('.spotter.walking', { timeout: 4000 }).catch(() => {});
+  const gap = Date.now() - touchedAt;
+  check(gap >= 1900, `idle clock restarted: the next spotter came ${(gap / 1000).toFixed(1)}s after the touch`);
+  check(!(await page.$('.magpie')), 'magpie only comes once per level');
+  // A touch while he is still walking on cancels him outright.
+  const wasWalking = !!(await page.$('.spotter.walking'));
   await touch.tapAt(20, 400);
   await wait(60);
-  check(!(await page.$('.spotter')), 'a touch sends the spotter away instantly');
-  await wait(1500);
-  check(!(await page.$('.spotter')), 'idle clock restarted: no spotter 1.5s after the touch');
-  check(!(await page.$('.magpie')), 'magpie only comes once per level');
+  check(wasWalking && !(await page.$('.spotter')), 'a touch before he sits cancels him instantly');
 
   // Cancel the magpie mid-flight on a fresh level.
   await enter(page, 1, 1);
@@ -155,50 +171,50 @@ const play = async (page, touch, level) => {
   const cm = await rect(page, '.company-man').catch(() => null);
   check(!!cm && !(await page.evaluate(() => { const o = document.querySelector('.win'); return o.scrollHeight > o.clientHeight + 1; })), 'Company Man fits on the win card without scrolling');
 
-  // 5. Biffy: a bump next to it opens the door.
+  // 5. Biffy: just outside the fence behind one truck's tailgate; reversing that truck sets it off.
   let biffyDone = false;
   for (const [ri, region] of REGIONS.entries()) {
     for (const [li, level] of region.levels.entries()) {
-      const col = biffyColumn(level);
-      const t = level.trucks.find((x) => {
-        const cells = Array.from({ length: x.length }, (_, i) => (x.orient === 'h' ? [x.row, x.col + i] : [x.row + i, x.col]));
-        return cells.some(([r, c]) => r >= 4 && Math.abs(c - col) <= 1);
-      });
-      if (!t) continue;
+      const spot = biffySpot(level);
+      if (!spot) continue;
+      const t = level.trucks.find((x) => x.id === spot.truckId);
+      const back = reverseDirection(level, t);
+      const r = getMoveRange(newGame(level), t.id);
+      const reach = back < 0 ? r.min : r.max;
+      if (reach === 0) continue; // needs room to back up
       await enter(page, ri + 1, li);
-      // Push hard against whatever stops it (both ways): it's a bump either way.
-      const b = await page.$eval(`.truck[data-id="${t.id}"]`, (e) => { const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
-      const cell = await page.$eval('.board', (e) => parseFloat(e.style.getPropertyValue('--cell')));
-      const cdpDrag = async (dir) => {
-        const page2 = page;
-        await page2.evaluate(() => {});
-        const h = t.orient === 'h';
-        const steps = 10;
-        const d = dir * cell * 7;
-        const s = await page.context().newCDPSession(page);
-        const tp = (x, y) => [{ x, y, id: 2, radiusX: 4, radiusY: 4, force: 1 }];
-        await s.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: tp(b.x, b.y) });
-        for (let k = 1; k <= steps; k++) await s.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: tp(b.x + (h ? (d * k) / steps : 0), b.y + (h ? 0 : (d * k) / steps)) });
-        await wait(80);
-        const open = await page.$eval('.biffy', (e) => e.classList.contains('open'));
-        await s.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: tp(b.x, b.y) });
-        await s.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-        return open;
-      };
-      const opened = (await cdpDrag(1)) || (await cdpDrag(-1));
-      await wait(500);
-      const worker = await page.$eval('.biffy .gag-worker', (w) => getComputedStyle(w).opacity).catch(() => '0');
-      check(opened, `${region.name} ${li + 1}: a bump next to the biffy bangs the door open`);
-      check(Number(worker) > 0, 'a worker stumbles out');
-      const biffy = await rect(page, '.biffy');
-      check(!overlaps(biffy, await rect(page, '.pad')), 'the biffy stands outside the 6x6 grid');
-      await wait(2200);
-      check(!(await page.$eval('.biffy', (e) => e.classList.contains('open'))), '...and goes back in');
+      const geo = await page.evaluate((id) => {
+        const b = document.querySelector('.biffy').getBoundingClientRect();
+        const tr = document.querySelector(`.truck[data-id="${id}"]`).getBoundingClientRect();
+        const pad = document.querySelector('.pad').getBoundingClientRect();
+        return { vw: document.documentElement.clientWidth, b: { l: b.left, t: b.top, r: b.right, bt: b.bottom, cx: b.left + b.width / 2, cy: b.top + b.height / 2 }, tr: { cx: tr.left + tr.width / 2, cy: tr.top + tr.height / 2 }, pad: { l: pad.left, t: pad.top, r: pad.right, b: pad.bottom } };
+      }, t.id);
+      const behind =
+        spot.side === 'bottom' ? geo.b.t >= geo.pad.b - 12 && Math.abs(geo.b.cx - geo.tr.cx) < 8 :
+        spot.side === 'top' ? geo.b.bt <= geo.pad.t + 12 && Math.abs(geo.b.cx - geo.tr.cx) < 8 :
+        spot.side === 'left' ? geo.b.r <= geo.pad.l + 12 && Math.abs(geo.b.cy - geo.tr.cy) < 8 :
+        geo.b.l >= geo.pad.r - 12 && Math.abs(geo.b.cy - geo.tr.cy) < 8;
+      check(behind, `${region.name} ${li + 1}: biffy stands outside the ${spot.side} fence, right behind truck ${t.id}'s tailgate`);
+      check(geo.b.l >= 0 && geo.b.r <= geo.vw, 'the whole biffy is on screen');
+      const gateThere = level.gates.some((g) => g.side === spot.side && g.index === spot.index);
+      check(!gateThere, 'that stretch of fence has no gate');
+      await touch.drag(t.id, [back * Math.abs(reach)]);
+      const worker = await page.$('.worker-bent');
+      check(!!worker && (await page.$eval('.biffy', (e) => e.classList.contains('open'))), 'backing that truck up bangs the door open and a worker comes out');
+      await wait(1200);
+      const w = await rect(page, '.worker-bent').catch(() => null);
+      check(!!w && !overlaps(w, await rect(page, '.pad')), 'bent over, hauling his coveralls up, he shuffles off outside the fence');
+      await wait(2600);
+      check(!(await page.$('.worker-bent')), 'off screen, and he does not go back in');
+      await touch.drag(t.id, [-back * Math.abs(reach)]);
+      await touch.drag(t.id, [back * Math.abs(reach)]);
+      check(!(await page.$('.worker-bent')), 'once per level');
       biffyDone = true;
       break;
     }
     if (biffyDone) break;
   }
+  check(biffyDone, 'found a level to test the biffy on');
 
   // 6. Block heater cords, Duvernay only: plugged in, rip out on the first move.
   await enter(page, 3, 0);
@@ -241,7 +257,7 @@ const play = async (page, touch, level) => {
     const said = saidAll.find((t) => t.includes('ruts')) ?? saidAll.join(' / ');
     if (expect) {
       check(!!quad && said === "Who's paying for these ruts?", `${name}: deepest rut brings the landowner: "${said}"`);
-      if (quad) check(!overlaps(await rect(page, '.landowner'), await rect(page, '.pad')), 'he stays outside the fence');
+      if (quad) check((await rect(page, '.landowner')).t >= (await rect(page, '.pad')).b, 'he rides along below the board');
     } else check(!quad, `${name}: no landowner (${lv.name})`);
   }
   await browser.close();
@@ -259,10 +275,10 @@ const play = async (page, touch, level) => {
     anims: document.getAnimations().filter((a) => a.effect?.target?.closest?.('.gag')).length,
   }));
   check(still.bird && !still.flapping && still.anims === 0, `magpie shows without animation (${JSON.stringify(still)})`);
-  await page.waitForSelector('.roof-splat', { timeout: 3000 }).catch(() => {});
-  check(!!(await page.$('.roof-splat')), 'splat still lands');
-  await page.waitForSelector('.spotter', { timeout: 4000 }).catch(() => {});
-  check(!!(await page.$('.spotter')) && (await page.evaluate(() => document.getAnimations().length)) === 0, 'spotter shows, standing still');
+  await page.waitForSelector('.dropping', { timeout: 3000 }).catch(() => {});
+  check((await page.$$eval('.dropping', (d) => d.length)) >= 2, 'droppings still land');
+  await page.waitForSelector('.spotter.asleep', { timeout: 5000 }).catch(() => {});
+  check(!!(await page.$('.spotter.asleep')) && (await page.evaluate(() => document.getAnimations().length)) === 0, 'spotter shows asleep on his pail, standing still');
   await browser.close();
 }
 

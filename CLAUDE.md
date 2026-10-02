@@ -80,17 +80,23 @@ something, give exact clicks and one command at a time.
 - Rules: gags never take touches (`pointer-events: none`) and stay outside the 6x6 grid or on truck
   roofs (block heater cords lie on the ground in the truck's own lane, under the trucks). Reduced
   motion: shown as still frames, no animation.
-- Magpie: 10s with no touch or move: lands on a random truck's roof, poops (splat rides on that truck
-  until it exits), driver says "Seriously?", flies off. Once per level (a cancelled one may retry).
-- Spotter: 20s idle: jogs on outside the fence, flag dance, jogs off. Once per idle stretch.
-- Any touch cancels the magpie/spotter instantly and restarts the idle clock.
+- Magpie: 10s with no touch or move: lands on a random truck's roof, leaves 2-3 small droppings
+  (white blob, dark centre, drip; they ride on that truck until it exits), driver says
+  "Seriously?", flies off. Once per level (a cancelled one may retry).
+- Spotter: 20s idle: walks on below the fence carrying a pail, sits on it and dozes ("Zzz"). A
+  touch while he's walking cancels him; a touch while he's asleep startles him: he falls off the
+  pail and scrambles off. Once per idle stretch.
+- Any touch cancels the magpie instantly and restarts the idle clock.
 - Company Man on the win card: line by tier (par / +1..+3 / worse), 3 per tier, no repeats in a row.
-- Biffy: below the bottom fence by a gate-free column; a bump by a truck touching the bottom two
-  rows within one column of it opens the door; a worker stumbles out and goes back in.
+- Biffy: just outside the fence directly behind one truck's tailgate, where that fence has no gate
+  (`biffySpot`: bottom preferred, then top, then the sides, sized to fit the screen margin). When
+  that truck reverses toward it (a move) or backs into the fence (a bump), the door bangs open and a
+  worker shuffles out bent over (cheeky cartoon bum), hauling his coveralls up, and off screen. He
+  doesn't go back in. Once per level.
 - Block heater cords (Duvernay): each truck plugged into a post in the fence behind it; first move
   rips the cord out (whip + sparks); the post keeps a dangling plug. Restart re-plugs.
-- Landowner (Montney): first time any lane wears to `WEAR_CAP`, he rides up on his quad outside the
-  fence, shakes his fist, "Who's paying for these ruts?", rides off. Once per level.
+- Landowner (Montney): first time any lane wears to `WEAR_CAP`, he rides along below the board on
+  his quad, shakes his fist, "Who's paying for these ruts?", rides off. Once per level.
 - Preview/test hook: `?idle=0.1` makes idle gags come 10x sooner. `npm run test:e2e:gags` tests them.
 
 ## Daily Pad (M3)
