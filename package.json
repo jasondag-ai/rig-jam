@@ -11,7 +11,8 @@
     "check-levels": "node tools/check-levels.ts",
     "gen-levels": "node tools/gen-levels.ts",
     "test:e2e": "node e2e/taps.e2e.mjs",
-    "test:e2e:gags": "node e2e/gags.e2e.mjs"
+    "test:e2e:gags": "node e2e/gags.e2e.mjs",
+    "test:e2e:audio": "node e2e/audio.e2e.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
