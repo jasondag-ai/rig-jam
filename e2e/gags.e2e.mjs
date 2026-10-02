@@ -84,6 +84,8 @@ const play = async (page, touch, level) => {
   check(!!birdMid, 'magpie arrives after the idle time');
   await page.waitForSelector('.dropping', { timeout: 4000 }).catch(() => {});
   const drops = await page.$$eval('.dropping', (d) => ({ n: d.length, trucks: [...new Set(d.map((x) => x.closest('.truck')?.dataset.id))] }));
+  // The plops land first, then the driver's "Seriously?" a beat later.
+  await page.waitForSelector('.bubble', { timeout: 1500 }).catch(() => {});
   const bubble = await page.$eval('.bubble', (b) => b.textContent).catch(() => null);
   const splatTruck = drops.trucks[0];
   check(drops.n >= 2 && drops.n <= 3 && drops.trucks.length === 1 && !!splatTruck, `${drops.n} droppings land on one truck roof (truck ${splatTruck})`);

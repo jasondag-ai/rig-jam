@@ -3,6 +3,7 @@
 // (Duvernay), and the landowner when the mud gets rutted (Montney). Nothing here takes touches
 // (pointer-events: none), and everything sits outside the 6x6 grid or on a truck roof.
 // Reduced motion: still frames only.
+import { sound } from '../audio/engine.ts';
 import { SIZE, type GameState, type Level, type Side } from '../engine/index.ts';
 import { BIFFY, DROPPING, LANDOWNER, MAGPIE, PLUG_POST, SPOTTER_SIT, SPOTTER_WALK, WORKER_BENT } from './cast.ts';
 import {
@@ -199,8 +200,10 @@ export class GagLayer {
     if (reducedMotion()) {
       bird.classList.remove('flying');
       bird.style.transform = at(land);
+      sound.squawk();
       await sleep(500, signal);
       this.droppings(truckEl, s);
+      sound.grunt();
       this.host.say(truckEl.querySelector('.cab') ?? truckEl, MAGPIE_LINE);
       await sleep(1600, signal);
       bird.remove();
@@ -208,6 +211,7 @@ export class GagLayer {
     }
     await this.animate(bird, [{ transform: at(from) }, { transform: at(land) }], 1100, 'cubic-bezier(0.3, 0.6, 0.4, 1)', signal);
     bird.classList.remove('flying');
+    sound.squawk();
     for (let i = 0; i < 2; i++) {
       const hop = { x: land.x + s * 0.12, y: land.y - s * 0.3 };
       const next = { x: land.x + s * 0.2, y: land.y };
@@ -216,6 +220,8 @@ export class GagLayer {
     }
     await sleep(350, signal);
     this.droppings(truckEl, s);
+    await sleep(380, signal);
+    sound.grunt();
     this.host.say(truckEl.querySelector('.cab') ?? truckEl, MAGPIE_LINE);
     await sleep(500, signal);
     bird.classList.add('flying');
@@ -254,6 +260,7 @@ export class GagLayer {
         transform: `rotate(${Math.round(Math.random() * 30 - 15)}deg)`,
       });
       body?.append(d);
+      sound.plop(i * 0.11);
     }
   }
 
@@ -287,13 +294,17 @@ export class GagLayer {
     el.getAnimations().forEach((a) => a.cancel());
     el.style.transform = at(x);
     el.classList.replace('walking', 'asleep');
-    if (this.spotter?.el === el) this.spotter.state = 'asleep';
+    if (this.spotter?.el === el) {
+      this.spotter.state = 'asleep';
+      sound.snore(true);
+    }
   }
 
   /** Touched while asleep: jolts awake, falls off the pail, scrambles off. */
   private async wakeSpotter(): Promise<void> {
     const sp = this.spotter!;
     sp.state = 'waking';
+    sound.snore(false);
     const at = (px: number, py = sp.y) => `translate(${px}px, ${py}px)`;
     sp.el.classList.replace('asleep', 'startled');
     try {
@@ -304,6 +315,7 @@ export class GagLayer {
         await this.animate(sp.el, [{ transform: at(sp.x) }, { transform: at(sp.x, sp.y - sp.h * 0.22) }, { transform: at(sp.x) }], 260, 'ease-out');
         // ...he topples off it onto the ground (the pail stays put)...
         sp.el.classList.replace('startled', 'fallen');
+        sound.clatter();
         await sleep(650);
         // ...and scrambles off.
         sp.el.classList.replace('fallen', 'running');
@@ -319,6 +331,7 @@ export class GagLayer {
   }
 
   private removeSpotter(): void {
+    sound.snore(false);
     this.spotter?.el.remove();
     this.spotter = null;
   }
@@ -364,6 +377,7 @@ export class GagLayer {
     b.done = true;
     const { el } = b;
     el.classList.add('open');
+    sound.doorBang();
     const r = { left: parseFloat(el.style.left), top: parseFloat(el.style.top), w: parseFloat(el.style.width), h: parseFloat(el.style.height) };
     const ww = r.h;
     const wh = r.h * 0.88;
@@ -379,15 +393,18 @@ export class GagLayer {
     try {
       if (reducedMotion()) {
         guy.style.transform = at(start.x + (toRight ? r.w : -r.w), outY);
+        sound.feet(true);
         await sleep(2200);
       } else {
         await this.animate(guy, [{ transform: at(start.x, start.y), opacity: 0 }, { transform: at(start.x, outY), opacity: 1 }], 280, 'ease-out');
         guy.classList.add('shuffling');
+        sound.feet(true);
         await this.animate(guy, [{ transform: at(start.x, outY) }, { transform: at(offX, outY) }], 3000, 'linear');
       }
     } catch {
       // Stage cleared.
     } finally {
+      sound.feet(false);
       guy.remove();
       el.classList.remove('open');
     }
@@ -444,6 +461,7 @@ export class GagLayer {
   private rip(id: string, c: { cord: Cord; post: HTMLElement; line: SVGPathElement | null }): void {
     this.cords.delete(id);
     c.post.classList.add('ripped');
+    sound.cordSnap();
     this.sparks(c.cord);
     const line = c.line;
     if (!line) return;
@@ -508,21 +526,26 @@ export class GagLayer {
     const at = (x: number) => `translate(${x}px, ${y}px)`;
     const stopAt = size - w - cell * 0.4;
     try {
+      sound.quad('start');
       if (reducedMotion()) {
         quad.style.transform = at(stopAt);
+        sound.quad('idle');
         this.host.say(quad, LANDOWNER_LINE);
         await sleep(2600);
         return;
       }
       await this.animate(quad, [{ transform: at(size + w) }, { transform: at(stopAt) }], 1300, 'cubic-bezier(0.2, 0.7, 0.3, 1)');
       quad.classList.add('shaking');
+      sound.quad('idle');
       this.host.say(quad, LANDOWNER_LINE);
       await sleep(2200);
       quad.classList.remove('shaking');
+      sound.quad('rev');
       await this.animate(quad, [{ transform: at(stopAt) }, { transform: at(size + w * 1.5) }], 1100, 'cubic-bezier(0.5, 0, 0.8, 0.5)');
     } catch {
       // Interrupted by a new level.
     } finally {
+      sound.quad('stop');
       quad.remove();
     }
   }
