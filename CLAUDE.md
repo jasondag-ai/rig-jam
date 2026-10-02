@@ -128,7 +128,10 @@ something, give exact clicks and one command at a time.
     at 375px wide too). Beats (`data-beat`): walk (alternating
     legs) > squat > strain (quiver, eyes shut, sweat) > rabbit hops in > sniff > notice (eyes pop,
     slow head turn, hold) > windup > grab (jointed shoulder/elbow/wrist; rabbit squashed in his
-    paw, held by the scruff) > wipe (two, behind his rump, ears flapping, fur frazzled) > setdown >
+    paw, held by the scruff) > wipe (up into a half-squat, rump pushed back, tail showing; the arm
+    is redrawn over his thigh and stretched to his rump (`reachFor`); the rabbit is held flat under
+    the tail and given two short strokes along the rump's curve (`rumpPoint`), ears flopping; rabbit
+    deadpan, bear relieved) > setdown >
     freeze > shake (wet dog) > bolt (rabbit right with flat ears and speed lines, bear left after a
     satisfied hop). The hint line fades while he's on.
   - Moose (Duvernay, `moose-scene.ts`). A small, quick peekaboo behind the board: only

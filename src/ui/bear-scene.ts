@@ -98,9 +98,44 @@ const TURN: Pose = { head: { rot: 68 } };
 const WINDUP: Pose = { body: { rot: -68 }, head: { rot: 64 }, arm: { rot: 80 }, fore: { rot: -115 }, paw: { rot: 0 } };
 const REACH: Pose = { body: { rot: -30 }, head: { rot: 50 }, arm: { rot: 0 }, fore: { rot: -4 }, paw: { rot: 12 } };
 const CLUTCH: Pose = { body: { rot: -60 }, head: { rot: 64 }, arm: { rot: 0 }, fore: { rot: -64 }, paw: { rot: 0 } };
-const BEHIND: Pose = { body: { rot: -60 }, head: { rot: 46 }, arm: { rot: 108 }, fore: { rot: -12 } };
-const WIPE_UP: Pose = { arm: { rot: 94 }, fore: { rot: -30 } };
-const WIPE_DOWN: Pose = { arm: { rot: 114 }, fore: { rot: -2 } };
+/** The wipe: up into a half-squat, rump pushed back and tail lifted, head up with relief. */
+const HALF_SQUAT: Pose = {
+  hips: { y: 7 },
+  body: { rot: -30 },
+  head: { rot: 14 },
+  thigh: { rot: -42 },
+  shin: { rot: 42 },
+  thighF: { rot: -50 },
+  shinF: { rot: 50 },
+  armF: { rot: 34 },
+  tail: { rot: -18, x: -2, y: -2 },
+};
+/**
+ * The curve of his rump just under the tail, in the body's own drawing units (the lower rear of the
+ * body outline, nudged outward). `t` runs from low (0) to high (1): the wipe strokes follow it.
+ */
+export function rumpPoint(t: number): { x: number; y: number } {
+  const u = 0.47 + 0.25 * t;
+  const q = (a: number, c: number, b: number) => (1 - u) * (1 - u) * a + 2 * u * (1 - u) * c + u * u * b;
+  return { x: q(66, 38, 36) - 3, y: q(138, 134, 104) + 1 };
+}
+/** Shoulder, and the paw's grip measured from it with the arm hanging straight (drawing units). */
+const SHOULDER = { x: 128, y: 114 };
+const GRIP = { x: 6, y: 62 };
+/**
+ * Shoulder angle and arm stretch that put the paw's grip on a point given in the body's units
+ * (elbow straight). He's a cartoon: the arm stretches to reach his own rump.
+ */
+export function reachFor(p: { x: number; y: number }): { rot: number; sy: number } {
+  const dx = p.x - SHOULDER.x;
+  const dy = p.y - SHOULDER.y;
+  const sy = Math.sqrt(Math.max(1, dx * dx + dy * dy - GRIP.x * GRIP.x)) / GRIP.y;
+  let rot = ((Math.atan2(dy, dx) - Math.atan2(GRIP.y * sy, GRIP.x)) * 180) / Math.PI;
+  while (rot < -180) rot += 360;
+  return { rot, sy };
+}
+/** How the rabbit is held under the rump: his back flat against it, face out and upright enough to read. */
+const RUMP_TILT = 34;
 const SETDOWN: Pose = { body: { rot: -32 }, head: { rot: 52 }, arm: { rot: 0 }, fore: { rot: -4 }, paw: { rot: 0 } };
 
 const inner = (svg: string) => svg.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
@@ -117,7 +152,10 @@ export async function playBear(host: HTMLElement, L: BearLayout, g: { ground: nu
   stage.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" overflow="visible" aria-hidden="true">
     <ellipse class="shadow-b" rx="${70 * L.k}" ry="${7 * L.k}" fill="rgba(0,0,0,0.22)"/>
     <ellipse class="shadow-r" rx="${18 * L.kr}" ry="${3.5 * L.kr}" fill="rgba(0,0,0,0.22)"/>
-    <g class="bear">${inner(BEAR_RIG)}</g><g class="rabbit">${inner(RABBIT_RIG)}</g></svg>`;
+    <g class="bear">${inner(BEAR_RIG)}</g>
+    <g class="reach" style="display:none"><path class="reach-o" fill="none" stroke="#2a1a0c" stroke-linecap="round" stroke-linejoin="round"/><path class="reach-i" fill="none" stroke="#2e2622" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g class="rabbit">${inner(RABBIT_RIG)}</g>
+    <ellipse class="reach-paw" style="display:none" fill="#2e2622" stroke="#2a1a0c"/></svg>`;
   host.append(stage);
   const svg = stage.querySelector('svg')!;
   const bearEl = svg.querySelector<SVGGElement>('.bear')!;
@@ -131,7 +169,19 @@ export async function playBear(host: HTMLElement, L: BearLayout, g: { ground: nu
   const R = (n: string) => rabbit.get(n);
   // Where each one stands (stage px, feet), plus squash for the bear and facing for the rabbit.
   const bp = { x: -BEAR_REACH * L.k, y: H, sqx: 1, sqy: 1, jitter: 0 };
-  const rp = { x: W + RABBIT_H * L.kr, y: H, dir: 1, held: false, tilt: 0 };
+  const rp = { x: W + RABBIT_H * L.kr, y: H, dir: 1, held: false, tilt: 0, wiping: false };
+  // The wipe: his reaching arm is redrawn over his thigh (the rig's own arm sits under it), with
+  // the rabbit between the arm and the paw.
+  const reach = svg.querySelector<SVGGElement>('.reach')!;
+  const reachPaw = svg.querySelector<SVGEllipseElement>('.reach-paw')!;
+  reach.querySelector('.reach-o')!.setAttribute('stroke-width', String(20 * L.k));
+  reach.querySelector('.reach-i')!.setAttribute('stroke-width', String(14 * L.k));
+  reachPaw.setAttribute('stroke-width', String(3 * L.k));
+  /** A point in a part's own drawing units, on the stage. */
+  const stagePt = (el: SVGGraphicsElement, x: number, y: number) => {
+    const m = svg.getScreenCTM()!.inverse().multiply(el.getScreenCTM()!);
+    return { x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f };
+  };
   const place = () => {
     // Shadows stay on the ground and shrink as their owner leaves it.
     shadowB.setAttribute('cx', String(bp.x + bp.jitter - 10 * L.k));
@@ -142,7 +192,24 @@ export async function playBear(host: HTMLElement, L: BearLayout, g: { ground: nu
     shadowR.setAttribute('cy', String(H - 1));
     shadowR.setAttribute('transform', `translate(${rp.x} ${H - 1}) scale(${Math.max(0.4, 1 - (H - rp.y) / (30 * L.kr))}) translate(${-rp.x} ${-(H - 1)})`);
     bearEl.setAttribute('transform', `translate(${bp.x + bp.jitter} ${bp.y}) scale(${L.k * bp.sqx} ${L.k * bp.sqy}) translate(${-BEAR_FEET.x} ${-BEAR_FEET.y})`);
-    if (rp.held) {
+    if (rp.wiping) {
+      // On the rump (and on the way there and back): the rabbit rides the grip, in front of the thigh.
+      const s = stagePt(B('arm').el, 128, 114);
+      const e = stagePt(B('fore').el, 128, 146);
+      const p = stagePt(B('paw').el, 131, 178);
+      const d = `M${s.x} ${s.y} L${e.x} ${e.y} L${p.x} ${p.y}`;
+      reach.querySelectorAll('path').forEach((path) => path.setAttribute('d', d));
+      const gp = stagePt(grip, 0, 0);
+      // Never through the ground: his feet and tail end reach this far below where he's held.
+      const tilt = (rp.tilt * Math.PI) / 180;
+      gp.y = Math.min(gp.y, H - (18 * Math.abs(Math.sin(tilt)) + 31 * Math.cos(tilt)) * L.kr - 1);
+      rabbitEl.setAttribute('transform', `translate(${gp.x} ${gp.y}) rotate(${rp.tilt}) scale(${L.kr}) translate(${-RABBIT_BODY.x} ${-RABBIT_BODY.y})`);
+      reachPaw.setAttribute('cx', String(gp.x));
+      reachPaw.setAttribute('cy', String(gp.y));
+      reachPaw.setAttribute('rx', String(9.5 * L.k));
+      reachPaw.setAttribute('ry', String(7 * L.k));
+      reachPaw.setAttribute('transform', `rotate(${rp.tilt - 90} ${gp.x} ${gp.y})`);
+    } else if (rp.held) {
       // Riding in his paw: undo the arm's rotation so the rabbit stays readable, plus a tilt.
       const chain = B('body').rot + B('arm').rot + B('fore').rot + B('paw').rot;
       rabbitEl.setAttribute('transform', `rotate(${-chain + rp.tilt}) scale(${L.kr / L.k}) translate(${-RABBIT_BODY.x} ${-RABBIT_BODY.y})`);
@@ -328,33 +395,77 @@ export async function playBear(host: HTMLElement, L: BearLayout, g: { ground: nu
     await run(pose(bear, CLUTCH, 0.32, 'back.out(1.6)'));
     await hold(0.3);
 
-    // 8. Round behind the rump, and two quick wipes: ears flap, fur puffs out.
+    // 8. Up into a half-squat, rump pushed back, tail lifted. The paw reaches behind and holds the
+    // rabbit flat against his rump, right under the tail, and gives two short up-and-down strokes
+    // along its curve. The rabbit: deadpan, ears flopping. The bear: relieved.
     beat('wipe');
     show(rabbitEl, 'fur', 'frazzled');
     sound.swish();
-    rp.tilt = 20;
-    await run(pose(bear, BEHIND, 0.36, 'power2.inOut'));
+    // From here until he lets go the arm is drawn over his thigh, the rabbit riding its grip.
+    rp.tilt = 0;
+    rp.wiping = true;
+    svg.insertBefore(rabbitEl, reachPaw);
+    reach.style.display = '';
+    reachPaw.style.display = '';
+    B('arm').el.style.visibility = 'hidden';
+    place();
+    const stroke = { t: 0.5 };
+    const aim = () => Object.assign(B('arm'), reachFor(rumpPoint(stroke.t)));
+    const mid = reachFor(rumpPoint(0.5));
+    const behind = pose(bear, HALF_SQUAT, 0.36, 'power2.inOut');
+    behind.to(B('arm'), { rot: mid.rot, sy: mid.sy, duration: 0.36, ease: 'power2.inOut' }, 0);
+    behind.to([B('fore'), B('paw')], { rot: 0, duration: 0.36, ease: 'power2.inOut' }, 0);
+    behind.to(rp, { tilt: RUMP_TILT, duration: 0.3, ease: 'power2.inOut' }, 0.06);
+    behind.to(R('root'), { sx: 1, sy: 1, duration: 0.2, ease: 'power2.out' }, 0.1);
+    behind.to([R('ear'), R('earF')], { rot: -60, duration: 0.25, ease: 'power2.out' }, 0.1);
+    behind.call(() => {
+      show(rabbitEl, 'eye', 'deadpan');
+      show(rabbitEl, 'mouth', 'flat');
+      show(bearEl, 'eye', 'happy');
+      show(bearEl, 'brow', 'relief');
+    }, [], 0.26);
+    await run(behind);
     for (let i = 0; i < 2; i++) {
       stage.dataset.wipes = String(i + 1);
       sound.rabbitSqueak();
       const w = gsap.timeline();
-      w.add(pose(bear, WIPE_UP, 0.15, 'power2.inOut'));
-      w.to(R('ear'), { rot: 20, duration: 0.15, ease: 'power2.out' }, 0);
-      w.to(R('earF'), { rot: 110, duration: 0.15, ease: 'power2.out' }, 0);
-      w.to(R('root'), { sx: 1.18, sy: 0.82, duration: 0.15 }, 0);
-      w.add(pose(bear, WIPE_DOWN, 0.15, 'power2.inOut'));
-      w.to(R('ear'), { rot: 105, duration: 0.15, ease: 'power2.out' }, 0.15);
-      w.to(R('earF'), { rot: 25, duration: 0.15, ease: 'power2.out' }, 0.15);
-      w.to(R('root'), { sx: 1.34, sy: 0.7, duration: 0.15 }, 0.15);
+      // Up the curve...
+      w.to(stroke, { t: 1, duration: 0.15, ease: 'power2.inOut', onUpdate: aim }, 0);
+      w.to(rp, { tilt: RUMP_TILT + 12, duration: 0.15, ease: 'power2.inOut' }, 0);
+      w.to(R('ear'), { rot: -100, duration: 0.15, ease: 'power2.out' }, 0);
+      w.to(R('earF'), { rot: -80, duration: 0.15, ease: 'power2.out' }, 0.03);
+      w.to(B('tail'), { rot: -34, duration: 0.15, ease: 'sine.inOut' }, 0);
+      w.to(B('hips'), { y: 5.5, duration: 0.15, ease: 'sine.inOut' }, 0);
+      // ...and back down, ears flopping the other way.
+      w.to(stroke, { t: 0, duration: 0.15, ease: 'power2.inOut', onUpdate: aim }, 0.15);
+      w.to(rp, { tilt: RUMP_TILT - 8, duration: 0.15, ease: 'power2.inOut' }, 0.15);
+      w.to(R('ear'), { rot: -25, duration: 0.15, ease: 'power2.out' }, 0.15);
+      w.to(R('earF'), { rot: -5, duration: 0.15, ease: 'power2.out' }, 0.18);
+      w.to(B('tail'), { rot: -10, duration: 0.15, ease: 'sine.inOut' }, 0.15);
+      w.to(B('hips'), { y: 8, duration: 0.15, ease: 'sine.inOut' }, 0.15);
       await run(w);
     }
     await hold(0.18);
 
-    // 9. Sets it down in front of him and lets go.
+    // 9. Sits back, sets it down in front of him and lets go.
     beat('setdown');
-    rp.tilt = 0;
-    await run(pose(bear, SETDOWN, 0.42, 'power2.inOut'));
+    show(bearEl, 'eye', 'open');
+    show(bearEl, 'brow', 'none');
+    const sitBack = pose(bear, { hips: SIT.hips, thigh: SIT.thigh, shin: SIT.shin, thighF: SIT.thighF, shinF: SIT.shinF, armF: SIT.armF, tail: { ...SIT.tail, x: 0, y: 0 } }, 0.42, 'power2.inOut');
+    sitBack.to(B('arm'), { sy: 1, duration: 0.42, ease: 'power2.inOut' }, 0);
+    sitBack.to(rp, { tilt: 0, duration: 0.42, ease: 'power2.inOut' }, 0);
+    sitBack.to([R('ear'), R('earF')], { rot: 0, duration: 0.3, ease: 'power2.out' }, 0);
+    sitBack.to(R('root'), { sx: 1.3, sy: 0.72, duration: 0.2, ease: 'power2.out' }, 0); // squashed in his paw again
+    sitBack.add(pose(bear, SETDOWN, 0.42, 'power2.inOut'), 0);
+    await run(sitBack);
     const at = onStage(grip);
+    // Let go: back to his own arm (it's out in front again), the rabbit on its own feet.
+    rp.wiping = false;
+    reach.style.display = 'none';
+    reachPaw.style.display = 'none';
+    B('arm').el.style.visibility = '';
+    show(rabbitEl, 'eye', 'huge');
+    show(rabbitEl, 'mouth', 'none');
     rp.held = false;
     svg.append(rabbitEl);
     rp.x = at.x - (RABBIT_BODY.x - RABBIT_FEET.x) * L.kr;

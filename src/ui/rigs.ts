@@ -29,7 +29,7 @@ export const BEAR_RIG = `
       <rect x="110" y="108" width="17" height="72" rx="8" fill="${BEAR_DK}" ${OL} stroke-width="3"/>
       <ellipse cx="123" cy="182" rx="12" ry="5.5" fill="${BEAR_DK}" ${OL} stroke-width="3"/>
     </g>
-    <g data-j="tail" data-p="38 100"><circle cx="32" cy="96" r="7.5" fill="${BEAR}" ${OL} stroke-width="3"/></g>
+    <g data-j="tail" data-p="38 100"><circle cx="31" cy="96" r="8.5" fill="${BEAR}" ${OL} stroke-width="3"/><path d="M26.5 93 Q30 89.5 34.5 91.5" fill="none" stroke="${BEAR_HI}" stroke-width="3" stroke-linecap="round"/></g>
     <path d="M36 104 Q32 72 70 68 Q112 60 142 74 Q160 84 156 110 Q152 136 126 138 L66 138 Q38 134 36 104 Z" fill="${BEAR}" ${OL} stroke-width="3.2"/>
     <g data-j="belly" data-p="96 128">
       <path d="M62 126 Q96 150 134 126 Q130 140 96 142 Q66 140 62 126 Z" fill="${BEAR}" ${OL} stroke-width="3"/>
@@ -47,8 +47,10 @@ export const BEAR_RIG = `
       <g data-j="eye" data-p="177 80">
         <g data-alt="eye" data-v="open"><circle cx="177" cy="80" r="5" fill="#fff" ${OL} stroke-width="1.6"/><circle cx="178.6" cy="80.3" r="2.6" fill="#111"/></g>
         <g data-alt="eye" data-v="shut" style="display:none"><path d="M171 76 L181 80 L171 84" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+        <g data-alt="eye" data-v="happy" style="display:none"><path d="M170.5 82 Q177 73.5 183.5 82" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/></g>
         <g data-alt="eye" data-v="pop" style="display:none"><circle cx="177" cy="79" r="8" fill="#fff" ${OL} stroke-width="1.8"/><circle cx="179.5" cy="79.5" r="3" fill="#111"/></g>
       </g>
+      <g data-alt="brow" data-v="relief" style="display:none"><ellipse cx="183" cy="90" rx="5.5" ry="3.2" fill="#e8847a" opacity="0.75"/><path d="M190 98.5 Q195 101.5 200 98" fill="none" stroke="#2a1a0c" stroke-width="1.8" stroke-linecap="round"/></g>
       <g data-alt="brow" data-v="strain" style="display:none"><path d="M168 70 L184 74" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><path d="M182 97 L194 97" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>
       <g data-j="sweat" data-p="158 70" style="display:none">
         <path d="M156 58 Q152 65 156 68 Q160 65 156 58 Z" fill="#8fd6ff" stroke="#2a6a9a" stroke-width="1.4"/>
@@ -125,6 +127,8 @@ export const RABBIT_RIG = `
       <path d="M10 33 L3 32 M10 34 L4 36" stroke="#5a4636" stroke-width="0.9" stroke-linecap="round"/>
       <g data-alt="eye" data-v="normal"><circle cx="15.5" cy="26.5" r="2.2" fill="#111"/><circle cx="14.9" cy="25.8" r="0.7" fill="#fff"/></g>
       <g data-alt="eye" data-v="huge" style="display:none"><circle cx="15.5" cy="26" r="5.4" fill="#fff" ${OL} stroke-width="1.4"/><circle cx="14" cy="26" r="1.6" fill="#111"/></g>
+      <g data-alt="eye" data-v="deadpan" style="display:none"><circle cx="15.5" cy="26.5" r="4.4" fill="#fff" ${OL} stroke-width="1.3"/><circle cx="14.6" cy="28.2" r="1.5" fill="#111"/><path d="M11 26.2 A4.5 4.5 0 0 1 20 26.2 Z" fill="${FUR_DK}" ${OL} stroke-width="1.3"/></g>
+      <g data-alt="mouth" data-v="flat" style="display:none"><path d="M8.6 35.2 L13.6 35.6" stroke="#3a2a18" stroke-width="1.5" stroke-linecap="round"/></g>
       <g data-alt="eye" data-v="shut" style="display:none"><path d="M12.5 26.5 Q15.5 28.5 18.5 26.5" fill="none" stroke="#111" stroke-width="1.6" stroke-linecap="round"/></g>
     </g>
   </g>

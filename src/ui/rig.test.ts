@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bearLayout } from './bear-scene.ts';
+import { bearLayout, reachFor, rumpPoint } from './bear-scene.ts';
 import { jointTransform, jointsIn } from './rig.ts';
 import { BEAR_RIG, MOOSE_RIG, RABBIT_RIG, WORKER_RIG } from './rigs.ts';
 
@@ -40,6 +40,35 @@ describe('puppet rigs', () => {
   it('the biffy worker: bare cheek, no long johns, toilet paper', () => {
     expect(WORKER_RIG).not.toContain('#c0392b');
     expect(WORKER_RIG).toContain('class="tp"');
+  });
+});
+
+describe('bear wipe', () => {
+  it('the strokes run along his rump, under the tail and behind the thigh', () => {
+    // Body drawing units: the tail sits at about (31, 96), the near thigh starts at about x = 38.
+    for (const t of [0, 0.5, 1]) {
+      const p = rumpPoint(t);
+      expect(p.y, `t=${t}`).toBeGreaterThan(104); // below the tail
+      expect(p.y).toBeLessThan(140);
+      expect(p.x).toBeGreaterThan(30);
+      expect(p.x).toBeLessThan(56);
+    }
+    expect(rumpPoint(1).y).toBeLessThan(rumpPoint(0).y); // t goes up the curve
+  });
+
+  it('the stretched arm puts the paw exactly on the rump point', () => {
+    for (const t of [0, 0.3, 1]) {
+      const p = rumpPoint(t);
+      const { rot, sy } = reachFor(p);
+      const r = (rot * Math.PI) / 180;
+      // Grip (6, 62) from the shoulder (128, 114), stretched along the arm, then rotated.
+      const gx = 128 + Math.cos(r) * 6 - Math.sin(r) * 62 * sy;
+      const gy = 114 + Math.sin(r) * 6 + Math.cos(r) * 62 * sy;
+      expect(gx).toBeCloseTo(p.x, 3);
+      expect(gy).toBeCloseTo(p.y, 3);
+      expect(sy).toBeGreaterThan(1); // he has to stretch to reach
+      expect(sy).toBeLessThan(1.6);
+    }
   });
 });
 

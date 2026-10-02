@@ -391,8 +391,8 @@ const played = (w) => [...Object.keys(w.beats).filter((k) => w.beats[k].length),
   const scene = async (gag, sel, during = async () => {}) => {
     await page.goto(`${ROOT}?gag=${gag}&audiolog`, { waitUntil: 'networkidle' });
     await page.evaluate(() => document.body.click()); // a tap starts the audio
-    await page.waitForSelector(sel, { state: 'attached', timeout: 4000 }).catch(() => {});
-    await page.waitForSelector(sel, { state: 'detached', timeout: 25000 }).catch(() => {});
+    await page.waitForSelector(sel, { state: 'attached', timeout: 20000 });
+    await page.waitForSelector(sel, { state: 'detached', timeout: 25000 });
     await page.evaluate(() => (window.__rhrAudio.log.length = 0));
     await page.evaluate(watchStage);
     await page.waitForSelector(sel, { state: 'attached', timeout: 5000 }).catch(() => {});
@@ -413,13 +413,30 @@ const played = (w) => [...Object.keys(w.beats).filter((k) => w.beats[k].length),
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 195, y: 300, id: 1 }] });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await wait(150);
-    return { where, bush, alive: !!(await page.$('.bear-stage')) };
+    const alive = !!(await page.$('.bear-stage'));
+    // Mid-wipe: where the rabbit is against the bear, and their faces.
+    await page.waitForSelector('.bear-stage[data-wipes]', { state: 'attached', timeout: 20000 });
+    const wipe = await page.evaluate(() => {
+      const st = document.querySelector('.bear-stage');
+      const c = (sel) => {
+        const r = st.querySelector(sel).getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2, l: r.left, r: r.right, t: r.top, b: r.bottom };
+      };
+      const shown = (root, group) => [...st.querySelectorAll(`${root} [data-alt="${group}"]`)].find((e) => e.style.display !== 'none')?.dataset.v;
+      return { rabbit: c('.rabbit [data-j="body"]'), tail: c('.bear [data-j="tail"]'), thigh: c('.bear [data-j="thigh"]'), head: c('.bear [data-j="head"]'), rabbitEye: shown('.rabbit', 'eye'), rabbitMouth: shown('.rabbit', 'mouth'), bearEye: shown('.bear', 'eye'), bearFace: shown('.bear', 'brow') };
+    });
+    return { where, bush, alive, wipe };
   });
   check(/duvernay 8/i.test(r.extra.where), `?gag=bear opens ${r.extra.where}`);
   check(!!r.extra.bush && r.extra.bush.top >= r.extra.bush.board - 1, 'a bush stands at the bottom');
   check(r.extra.alive, 'a touch mid-scene does not cancel the bear');
   check(r.w.beats.bear.join(' > ') === 'walk > squat > strain > rabbit > sniff > notice > windup > grab > wipe > setdown > freeze > shake > bolt', `every beat, in order: ${r.w.beats.bear.join(' > ')}`);
   check(r.w.wipes === 2, `two wipes (${r.w.wipes})`);
+  const wp = r.extra.wipe;
+  check(wp.rabbit.y > wp.tail.y && Math.abs(wp.rabbit.x - wp.tail.x) < (wp.tail.r - wp.tail.l) * 1.6, `the rabbit is held under his tail (rabbit ${Math.round(wp.rabbit.x)},${Math.round(wp.rabbit.y)}; tail ${Math.round(wp.tail.x)},${Math.round(wp.tail.y)})`);
+  check(wp.rabbit.x < wp.thigh.x && wp.tail.x < wp.thigh.l + 4 && wp.tail.x < wp.head.l, 'on his rump, behind the thigh: rump pushed back, tail showing at the far end from his head');
+  check(wp.rabbitEye === 'deadpan' && wp.rabbitMouth === 'flat', `the rabbit: deadpan (${wp.rabbitEye} eye, ${wp.rabbitMouth} mouth)`);
+  check(wp.bearEye === 'happy' && wp.bearFace === 'relief', `the bear: relieved (${wp.bearEye} eye, ${wp.bearFace})`);
   const notice = r.w.beatAt['bear:windup'] - r.w.beatAt['bear:notice'];
   check(notice >= 1200, `eyes pop, slow head turn and a hold before the grab (${Math.round(notice)}ms)`);
   check(['bear-grunt', 'bear-huff', 'rabbit-squeak', 'pop', 'swish', 'shake'].every((n) => r.log.includes(n)), `sounds: grunt, huff, squeak, pop, swish, shake (${[...new Set(r.log)].join(' ')})`);
