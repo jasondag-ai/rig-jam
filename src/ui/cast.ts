@@ -19,41 +19,61 @@ export const MAGPIE = `
   <path d="M51 15 L60 17.5 L51 19.5 Z" fill="#5a5a5a" ${OL} stroke-width="2"/>
 </svg>`;
 
-/** Roof splat the magpie leaves behind. */
-export const SPLAT = `
-<svg viewBox="0 0 30 24" aria-hidden="true">
-  <path d="M15 3 Q22 2 22 8 Q28 9 26 14 Q29 19 22 20 Q18 24 13 20 Q6 23 5 17 Q0 13 6 10 Q5 3 15 3 Z" fill="#fff" stroke="#9a9a9a" stroke-width="1.6"/>
-  <circle cx="13" cy="11" r="2.4" fill="#d8d8d8"/><circle cx="18" cy="15" r="1.6" fill="#e4e4e4"/>
+/** One bird dropping: white blob, dark centre, a short drip. The magpie leaves two or three. */
+export const DROPPING = `
+<svg viewBox="0 0 20 24" aria-hidden="true">
+  <path d="M10 2 Q14 2 15 6 Q19 7 18 11 Q19 15 14 15 Q11 17 8 15 Q3 16 3 11 Q1 7 5 6 Q6 2 10 2 Z" fill="#fff" stroke="#7a7a7a" stroke-width="1.3"/>
+  <path d="M12.2 14.6 Q13.8 18 12.8 21 Q11.8 22.8 10.9 21.2 Q10.4 18 11 15.2 Z" fill="#fff" stroke="#7a7a7a" stroke-width="1.1"/>
+  <ellipse cx="10" cy="9.6" rx="3.4" ry="2.7" fill="#34322f"/>
+  <circle cx="8.8" cy="8.7" r="0.9" fill="#6b6a66"/>
 </svg>`;
 
-/** Spotter in a hi-vis vest with two flags. Arms wave in the flag dance. */
-export const SPOTTER = `
-<svg viewBox="0 0 70 90" aria-hidden="true">
-  <g class="sp-legs">
-    <rect x="24" y="58" width="9" height="24" rx="3" fill="#2f5d9e" ${OL} stroke-width="2.5"/>
-    <rect x="37" y="58" width="9" height="24" rx="3" fill="#2f5d9e" ${OL} stroke-width="2.5"/>
-    <rect x="21" y="80" width="13" height="7" rx="3" fill="#5a3a1c" ${OL} stroke-width="2.5"/>
-    <rect x="36" y="80" width="13" height="7" rx="3" fill="#5a3a1c" ${OL} stroke-width="2.5"/>
-  </g>
-  <g class="sp-arm sp-arm-l">
-    <path d="M22 34 L8 22" stroke="#e8b48a" stroke-width="6" stroke-linecap="round"/>
-    <path d="M8 22 L4 4" stroke="#5a3a1c" stroke-width="2.5" stroke-linecap="round"/>
-    <path d="M4 4 L18 7 L6 14 Z" fill="#ff7a00" ${OL} stroke-width="2"/>
-  </g>
-  <g class="sp-arm sp-arm-r">
-    <path d="M48 34 L62 22" stroke="#e8b48a" stroke-width="6" stroke-linecap="round"/>
-    <path d="M62 22 L66 4" stroke="#5a3a1c" stroke-width="2.5" stroke-linecap="round"/>
-    <path d="M66 4 L52 7 L64 14 Z" fill="#ff7a00" ${OL} stroke-width="2"/>
-  </g>
+const SPOTTER_HEAD = `
+  <circle cx="35" cy="22" r="10" fill="#e8b48a" ${OL} stroke-width="2.5"/>
+  <path d="M23 17 Q24 6 35 6 Q46 6 47 17 Z" fill="#ffd21f" ${OL} stroke-width="2.5"/>
+  <rect x="20" y="15" width="30" height="4" rx="2" fill="#ffd21f" ${OL} stroke-width="2"/>`;
+const VEST = `
   <rect x="20" y="30" width="30" height="31" rx="7" fill="#ff8a00" ${OL} stroke-width="2.5"/>
   <rect x="21" y="40" width="28" height="4" fill="#e8eef2"/>
   <rect x="21" y="50" width="28" height="4" fill="#e8eef2"/>
-  <rect x="33" y="30" width="4" height="31" fill="#d8e0e6"/>
-  <circle cx="35" cy="22" r="10" fill="#e8b48a" ${OL} stroke-width="2.5"/>
+  <rect x="33" y="30" width="4" height="31" fill="#d8e0e6"/>`;
+const PAIL_SHAPE = (x: number, y: number, up: boolean) =>
+  up
+    ? `<path d="M${x} ${y} L${x + 30} ${y} L${x + 27} ${y + 26} L${x + 3} ${y + 26} Z" fill="#ff7a00" ${OL} stroke-width="2.5"/><rect x="${x - 1}" y="${y - 3}" width="32" height="5" rx="2" fill="#ff9a2e" ${OL} stroke-width="2"/><path d="M${x + 6} ${y + 8} H${x + 24}" stroke="#ffb35c" stroke-width="2"/>`
+    : `<path d="M${x} ${y} L${x + 18} ${y} L${x + 16} ${y + 16} L${x + 2} ${y + 16} Z" fill="#ff7a00" ${OL} stroke-width="2"/><path d="M${x} ${y} Q${x + 9} ${y - 9} ${x + 18} ${y}" fill="none" stroke="#5a5a5a" stroke-width="1.8"/>`;
+
+/** Spotter in his hi-vis vest walking on with a pail (the pail hides when he runs off). */
+export const SPOTTER_WALK = `
+<svg viewBox="0 0 70 90" aria-hidden="true">
+  <g class="sw-leg sw-leg-l"><rect x="24" y="58" width="9" height="24" rx="3" fill="#2f5d9e" ${OL} stroke-width="2.5"/><rect x="21" y="80" width="13" height="7" rx="3" fill="#5a3a1c" ${OL} stroke-width="2.5"/></g>
+  <g class="sw-leg sw-leg-r"><rect x="37" y="58" width="9" height="24" rx="3" fill="#2f5d9e" ${OL} stroke-width="2.5"/><rect x="36" y="80" width="13" height="7" rx="3" fill="#5a3a1c" ${OL} stroke-width="2.5"/></g>
+  <path d="M22 34 L16 54" stroke="#e8b48a" stroke-width="6" stroke-linecap="round"/>
+  ${VEST}
+  <path d="M48 34 L54 54" stroke="#e8b48a" stroke-width="6" stroke-linecap="round"/>
+  <g class="sw-pail">${PAIL_SHAPE(47, 55, false)}</g>
+  ${SPOTTER_HEAD}
   <circle cx="31.5" cy="22" r="1.6" fill="#2a1a0c"/><circle cx="38.5" cy="22" r="1.6" fill="#2a1a0c"/>
-  <path d="M31 27 Q35 30 39 27" fill="none" stroke="#2a1a0c" stroke-width="1.8" stroke-linecap="round"/>
-  <path d="M23 17 Q24 6 35 6 Q46 6 47 17 Z" fill="#ffd21f" ${OL} stroke-width="2.5"/>
-  <rect x="20" y="15" width="30" height="4" rx="2" fill="#ffd21f" ${OL} stroke-width="2"/>
+  <path d="M31 27 Q35 29 39 27" fill="none" stroke="#2a1a0c" stroke-width="1.8" stroke-linecap="round"/>
+</svg>`;
+
+/** Spotter asleep on an upturned pail: head drooped, eyes shut, mouth open. */
+export const SPOTTER_SIT = `
+<svg viewBox="0 0 70 90" aria-hidden="true">
+  <g class="ss-pail">${PAIL_SHAPE(20, 62, true)}</g>
+  <g class="ss-body">
+    <rect x="18" y="64" width="9" height="18" rx="3" fill="#2f5d9e" ${OL} stroke-width="2.5"/>
+    <rect x="43" y="64" width="9" height="18" rx="3" fill="#2f5d9e" ${OL} stroke-width="2.5"/>
+    <rect x="15" y="80" width="13" height="7" rx="3" fill="#5a3a1c" ${OL} stroke-width="2.5"/>
+    <rect x="42" y="80" width="13" height="7" rx="3" fill="#5a3a1c" ${OL} stroke-width="2.5"/>
+    <rect x="17" y="58" width="36" height="10" rx="5" fill="#2f5d9e" ${OL} stroke-width="2.5"/>
+    <g transform="translate(0 6)">${VEST}</g>
+    <path d="M22 42 Q16 52 22 62 M48 42 Q54 52 48 62" fill="none" stroke="#e8b48a" stroke-width="6" stroke-linecap="round"/>
+    <g transform="rotate(18 35 30) translate(0 6)">
+      ${SPOTTER_HEAD}
+      <path d="M29.5 22 q2 1.6 4 0 M36.5 22 q2 1.6 4 0" fill="none" stroke="#2a1a0c" stroke-width="1.6" stroke-linecap="round"/>
+      <ellipse cx="35" cy="27.5" rx="2.2" ry="2.6" fill="#7a3b2a"/>
+    </g>
+  </g>
 </svg>`;
 
 /** Company Man: white hard hat, pressed shirt, tie, clipboard. Upper body, for the win card. */
@@ -91,21 +111,30 @@ export const BIFFY = `
   </g>
 </svg>`;
 
-/** The worker who stumbles out of the biffy, hauling his coveralls up. */
-export const WORKER = `
-<svg viewBox="0 0 44 70" aria-hidden="true">
-  <rect x="13" y="44" width="8" height="22" rx="3" fill="#1f3c6e" ${OL} stroke-width="2.2"/>
-  <rect x="23" y="44" width="8" height="22" rx="3" fill="#1f3c6e" ${OL} stroke-width="2.2"/>
-  <rect x="11" y="28" width="22" height="22" rx="6" fill="#1f3c6e" ${OL} stroke-width="2.2"/>
-  <rect x="11" y="44" width="22" height="5" fill="#f2f2f2" ${OL} stroke-width="1.5"/>
-  <g class="wk-arms">
-    <path d="M12 32 Q6 40 13 46" fill="none" stroke="#1f3c6e" stroke-width="6" stroke-linecap="round"/>
-    <path d="M32 32 Q38 40 31 46" fill="none" stroke="#1f3c6e" stroke-width="6" stroke-linecap="round"/>
+/**
+ * The worker who comes out of the biffy bent over, coveralls round his knees, hauling them up as
+ * he shuffles off. Cheeky, not crude: two round cheeks and a little crack line. Faces right.
+ */
+export const WORKER_BENT = `
+<svg viewBox="0 0 70 62" aria-hidden="true">
+  <rect x="14" y="52" width="10" height="7" rx="3" fill="#5a3a1c" ${OL} stroke-width="2.2"/>
+  <rect x="27" y="52" width="10" height="7" rx="3" fill="#5a3a1c" ${OL} stroke-width="2.2"/>
+  <rect x="15" y="40" width="8" height="14" rx="3" fill="#1f3c6e" ${OL} stroke-width="2.2"/>
+  <rect x="28" y="40" width="8" height="14" rx="3" fill="#1f3c6e" ${OL} stroke-width="2.2"/>
+  <rect x="10" y="33" width="31" height="10" rx="5" fill="#18305a" ${OL} stroke-width="2.2"/>
+  <path d="M14 37 Q20 35 26 38 Q32 35 38 37" fill="none" stroke="#2b4a80" stroke-width="1.6"/>
+  <path d="M25 17 Q34 9 50 13 L54 24 Q40 27 29 23 Z" fill="#1f3c6e" ${OL} stroke-width="2.2"/>
+  <ellipse cx="19" cy="27" rx="8.5" ry="8" fill="#f0c49c" ${OL} stroke-width="2.2"/>
+  <ellipse cx="31" cy="27" rx="8.5" ry="8" fill="#f0c49c" ${OL} stroke-width="2.2"/>
+  <path d="M25 20.5 Q25.6 24.5 25 28" fill="none" stroke="#a0613d" stroke-width="1.8" stroke-linecap="round"/>
+  <g class="wb-arms">
+    <path d="M47 18 Q40 30 33 36" fill="none" stroke="#1f3c6e" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="33" cy="36" r="3.4" fill="#f0c49c" ${OL} stroke-width="1.8"/>
   </g>
-  <circle cx="22" cy="20" r="9" fill="#efc39c" ${OL} stroke-width="2.2"/>
-  <path d="M18 18 L20 20 M26 18 L24 20" stroke="#2a1a0c" stroke-width="1.8" stroke-linecap="round"/>
-  <ellipse cx="22" cy="25" rx="3" ry="2" fill="#7a3b2a"/>
-  <path d="M12 15 Q13 5 22 5 Q31 5 32 15 Z" fill="#ffd21f" ${OL} stroke-width="2.2"/>
+  <circle cx="57" cy="27" r="7.5" fill="#f0c49c" ${OL} stroke-width="2.2"/>
+  <path d="M58 27 l2.5 1" stroke="#2a1a0c" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="58" cy="32" rx="2.2" ry="1.4" fill="#c0392b"/>
+  <path d="M51 23 Q53 15 61 17 Q66 19 65 25 Z" fill="#ffd21f" ${OL} stroke-width="2.2"/>
 </svg>`;
 
 /** Landowner on his quad, cowboy hat, plaid shirt. His fist shakes. Faces left. */
