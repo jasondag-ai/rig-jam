@@ -5,18 +5,23 @@
 // Reduced motion: still frames only.
 import { sound } from '../audio/engine.ts';
 import { SIZE, type GameState, type Level, type Side } from '../engine/index.ts';
-import { BIFFY, DROPPING, LANDOWNER, MAGPIE, PLUG_POST, SPOTTER_SIT, SPOTTER_WALK, WORKER_BENT } from './cast.ts';
+import { BEAR_SVG, BIFFY, BUSH, DROPPING, HOTSHOT, LANDOWNER, MAGPIE, MOOSE_SVG, PLUG_POST, RABBIT, SPOTTER_SIT, SPOTTER_WALK, WORKER_BENT } from './cast.ts';
 import {
   biffySpot,
   cordFor,
   dueGag,
+  dueWildlife,
+  planWildlife,
+  squatSpot,
   freshIdle,
   magpieTarget,
   reverseDirection,
   touched,
+  type Animal,
   type BiffySpot,
   type Cord,
   type IdleState,
+  type WildState,
 } from './gags.ts';
 import { LANDOWNER_LINE, MAGPIE_LINE, type BumpHit } from './lines.ts';
 import { WEAR_CAP } from './tracks.ts';
@@ -46,15 +51,25 @@ export interface GagOptions {
   cords: boolean;
   /** Montney: the landowner shows up once a lane wears to the deepest rut. */
   landowner: boolean;
+  /** Montney's bear or Duvernay's moose walks along the bottom once per level. */
+  animal: Animal | null;
+  /** What the hot shot kicks up: dust, mud or snow. */
+  ground: 'gravel' | 'mud' | 'snow';
   /** Multiplies the idle times (tests and previews use ?idle=0.1). */
   idleScale: number;
+  /** Bear, moose and hot shot on (tests of the other gags turn them off with ?wild=0). */
+  wildlife: boolean;
 }
 
 /** Free space above and below the board, in px, for characters outside the fence. */
 export interface Bands {
   above: number;
   below: number;
+  /** From the board's bottom edge down to the buttons (the hint line in between fades for wildlife). */
+  ground: number;
 }
+
+const PUFF: Record<GagOptions['ground'], string> = { gravel: '#dcc9a0', mud: '#7a5532', snow: '#ffffff' };
 
 type SpotterState = 'walking' | 'asleep' | 'waking';
 
@@ -66,7 +81,16 @@ export class GagLayer {
   private lastActivity = performance.now();
   private timer = 0;
   private stopped = false;
-  private bands: Bands = { above: 60, below: 60 };
+  private bands: Bands = { above: 60, below: 60, ground: 100 };
+  private wild: WildState = planWildlife();
+  private levelStart = performance.now();
+  /** The bear, moose or hot shot playing right now. Touches never cancel it; a new level does. */
+  private wildGag: AbortController | null = null;
+  private landownerPlaying = false;
+  private biffyPlaying = false;
+  /** Waiting for the wildlife to finish before they go. */
+  private landownerPending = false;
+  private biffyPending = false;
   /** The magpie (or the spotter walking on) right now; a touch cancels it. */
   private idleGag: AbortController | null = null;
   private spotter: { el: HTMLElement; state: SpotterState; x: number; y: number; w: number; h: number } | null = null;
@@ -86,6 +110,12 @@ export class GagLayer {
     this.clearIdleGags();
     this.idle = freshIdle();
     this.landownerDone = false;
+    this.wildGag?.abort();
+    this.wildGag = null;
+    this.wild = planWildlife();
+    this.levelStart = performance.now();
+    this.landownerPending = false;
+    this.biffyPending = false;
     this.lastActivity = performance.now();
     this.stopped = false;
     this.host.el.querySelectorAll('.gag').forEach((n) => n.remove());
@@ -139,7 +169,8 @@ export class GagLayer {
   worn(level: number): void {
     if (this.opts.landowner && !this.landownerDone && level >= WEAR_CAP && !this.stopped) {
       this.landownerDone = true;
-      void this.landowner();
+      if (this.wildGag) this.landownerPending = true;
+      else void this.landowner();
     }
   }
 
@@ -154,7 +185,9 @@ export class GagLayer {
 
   private tick(): void {
     if (!this.host.el.isConnected) return this.stop();
-    if (this.stopped || this.idleGag || this.spotter || document.hidden) return;
+    if (this.stopped || document.hidden) return;
+    this.tickWild();
+    if (this.idleGag || this.spotter || this.wildGag) return;
     const due = dueGag((performance.now() - this.lastActivity) / this.opts.idleScale, this.idle);
     if (due === 'magpie') {
       this.idle = { ...this.idle, magpieThisIdle: true };
@@ -375,6 +408,11 @@ export class GagLayer {
   private async biffyGag(): Promise<void> {
     const b = this.biffy!;
     b.done = true;
+    if (this.wildGag) {
+      this.biffyPending = true;
+      return;
+    }
+    this.biffyPlaying = true;
     const { el } = b;
     el.classList.add('open');
     sound.doorBang();
@@ -407,6 +445,7 @@ export class GagLayer {
       sound.feet(false);
       guy.remove();
       el.classList.remove('open');
+      this.biffyPlaying = false;
     }
   }
 
@@ -517,6 +556,15 @@ export class GagLayer {
   // ---------- Landowner: rides along below the board ----------
 
   private async landowner(): Promise<void> {
+    this.landownerPlaying = true;
+    try {
+      await this.landownerRide();
+    } finally {
+      this.landownerPlaying = false;
+    }
+  }
+
+  private async landownerRide(): Promise<void> {
     const { cellPx: cell, fencePx: fence } = this.host;
     const size = cell * SIZE + fence * 2;
     const h = Math.max(cell * 0.9, Math.min(cell * 1.3, this.bands.below - 6));
@@ -548,6 +596,235 @@ export class GagLayer {
       sound.quad('stop');
       quad.remove();
     }
+  }
+
+  // ---------- Wildlife and traffic: along the bottom, between the board and the buttons ----------
+
+  /** Anything else on stage right now? The bear, moose and hot shot wait for it to finish. */
+  private busy(): boolean {
+    return !!(this.idleGag || this.spotter || this.wildGag || this.landownerPlaying || this.biffyPlaying);
+  }
+
+  private tickWild(): void {
+    if (!this.opts.wildlife || reducedMotion() || this.busy()) return;
+    const now = performance.now();
+    const due = dueWildlife((now - this.levelStart) / this.opts.idleScale, (now - this.lastActivity) / this.opts.idleScale, this.wild, this.opts.animal);
+    if (!due) return;
+    if (due === 'animal') this.wild = { ...this.wild, animalDone: true };
+    else this.wild = { ...this.wild, hotshotDone: true };
+    const ctl = new AbortController();
+    this.wildGag = ctl;
+    const play = due === 'hotshot' ? this.hotshot(ctl.signal) : this.opts.animal === 'bear' ? this.bear(ctl.signal) : this.moose(ctl.signal);
+    play
+      .catch(() => {})
+      .finally(() => {
+        if (this.wildGag !== ctl) return;
+        this.wildGag = null;
+        // Whatever was waiting goes now.
+        if (this.landownerPending && !this.stopped) {
+          this.landownerPending = false;
+          void this.landowner();
+        } else if (this.biffyPending && !this.stopped) {
+          this.biffyPending = false;
+          void this.biffyGag();
+        }
+      });
+  }
+
+  /** The strip between the board and the buttons, in board px: top edge and the ground line. */
+  private groundStrip(): { top: number; base: number; h: number } {
+    const size = this.host.cellPx * SIZE + this.host.fencePx * 2;
+    const h = Math.max(30, this.bands.ground - 6);
+    return { top: size + 3, base: size + 3 + h, h };
+  }
+
+  /** Screen edges in board px (characters come in and leave from off screen). */
+  private screenEdges(): { left: number; right: number } {
+    const board = this.host.el.getBoundingClientRect();
+    return { left: -board.left, right: document.documentElement.clientWidth - board.left };
+  }
+
+  /** The biffy's span if it stands below the board, so nothing stops in front of it. */
+  private biffyBelow(): { left: number; right: number } | null {
+    if (!this.biffy || this.biffy.spot.side !== 'bottom') return null;
+    const l = parseFloat(this.biffy.el.style.left);
+    return { left: l, right: l + parseFloat(this.biffy.el.style.width) };
+  }
+
+  /** Keyframes for hopping from x0 to x1 along the ground line (little arcs). */
+  private hops(x0: number, x1: number, y: number, n: number, height: number): Keyframe[] {
+    const frames: Keyframe[] = [];
+    for (let i = 0; i <= n * 2; i++) {
+      const x = x0 + ((x1 - x0) * i) / (n * 2);
+      frames.push({ transform: `translate(${x}px, ${y - (i % 2 ? height : 0)}px)` });
+    }
+    return frames;
+  }
+
+  /**
+   * Bear (Montney): walks in, squats side-on with his back to a bush and strains. A rabbit hops up;
+   * he grabs it, wipes with it, and they bolt opposite ways, the rabbit's ears flat back.
+   */
+  private async bear(signal: AbortSignal): Promise<void> {
+    const { cellPx: cell } = this.host;
+    const strip = this.groundStrip();
+    const size = cell * SIZE + this.host.fencePx * 2;
+    let bh = Math.max(cell * 0.9, Math.min(cell * 2, strip.h));
+    let bw = (bh * 120) / 92;
+    let bushH = bh * 0.62;
+    let bushW = (bushH * 60) / 48;
+    // Bush, then the bear overlapping it a little; shrink if the biffy leaves too little room.
+    let spot: number | null = null;
+    for (const k of [1, 0.85, 0.7]) {
+      spot = squatSpot(size, (bw + bushW * 0.6) * k, this.biffyBelow());
+      if (spot !== null) {
+        [bh, bw, bushH, bushW] = [bh * k, bw * k, bushH * k, bushW * k];
+        break;
+      }
+    }
+    if (spot === null) return;
+    const edges = this.screenEdges();
+    const bushX = spot;
+    const squatX = spot + bushW * 0.6 - bw * 0.12;
+    const y = strip.base - bh;
+    const at = (x: number, yy = y) => `translate(${x}px, ${yy}px)`;
+    const bush = this.figure('gag wild bush', BUSH, bushW, bushH);
+    bush.style.transform = at(bushX, strip.base - bushH);
+    const bear = this.figure('gag wild bear walking', BEAR_SVG, bw, bh);
+    bear.style.transform = at(edges.left - bw);
+    const rw = bh * 0.42;
+    const rh = (rw * 40) / 44;
+    const rabbit = this.figure('gag wild rabbit', RABBIT, rw, rh);
+    rabbit.style.transform = at(edges.right + rw, strip.base - rh);
+    const cleanup = () => [bush, bear, rabbit].forEach((e) => e.remove());
+    signal.addEventListener('abort', cleanup, { once: true });
+    try {
+      await this.animate(bush, [{ opacity: 0 }, { opacity: 1 }], 300, 'ease-out', signal);
+      const walkMs = Math.min(3000, Math.max(1600, ((squatX - edges.left + bw) / bw) * 700));
+      await this.animate(bear, [{ transform: at(edges.left - bw) }, { transform: at(squatX) }], walkMs, 'cubic-bezier(0.3, 0.2, 0.5, 1)', signal);
+      bear.style.transform = at(squatX);
+      // Squats with his rump to the bush and strains.
+      bear.classList.replace('walking', 'squatting');
+      sound.bearHuff();
+      await sleep(350, signal);
+      bear.classList.add('straining');
+      sound.bearGrunt();
+      await sleep(900, signal);
+      sound.bearGrunt();
+      await sleep(700, signal);
+      // A rabbit hops up to his front paw.
+      const paw = { x: squatX + (bw * 84) / 120 - rw * 0.15, y: strip.base - rh - bh * 0.2 };
+      const hopMs = Math.max(900, Math.min(1600, ((edges.right - paw.x) / rw) * 120));
+      await this.animate(rabbit, this.hops(edges.right + rw, paw.x, strip.base - rh, 5, rh * 0.45), hopMs, 'linear', signal);
+      bear.classList.remove('straining');
+      // Grabbed.
+      rabbit.classList.add('shock');
+      sound.rabbitSqueak();
+      await this.animate(rabbit, [{ transform: at(paw.x, strip.base - rh) }, { transform: at(paw.x, paw.y) }], 160, 'ease-out', signal);
+      await sleep(300, signal);
+      // Round the back for a wipe: scrub, scrub, scrub.
+      bear.classList.add('wiping');
+      const rump = { x: squatX + (bw * 10) / 120 - rw * 0.5, y: strip.base - rh - bh * 0.12 };
+      const rub = bh * 0.1;
+      await this.animate(rabbit, [{ transform: at(paw.x, paw.y) }, { transform: at(rump.x, rump.y) }], 220, 'ease-in-out', signal);
+      sound.rabbitSqueak();
+      const scrub: Keyframe[] = [];
+      for (let i = 0; i < 4; i++) scrub.push({ transform: at(rump.x, rump.y) }, { transform: at(rump.x + rub * 0.3, rump.y - rub) });
+      scrub.push({ transform: at(rump.x, rump.y) });
+      await this.animate(rabbit, scrub, 900, 'linear', signal);
+      sound.rabbitSqueak();
+      // Let go: both bolt, opposite ways.
+      bear.classList.remove('wiping', 'squatting');
+      bear.classList.add('walking', 'running', 'facing-left');
+      rabbit.classList.add('flat', 'facing-right');
+      sound.bearHuff();
+      const runRabbit = this.animate(rabbit, this.hops(rump.x, edges.right + rw * 2, strip.base - rh, 4, rh * 0.3), 650, 'linear', signal);
+      const runBear = this.animate(bear, [{ transform: at(squatX) }, { transform: at(edges.left - bw * 1.3) }], 1100, 'cubic-bezier(0.4, 0, 0.9, 0.6)', signal);
+      await sleep(500, signal);
+      const fade = this.animate(bush, [{ opacity: 1 }, { opacity: 0 }], 500, 'ease-in', signal);
+      await Promise.all([runRabbit, runBear, fade]);
+    } finally {
+      cleanup();
+    }
+  }
+
+  /** Moose (Duvernay): plods along the bottom, stops, turns his head and stares at you, plods off. */
+  private async moose(signal: AbortSignal): Promise<void> {
+    const { cellPx: cell } = this.host;
+    const strip = this.groundStrip();
+    const size = cell * SIZE + this.host.fencePx * 2;
+    // The antlers reach a little above the drawing's box: keep them clear of the fence.
+    const h = Math.max(cell * 1.1, Math.min(cell * 2.4, strip.h * 0.94));
+    const w = (h * 140) / 120;
+    const edges = this.screenEdges();
+    const stopX = squatSpot(size, w, this.biffyBelow()) ?? size / 2 - w / 2;
+    const y = strip.base - h;
+    const at = (x: number) => `translate(${x}px, ${y}px)`;
+    const moose = this.figure('gag wild moose walking', MOOSE_SVG, w, h);
+    moose.style.transform = at(edges.left - w);
+    signal.addEventListener('abort', () => moose.remove(), { once: true });
+    try {
+      await this.animate(moose, [{ transform: at(edges.left - w) }, { transform: at(stopX) }], 3400, 'cubic-bezier(0.3, 0.1, 0.6, 1)', signal);
+      moose.style.transform = at(stopX);
+      moose.classList.remove('walking');
+      await sleep(350, signal);
+      // Slowly turns his head... and stares right at you.
+      moose.classList.add('staring');
+      sound.mooseGroan();
+      await sleep(2000, signal);
+      moose.classList.remove('staring');
+      await sleep(300, signal);
+      moose.classList.add('walking');
+      await this.animate(moose, [{ transform: at(stopX) }, { transform: at(edges.right + w * 0.2) }], 3400, 'cubic-bezier(0.4, 0, 0.7, 0.9)', signal);
+    } finally {
+      moose.remove();
+    }
+  }
+
+  /** Hot shot (every region): a pickup screams across the bottom in a cloud of dust, mud or snow. Under a second. */
+  private async hotshot(signal: AbortSignal): Promise<void> {
+    const { cellPx: cell } = this.host;
+    const strip = this.groundStrip();
+    const h = Math.max(cell * 0.6, Math.min(cell * 1.1, strip.h * 0.62));
+    const w = (h * 120) / 52;
+    const edges = this.screenEdges();
+    const ltr = Math.random() < 0.5;
+    const x0 = ltr ? edges.left - w * 1.2 : edges.right + w * 0.2;
+    const x1 = ltr ? edges.right + w * 0.2 : edges.left - w * 1.2;
+    const y = strip.base - h;
+    const ms = 760;
+    const truck = this.figure(`gag wild hotshot${ltr ? '' : ' facing-left'}`, HOTSHOT, w, h);
+    truck.style.transform = `translate(${x0}px, ${y}px)`;
+    signal.addEventListener('abort', () => truck.remove(), { once: true });
+    sound.hotshot(ms / 1000, ltr);
+    const start = performance.now();
+    // A puff off the back wheels every few frames, left hanging behind as it goes.
+    const puffs = window.setInterval(() => {
+      const k = Math.min(1, (performance.now() - start) / ms);
+      const x = x0 + (x1 - x0) * k + (ltr ? w * 0.05 : w * 0.95);
+      this.puff(x + (Math.random() - 0.5) * h * 0.3, strip.base - h * (0.15 + Math.random() * 0.25), h);
+    }, 45);
+    try {
+      await this.animate(truck, [{ transform: `translate(${x0}px, ${y}px)` }, { transform: `translate(${x1}px, ${y}px)` }], ms, 'linear', signal);
+    } finally {
+      clearInterval(puffs);
+      truck.remove();
+    }
+  }
+
+  private puff(x: number, y: number, h: number): void {
+    const p = document.createElement('div');
+    p.className = 'gag wild-puff';
+    const s = h * (0.45 + Math.random() * 0.35);
+    Object.assign(p.style, { width: `${s}px`, height: `${s}px`, background: PUFF[this.opts.ground], left: `${x - s / 2}px`, top: `${y - s / 2}px` });
+    this.host.el.append(p);
+    p.animate(
+      [
+        { transform: 'scale(0.4)', opacity: 0.85 },
+        { transform: `translate(${(Math.random() - 0.5) * h * 0.4}px, ${-h * (0.2 + Math.random() * 0.3)}px) scale(${1.4 + Math.random() * 0.6})`, opacity: 0 },
+      ],
+      { duration: 650 + Math.random() * 250, easing: 'ease-out' },
+    ).onfinish = () => p.remove();
   }
 
   // ---------- helpers ----------

@@ -67,7 +67,7 @@ export class GameView {
     theme: Theme,
     handlers: GameViewHandlers,
     daily: DailyInfo | null = null,
-    gagOptions: Omit<GagOptions, 'idleScale'> = { cords: false, landowner: false },
+    gagOptions: Omit<GagOptions, 'idleScale' | 'ground' | 'wildlife'> = { cords: false, landowner: false, animal: null },
   ) {
     this.level = level;
     this.theme = theme;
@@ -94,7 +94,7 @@ export class GameView {
         addGround: (el) => board.addGround(el),
         state: () => this.state,
       },
-      { ...gagOptions, idleScale: idleScale() },
+      { ...gagOptions, ground: theme.ground, idleScale: idleScale(), wildlife: new URLSearchParams(location.search).get('wild') !== '0' },
     );
     board.onWear = (lvl) => this.gags.worn(lvl);
 
@@ -172,7 +172,12 @@ export class GameView {
     this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box);
     // Room outside the fence for the characters: between the HUD and the board, and below it.
     const hudBottom = this.el.querySelector('.hud')!.getBoundingClientRect().bottom - screen.top;
-    this.gags.layout({ above: Math.max(0, box.y - hudBottom), below: Math.max(0, controlsTop - (box.y + box.height)) });
+    const buttonsTop = this.el.querySelector('.controls')!.getBoundingClientRect().top - screen.top;
+    this.gags.layout({
+      above: Math.max(0, box.y - hudBottom),
+      below: Math.max(0, controlsTop - (box.y + box.height)),
+      ground: Math.max(0, buttonsTop - (box.y + box.height)),
+    });
   }
 
   private move(id: string, delta: number): void {

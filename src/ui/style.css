@@ -2130,3 +2130,173 @@ input,
   outline: 3px solid var(--ink);
   outline-offset: -3px;
 }
+
+/* ---------- Wildlife and traffic along the bottom (bear, moose, hot shot) ---------- */
+
+/* In front of the biffy and scenery; the hint line steps aside while they're on. */
+.wild {
+  z-index: 8;
+}
+
+.wild.bush {
+  z-index: 7;
+}
+
+.screen.game .note {
+  transition: opacity 0.25s;
+}
+
+.screen.game:has(.gag.wild) .note {
+  opacity: 0;
+}
+
+.wild.facing-left svg {
+  transform: scaleX(-1);
+}
+
+.wild.facing-right svg {
+  transform: scaleX(-1);
+}
+
+.wild-puff {
+  z-index: 7;
+  border-radius: 50%;
+  box-shadow: inset -2px -3px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* Bear: walk or squat pose; while squatting his arm is out front, or round the back to wipe. */
+.bear .pose,
+.bear .bs-arm-back,
+.bear .bs-sweat {
+  display: none;
+}
+
+.bear.walking .pose.walk,
+.bear.squatting .pose.squat,
+.bear.wiping .bs-arm-back,
+.bear.straining .bs-sweat {
+  display: inline;
+}
+
+.bear.wiping .bs-arm-front {
+  display: none;
+}
+
+.bear .bw-leg,
+.moose .mw-leg {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+}
+
+.bear.walking .bw-leg-a {
+  animation: leg-swing 280ms ease-in-out infinite alternate;
+}
+
+.bear.walking .bw-leg-b {
+  animation: leg-swing 280ms ease-in-out infinite alternate-reverse;
+}
+
+.bear.running .bw-leg-a,
+.bear.running .bw-leg-b {
+  animation-duration: 120ms;
+}
+
+@keyframes leg-swing {
+  from { transform: rotate(-16deg); }
+  to { transform: rotate(16deg); }
+}
+
+/* Straining: a trembling squat and sweat drops. */
+.bear.straining .pose.squat {
+  animation: strain 70ms linear infinite alternate;
+}
+
+@keyframes strain {
+  from { transform: translate(-0.8px, 0.5px); }
+  to { transform: translate(0.8px, -0.5px); }
+}
+
+.bear.straining .bs-sweat {
+  animation: sweat 600ms ease-in infinite;
+}
+
+@keyframes sweat {
+  from { transform: translateY(-2px); opacity: 1; }
+  to { transform: translateY(6px); opacity: 0.2; }
+}
+
+/* Rabbit: shocked eyes when grabbed, ears flat back as he bolts. */
+.rabbit .rb-eye-big {
+  display: none;
+}
+
+.rabbit.shock .rb-eye-big {
+  display: inline;
+}
+
+.rabbit.shock .rb-eye {
+  display: none;
+}
+
+.rabbit .rb-ears {
+  transform-box: view-box;
+  transform-origin: 16px 14px;
+  transition: transform 120ms ease-out;
+}
+
+.rabbit.flat .rb-ears {
+  transform: rotate(70deg);
+}
+
+/* Moose: slow plodding legs; the front-on head shows while he stares. */
+.moose.walking .mw-leg-a {
+  animation: leg-swing 620ms ease-in-out infinite alternate;
+}
+
+.moose.walking .mw-leg-b {
+  animation: leg-swing 620ms ease-in-out infinite alternate-reverse;
+}
+
+.moose .mh-front {
+  display: none;
+}
+
+.moose.staring .mh-front {
+  display: inline;
+}
+
+.moose.staring .mh-side {
+  display: none;
+}
+
+.moose.staring .mh-eyes {
+  animation: blink 2000ms steps(1) 1;
+}
+
+@keyframes blink {
+  0%, 48%, 56%, 100% { transform: none; }
+  50% { transform: scaleY(0.1); }
+}
+
+.moose .mh-eyes {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+
+/* Hot shot: amber light flashing; the lettering stays readable when he drives right to left. */
+.hotshot .hs-text {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+
+.hotshot.facing-left .hs-text {
+  transform: scaleX(-1);
+}
+
+.hotshot .hs-light {
+  animation: hs-flash 140ms steps(1) infinite;
+}
+
+@keyframes hs-flash {
+  50% { fill: #fff3b0; }
+}

@@ -7,6 +7,7 @@ import { hatsHtml } from './ui/hats.ts';
 import { hardHats, loadProgress, resetProgress, saveProgress } from './ui/progress.ts';
 import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } from './ui/unlocks.ts';
 import { onTap } from './ui/tap.ts';
+import { animalFor } from './ui/gags.ts';
 import { sceneryHtml } from './ui/scenery.ts';
 import { THEMES, applyTheme, themeOverride } from './ui/themes.ts';
 import { audio, sound } from './audio/engine.ts';
@@ -177,8 +178,8 @@ function showGame(regionIndex: number, index: number): void {
       onNext: hasNext ? () => showGame(regionIndex, index + 1) : null,
     },
     null,
-    // Block heater cords in Duvernay's cold; the landowner minds his Montney mud.
-    { cords: region.id === 'duvernay', landowner: region.id === 'montney' },
+    // Block heater cords in Duvernay's cold; the landowner minds his Montney mud. Bear in Montney, moose in Duvernay.
+    { cords: region.id === 'duvernay', landowner: region.id === 'montney', animal: animalFor(region.id) },
   );
   app.replaceChildren(game.el);
   game.fit();
