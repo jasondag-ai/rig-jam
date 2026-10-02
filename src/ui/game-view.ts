@@ -13,6 +13,7 @@ import { COMPANY_MAN } from './cast.ts';
 import { GagLayer, type GagOptions } from './gag-layer.ts';
 import { companyLine } from './gags.ts';
 import { onTap } from './tap.ts';
+import type { BumpHit } from './lines.ts';
 
 /** Screen-changing buttons: act on the first tap, even on iOS (see tap.ts). */
 const TAPPED = '.win [data-act], .hud [data-act="levels"]';
@@ -75,7 +76,7 @@ export class GameView {
     this.board = new BoardView(
       () => this.state,
       (id, delta) => this.move(id, delta),
-      (id) => this.onBump(id),
+      (id, direction, hit) => this.onBump(id, direction, hit),
     );
     const board = this.board;
     this.gags = new GagLayer(
@@ -179,7 +180,7 @@ export class GameView {
       return;
     }
     this.state = result.state;
-    this.gags.moved(id);
+    this.gags.moved(id, delta);
     this.resetHint();
     this.showLevelHint();
     this.board.sync(this.state, true, result.exited ? id : undefined);
@@ -213,8 +214,8 @@ export class GameView {
   }
 
   /** A bump: count it and give the hazard counter a quick shake. */
-  private onBump(truckId: string): void {
-    this.gags.bumped(truckId);
+  private onBump(truckId: string, direction: 1 | -1, hit: BumpHit): void {
+    this.gags.bumped(truckId, direction, hit);
     this.bumps++;
     this.showMisses();
     this.missesEl.classList.remove('tick');

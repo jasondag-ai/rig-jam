@@ -48,9 +48,13 @@ export class BoardView {
   private grid: HTMLElement;
   private getState: () => GameState;
   private onMove: (id: string, delta: number) => void;
-  private onBump: (truckId: string) => void;
+  private onBump: (truckId: string, direction: 1 | -1, hit: BumpHit) => void;
 
-  constructor(getState: () => GameState, onMove: (id: string, delta: number) => void, onBump: (truckId: string) => void = () => {}) {
+  constructor(
+    getState: () => GameState,
+    onMove: (id: string, delta: number) => void,
+    onBump: (truckId: string, direction: 1 | -1, hit: BumpHit) => void = () => {},
+  ) {
     this.getState = getState;
     this.onMove = onMove;
     this.onBump = onBump;
@@ -275,7 +279,6 @@ export class BoardView {
   // ---------- Bumps: jolt, near-miss tick (in the HUD), and a word from the driver ----------
 
   private bump(d: Drag, direction: 1 | -1): void {
-    this.onBump(d.id);
     const body = d.el.querySelector<HTMLElement>('.body')!;
     body.style.setProperty('--jx', d.horizontal ? `${direction * 5}px` : '0px');
     body.style.setProperty('--jy', d.horizontal ? '0px' : `${direction * 5}px`);
@@ -285,6 +288,7 @@ export class BoardView {
     // The driver who'd complain: the truck that got hit, else another truck, else the dragged one.
     const state = this.getState();
     const target = bumpTarget(state, d.id, d.range, direction);
+    this.onBump(d.id, direction, target.hit);
     const speakerEl = this.trucks.get(pickSpeaker(state, d.id, target)) ?? d.el;
     this.speak(speakerEl, target.hit);
   }

@@ -1,29 +1,31 @@
-// Runs the oilfield gags on the board: the magpie and spotter when nobody's touched anything for a
-// while, the biffy when a bump lands next to it, block heater cords ripping out (Duvernay), and the
-// landowner when the mud gets rutted (Montney). Nothing here takes touches (pointer-events: none),
-// and everything sits outside the 6x6 grid or on a truck roof. Reduced motion: still frames only.
-import { SIZE, truckCells, type GameState, type Level } from '../engine/index.ts';
-import { BIFFY, LANDOWNER, MAGPIE, PLUG_POST, SPLAT, SPOTTER, WORKER } from './cast.ts';
+// Runs the oilfield gags on the board: the magpie and the sleepy spotter when nobody's touched
+// anything for a while, the biffy when its truck backs up toward it, block heater cords ripping out
+// (Duvernay), and the landowner when the mud gets rutted (Montney). Nothing here takes touches
+// (pointer-events: none), and everything sits outside the 6x6 grid or on a truck roof.
+// Reduced motion: still frames only.
+import { SIZE, type GameState, type Level, type Side } from '../engine/index.ts';
+import { BIFFY, DROPPING, LANDOWNER, MAGPIE, PLUG_POST, SPOTTER_SIT, SPOTTER_WALK, WORKER_BENT } from './cast.ts';
 import {
-  biffyColumn,
+  biffySpot,
   cordFor,
   dueGag,
   freshIdle,
   magpieTarget,
-  nearBiffy,
+  reverseDirection,
   touched,
+  type BiffySpot,
   type Cord,
   type IdleState,
 } from './gags.ts';
-import { LANDOWNER_LINE, MAGPIE_LINE } from './lines.ts';
+import { LANDOWNER_LINE, MAGPIE_LINE, type BumpHit } from './lines.ts';
 import { WEAR_CAP } from './tracks.ts';
 
 const NS = 'http://www.w3.org/2000/svg';
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const sleep = (ms: number, signal: AbortSignal) =>
+const sleep = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((resolve, reject) => {
     const t = setTimeout(resolve, ms);
-    signal.addEventListener('abort', () => (clearTimeout(t), reject(signal.reason)), { once: true });
+    signal?.addEventListener('abort', () => (clearTimeout(t), reject(signal.reason)), { once: true });
   });
 
 /** What the gags need from the board. */
@@ -53,19 +55,21 @@ export interface Bands {
   below: number;
 }
 
+type SpotterState = 'walking' | 'asleep' | 'waking';
+
 export class GagLayer {
   private host: GagHost;
   private opts: GagOptions;
+  private level: Level | null = null;
   private idle: IdleState = freshIdle();
   private lastActivity = performance.now();
   private timer = 0;
   private stopped = false;
   private bands: Bands = { above: 60, below: 60 };
-  /** The magpie or spotter on stage right now (any touch cancels it). */
+  /** The magpie (or the spotter walking on) right now; a touch cancels it. */
   private idleGag: AbortController | null = null;
-  private biffyEl: HTMLElement | null = null;
-  private biffyCol = 5;
-  private biffyBusy = false;
+  private spotter: { el: HTMLElement; state: SpotterState; x: number; y: number; w: number; h: number } | null = null;
+  private biffy: { el: HTMLElement; spot: BiffySpot; done: boolean } | null = null;
   private cords = new Map<string, { cord: Cord; post: HTMLElement; line: SVGPathElement | null }>();
   private cordLayer: SVGSVGElement | null = null;
   private landownerDone = false;
@@ -77,7 +81,8 @@ export class GagLayer {
 
   /** New level (or restart): plug the trucks in, put the biffy out, restart the idle clock. */
   setLevel(level: Level): void {
-    this.cancelIdleGag();
+    this.level = level;
+    this.clearIdleGags();
     this.idle = freshIdle();
     this.landownerDone = false;
     this.lastActivity = performance.now();
@@ -85,9 +90,8 @@ export class GagLayer {
     this.host.el.querySelectorAll('.gag').forEach((n) => n.remove());
     this.cordLayer?.remove();
     this.cords.clear();
-    this.biffyCol = biffyColumn(level);
-    this.biffyEl = this.figure('gag biffy', BIFFY);
-    this.biffyEl.insertAdjacentHTML('beforeend', `<div class="gag-worker">${WORKER}</div>`);
+    const spot = biffySpot(level);
+    this.biffy = spot ? { el: this.figure('gag biffy', BIFFY), spot, done: false } : null;
     if (this.opts.cords) this.plugIn(level);
     this.layout(this.bands);
     clearInterval(this.timer);
@@ -97,41 +101,37 @@ export class GagLayer {
   /** Board resized: put the static pieces back in place. */
   layout(bands: Bands): void {
     this.bands = bands;
-    const { cellPx: cell, fencePx: fence } = this.host;
-    const size = cell * SIZE + fence * 2;
-    if (this.biffyEl) {
-      const h = Math.min(cell * 1.15, Math.max(cell * 0.7, bands.below - 4));
-      Object.assign(this.biffyEl.style, {
-        width: `${h * 0.63}px`,
-        height: `${h}px`,
-        left: `${fence + (this.biffyCol + 0.5) * cell - h * 0.315}px`,
-        top: `${size - fence * 0.35}px`,
-      });
-    }
+    if (this.biffy) this.placeBiffy(this.biffy.el, this.biffy.spot);
     for (const { cord, post, line } of this.cords.values()) {
       this.placePost(post, cord);
       if (line) line.setAttribute('d', this.cordPath(cord));
     }
   }
 
-  /** Any touch on the screen: cancel the magpie or spotter, and start the idle clock again. */
+  /**
+   * Any touch restarts the idle clock and cancels the magpie, or the spotter while he's still
+   * walking on. A sleeping spotter instead jolts awake, falls off his pail and scrambles off.
+   */
   touch(): void {
     this.lastActivity = performance.now();
     this.idle = touched(this.idle);
-    this.cancelIdleGag();
+    this.idleGag?.abort();
+    this.idleGag = null;
+    if (this.spotter?.state === 'walking') this.removeSpotter();
+    else if (this.spotter?.state === 'asleep') void this.wakeSpotter();
   }
 
-  /** A truck moved: reset the idle clock, and rip its block heater cord out on its first move. */
-  moved(truckId: string): void {
+  /** A truck moved: rip its cord out on its first move; reversing toward the biffy sets it off. */
+  moved(truckId: string, delta: number): void {
     this.touch();
     const c = this.cords.get(truckId);
     if (c) this.rip(truckId, c);
+    if (this.biffyTruckReversing(truckId, Math.sign(delta))) void this.biffyGag();
   }
 
-  /** A bump: if it's next to the biffy, someone gets a fright. */
-  bumped(truckId: string): void {
-    const t = this.host.state().trucks.find((x) => x.id === truckId);
-    if (t && this.biffyEl && !this.biffyBusy && nearBiffy(truckCells(t), this.biffyCol)) void this.biffy();
+  /** A bump: the biffy's truck backing into the fence sets it off. */
+  bumped(truckId: string, direction: 1 | -1, hit: BumpHit): void {
+    if (hit === 'wall' && this.biffyTruckReversing(truckId, direction)) void this.biffyGag();
   }
 
   /** Lane wear: the landowner shows up the first time any lane wears to the deepest rut. */
@@ -146,22 +146,21 @@ export class GagLayer {
   stop(): void {
     this.stopped = true;
     clearInterval(this.timer);
-    this.cancelIdleGag();
+    this.clearIdleGags();
   }
 
   // ---------- Idle gags ----------
 
   private tick(): void {
     if (!this.host.el.isConnected) return this.stop();
-    if (this.stopped || this.idleGag || document.hidden) return;
-    const idleMs = (performance.now() - this.lastActivity) / this.opts.idleScale;
-    const due = dueGag(idleMs, this.idle);
+    if (this.stopped || this.idleGag || this.spotter || document.hidden) return;
+    const due = dueGag((performance.now() - this.lastActivity) / this.opts.idleScale, this.idle);
     if (due === 'magpie') {
       this.idle = { ...this.idle, magpieThisIdle: true };
       this.runIdleGag((s) => this.magpie(s));
     } else if (due === 'spotter') {
       this.idle = { ...this.idle, spotterThisIdle: true };
-      this.runIdleGag((s) => this.spotter(s));
+      this.runIdleGag((s) => this.spotterWalksOn(s));
     }
   }
 
@@ -175,9 +174,11 @@ export class GagLayer {
       });
   }
 
-  private cancelIdleGag(): void {
+  /** New level or win: the magpie and spotter leave at once, whatever they were doing. */
+  private clearIdleGags(): void {
     this.idleGag?.abort();
     this.idleGag = null;
+    this.removeSpotter();
   }
 
   private async magpie(signal: AbortSignal): Promise<void> {
@@ -193,14 +194,13 @@ export class GagLayer {
     const land = { x: roof.left + roof.width / 2 - board.left - s / 2, y: roof.top + roof.height / 2 - board.top - s * 0.62 };
     const from = { x: -s * 1.5, y: -cell * 1.6 };
     const away = { x: board.width + s, y: -cell * 2 };
-    const at = (p: { x: number; y: number }, extra = '') => `translate(${p.x}px, ${p.y}px) ${extra}`;
+    const at = (p: { x: number; y: number }) => `translate(${p.x}px, ${p.y}px)`;
 
     if (reducedMotion()) {
       bird.classList.remove('flying');
       bird.style.transform = at(land);
       await sleep(500, signal);
-      this.splat(truckEl, land, board, s);
-      this.idle = { ...this.idle, magpieDone: true };
+      this.droppings(truckEl, land, board, s);
       this.host.say(truckEl.querySelector('.cab') ?? truckEl, MAGPIE_LINE);
       await sleep(1600, signal);
       bird.remove();
@@ -209,12 +209,13 @@ export class GagLayer {
     await this.animate(bird, [{ transform: at(from) }, { transform: at(land) }], 1100, 'cubic-bezier(0.3, 0.6, 0.4, 1)', signal);
     bird.classList.remove('flying');
     for (let i = 0; i < 2; i++) {
-      await this.animate(bird, [{ transform: at(land) }, { transform: at({ x: land.x + s * 0.12, y: land.y - s * 0.3 }) }, { transform: at({ x: land.x + s * 0.2, y: land.y }) }], 280, 'ease-out', signal);
-      land.x += s * 0.2;
+      const hop = { x: land.x + s * 0.12, y: land.y - s * 0.3 };
+      const next = { x: land.x + s * 0.2, y: land.y };
+      await this.animate(bird, [{ transform: at(land) }, { transform: at(hop) }, { transform: at(next) }], 280, 'ease-out', signal);
+      land.x = next.x;
     }
     await sleep(350, signal);
-    this.splat(truckEl, land, board, s);
-    this.idle = { ...this.idle, magpieDone: true };
+    this.droppings(truckEl, land, board, s);
     this.host.say(truckEl.querySelector('.cab') ?? truckEl, MAGPIE_LINE);
     await sleep(500, signal);
     bird.classList.add('flying');
@@ -222,59 +223,169 @@ export class GagLayer {
     bird.remove();
   }
 
-  /** The splat rides on the truck's roof until that truck leaves the pad. */
-  private splat(truckEl: HTMLElement, land: { x: number; y: number }, board: DOMRect, s: number): void {
+  /** Two or three small droppings where the bird stood. They ride on the roof until the truck exits. */
+  private droppings(truckEl: HTMLElement, land: { x: number; y: number }, board: DOMRect, s: number): void {
+    this.idle = { ...this.idle, magpieDone: true };
     const truck = truckEl.getBoundingClientRect();
-    const sp = document.createElement('div');
-    sp.className = 'roof-splat';
-    sp.innerHTML = SPLAT;
-    const w = s * 0.75;
-    Object.assign(sp.style, {
-      width: `${w}px`,
-      height: `${w * 0.8}px`,
-      left: `${land.x + board.left - truck.left + s * 0.15}px`,
-      top: `${land.y + board.top - truck.top + s * 0.55}px`,
-    });
-    truckEl.querySelector('.body')?.append(sp);
+    const body = truckEl.querySelector('.body');
+    const count = 2 + Math.round(Math.random());
+    const baseX = land.x + board.left - truck.left + s * 0.18;
+    const baseY = land.y + board.top - truck.top + s * 0.62;
+    const offsets = [
+      [0, 0],
+      [s * 0.32, s * 0.1],
+      [s * 0.12, s * 0.32],
+    ];
+    for (let i = 0; i < count; i++) {
+      const d = document.createElement('div');
+      d.className = 'dropping';
+      d.innerHTML = DROPPING;
+      const w = s * (0.22 + Math.random() * 0.06);
+      Object.assign(d.style, {
+        width: `${w}px`,
+        height: `${w * 1.2}px`,
+        left: `${baseX + offsets[i][0]}px`,
+        top: `${baseY + offsets[i][1]}px`,
+        transform: `rotate(${Math.round(Math.random() * 40 - 20)}deg)`,
+      });
+      body?.append(d);
+    }
   }
 
-  private async spotter(signal: AbortSignal): Promise<void> {
+  // ---------- Spotter: walks on below the fence, sits on his pail, dozes off ----------
+
+  /** Top of a figure `h` px tall, centred in the band below the board. */
+  private belowBand(h: number): number {
+    const { cellPx: cell, fencePx: fence } = this.host;
+    return cell * SIZE + fence * 2 + Math.max(2, (this.bands.below - h) / 2);
+  }
+
+  private async spotterWalksOn(signal: AbortSignal): Promise<void> {
     const { cellPx: cell, fencePx: fence } = this.host;
     const size = cell * SIZE + fence * 2;
-    const useBelow = this.bands.below >= cell * 0.9 || this.bands.below >= this.bands.above;
-    const band = useBelow ? this.bands.below : this.bands.above;
-    const h = Math.max(cell * 0.9, Math.min(cell * 1.35, band - 6));
+    const h = Math.max(cell * 0.9, Math.min(cell * 1.35, this.bands.below - 6));
     const w = h * 0.78;
-    const y = useBelow ? size + Math.max(2, (band - h) / 2) : -Math.max(h + 2, (band + h) / 2);
-    const guy = this.figure('gag spotter jogging', SPOTTER, w, h);
-    signal.addEventListener('abort', () => guy.remove(), { once: true });
-    const at = (x: number) => `translate(${x}px, ${y}px)`;
-    const mid = size / 2 - w / 2;
-    if (reducedMotion()) {
-      guy.classList.remove('jogging');
-      guy.style.transform = at(mid);
-      await sleep(2500, signal);
-      guy.remove();
-      return;
-    }
-    await this.animate(guy, [{ transform: at(-w * 1.5) }, { transform: at(mid) }], 1400, 'linear', signal);
-    guy.classList.replace('jogging', 'dancing');
-    await sleep(2600, signal);
-    guy.classList.replace('dancing', 'jogging');
-    await this.animate(guy, [{ transform: at(mid) }, { transform: at(size + w * 0.5) }], 1300, 'linear', signal);
-    guy.remove();
+    const y = this.belowBand(h);
+    const x = size * 0.36 - w / 2;
+    const el = this.figure(
+      'gag spotter walking',
+      `<div class="pose walk">${SPOTTER_WALK}</div><div class="pose sit">${SPOTTER_SIT}</div>` +
+        '<div class="zzz" aria-hidden="true"><span>Z</span><span>z</span><span>z</span></div>',
+      w,
+      h,
+    );
+    this.spotter = { el, state: 'walking', x, y, w, h };
+    const at = (px: number) => `translate(${px}px, ${y}px)`;
+    el.style.transform = at(-w * 1.5);
+    if (!reducedMotion()) await this.animate(el, [{ transform: at(-w * 1.5) }, { transform: at(x) }], 1800, 'linear', signal);
+    // He sits down on the pail and nods off. From here a touch wakes him instead of cancelling him.
+    el.getAnimations().forEach((a) => a.cancel());
+    el.style.transform = at(x);
+    el.classList.replace('walking', 'asleep');
+    if (this.spotter?.el === el) this.spotter.state = 'asleep';
   }
 
-  // ---------- Biffy ----------
+  /** Touched while asleep: jolts awake, falls off the pail, scrambles off. */
+  private async wakeSpotter(): Promise<void> {
+    const sp = this.spotter!;
+    sp.state = 'waking';
+    const at = (px: number, py = sp.y) => `translate(${px}px, ${py}px)`;
+    sp.el.classList.replace('asleep', 'startled');
+    try {
+      if (reducedMotion()) {
+        await sleep(900);
+      } else {
+        // Jolt: a jump straight up off the pail...
+        await this.animate(sp.el, [{ transform: at(sp.x) }, { transform: at(sp.x, sp.y - sp.h * 0.22) }, { transform: at(sp.x) }], 260, 'ease-out');
+        // ...he topples off it onto the ground (the pail stays put)...
+        sp.el.classList.replace('startled', 'fallen');
+        await sleep(650);
+        // ...and scrambles off.
+        sp.el.classList.replace('fallen', 'running');
+        const size = this.host.cellPx * SIZE + this.host.fencePx * 2;
+        await this.animate(sp.el, [{ transform: at(sp.x) }, { transform: at(size + sp.w * 1.5) }], 900, 'cubic-bezier(0.4, 0, 1, 1)');
+      }
+    } catch {
+      // New level or win cleared the stage.
+    } finally {
+      sp.el.remove();
+      if (this.spotter === sp) this.spotter = null;
+    }
+  }
 
-  private async biffy(): Promise<void> {
-    const el = this.biffyEl!;
-    this.biffyBusy = true;
+  private removeSpotter(): void {
+    this.spotter?.el.remove();
+    this.spotter = null;
+  }
+
+  // ---------- Biffy: just outside the fence behind one truck's tailgate ----------
+
+  private biffyTruckReversing(truckId: string, direction: number): boolean {
+    const b = this.biffy;
+    if (!b || b.done || b.spot.truckId !== truckId || !this.level || this.stopped) return false;
+    const t = this.level.trucks.find((x) => x.id === truckId)!;
+    return direction === reverseDirection(this.level, t);
+  }
+
+  private placeBiffy(el: HTMLElement, spot: BiffySpot): void {
+    const { cellPx: cell, fencePx: fence } = this.host;
+    const size = cell * SIZE + fence * 2;
+    const room = spot.side === 'bottom' ? this.bands.below : spot.side === 'top' ? this.bands.above : cell;
+    let h = Math.min(cell * 1.15, Math.max(cell * 0.75, room - 4));
+    let w = h * 0.63;
+    if (spot.side === 'left' || spot.side === 'right') {
+      // The side margins are narrow on a phone: fit in the outer half of the fence plus the margin.
+      const board = this.host.el.getBoundingClientRect();
+      const margin = spot.side === 'right' ? document.documentElement.clientWidth - board.right : board.left;
+      w = Math.min(w, fence * 0.55 + margin - 3);
+      h = w / 0.63;
+    }
+    const along = fence + (spot.index + 0.5) * cell;
+    const pos: Record<Side, { left: number; top: number }> = {
+      bottom: { left: along - w / 2, top: size - fence * 0.35 },
+      top: { left: along - w / 2, top: fence * 0.35 - h },
+      left: { left: fence * 0.55 - w, top: along - h / 2 },
+      right: { left: size - fence * 0.55, top: along - h / 2 },
+    };
+    const p = pos[spot.side];
+    Object.assign(el.style, { width: `${w}px`, height: `${h}px`, left: `${p.left}px`, top: `${p.top}px` });
+    el.dataset.side = spot.side;
+    el.dataset.truck = spot.truckId;
+  }
+
+  /** The door bangs open; a worker shuffles out bent over, hauling his coveralls up, and off screen. Once per level. */
+  private async biffyGag(): Promise<void> {
+    const b = this.biffy!;
+    b.done = true;
+    const { el } = b;
     el.classList.add('open');
-    await new Promise((r) => setTimeout(r, reducedMotion() ? 1800 : 1900));
-    el.classList.remove('open');
-    await new Promise((r) => setTimeout(r, 600));
-    this.biffyBusy = false;
+    const r = { left: parseFloat(el.style.left), top: parseFloat(el.style.top), w: parseFloat(el.style.width), h: parseFloat(el.style.height) };
+    const ww = r.h;
+    const wh = r.h * 0.88;
+    const guy = this.figure('gag worker-bent', WORKER_BENT, ww, wh);
+    const start = { x: r.left + r.w / 2 - ww / 2, y: r.top + r.h - wh };
+    // He shuffles off whichever screen edge is nearer.
+    const board = this.host.el.getBoundingClientRect();
+    const toRight = r.left + r.w / 2 > board.width / 2;
+    const offX = toRight ? window.innerWidth - board.left + ww : -board.left - ww * 1.2;
+    guy.classList.toggle('facing-left', !toRight);
+    const at = (x: number, y: number) => `translate(${x}px, ${y}px)`;
+    const outY = start.y + r.h * 0.18;
+    try {
+      if (reducedMotion()) {
+        guy.style.transform = at(start.x + (toRight ? r.w : -r.w), outY);
+        await sleep(2200);
+      } else {
+        await this.animate(guy, [{ transform: at(start.x, start.y), opacity: 0 }, { transform: at(start.x, outY), opacity: 1 }], 280, 'ease-out');
+        guy.classList.add('shuffling');
+        await this.animate(guy, [{ transform: at(start.x, outY) }, { transform: at(offX, outY) }], 3000, 'linear');
+      }
+    } catch {
+      // Stage cleared.
+    } finally {
+      guy.remove();
+      el.classList.remove('open');
+    }
   }
 
   // ---------- Block heater cords ----------
@@ -338,7 +449,7 @@ export class GagLayer {
     const dur = 450;
     const step = () => {
       const k = Math.min(1, (performance.now() - start) / dur);
-      const len = 1 - k; // fraction of the cord still reaching out
+      const len = 1 - k;
       const ex = from.x + (to.x - from.x) * len;
       const ey = from.y + (to.y - from.y) * len;
       const amp = 40 * (1 - k) * Math.sin(k * Math.PI * 5);
@@ -380,16 +491,14 @@ export class GagLayer {
     }
   }
 
-  // ---------- Landowner ----------
+  // ---------- Landowner: rides along below the board ----------
 
   private async landowner(): Promise<void> {
     const { cellPx: cell, fencePx: fence } = this.host;
     const size = cell * SIZE + fence * 2;
-    const useAbove = this.bands.above >= cell * 0.9 || this.bands.above >= this.bands.below;
-    const band = useAbove ? this.bands.above : this.bands.below;
-    const h = Math.max(cell * 0.9, Math.min(cell * 1.3, band - 6));
+    const h = Math.max(cell * 0.9, Math.min(cell * 1.3, this.bands.below - 6));
     const w = h * 1.04;
-    const y = useAbove ? -Math.max(h + 2, (band + h) / 2) : size + Math.max(2, (band - h) / 2);
+    const y = this.belowBand(h);
     const quad = this.figure('gag landowner', LANDOWNER, w, h);
     const at = (x: number) => `translate(${x}px, ${y}px)`;
     const stopAt = size - w - cell * 0.4;
@@ -397,17 +506,17 @@ export class GagLayer {
       if (reducedMotion()) {
         quad.style.transform = at(stopAt);
         this.host.say(quad, LANDOWNER_LINE);
-        await new Promise((r) => setTimeout(r, 2600));
+        await sleep(2600);
         return;
       }
       await this.animate(quad, [{ transform: at(size + w) }, { transform: at(stopAt) }], 1300, 'cubic-bezier(0.2, 0.7, 0.3, 1)');
       quad.classList.add('shaking');
       this.host.say(quad, LANDOWNER_LINE);
-      await new Promise((r) => setTimeout(r, 2200));
+      await sleep(2200);
       quad.classList.remove('shaking');
       await this.animate(quad, [{ transform: at(stopAt) }, { transform: at(size + w * 1.5) }], 1100, 'cubic-bezier(0.5, 0, 0.8, 0.5)');
     } catch {
-      // Interrupted by a new level: nothing to clean up beyond the element.
+      // Interrupted by a new level.
     } finally {
       quad.remove();
     }
@@ -415,7 +524,7 @@ export class GagLayer {
 
   // ---------- helpers ----------
 
-  /** A character element on the board (positioned by transform unless sized/placed here). */
+  /** A character element on the board. */
   private figure(className: string, svg: string, w?: number, h?: number): HTMLElement {
     const el = document.createElement('div');
     el.className = className;
@@ -435,4 +544,3 @@ export class GagLayer {
     });
   }
 }
-
