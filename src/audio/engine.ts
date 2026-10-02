@@ -256,6 +256,12 @@ export const sound = {
     else audio.stopLoop('snore');
   },
   clatter: () => audio.play('clatter', fx.clatter),
+  bearGrunt: () => audio.play('bear-grunt', fx.bearGrunt),
+  bearHuff: () => audio.play('bear-huff', fx.bearHuff),
+  rabbitSqueak: () => audio.play('rabbit-squeak', fx.rabbitSqueak),
+  mooseGroan: () => audio.play('moose-groan', fx.mooseGroan),
+  /** The hot shot passing: `seconds` long, panned the way it drives. */
+  hotshot: (seconds: number, leftToRight: boolean) => audio.play('hotshot', (c, o, t) => fx.hotshot(c, o, t, seconds, leftToRight)),
   cordSnap(): void {
     audio.play('cord-snap', fx.cordSnap);
     audio.play('crackle', fx.crackle, 0.02);

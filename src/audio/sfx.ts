@@ -284,6 +284,85 @@ export const crackle: Recipe = (ctx, out, t) => {
   for (let i = 0; i < 14; i++) noise(ctx, out, { t: t + Math.random() * 0.5, dur: 0.008, gain: 0.12, filter: { type: 'bandpass', f: 4500, q: 2 } });
 };
 
+// ---------- Wildlife and traffic ----------
+
+/** Bear straining: a low, rough "hnnngh" that wavers. */
+export const bearGrunt: Recipe = (ctx, out, t) => {
+  for (const [form, g] of [
+    [420, 0.22],
+    [900, 0.1],
+  ])
+    tone(ctx, out, { type: 'sawtooth', f: 78, f2: 92, t, dur: 0.75, gain: g, attack: 0.08, vibrato: [11, 6], filter: { type: 'bandpass', f: form, q: 4 } });
+  noise(ctx, out, { t, dur: 0.6, gain: 0.05, attack: 0.1, filter: { type: 'lowpass', f: 500 } });
+};
+
+/** Bear huff: two short breathy chuffs through the nose. */
+export const bearHuff: Recipe = (ctx, out, t) => {
+  for (let i = 0; i < 2; i++) {
+    noise(ctx, out, { t: t + i * 0.22, dur: 0.16, gain: 0.3, attack: 0.01, filter: { type: 'bandpass', f: 600, q: 1.5, f2: 300 } });
+    tone(ctx, out, { f: 95, f2: 70, t: t + i * 0.22, dur: 0.14, gain: 0.18 });
+  }
+};
+
+/** Rabbit squeak: a quick high peep that jumps up. */
+export const rabbitSqueak: Recipe = (ctx, out, t) => {
+  tone(ctx, out, { type: 'triangle', f: 1900, f2: 3100, t, dur: 0.09, gain: 0.12 });
+  tone(ctx, out, { type: 'triangle', f: 2300, f2: 3600, t: t + 0.11, dur: 0.14, gain: 0.12, vibrato: [30, 120] });
+};
+
+/** Moose: a long, low, mournful groan that sags at the end. */
+export const mooseGroan: Recipe = (ctx, out, t) => {
+  for (const [form, g] of [
+    [380, 0.2],
+    [760, 0.09],
+    [1500, 0.03],
+  ])
+    tone(ctx, out, { type: 'sawtooth', f: 118, f2: 82, t, dur: 1.5, gain: g, attack: 0.25, vibrato: [4.5, 3], filter: { type: 'bandpass', f: form, q: 6 } });
+};
+
+/**
+ * Hot shot pickup screaming past: engine roar that drops in pitch as it passes (doppler), a whoosh
+ * of air, panned left to right (or right to left) across `dur` seconds.
+ */
+export function hotshot(ctx: Ctx, out: AudioNode, t: number, dur = 0.8, leftToRight = true): void {
+  const pan = ctx.createStereoPanner?.();
+  const dest: AudioNode = pan ?? out;
+  if (pan) {
+    pan.pan.setValueAtTime(leftToRight ? -0.9 : 0.9, t);
+    pan.pan.linearRampToValueAtTime(leftToRight ? 0.9 : -0.9, t + dur);
+    pan.connect(out);
+  }
+  const mid = t + dur * 0.5;
+  // Engine: approaching = higher, receding = lower, loudest as it passes.
+  for (const [type, mul, g] of [
+    ['sawtooth', 1, 0.12],
+    ['square', 2.01, 0.05],
+  ] as const) {
+    const o = ctx.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(150 * mul, t);
+    o.frequency.linearRampToValueAtTime(140 * mul, mid - 0.06);
+    o.frequency.exponentialRampToValueAtTime(92 * mul, mid + 0.08);
+    o.frequency.linearRampToValueAtTime(86 * mul, t + dur);
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(900, t);
+    lp.frequency.linearRampToValueAtTime(2600, mid);
+    lp.frequency.exponentialRampToValueAtTime(700, t + dur);
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0.0001, t);
+    env.gain.exponentialRampToValueAtTime(g, mid);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.15);
+    o.connect(lp).connect(env).connect(dest);
+    o.start(t);
+    o.stop(t + dur + 0.2);
+  }
+  // Air whoosh, peaking as it passes.
+  noise(ctx, dest, { t, dur: dur + 0.1, gain: 0.22, attack: dur * 0.5, filter: { type: 'bandpass', f: 500, q: 0.8, f2: 1800 } });
+  // Gravel spitting off the tires.
+  for (let i = 0; i < 10; i++) noise(ctx, dest, { t: t + Math.random() * dur, dur: 0.01, gain: 0.08, filter: { type: 'bandpass', f: 3500, q: 2 } });
+}
+
 /** Silent, one sample: plays on the first tap to unlock audio on older iOS. */
 export function unlockBlip(ctx: Ctx): void {
   const src = ctx.createBufferSource();
