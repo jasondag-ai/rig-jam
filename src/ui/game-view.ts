@@ -9,6 +9,7 @@ import { copyText } from './clipboard.ts';
 import { shareText, streak, zeroIncident } from './daily.ts';
 import { hardHats, loadProgress, recordDailyClear, recordWin, saveProgress, spendHint } from './progress.ts';
 import { streakSignHtml } from './sign.ts';
+import { sound } from '../audio/engine.ts';
 import { COMPANY_MAN } from './cast.ts';
 import { GagLayer, type GagOptions } from './gag-layer.ts';
 import { companyLine } from './gags.ts';
@@ -134,6 +135,7 @@ export class GameView {
     this.stage.append(this.board.el);
     this.board.setLevel(level);
     this.board.setDecor(padDecor(theme.ground, seedFrom(level.id)), theme.ground);
+    sound.setGround(theme.ground);
     this.gags.setLevel(level);
     // Any touch anywhere on the screen cancels an idle gag and restarts the idle clock.
     this.el.addEventListener('pointerdown', () => this.gags.touch(), { capture: true });
@@ -299,7 +301,8 @@ export class GameView {
   private showWin(): void {
     const { moves } = this.state;
     const { par } = this.level;
-    let { progress, earnedHint } = recordWin(loadProgress(), this.level.id, moves, par);
+    const before = loadProgress();
+    let { progress, earnedHint } = recordWin(before, this.level.id, moves, par);
     if (this.daily) progress = recordDailyClear(progress, this.daily.day);
     saveProgress(progress);
     this.updateHud();
@@ -311,6 +314,7 @@ export class GameView {
     let daily = '';
     if (this.daily) {
       const s = streak(progress.dailyCleared, this.daily.day);
+      if (s.days > streak(before.dailyCleared, this.daily.day).days) sound.streakUp();
       this.shareMessage = shareText({ pad: this.daily.pad, moves, par, hats, zeroIncident: clean, streak: s.days });
       daily = `${streakSignHtml(s, true)}<button class="btn primary share" data-act="share">Share result</button>`;
     }
@@ -340,6 +344,7 @@ export class GameView {
       </div>`;
     this.winEl.querySelector('.company-says')!.textContent = companyLine(moves, par);
     this.winEl.hidden = false;
+    sound.win(hats, moves, par);
   }
 
   /** One tap: copy the spoiler-free result, ready to paste into Messages. */

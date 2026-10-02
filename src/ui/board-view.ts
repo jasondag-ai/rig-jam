@@ -7,6 +7,7 @@ import { Spray } from './spray.ts';
 import { TrackLayer } from './track-layer.ts';
 import type { Ground } from './themes.ts';
 import { SYMBOL } from './palette.ts';
+import { sound } from '../audio/engine.ts';
 
 const FENCE_RATIO = 0.42;
 const GAP = 3; // px between a truck and its cell edge
@@ -14,6 +15,7 @@ const WAVE_MS = 260; // gate arm lifts and the driver waves before pulling out
 const DRIVE_MS = 460;
 const BUMP_PUSH = 0.25; // cells of push past a blocker before it counts as a bump
 const BUBBLE_MS = 2200;
+const RADIO_MS = 140; // radio squelch, then the driver speaks
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -70,7 +72,10 @@ export class BoardView {
     this.grid = document.createElement('div');
     this.grid.className = 'pad-grid';
     this.spray = new Spray(this.pad, () => this.pad.querySelector('.truck'));
-    this.tracks = new TrackLayer((m) => this.spray.emit(m, this.cell));
+    this.tracks = new TrackLayer((m) => {
+      this.spray.emit(m, this.cell);
+      sound.motion(m.speed, m.dt);
+    });
   }
 
   setLevel(level: Level): void {
@@ -230,6 +235,7 @@ export class BoardView {
     }
     gate?.classList.add('open');
     el.classList.add('waving');
+    sound.exit();
     const from = this.currentXY(el);
     const dist = this.cell * (SIZE + 1);
     const dx = side === 'left' ? -dist : side === 'right' ? dist : 0;
@@ -290,7 +296,11 @@ export class BoardView {
     const target = bumpTarget(state, d.id, d.range, direction);
     this.onBump(d.id, direction, target.hit);
     const speakerEl = this.trucks.get(pickSpeaker(state, d.id, target)) ?? d.el;
-    this.speak(speakerEl, target.hit);
+    sound.bump();
+    sound.radio();
+    setTimeout(() => {
+      if (speakerEl.isConnected) this.speak(speakerEl, target.hit);
+    }, RADIO_MS);
   }
 
   private speak(truckEl: HTMLElement, hit: BumpHit): void {
@@ -425,6 +435,7 @@ export class BoardView {
     const horizontal = truck.orient === 'h';
     this.drag = { id, el, pointerId: e.pointerId, start: horizontal ? e.clientX : e.clientY, range, horizontal, offset: 0, pressing: false };
     el.classList.add('dragging');
+    sound.dragStart();
     this.tracks.begin(truck.orient, horizontal ? truck.row : truck.col, horizontal ? truck.col : truck.row, truck.length, el, () =>
       this.positionOf(el, horizontal),
     );
@@ -440,8 +451,15 @@ export class BoardView {
     // Axis lock: only the truck's own axis counts. Allow a little overshoot toward an open gate.
     const lo = min * this.cell - (exitLo ? this.cell * 0.6 : 0);
     const hi = max * this.cell + (exitHi ? this.cell * 0.6 : 0);
+    const before = d.offset;
     d.offset = Math.max(lo, Math.min(hi, raw));
     const truck = this.truckById(d.id);
+    // Backing away from its own gate sets off the backup alarm; pulling forward stops it.
+    if (truck && Math.abs(d.offset - before) > 0.5) {
+      const side = cabSide(this.getState().level, truck);
+      const forward = side === 'right' || side === 'bottom' ? 1 : -1;
+      sound.reversing(Math.sign(d.offset - before) !== forward);
+    }
     if (truck) this.place(d.el, truck, d.offset);
     this.tracks.update(); // draw marks now, under the finger, not on the next frame
 
@@ -463,7 +481,12 @@ export class BoardView {
     this.endDrag();
     const delta = Math.max(d.range.min, Math.min(d.range.max, Math.round(d.offset / this.cell)));
     // Keep laying marks while the truck snaps into place, or all the way out through its gate.
-    this.tracks.release(delta !== 0, delta !== 0 && delta === d.range.exitDelta ? WAVE_MS + DRIVE_MS + 80 : 260);
+    const settle = delta !== 0 && delta === d.range.exitDelta ? WAVE_MS + DRIVE_MS + 80 : 260;
+    this.tracks.release(delta !== 0, settle);
+    sound.reversing(false);
+    setTimeout(() => {
+      if (!this.drag) sound.dragEnd();
+    }, settle);
     if (delta !== 0) this.onMove(d.id, delta);
     else this.sync(this.getState());
   }
@@ -472,6 +495,7 @@ export class BoardView {
     if (!this.drag || e.pointerId !== this.drag.pointerId) return;
     this.endDrag();
     this.tracks.release(false, 260);
+    sound.dragEnd();
     this.sync(this.getState());
   }
 

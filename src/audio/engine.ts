@@ -145,7 +145,8 @@ class AudioEngine {
     this.loops.delete(name);
   }
 
-  private silenceEffects(): void {
+  /** Stops every running loop and held sound (leaving the game screen, or effects switched off). */
+  silenceEffects(): void {
     for (const name of [...this.held.keys()]) this.release(name);
     for (const name of [...this.loops.keys()]) this.stopLoop(name);
   }
@@ -159,6 +160,7 @@ let chain = 0;
 let lastExitAt: number | null = null;
 let rolled = 0;
 let ground: Ground = 'gravel';
+let idleTimer = 0;
 
 export const sound = {
   /** A drag starts: the diesel turns over. */
@@ -168,6 +170,9 @@ export const sound = {
   /** The truck is moving `speed` cells/s; mud squelches and snow crunches every so often. */
   motion(speed: number, dt: number): void {
     audio.heldNow('diesel')?.set(speed);
+    // No motion for a moment (finger held still): drop back to idle.
+    clearTimeout(idleTimer);
+    idleTimer = window.setTimeout(() => audio.heldNow('diesel')?.set(0), 120);
     rolled += Math.abs(speed) * dt;
     if (rolled >= STEP_CELLS) {
       rolled = 0;
@@ -224,6 +229,11 @@ export const sound = {
     lastExitAt = null;
     if (g === 'gravel') audio.loop('birds', fx.chirp, 4000, 5000);
     else audio.stopLoop('birds');
+  },
+
+  /** Off the game screen: no engines, birds or snoring left running. */
+  quiet(): void {
+    audio.silenceEffects();
   },
 
   // Gags
