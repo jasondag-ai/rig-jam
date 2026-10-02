@@ -2110,3 +2110,23 @@ input,
     opacity: 1;
   }
 }
+
+/* Music style picker: three buttons in a row, the chosen one lit. */
+.music-styles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.btn.style-pick {
+  min-height: 48px;
+  padding: 6px 4px;
+  font-size: 14px;
+  line-height: 1.1;
+}
+
+.btn.style-pick[aria-checked='true'] {
+  --btn: var(--gold, #ffc93c);
+  outline: 3px solid var(--ink);
+  outline-offset: -3px;
+}

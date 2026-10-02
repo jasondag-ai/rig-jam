@@ -9,6 +9,11 @@ import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } fro
 import { onTap } from './ui/tap.ts';
 import { sceneryHtml } from './ui/scenery.ts';
 import { THEMES, applyTheme, themeOverride } from './ui/themes.ts';
+import { audio, sound } from './audio/engine.ts';
+import { MUSIC_STYLES, type MusicStyle } from './audio/settings.ts';
+
+// Sound starts on the first tap anywhere (iOS won't play audio before a gesture).
+audio.install();
 
 /** The region's season, unless ?theme=… overrides it for previewing. */
 const themeFor = (regionIndex: number) => THEMES[themeOverride(location.search) ?? REGIONS[regionIndex].theme];
@@ -37,6 +42,7 @@ function savedRegion(): number {
 
 function showLevels(requested = savedRegion()): void {
   game = null;
+  sound.quiet();
   const progress = loadProgress();
   // A remembered region that's locked (after a reset, or demo mode off) falls back to Cardium.
   const regionIndex = regionOpen(REGIONS, requested, progress.best, progress.demo) ? requested : 0;
@@ -187,6 +193,21 @@ function showSettings(screen: HTMLElement): void {
       <h2>Settings</h2>
       <div class="step ask">
         <label class="switch">
+          <input type="checkbox" role="switch" data-act="sfx" ${audio.settings.sfx ? 'checked' : ''} />
+          <span class="track" aria-hidden="true"><span class="knob"></span></span>
+          <span class="switch-label">Sound effects</span>
+        </label>
+        <label class="switch">
+          <input type="checkbox" role="switch" data-act="music" ${audio.settings.music ? 'checked' : ''} />
+          <span class="track" aria-hidden="true"><span class="knob"></span></span>
+          <span class="switch-label">Music</span>
+        </label>
+        <div class="music-styles" role="radiogroup" aria-label="Music style">
+          ${MUSIC_STYLES.map(
+            (m) => `<button class="btn style-pick" role="radio" data-style="${m.id}" aria-checked="${audio.settings.style === m.id}">${m.name}</button>`,
+          ).join('')}
+        </div>
+        <label class="switch">
           <input type="checkbox" role="switch" data-act="demo" ${loadProgress().demo ? 'checked' : ''} />
           <span class="track" aria-hidden="true"><span class="knob"></span></span>
           <span class="switch-label">Unlock everything (demo mode)</span>
@@ -218,6 +239,19 @@ function showSettings(screen: HTMLElement): void {
   // Demo mode only flips a flag: scores, hard hats and streak stay exactly as they are.
   panel.querySelector<HTMLInputElement>('[data-act="demo"]')!.addEventListener('change', (e) => {
     saveProgress({ ...loadProgress(), demo: (e.target as HTMLInputElement).checked });
+  });
+  panel.querySelector<HTMLInputElement>('[data-act="sfx"]')!.addEventListener('change', (e) => {
+    audio.setSettings({ sfx: (e.target as HTMLInputElement).checked });
+  });
+  panel.querySelector<HTMLInputElement>('[data-act="music"]')!.addEventListener('change', (e) => {
+    audio.setSettings({ music: (e.target as HTMLInputElement).checked });
+  });
+  // Picking a style also turns the music on, so you hear what you picked.
+  onTap(panel.querySelector<HTMLElement>('.music-styles')!, '.style-pick', (btn) => {
+    const style = btn.dataset.style as MusicStyle;
+    audio.setSettings({ style, music: true });
+    panel.querySelector<HTMLInputElement>('[data-act="music"]')!.checked = true;
+    panel.querySelectorAll('.style-pick').forEach((b) => b.setAttribute('aria-checked', String(b === btn)));
   });
   screen.append(panel);
 }
