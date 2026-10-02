@@ -167,3 +167,124 @@ export const PLUG_POST = `
   <circle cx="8" cy="7" r="1.2" fill="#2a1a0c"/><circle cx="12" cy="7" r="1.2" fill="#2a1a0c"/>
   <g class="pp-plug"><path d="M10 12 Q4 18 10 22 Q15 25 11 28" fill="none" stroke="#1c1c1c" stroke-width="2.4" stroke-linecap="round"/><rect x="8.5" y="26" width="5" height="4" rx="1" fill="#ff8a00" stroke="#2a1a0c" stroke-width="1.2"/></g>
 </svg>`;
+
+// ---------- Wildlife and traffic along the bottom ----------
+
+const BEAR = '#2e2622';
+const BEAR_HI = '#4a3d36';
+const MUZZLE = '#c49a6c';
+
+/**
+ * Black bear, side view facing right. Two poses (`.pose.walk`, `.pose.squat`) swap by class; the
+ * walking legs (`.bw-leg-a/b`) step. Squatting, he strains (`.bs-sweat`) and his arm either holds
+ * out in front (`.bs-arm-front`) or reaches round behind to his rump (`.bs-arm-back`).
+ */
+export const BEAR_SVG = `
+<svg viewBox="0 0 120 92" aria-hidden="true">
+  <g class="pose walk">
+    <g class="bw-leg bw-leg-b"><rect x="22" y="56" width="13" height="30" rx="5" fill="${BEAR}" ${OL} stroke-width="2.5"/><rect x="73" y="56" width="13" height="30" rx="5" fill="${BEAR}" ${OL} stroke-width="2.5"/></g>
+    <path d="M10 46 Q8 26 34 22 Q58 16 84 26 Q98 32 96 50 Q94 66 74 66 L28 66 Q12 64 10 46 Z" fill="${BEAR}" ${OL} stroke-width="2.8"/>
+    <path d="M30 30 Q52 24 76 31" fill="none" stroke="${BEAR_HI}" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="11" cy="40" r="4.5" fill="${BEAR}" ${OL} stroke-width="2.2"/>
+    <g class="bw-leg bw-leg-a"><rect x="31" y="58" width="14" height="30" rx="5" fill="${BEAR}" ${OL} stroke-width="2.5"/><rect x="82" y="58" width="14" height="30" rx="5" fill="${BEAR}" ${OL} stroke-width="2.5"/></g>
+    <circle cx="97" cy="22" r="6" fill="${BEAR}" ${OL} stroke-width="2.4"/><circle cx="97" cy="22" r="2.6" fill="${MUZZLE}"/>
+    <path d="M86 34 Q86 16 100 16 Q112 16 113 28 L119 33 Q120 40 112 41 L102 42 Q88 44 86 34 Z" fill="${BEAR}" ${OL} stroke-width="2.6"/>
+    <path d="M108 31 L118 33 Q119 39 112 40 L106 40 Z" fill="${MUZZLE}" ${OL} stroke-width="2"/>
+    <ellipse cx="117.5" cy="33.5" rx="3" ry="2.4" fill="#111"/>
+    <circle cx="104" cy="27" r="2.6" fill="#fff"/><circle cx="104.8" cy="27" r="1.4" fill="#111"/>
+  </g>
+  <g class="pose squat">
+    <ellipse cx="34" cy="70" rx="24" ry="18" fill="${BEAR}" ${OL} stroke-width="2.8"/>
+    <g class="bs-arm-back"><path d="M60 46 Q40 66 22 76" fill="none" stroke="#2a1a0c" stroke-width="13" stroke-linecap="round"/><path d="M60 46 Q40 66 22 76" fill="none" stroke="${BEAR}" stroke-width="8.5" stroke-linecap="round"/></g>
+    <path d="M36 64 Q34 34 52 26 Q70 20 76 36 Q80 54 70 70 Q60 82 44 80 Z" fill="${BEAR}" ${OL} stroke-width="2.8"/>
+    <path d="M58 34 Q70 34 72 50" fill="none" stroke="${BEAR_HI}" stroke-width="5" stroke-linecap="round"/>
+    <ellipse cx="62" cy="86" rx="16" ry="5.5" fill="${BEAR}" ${OL} stroke-width="2.4"/>
+    <path d="M18 78 Q22 58 42 62 Q56 66 58 82" fill="none" stroke="${BEAR_HI}" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="72" cy="86.5" rx="5" ry="3" fill="${MUZZLE}" opacity="0.6"/>
+    <g class="bs-arm-front"><path d="M64 44 Q76 54 84 60" fill="none" stroke="#2a1a0c" stroke-width="13" stroke-linecap="round"/><path d="M64 44 Q76 54 84 60" fill="none" stroke="${BEAR}" stroke-width="8.5" stroke-linecap="round"/></g>
+    <circle cx="58" cy="10" r="6" fill="${BEAR}" ${OL} stroke-width="2.4"/><circle cx="58" cy="10" r="2.6" fill="${MUZZLE}"/>
+    <path d="M50 22 Q50 4 64 4 Q76 4 77 16 L83 21 Q84 28 76 29 L66 30 Q52 32 50 22 Z" fill="${BEAR}" ${OL} stroke-width="2.6"/>
+    <path d="M72 19 L82 21 Q83 27 76 28 L70 28 Z" fill="${MUZZLE}" ${OL} stroke-width="2"/>
+    <ellipse cx="81.5" cy="21.5" rx="3" ry="2.4" fill="#111"/>
+    <path d="M64 13 L70 16 M64 18 L70 16" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M71 26 L76 26" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+    <g class="bs-sweat"><path d="M46 6 Q43 11 46 13 Q49 11 46 6 Z" fill="#7fd0ff" stroke="#2a6a9a" stroke-width="1.2"/><path d="M42 16 Q39.5 20 42 22 Q44.5 20 42 16 Z" fill="#7fd0ff" stroke="#2a6a9a" stroke-width="1.2"/></g>
+  </g>
+</svg>`;
+
+/** Snowshoe-ish rabbit, side view facing left. `.rb-ears` flatten back when he bolts; `.rb-eye-big` for shock. */
+export const RABBIT = `
+<svg viewBox="0 0 44 40" aria-hidden="true">
+  <g class="rb-ears">
+    <path d="M14 14 Q8 0 12 -4 Q17 2 17 13 Z" fill="#b89a78" ${OL} stroke-width="2"/>
+    <path d="M18 13 Q16 -2 21 -4 Q24 3 21 14 Z" fill="#b89a78" ${OL} stroke-width="2"/>
+    <path d="M14 11 Q12 3 13 0" fill="none" stroke="#f2b8b0" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+  <ellipse cx="26" cy="27" rx="14" ry="10" fill="#c9ab88" ${OL} stroke-width="2.2"/>
+  <circle cx="39" cy="24" r="4.5" fill="#fff" ${OL} stroke-width="1.8"/>
+  <ellipse cx="31" cy="36" rx="8" ry="3.2" fill="#b89a78" ${OL} stroke-width="1.8"/>
+  <ellipse cx="14" cy="36" rx="3.5" ry="2.4" fill="#b89a78" ${OL} stroke-width="1.6"/>
+  <circle cx="13" cy="20" r="8.5" fill="#c9ab88" ${OL} stroke-width="2.2"/>
+  <circle cx="5.2" cy="21.5" r="1.6" fill="#e07070"/>
+  <g class="rb-eye"><circle cx="10.5" cy="18" r="1.8" fill="#111"/></g>
+  <g class="rb-eye-big"><circle cx="10.5" cy="18" r="3.4" fill="#fff" stroke="#111" stroke-width="1.2"/><circle cx="10" cy="18" r="1.4" fill="#111"/></g>
+</svg>`;
+
+/** A leafy bush (what the bear squats against). */
+export const BUSH = `
+<svg viewBox="0 0 60 48" aria-hidden="true">
+  <path d="M4 44 Q0 30 12 26 Q10 12 24 12 Q30 2 40 10 Q54 8 54 22 Q62 30 56 44 Z" fill="#4c9a3a" ${OL} stroke-width="2.6"/>
+  <path d="M14 30 Q18 22 26 24 M34 18 Q40 14 46 20 M30 34 Q36 28 44 32" fill="none" stroke="#6fbf52" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="20" cy="36" r="2" fill="#2f6e24"/><circle cx="42" cy="38" r="2" fill="#2f6e24"/>
+</svg>`;
+
+const MOOSE = '#5b3a22';
+const MOOSE_DK = '#3f2716';
+const ANTLER = '#e9d6a6';
+
+/**
+ * Bull moose, side view facing right: long legs (`.mw-leg-a/b` step slowly), hump, dewlap, palmate
+ * antlers. `.mh-side` is his head in profile; `.mh-front` (shown while `.staring`) looks right at you.
+ */
+export const MOOSE_SVG = `
+<svg viewBox="0 0 140 120" aria-hidden="true">
+  <g class="mw-leg mw-leg-b"><rect x="28" y="64" width="11" height="52" rx="4" fill="${MOOSE_DK}" ${OL} stroke-width="2.5"/><rect x="88" y="64" width="11" height="52" rx="4" fill="${MOOSE_DK}" ${OL} stroke-width="2.5"/></g>
+  <path d="M14 56 Q10 34 34 32 Q50 20 70 24 Q88 22 100 34 Q108 46 104 60 Q100 74 84 74 L34 74 Q16 72 14 56 Z" fill="${MOOSE}" ${OL} stroke-width="2.8"/>
+  <path d="M40 34 Q56 26 74 30" fill="none" stroke="#7a5233" stroke-width="5" stroke-linecap="round"/>
+  <path d="M15 46 Q8 48 9 56" fill="none" stroke="#2a1a0c" stroke-width="5" stroke-linecap="round"/>
+  <g class="mw-leg mw-leg-a"><rect x="38" y="66" width="12" height="52" rx="4" fill="${MOOSE}" ${OL} stroke-width="2.5"/><rect x="96" y="66" width="12" height="52" rx="4" fill="${MOOSE}" ${OL} stroke-width="2.5"/></g>
+  <g class="mh-side">
+    <path d="M100 30 Q92 18 98 8 Q104 16 108 18 Q112 6 106 -4 Q116 0 118 10 Q122 2 120 -6 Q130 4 124 18 Z" fill="${ANTLER}" ${OL} stroke-width="2.4"/>
+    <path d="M100 40 Q104 26 116 24 Q124 24 130 36 L136 50 Q138 58 130 60 L122 60 Q110 58 104 50 Z" fill="${MOOSE}" ${OL} stroke-width="2.6"/>
+    <path d="M128 44 Q138 46 136 56 Q134 61 127 60 Z" fill="${MOOSE_DK}" ${OL} stroke-width="2"/>
+    <ellipse cx="133" cy="51" rx="1.6" ry="2.4" fill="#111"/>
+    <path d="M110 56 Q108 70 114 72 Q118 66 116 57" fill="${MOOSE_DK}" ${OL} stroke-width="2"/>
+    <path d="M110 28 L104 22 L112 26 Z" fill="${MOOSE}" ${OL} stroke-width="2"/>
+    <circle cx="118" cy="35" r="2.6" fill="#fff"/><circle cx="119" cy="35" r="1.4" fill="#111"/>
+  </g>
+  <g class="mh-front">
+    <path d="M100 26 Q86 22 82 6 Q90 12 94 10 Q90 0 94 -6 Q100 4 102 2 Q104 -6 108 -2 Q106 10 108 22 Z" fill="${ANTLER}" ${OL} stroke-width="2.4"/>
+    <path d="M124 26 Q138 22 142 6 Q134 12 130 10 Q134 0 130 -6 Q124 4 122 2 Q120 -6 116 -2 Q118 10 116 22 Z" fill="${ANTLER}" ${OL} stroke-width="2.4"/>
+    <path d="M98 26 L90 22 L98 32 Z M126 26 L134 22 L126 32 Z" fill="${MOOSE}" ${OL} stroke-width="2"/>
+    <path d="M100 30 Q100 20 112 20 Q124 20 124 30 L122 54 Q120 66 112 66 Q104 66 102 54 Z" fill="${MOOSE}" ${OL} stroke-width="2.6"/>
+    <ellipse cx="112" cy="58" rx="9" ry="7" fill="${MOOSE_DK}" ${OL} stroke-width="2"/>
+    <ellipse cx="108.5" cy="58" rx="1.6" ry="2.2" fill="#111"/><ellipse cx="115.5" cy="58" rx="1.6" ry="2.2" fill="#111"/>
+    <g class="mh-eyes"><circle cx="106" cy="36" r="4" fill="#fff" ${OL} stroke-width="1.4"/><circle cx="118" cy="36" r="4" fill="#fff" ${OL} stroke-width="1.4"/><circle cx="106" cy="37" r="2" fill="#111"/><circle cx="118" cy="37" r="2" fill="#111"/></g>
+    <path d="M108 66 Q106 76 112 78 Q118 76 116 66" fill="${MOOSE_DK}" ${OL} stroke-width="2"/>
+  </g>
+</svg>`;
+
+/** Hot shot pickup (the rush-delivery truck), side view facing right, amber light, "HOT SHOT" door. */
+export const HOTSHOT = `
+<svg viewBox="0 0 120 52" aria-hidden="true">
+  <path d="M4 22 L4 40 L114 40 L114 30 Q114 24 106 23 L92 21 L82 8 Q80 6 76 6 L56 6 Q52 6 52 10 L52 22 Z" fill="#f4f4f0" ${OL} stroke-width="2.6"/>
+  <path d="M58 10 L76 10 L84 21 L58 21 Z" fill="#7fc4e8" ${OL} stroke-width="2"/>
+  <rect x="4" y="32" width="110" height="4" fill="#d8392b"/>
+  <text class="hs-text" x="8" y="29.5" font-family="Arial Black, Arial, sans-serif" font-size="7.4" font-weight="900" fill="#d8392b">HOT SHOT</text>
+  <rect x="62" y="1" width="10" height="5" rx="2" fill="#ffb000" ${OL} stroke-width="1.6" class="hs-light"/>
+  <rect x="108" y="25" width="6" height="5" rx="1.5" fill="#fff6b0" ${OL} stroke-width="1.4"/>
+  <path d="M8 22 L48 22" stroke="#cfcfc8" stroke-width="2"/>
+  <circle cx="26" cy="41" r="9.5" fill="#2a2725" ${OL} stroke-width="2.5"/><circle cx="26" cy="41" r="3.6" fill="#9a9a9a"/>
+  <circle cx="94" cy="41" r="9.5" fill="#2a2725" ${OL} stroke-width="2.5"/><circle cx="94" cy="41" r="3.6" fill="#9a9a9a"/>
+  <path d="M-10 18 H-2 M-14 27 H-4 M-9 36 H-1" stroke="#2a1a0c" stroke-width="2.4" stroke-linecap="round" opacity="0.55"/>
+</svg>`;
