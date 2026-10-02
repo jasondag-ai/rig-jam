@@ -10,6 +10,8 @@ import { shareText, streak, zeroIncident } from './daily.ts';
 import { hardHats, loadProgress, recordDailyClear, recordWin, saveProgress, spendHint } from './progress.ts';
 import { streakSignHtml } from './sign.ts';
 import { sound } from '../audio/engine.ts';
+import { toast } from './toast.ts';
+import { applyCamo, loadLog, record, saveLog, sightingToast } from './wildlife-log.ts';
 import { COMPANY_MAN } from './cast.ts';
 import { GagLayer, type GagOptions } from './gag-layer.ts';
 import { companyLine } from './gags.ts';
@@ -97,6 +99,17 @@ export class GameView {
       { ...gagOptions, ground: theme.ground, idleScale: idleScale(), wildlife: new URLSearchParams(location.search).get('wild') !== '0' },
     );
     board.onWear = (lvl) => this.gags.worn(lvl);
+    // The Wildlife Log collects each gag the first time it plays all the way through.
+    this.gags.onSeen = (id) => {
+      const r = record(loadLog(), id);
+      if (!r.isNew) return;
+      saveLog(r.log);
+      void toast(sightingToast(id, r.count));
+      if (r.completed) {
+        void toast('Wildlife Log complete!', { sub: 'Camo pickups unlocked', big: true, ms: 3200 });
+        applyCamo(r.log);
+      }
+    };
 
     this.el = document.createElement('div');
     this.el.className = 'screen game';

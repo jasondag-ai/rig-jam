@@ -29,6 +29,7 @@ import {
 } from './gags.ts';
 import { LANDOWNER_LINE, MAGPIE_LINE, type BumpHit } from './lines.ts';
 import { WEAR_CAP } from './tracks.ts';
+import type { Sighting } from './wildlife-log.ts';
 
 const NS = 'http://www.w3.org/2000/svg';
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -111,6 +112,8 @@ export class GagLayer {
   private bearPlan: BearLayout | null = null;
   /** ?gag=: when the forced scene may play next. */
   private forceAt = 0;
+  /** A gag just played all the way through (the Wildlife Log collects it). */
+  onSeen: (id: Sighting) => void = () => {};
 
   constructor(host: GagHost, opts: GagOptions) {
     this.host = host;
@@ -257,6 +260,7 @@ export class GagLayer {
       this.host.say(truckEl.querySelector('.cab') ?? truckEl, MAGPIE_LINE);
       await sleep(1600, signal);
       bird.remove();
+      this.onSeen('magpie');
       return;
     }
     await this.animate(bird, [{ transform: at(from) }, { transform: at(land) }], 1100, 'cubic-bezier(0.3, 0.6, 0.4, 1)', signal);
@@ -277,6 +281,7 @@ export class GagLayer {
     bird.classList.add('flying');
     await this.animate(bird, [{ transform: at(land) }, { transform: at(away) }], 900, 'cubic-bezier(0.5, 0, 0.8, 0.6)', signal);
     bird.remove();
+    this.onSeen('magpie');
   }
 
   /** Two or three small droppings clustered round the middle of the roof, every one fully on the truck. */
@@ -346,6 +351,7 @@ export class GagLayer {
     el.classList.replace('walking', 'asleep');
     if (this.spotter?.el === el) {
       this.spotter.state = 'asleep';
+      this.onSeen('spotter');
       sound.snore(true);
     }
   }
@@ -452,6 +458,7 @@ export class GagLayer {
         guy.style.transform = at(start.x + (toRight ? r.w : -r.w), outY);
         sound.feet(true);
         await sleep(2200);
+        this.onSeen('biffy');
       } else {
         // Out of the door with a little hop (squash, stretch, land), then tiny quick steps off screen.
         const hopOut = gsap.timeline();
@@ -462,6 +469,7 @@ export class GagLayer {
         shuffle.play();
         sound.feet(true);
         await this.animate(guy, [{ transform: at(start.x, outY) }, { transform: at(offX, outY) }], 3200, 'linear');
+        this.onSeen('biffy');
       }
     } catch {
       // Stage cleared.
@@ -638,6 +646,7 @@ export class GagLayer {
         sound.quad('idle');
         this.host.say(quad, LANDOWNER_LINE);
         await sleep(2600);
+        this.onSeen('landowner');
         return;
       }
       await this.animate(quad, [{ transform: at(size + w) }, { transform: at(stopAt) }], 1300, 'cubic-bezier(0.2, 0.7, 0.3, 1)');
@@ -648,6 +657,7 @@ export class GagLayer {
       quad.classList.remove('shaking');
       sound.quad('rev');
       await this.animate(quad, [{ transform: at(stopAt) }, { transform: at(size + w * 1.5) }], 1100, 'cubic-bezier(0.5, 0, 0.8, 0.5)');
+      this.onSeen('landowner');
     } catch {
       // Interrupted by a new level.
     } finally {
@@ -764,6 +774,7 @@ export class GagLayer {
     if (!this.bush || !this.bearPlan) return;
     const edges = this.screenEdges();
     await playBear(this.sceneLayer('front'), this.bearPlan, { ground: this.groundStrip().base, screenL: edges.left, screenR: edges.right }, signal);
+    this.onSeen('bear');
   }
 
   /** Moose (Duvernay): peeks in over the top fence, chews, stares at you, pulls back (moose-scene.ts). */
@@ -776,6 +787,7 @@ export class GagLayer {
     const before = Math.max(0.5, Math.min((cell * 2.2) / 126, (this.bands.above + clipY - 10) / 80));
     const h = MOOSE_H * before * 0.5;
     await playMoose(this.sceneLayer('back'), { cx: size * 0.5, clipY, h }, signal);
+    this.onSeen('moose');
   }
 
   /** Hot shot (every region): a pickup screams across the bottom in a cloud of dust, mud or snow. Under a second. */
@@ -803,6 +815,7 @@ export class GagLayer {
     }, 45);
     try {
       await this.animate(truck, [{ transform: `translate(${x0}px, ${y}px)` }, { transform: `translate(${x1}px, ${y}px)` }], ms, 'linear', signal);
+      this.onSeen('hotshot');
     } finally {
       clearInterval(puffs);
       truck.remove();

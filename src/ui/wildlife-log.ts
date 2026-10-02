@@ -79,3 +79,8 @@ export function record(log: WildlifeLog, id: Sighting): { log: WildlifeLog; isNe
 }
 
 export const sightingToast = (id: Sighting, count: number) => `New sighting! ${LOG_ENTRIES.find((e) => e.id === id)!.name} (${count}/${LOG_ENTRIES.length})`;
+
+/** Every pickup in the game wears camo (a class on <body>; style.css draws it). */
+export function applyCamo(log: WildlifeLog = loadLog()): void {
+  document.body.classList.toggle('camo-pickups', camoOn(log));
+}
