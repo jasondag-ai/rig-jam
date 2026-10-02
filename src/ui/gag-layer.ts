@@ -10,7 +10,7 @@ import { BIFFY, BUSH, DROPPING, HOTSHOT, LANDOWNER, MAGPIE, PLUG_POST, SPOTTER_S
 import { Rig } from './rig.ts';
 import { WORKER_RIG } from './rigs.ts';
 import { bearLayout, playBear, type BearLayout } from './bear-scene.ts';
-import { MOOSE_EYES, MOOSE_H, playMoose } from './moose-scene.ts';
+import { MOOSE_H, playMoose } from './moose-scene.ts';
 import {
   biffySpot,
   cordFor,
@@ -770,10 +770,11 @@ export class GagLayer {
   private async moose(signal: AbortSignal): Promise<void> {
     const { cellPx: cell, fencePx: fence } = this.host;
     const size = cell * SIZE + fence * 2;
-    // He stands behind the HUD and the board: antlers up behind the title, eyes and chewing muzzle in
-    // the gap between, chin and shoulders hidden behind the fence. Sized so his eyes clear the HUD.
+    // A small background peek behind the board: head and antlers in the gap above the top fence,
+    // chin hidden behind it. Half the size he was (when he filled the gap up to the HUD).
     const clipY = fence * 0.5;
-    const h = MOOSE_H * Math.max(0.5, Math.min((cell * 2.2) / MOOSE_H, (this.bands.above + clipY - 10) / MOOSE_EYES));
+    const before = Math.max(0.5, Math.min((cell * 2.2) / 126, (this.bands.above + clipY - 10) / 80));
+    const h = MOOSE_H * before * 0.5;
     await playMoose(this.sceneLayer('back'), { cx: size * 0.5, clipY, h }, signal);
   }
 
