@@ -138,6 +138,21 @@ something, give exact clicks and one command at a time.
 - Defaults: effects ON, music OFF, 80s Synth. Settings panel has both switches and the style picker.
 - Test hook: `?audiolog` exposes `window.__rhrAudio` (its `log` lists cues as they fire).
 
+## Wildlife Log
+- `src/ui/wildlife-log.ts` (pure + storage, tested): 7 entries (Magpie, Sleeping Spotter, Biffy
+  Surprise, Angry Landowner, Bear, Moose, Hot Shot) with captions and hints. An entry unlocks the
+  first time its gag fully plays (`GagLayer.onSeen`; the spotter counts once he's asleep). Saved in
+  `rush-hour-rigs:log`, so Reset progress clears it.
+- New sighting: a toast at the very top (`toast.ts`, 2s, one at a time, never over the board):
+  "New sighting! Bear (3/7)". The 7th adds a celebration toast and turns on camo pickups.
+- Log page: binoculars button beside the gear on the level list. Found cards: art + caption;
+  unfound: dark silhouette (CSS brightness(0)) + hint.
+- Camo pickups: `.v-camo` blotches in the pickup SVG over the truck's own paint (color stays
+  readable, badge on top), shown by `body.camo-pickups`. On once earned; switch in Settings
+  (locked until then).
+- `?log=all` previews a full log and camo without changing the saved log.
+  `npm run test:e2e:log` tests it all.
+
 ## Daily Pad (M3)
 - 60 pre-generated medium pads in `src/levels/daily.json` (generated like the regions; par 6-8, 5-6
   trucks, 1-2 obstacles). Pad #1 is 2026-09-30 (`DAILY_EPOCH` in `src/ui/daily.ts`); the pad is
@@ -215,6 +230,7 @@ something, give exact clicks and one command at a time.
 - `npm run check-levels` – print levels and solutions
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
 - `npm run test:e2e:gags` – gags test (Playwright; start the dev server first)
+- `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)
 - `npm run test:e2e:audio` – sound cues, settings and music-style distinctness (start the dev server first)
 
 ## Out of scope (M2)
