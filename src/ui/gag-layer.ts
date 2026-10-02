@@ -200,7 +200,7 @@ export class GagLayer {
       bird.classList.remove('flying');
       bird.style.transform = at(land);
       await sleep(500, signal);
-      this.droppings(truckEl, land, board, s);
+      this.droppings(truckEl, s);
       this.host.say(truckEl.querySelector('.cab') ?? truckEl, MAGPIE_LINE);
       await sleep(1600, signal);
       bird.remove();
@@ -215,7 +215,7 @@ export class GagLayer {
       land.x = next.x;
     }
     await sleep(350, signal);
-    this.droppings(truckEl, land, board, s);
+    this.droppings(truckEl, s);
     this.host.say(truckEl.querySelector('.cab') ?? truckEl, MAGPIE_LINE);
     await sleep(500, signal);
     bird.classList.add('flying');
@@ -223,30 +223,35 @@ export class GagLayer {
     bird.remove();
   }
 
-  /** Two or three small droppings where the bird stood. They ride on the roof until the truck exits. */
-  private droppings(truckEl: HTMLElement, land: { x: number; y: number }, board: DOMRect, s: number): void {
+  /** Two or three small droppings clustered round the middle of the roof, every one fully on the truck. */
+  private droppings(truckEl: HTMLElement, s: number): void {
     this.idle = { ...this.idle, magpieDone: true };
-    const truck = truckEl.getBoundingClientRect();
     const body = truckEl.querySelector('.body');
+    const tw = truckEl.offsetWidth;
+    const th = truckEl.offsetHeight;
     const count = 2 + Math.round(Math.random());
-    const baseX = land.x + board.left - truck.left + s * 0.18;
-    const baseY = land.y + board.top - truck.top + s * 0.62;
+    const spread = Math.min(tw, th) * 0.18;
     const offsets = [
-      [0, 0],
-      [s * 0.32, s * 0.1],
-      [s * 0.12, s * 0.32],
+      [-0.6, -0.4],
+      [0.7, 0.1],
+      [-0.1, 0.8],
     ];
     for (let i = 0; i < count; i++) {
       const d = document.createElement('div');
       d.className = 'dropping';
       d.innerHTML = DROPPING;
-      const w = s * (0.22 + Math.random() * 0.06);
+      const w = Math.min(s * (0.2 + Math.random() * 0.05), Math.min(tw, th) * 0.32);
+      const h = w * 1.2;
+      // Centre of the roof, nudged into a little cluster, then clamped inside the truck.
+      const m = Math.max(3, w * 0.2); // room for the slight rotation
+      const x = Math.max(m, Math.min(tw - w - m, tw / 2 + offsets[i][0] * spread - w / 2));
+      const y = Math.max(m, Math.min(th - h - m, th / 2 + offsets[i][1] * spread - h / 2));
       Object.assign(d.style, {
         width: `${w}px`,
-        height: `${w * 1.2}px`,
-        left: `${baseX + offsets[i][0]}px`,
-        top: `${baseY + offsets[i][1]}px`,
-        transform: `rotate(${Math.round(Math.random() * 40 - 20)}deg)`,
+        height: `${h}px`,
+        left: `${x}px`,
+        top: `${y}px`,
+        transform: `rotate(${Math.round(Math.random() * 30 - 15)}deg)`,
       });
       body?.append(d);
     }

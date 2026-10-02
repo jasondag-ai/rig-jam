@@ -99,6 +99,12 @@ const play = async (page, touch, level) => {
   await wait(2500);
   check(!(await page.$('.magpie')), 'magpie flies off');
   check((await page.$$eval('.dropping', (d) => d.length)) === drops.n, 'the droppings stay on the roof');
+  const allOn = await page.$$eval('.dropping', (ds) => ds.every((d) => {
+    const r = d.getBoundingClientRect();
+    const t = d.closest('.truck').getBoundingClientRect();
+    return r.left >= t.left && r.right <= t.right && r.top >= t.top && r.bottom <= t.bottom;
+  }));
+  check(allOn, 'every dropping sits fully on the truck');
   // Splat stays until that truck exits: solve the level and watch it go with the truck.
   // 2. Spotter after 20s (2s here): walks on below the fence, sits on his pail, dozes off.
   await page.waitForSelector('.spotter', { timeout: 3000 }).catch(() => {});

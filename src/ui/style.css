@@ -2062,7 +2062,7 @@ input,
 }
 
 .worker-bent.shuffling svg {
-  animation: shuffle 220ms ease-in-out infinite alternate;
+  animation: shuffle 110ms ease-in-out infinite alternate;
 }
 
 .worker-bent.facing-left.shuffling svg {
@@ -2071,18 +2071,32 @@ input,
 
 .worker-bent .wb-arms {
   transform-box: view-box;
-  transform-origin: 47px 18px;
+  transform-origin: 42px 17px;
   animation: haul 260ms ease-in-out infinite alternate;
 }
 
+/* Tiny, quick shuffle steps: the feet scoot back and forth under the bunched coveralls. */
+.worker-bent.shuffling .wb-foot-front {
+  animation: scoot 110ms ease-in-out infinite alternate;
+}
+
+.worker-bent.shuffling .wb-foot-back {
+  animation: scoot 110ms ease-in-out infinite alternate-reverse;
+}
+
+@keyframes scoot {
+  from { transform: translateX(-2.5px); }
+  to { transform: translateX(2.5px); }
+}
+
 @keyframes shuffle {
-  from { transform: translateY(0) rotate(-3deg); }
-  to { transform: translateY(-4%) rotate(3deg); }
+  from { transform: translateY(0); }
+  to { transform: translateY(-2%); }
 }
 
 @keyframes shuffle-left {
-  from { transform: scaleX(-1) translateY(0) rotate(-3deg); }
-  to { transform: scaleX(-1) translateY(-4%) rotate(3deg); }
+  from { transform: scaleX(-1) translateY(0); }
+  to { transform: scaleX(-1) translateY(-2%); }
 }
 
 @keyframes haul {

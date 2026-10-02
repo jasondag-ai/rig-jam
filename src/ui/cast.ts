@@ -112,29 +112,30 @@ export const BIFFY = `
 </svg>`;
 
 /**
- * The worker who comes out of the biffy bent over, coveralls round his knees, hauling them up as
- * he shuffles off. Cheeky, not crude: two round cheeks and a little crack line. Faces right.
+ * The worker who comes out of the biffy: strict side profile, bent over, coveralls bunched round his
+ * knees (red long johns underneath, nothing bare), hauling them up. Faces right; flipped to go left.
+ * His feet (`.wb-foot`) do tiny quick shuffle steps.
  */
 export const WORKER_BENT = `
-<svg viewBox="0 0 70 62" aria-hidden="true">
-  <rect x="14" y="52" width="10" height="7" rx="3" fill="#5a3a1c" ${OL} stroke-width="2.2"/>
-  <rect x="27" y="52" width="10" height="7" rx="3" fill="#5a3a1c" ${OL} stroke-width="2.2"/>
-  <rect x="15" y="40" width="8" height="14" rx="3" fill="#1f3c6e" ${OL} stroke-width="2.2"/>
-  <rect x="28" y="40" width="8" height="14" rx="3" fill="#1f3c6e" ${OL} stroke-width="2.2"/>
-  <rect x="10" y="33" width="31" height="10" rx="5" fill="#18305a" ${OL} stroke-width="2.2"/>
-  <path d="M14 37 Q20 35 26 38 Q32 35 38 37" fill="none" stroke="#2b4a80" stroke-width="1.6"/>
-  <path d="M25 17 Q34 9 50 13 L54 24 Q40 27 29 23 Z" fill="#1f3c6e" ${OL} stroke-width="2.2"/>
-  <ellipse cx="19" cy="27" rx="8.5" ry="8" fill="#f0c49c" ${OL} stroke-width="2.2"/>
-  <ellipse cx="31" cy="27" rx="8.5" ry="8" fill="#f0c49c" ${OL} stroke-width="2.2"/>
-  <path d="M25 20.5 Q25.6 24.5 25 28" fill="none" stroke="#a0613d" stroke-width="1.8" stroke-linecap="round"/>
+<svg viewBox="0 0 64 60" aria-hidden="true">
+  <g class="wb-foot wb-foot-back"><rect x="14" y="52" width="13" height="6" rx="3" fill="#4a2f16" ${OL} stroke-width="2"/></g>
+  <rect x="16" y="38" width="8" height="16" rx="3" fill="#c0392b" ${OL} stroke-width="2"/>
+  <g class="wb-foot wb-foot-front"><rect x="22" y="52" width="13" height="6" rx="3" fill="#5a3a1c" ${OL} stroke-width="2"/></g>
+  <rect x="21" y="38" width="8" height="16" rx="3" fill="#d8392b" ${OL} stroke-width="2"/>
+  <rect x="12" y="33" width="22" height="11" rx="5" fill="#1f3c6e" ${OL} stroke-width="2.2"/>
+  <path d="M15 37 Q20 35 24 38 Q28 35 31 37" fill="none" stroke="#2b4a80" stroke-width="1.6"/>
+  <path d="M12 20 Q12 33 24 33 L30 33 L30 21 Z" fill="#d8392b" ${OL} stroke-width="2.2"/>
+  <path d="M15 26 H28 M16 30 H29" stroke="#a82a1f" stroke-width="1.4"/>
+  <path d="M22 13 Q34 7 47 13 L48 23 Q36 26 24 22 Z" fill="#1f3c6e" ${OL} stroke-width="2.2"/>
   <g class="wb-arms">
-    <path d="M47 18 Q40 30 33 36" fill="none" stroke="#1f3c6e" stroke-width="6" stroke-linecap="round"/>
-    <circle cx="33" cy="36" r="3.4" fill="#f0c49c" ${OL} stroke-width="1.8"/>
+    <path d="M42 17 Q33 28 27 35" fill="none" stroke="#1f3c6e" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="27" cy="35" r="3.4" fill="#f0c49c" ${OL} stroke-width="1.8"/>
   </g>
-  <circle cx="57" cy="27" r="7.5" fill="#f0c49c" ${OL} stroke-width="2.2"/>
-  <path d="M58 27 l2.5 1" stroke="#2a1a0c" stroke-width="1.8" stroke-linecap="round"/>
-  <ellipse cx="58" cy="32" rx="2.2" ry="1.4" fill="#c0392b"/>
-  <path d="M51 23 Q53 15 61 17 Q66 19 65 25 Z" fill="#ffd21f" ${OL} stroke-width="2.2"/>
+  <circle cx="52" cy="25" r="7.5" fill="#f0c49c" ${OL} stroke-width="2.2"/>
+  <path d="M54 24 l2.6 0.6" stroke="#2a1a0c" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M55.5 29.5 q1.6 -1 3 0" fill="none" stroke="#a0442a" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M45 21 Q46 13 54 14 Q60 15 60 22 Z" fill="#ffd21f" ${OL} stroke-width="2.2"/>
+  <path d="M43 21.5 H61" stroke="#2a1a0c" stroke-width="2.2" stroke-linecap="round"/>
 </svg>`;
 
 /** Landowner on his quad, cowboy hat, plaid shirt. His fist shakes. Faces left. */
