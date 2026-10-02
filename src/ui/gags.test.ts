@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { parseLevel } from '../engine/index.ts';
 import { mulberry32 } from '../engine/rng.ts';
 import {
+  ANIMAL_IDLE_MS,
   MAGPIE_IDLE_MS,
+  animalFor,
+  dueWildlife,
+  planWildlife,
+  squatSpot,
   SPOTTER_IDLE_MS,
   biffySpot,
   companyLine,
@@ -117,5 +122,57 @@ describe('magpie', () => {
   it('lands on a truck still on the pad, or stays away from an empty one', () => {
     expect(level.trucks).toContain(magpieTarget(level.trucks, () => 0.7));
     expect(magpieTarget([])).toBeNull();
+  });
+});
+
+describe('wildlife and traffic', () => {
+  it('bear in Montney, moose in Duvernay, no animal elsewhere', () => {
+    expect(animalFor('montney')).toBe('bear');
+    expect(animalFor('duvernay')).toBe('moose');
+    expect(animalFor('cardium')).toBeNull();
+    expect(animalFor('daily')).toBeNull();
+  });
+
+  it('random moments stay mid-level and well apart', () => {
+    const rand = mulberry32(7);
+    for (let i = 0; i < 500; i++) {
+      const p = planWildlife(rand);
+      expect(p.animalAt).toBeGreaterThanOrEqual(20_000);
+      expect(p.animalAt).toBeLessThanOrEqual(50_000);
+      expect(p.hotshotAt).toBeGreaterThanOrEqual(8_000);
+      expect(p.hotshotAt).toBeLessThanOrEqual(60_000);
+      expect(Math.abs(p.hotshotAt - p.animalAt)).toBeGreaterThanOrEqual(10_000 - 1e-6);
+    }
+  });
+
+  it('the animal comes after 15s idle, or at its moment even while you play', () => {
+    const s = { animalAt: 30_000, hotshotAt: 50_000, animalDone: false, hotshotDone: false };
+    expect(dueWildlife(10_000, 5_000, s, 'bear')).toBeNull();
+    expect(dueWildlife(16_000, ANIMAL_IDLE_MS, s, 'bear')).toBe('animal');
+    expect(dueWildlife(30_000, 200, s, 'moose')).toBe('animal');
+    expect(dueWildlife(30_000, 200, { ...s, animalDone: true }, 'moose')).toBeNull();
+    expect(dueWildlife(30_000, 20_000, s, null)).toBeNull();
+  });
+
+  it('the hot shot comes once, at its moment, in every region', () => {
+    const s = { animalAt: 30_000, hotshotAt: 12_000, animalDone: false, hotshotDone: false };
+    expect(dueWildlife(11_000, 0, s, null)).toBeNull();
+    expect(dueWildlife(12_000, 0, s, null)).toBe('hotshot');
+    expect(dueWildlife(40_000, 0, { ...s, hotshotDone: true, animalDone: true }, 'bear')).toBeNull();
+  });
+
+  it('the bear squats clear of the biffy', () => {
+    const W = 358;
+    const span = 150;
+    for (const biffyLeft of [10, 60, 120, 160, 200, 260, 300]) {
+      const biffy = { left: biffyLeft, right: biffyLeft + 30 };
+      const fit = [1, 0.8, 0.65].map((k) => ({ k, x: squatSpot(W, span * k, biffy) })).find((f) => f.x !== null)!;
+      const x = fit.x!;
+      expect(fit.k, `biffy at ${biffyLeft}`).toBeGreaterThanOrEqual(0.8);
+      expect(x + span * fit.k <= biffy.left || x >= biffy.right, `biffy at ${biffyLeft}: group at ${x}`).toBe(true);
+      expect(x).toBeGreaterThanOrEqual(0);
+      expect(x + span * fit.k).toBeLessThanOrEqual(W);
+    }
+    expect(squatSpot(W, span, null)! + span).toBeLessThanOrEqual(W);
   });
 });

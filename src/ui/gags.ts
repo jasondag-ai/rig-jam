@@ -115,3 +115,56 @@ export function cordFor(level: Level, t: Truck): Cord {
 export function magpieTarget(trucks: readonly Truck[], random: () => number = Math.random): Truck | null {
   return trucks.length ? trucks[Math.floor(random() * trucks.length)] : null;
 }
+
+// ---------- Wildlife and traffic (outside the fence, along the bottom) ----------
+
+/** Montney has a bear, Duvernay a moose; every region gets the hot shot pickup. */
+export type Animal = 'bear' | 'moose';
+export const animalFor = (regionId: string): Animal | null => (regionId === 'montney' ? 'bear' : regionId === 'duvernay' ? 'moose' : null);
+
+/** The animal comes after this long with no touch or move, or at its random moment, whichever is first. */
+export const ANIMAL_IDLE_MS = 15_000;
+/** At least this far apart, so the hot shot never crowds the animal. */
+const WILD_GAP_MS = 10_000;
+
+export interface WildState {
+  /** Level time (ms) when the animal shows up even if you're busy playing, and when the hot shot does. */
+  animalAt: number;
+  hotshotAt: number;
+  animalDone: boolean;
+  hotshotDone: boolean;
+}
+
+/** This level's random moments: the animal 20-50s in, the hot shot 8-45s in, kept apart. */
+export function planWildlife(random: () => number = Math.random): WildState {
+  const animalAt = 20_000 + random() * 30_000;
+  let hotshotAt = 8_000 + random() * 37_000;
+  if (Math.abs(hotshotAt - animalAt) < WILD_GAP_MS) hotshotAt = animalAt - WILD_GAP_MS >= 8_000 ? animalAt - WILD_GAP_MS : animalAt + WILD_GAP_MS;
+  return { animalAt, hotshotAt, animalDone: false, hotshotDone: false };
+}
+
+/**
+ * Which outside gag is due, `levelMs` into the level with `idleMs` since the last touch.
+ * The caller only asks when nothing else is playing; each one runs once per level.
+ */
+export function dueWildlife(levelMs: number, idleMs: number, s: WildState, animal: Animal | null): 'animal' | 'hotshot' | null {
+  if (animal && !s.animalDone && (idleMs >= ANIMAL_IDLE_MS || levelMs >= s.animalAt)) return 'animal';
+  if (!s.hotshotDone && levelMs >= s.hotshotAt) return 'hotshot';
+  return null;
+}
+
+/**
+ * Where along the bottom the bear squats (left edge of bush + bear, px from the board's left),
+ * keeping clear of the biffy if it stands below the board. `span` is the bush + bear width.
+ * Null if it can't fit beside the biffy at that size (the caller tries a smaller bear).
+ */
+export function squatSpot(boardW: number, span: number, biffy: { left: number; right: number } | null): number | null {
+  const lo = boardW * 0.06;
+  const hi = boardW * 0.94;
+  if (!biffy) return lo + (hi - lo - span) * 0.35;
+  // Centre the group in the wider stretch either side of the biffy.
+  const a = { from: lo, to: biffy.left - 8 };
+  const b = { from: biffy.right + 8, to: hi };
+  const best = a.to - a.from >= b.to - b.from ? a : b;
+  return best.to - best.from >= span ? best.from + (best.to - best.from - span) / 2 : null;
+}
