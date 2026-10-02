@@ -99,6 +99,18 @@ something, give exact clicks and one command at a time.
   his quad, shakes his fist, "Who's paying for these ruts?", rides off. Once per level.
 - Preview/test hook: `?idle=0.1` makes idle gags come 10x sooner. `npm run test:e2e:gags` tests them.
 
+## Sound (M4)
+
+- `src/audio`, Web Audio only, no audio files. `synth.ts` (tone/noise building blocks), `sfx.ts` (every
+  effect as a recipe; diesel and quad are held sounds), `music.ts` (80s Synth, Country Twang, Chill Lo-fi
+  as 16-step patterns + a lookahead Sequencer), `cues.ts` (pure timing rules: exit chain, win jingle),
+  `settings.ts` (localStorage `rush-hour-rigs-audio`, separate so Reset progress keeps it), `engine.ts`.
+- `engine.ts`: the AudioContext is made on the first tap (iOS rule); `navigator.audioSession.type =
+  'ambient'` where supported so the iPhone silent switch mutes it. Music bus sits under effects.
+  The UI only calls `sound.*` cues. `sound.quiet()` when leaving the game screen.
+- Defaults: effects ON, music OFF, 80s Synth. Settings panel has both switches and the style picker.
+- Test hook: `?audiolog` exposes `window.__rhrAudio` (its `log` lists cues as they fire).
+
 ## Daily Pad (M3)
 - 60 pre-generated medium pads in `src/levels/daily.json` (generated like the regions; par 6-8, 5-6
   trucks, 1-2 obstacles). Pad #1 is 2026-09-30 (`DAILY_EPOCH` in `src/ui/daily.ts`); the pad is
@@ -175,6 +187,7 @@ something, give exact clicks and one command at a time.
 - `npm run check-levels` – print levels and solutions
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
 - `npm run test:e2e:gags` – gags test (Playwright; start the dev server first)
+- `npm run test:e2e:audio` – sound cues, settings and music-style distinctness (start the dev server first)
 
 ## Out of scope (M2)
 Daily puzzle, sound, haptics, confetti, skins, Company Man character, magpie.
