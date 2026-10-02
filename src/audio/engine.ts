@@ -260,6 +260,9 @@ export const sound = {
   bearHuff: () => audio.play('bear-huff', fx.bearHuff),
   rabbitSqueak: () => audio.play('rabbit-squeak', fx.rabbitSqueak),
   mooseGroan: () => audio.play('moose-groan', fx.mooseGroan),
+  pop: () => audio.play('pop', fx.pop),
+  swish: () => audio.play('swish', fx.swish),
+  shakeOff: () => audio.play('shake', fx.shake),
   /** The hot shot passing: `seconds` long, panned the way it drives. */
   hotshot: (seconds: number, leftToRight: boolean) => audio.play('hotshot', (c, o, t) => fx.hotshot(c, o, t, seconds, leftToRight)),
   cordSnap(): void {

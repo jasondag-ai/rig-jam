@@ -154,15 +154,12 @@ export function dueWildlife(levelMs: number, idleMs: number, s: WildState, anima
 }
 
 /**
- * Where along the bottom the bear squats (left edge of bush + bear, px from the board's left),
- * keeping clear of the biffy if it stands below the board. `span` is the bush + bear width.
- * Null if it can't fit beside the biffy at that size (the caller tries a smaller bear).
+ * Where a scene `span` px wide goes between `lo` and `hi` (left edge returned), keeping clear of
+ * the biffy if it stands below the board: centred in the wider stretch beside it. Without a biffy,
+ * a bit left of centre. Null if it can't fit beside the biffy at that size.
  */
-export function squatSpot(boardW: number, span: number, biffy: { left: number; right: number } | null): number | null {
-  const lo = boardW * 0.06;
-  const hi = boardW * 0.94;
-  if (!biffy) return lo + (hi - lo - span) * 0.35;
-  // Centre the group in the wider stretch either side of the biffy.
+export function fitSpan(lo: number, hi: number, span: number, biffy: { left: number; right: number } | null): number | null {
+  if (!biffy) return span <= hi - lo ? lo + (hi - lo - span) * 0.35 : null;
   const a = { from: lo, to: biffy.left - 8 };
   const b = { from: biffy.right + 8, to: hi };
   const best = a.to - a.from >= b.to - b.from ? a : b;

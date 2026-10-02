@@ -7,7 +7,8 @@ import { hatsHtml } from './ui/hats.ts';
 import { hardHats, loadProgress, resetProgress, saveProgress } from './ui/progress.ts';
 import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } from './ui/unlocks.ts';
 import { onTap } from './ui/tap.ts';
-import { animalFor } from './ui/gags.ts';
+import { animalFor, biffySpot } from './ui/gags.ts';
+import type { ForcedGag } from './ui/gag-layer.ts';
 import { sceneryHtml } from './ui/scenery.ts';
 import { THEMES, applyTheme, themeOverride } from './ui/themes.ts';
 import { audio, sound } from './audio/engine.ts';
@@ -166,7 +167,7 @@ function showLevels(requested = savedRegion()): void {
   }
 }
 
-function showGame(regionIndex: number, index: number): void {
+function showGame(regionIndex: number, index: number, force: ForcedGag | null = null): void {
   const region = REGIONS[regionIndex];
   const hasNext = index + 1 < region.levels.length;
   game = new GameView(
@@ -179,7 +180,7 @@ function showGame(regionIndex: number, index: number): void {
     },
     null,
     // Block heater cords in Duvernay's cold; the landowner minds his Montney mud. Bear in Montney, moose in Duvernay.
-    { cords: region.id === 'duvernay', landowner: region.id === 'montney', animal: animalFor(region.id) },
+    { cords: region.id === 'duvernay', landowner: region.id === 'montney', animal: animalFor(region.id), force },
   );
   app.replaceChildren(game.el);
   game.fit();
@@ -275,4 +276,25 @@ document.fonts?.ready.then(() => game?.fit());
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => void navigator.serviceWorker.register('./sw.js'));
 }
-showLevels();
+/**
+ * Test/preview links: ?gag=bear (Montney), ?gag=moose (Duvernay) or ?gag=biffy (a level with the
+ * biffy below the board) opens that level and plays the scene straight away, over and over.
+ */
+function forcedGag(): boolean {
+  const gag = new URLSearchParams(location.search).get('gag');
+  if (gag === 'bear') showGame(REGIONS.findIndex((r) => r.id === 'montney'), 0, 'bear');
+  else if (gag === 'moose') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 0, 'moose');
+  else if (gag === 'biffy') {
+    for (const [ri, region] of REGIONS.entries()) {
+      const li = region.levels.findIndex((l) => biffySpot(l)?.side === 'bottom');
+      if (li >= 0) {
+        showGame(ri, li, 'biffy');
+        return true;
+      }
+    }
+    return false;
+  } else return false;
+  return true;
+}
+
+if (!forcedGag()) showLevels();

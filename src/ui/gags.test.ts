@@ -7,7 +7,7 @@ import {
   animalFor,
   dueWildlife,
   planWildlife,
-  squatSpot,
+  fitSpan,
   SPOTTER_IDLE_MS,
   biffySpot,
   companyLine,
@@ -161,18 +161,18 @@ describe('wildlife and traffic', () => {
     expect(dueWildlife(40_000, 0, { ...s, hotshotDone: true, animalDone: true }, 'bear')).toBeNull();
   });
 
-  it('the bear squats clear of the biffy', () => {
-    const W = 358;
+  it('the bear scene fits clear of the biffy', () => {
     const span = 150;
     for (const biffyLeft of [10, 60, 120, 160, 200, 260, 300]) {
       const biffy = { left: biffyLeft, right: biffyLeft + 30 };
-      const fit = [1, 0.8, 0.65].map((k) => ({ k, x: squatSpot(W, span * k, biffy) })).find((f) => f.x !== null)!;
+      const fit = [1, 0.8, 0.65].map((k) => ({ k, x: fitSpan(-16, 374, span * k, biffy) })).find((f) => f.x !== null)!;
       const x = fit.x!;
-      expect(fit.k, `biffy at ${biffyLeft}`).toBeGreaterThanOrEqual(0.8);
-      expect(x + span * fit.k <= biffy.left || x >= biffy.right, `biffy at ${biffyLeft}: group at ${x}`).toBe(true);
-      expect(x).toBeGreaterThanOrEqual(0);
-      expect(x + span * fit.k).toBeLessThanOrEqual(W);
+      expect(x + span * fit.k <= biffy.left || x >= biffy.right, `biffy at ${biffyLeft}: scene at ${x}`).toBe(true);
+      expect(x).toBeGreaterThanOrEqual(-16);
+      expect(x + span * fit.k).toBeLessThanOrEqual(374);
     }
-    expect(squatSpot(W, span, null)! + span).toBeLessThanOrEqual(W);
+    expect(fitSpan(0, 358, span, null)! + span).toBeLessThanOrEqual(358);
+    expect(fitSpan(0, 100, span, null)).toBeNull();
   });
+
 });

@@ -320,6 +320,21 @@ export const mooseGroan: Recipe = (ctx, out, t) => {
     tone(ctx, out, { type: 'sawtooth', f: 118, f2: 82, t, dur: 1.5, gain: g, attack: 0.25, vibrato: [4.5, 3], filter: { type: 'bandpass', f: form, q: 6 } });
 };
 
+/** Eyes popping open: a quick cartoon blip that jumps up. */
+export const pop: Recipe = (ctx, out, t) => {
+  tone(ctx, out, { f: 380, f2: 1100, t, dur: 0.07, gain: 0.18 });
+};
+
+/** A fast arm swing: a short whoosh of air. */
+export const swish: Recipe = (ctx, out, t) => {
+  noise(ctx, out, { t, dur: 0.16, gain: 0.16, attack: 0.05, filter: { type: 'bandpass', f: 700, q: 1.2, f2: 2600 } });
+};
+
+/** Shaking off like a wet dog: a fluttery brrr. */
+export const shake: Recipe = (ctx, out, t) => {
+  for (let i = 0; i < 7; i++) noise(ctx, out, { t: t + i * 0.055, dur: 0.04, gain: 0.09, filter: { type: 'bandpass', f: 1400 + (i % 2) * 700, q: 1.5 } });
+};
+
 /**
  * Hot shot pickup screaming past: engine roar that drops in pitch as it passes (doppler), a whoosh
  * of air, panned left to right (or right to left) across `dur` seconds.

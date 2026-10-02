@@ -5,14 +5,15 @@
 // Reduced motion: still frames only.
 import { sound } from '../audio/engine.ts';
 import { SIZE, type GameState, type Level, type Side } from '../engine/index.ts';
-import { BEAR_SVG, BIFFY, BUSH, DROPPING, HOTSHOT, LANDOWNER, MAGPIE, MOOSE_SVG, PLUG_POST, RABBIT, SPOTTER_SIT, SPOTTER_WALK, WORKER_BENT } from './cast.ts';
+import { BIFFY, BUSH, DROPPING, HOTSHOT, LANDOWNER, MAGPIE, MOOSE_SVG, PLUG_POST, SPOTTER_SIT, SPOTTER_WALK, WORKER_BENT } from './cast.ts';
+import { bearLayout, playBear, type BearLayout } from './bear-scene.ts';
 import {
   biffySpot,
   cordFor,
   dueGag,
   dueWildlife,
   planWildlife,
-  squatSpot,
+  fitSpan,
   freshIdle,
   magpieTarget,
   reverseDirection,
@@ -59,7 +60,11 @@ export interface GagOptions {
   idleScale: number;
   /** Bear, moose and hot shot on (tests of the other gags turn them off with ?wild=0). */
   wildlife: boolean;
+  /** ?gag=bear|biffy|moose: play that scene straight away, again and again, and nothing else. */
+  force?: ForcedGag | null;
 }
+
+export type ForcedGag = 'bear' | 'biffy' | 'moose';
 
 /** Free space above and below the board, in px, for characters outside the fence. */
 export interface Bands {
@@ -98,6 +103,11 @@ export class GagLayer {
   private cords = new Map<string, { cord: Cord; post: HTMLElement; line: SVGPathElement | null }>();
   private cordLayer: SVGSVGElement | null = null;
   private landownerDone = false;
+  /** Montney: the bush the bear will squat beside stands there from the start of the level. */
+  private bush: HTMLElement | null = null;
+  private bearPlan: BearLayout | null = null;
+  /** ?gag=: when the forced scene may play next. */
+  private forceAt = 0;
 
   constructor(host: GagHost, opts: GagOptions) {
     this.host = host;
@@ -123,6 +133,8 @@ export class GagLayer {
     this.cords.clear();
     const spot = biffySpot(level);
     this.biffy = spot ? { el: this.figure('gag biffy', BIFFY), spot, done: false } : null;
+    this.bush = this.opts.animal === 'bear' ? this.figure('gag bush', BUSH) : null;
+    this.forceAt = performance.now() + 600;
     if (this.opts.cords) this.plugIn(level);
     this.layout(this.bands);
     clearInterval(this.timer);
@@ -133,6 +145,7 @@ export class GagLayer {
   layout(bands: Bands): void {
     this.bands = bands;
     if (this.biffy) this.placeBiffy(this.biffy.el, this.biffy.spot);
+    if (this.bush) this.placeBush(this.bush);
     for (const { cord, post, line } of this.cords.values()) {
       this.placePost(post, cord);
       if (line) line.setAttribute('d', this.cordPath(cord));
@@ -186,6 +199,7 @@ export class GagLayer {
   private tick(): void {
     if (!this.host.el.isConnected) return this.stop();
     if (this.stopped || document.hidden) return;
+    if (this.opts.force) return this.tickForced(this.opts.force);
     this.tickWild();
     if (this.idleGag || this.spotter || this.wildGag) return;
     const due = dueGag((performance.now() - this.lastActivity) / this.opts.idleScale, this.idle);
@@ -651,101 +665,41 @@ export class GagLayer {
     return { left: l, right: l + parseFloat(this.biffy.el.style.width) };
   }
 
-  /** Keyframes for hopping from x0 to x1 along the ground line (little arcs). */
-  private hops(x0: number, x1: number, y: number, n: number, height: number): Keyframe[] {
-    const frames: Keyframe[] = [];
-    for (let i = 0; i <= n * 2; i++) {
-      const x = x0 + ((x1 - x0) * i) / (n * 2);
-      frames.push({ transform: `translate(${x}px, ${y - (i % 2 ? height : 0)}px)` });
-    }
-    return frames;
+  /** ?gag=…: play that scene now, and again 1.5s after it ends, with nothing else on stage. */
+  private tickForced(gag: ForcedGag): void {
+    if (reducedMotion() || this.wildGag || this.biffyPlaying || performance.now() < this.forceAt) return;
+    const ctl = new AbortController();
+    this.wildGag = ctl;
+    let play: Promise<void>;
+    if (gag === 'biffy') {
+      if (!this.biffy) return void (this.wildGag = null);
+      this.biffy.done = false;
+      this.wildGag = null; // the biffy guards itself with biffyPlaying
+      play = this.biffyGag();
+    } else play = gag === 'bear' ? this.bear(ctl.signal) : this.moose(ctl.signal);
+    play
+      .catch(() => {})
+      .finally(() => {
+        if (this.wildGag === ctl) this.wildGag = null;
+        this.forceAt = performance.now() + 1500;
+      });
+    this.forceAt = Infinity;
   }
 
-  /**
-   * Bear (Montney): walks in, squats side-on with his back to a bush and strains. A rabbit hops up;
-   * he grabs it, wipes with it, and they bolt opposite ways, the rabbit's ears flat back.
-   */
-  private async bear(signal: AbortSignal): Promise<void> {
-    const { cellPx: cell } = this.host;
+  /** Where the Montney bush stands (and so where the bear will squat), worked out from the screen. */
+  private placeBush(el: HTMLElement): void {
     const strip = this.groundStrip();
-    const size = cell * SIZE + this.host.fencePx * 2;
-    let bh = Math.max(cell * 0.9, Math.min(cell * 2, strip.h));
-    let bw = (bh * 120) / 92;
-    let bushH = bh * 0.62;
-    let bushW = (bushH * 60) / 48;
-    // Bush, then the bear overlapping it a little; shrink if the biffy leaves too little room.
-    let spot: number | null = null;
-    for (const k of [1, 0.85, 0.7]) {
-      spot = squatSpot(size, (bw + bushW * 0.6) * k, this.biffyBelow());
-      if (spot !== null) {
-        [bh, bw, bushH, bushW] = [bh * k, bw * k, bushH * k, bushW * k];
-        break;
-      }
-    }
-    if (spot === null) return;
     const edges = this.screenEdges();
-    const bushX = spot;
-    const squatX = spot + bushW * 0.6 - bw * 0.12;
-    const y = strip.base - bh;
-    const at = (x: number, yy = y) => `translate(${x}px, ${yy}px)`;
-    const bush = this.figure('gag wild bush', BUSH, bushW, bushH);
-    bush.style.transform = at(bushX, strip.base - bushH);
-    const bear = this.figure('gag wild bear walking', BEAR_SVG, bw, bh);
-    bear.style.transform = at(edges.left - bw);
-    const rw = bh * 0.42;
-    const rh = (rw * 40) / 44;
-    const rabbit = this.figure('gag wild rabbit', RABBIT, rw, rh);
-    rabbit.style.transform = at(edges.right + rw, strip.base - rh);
-    const cleanup = () => [bush, bear, rabbit].forEach((e) => e.remove());
-    signal.addEventListener('abort', cleanup, { once: true });
-    try {
-      await this.animate(bush, [{ opacity: 0 }, { opacity: 1 }], 300, 'ease-out', signal);
-      const walkMs = Math.min(3000, Math.max(1600, ((squatX - edges.left + bw) / bw) * 700));
-      await this.animate(bear, [{ transform: at(edges.left - bw) }, { transform: at(squatX) }], walkMs, 'cubic-bezier(0.3, 0.2, 0.5, 1)', signal);
-      bear.style.transform = at(squatX);
-      // Squats with his rump to the bush and strains.
-      bear.classList.replace('walking', 'squatting');
-      sound.bearHuff();
-      await sleep(350, signal);
-      bear.classList.add('straining');
-      sound.bearGrunt();
-      await sleep(900, signal);
-      sound.bearGrunt();
-      await sleep(700, signal);
-      // A rabbit hops up to his front paw.
-      const paw = { x: squatX + (bw * 84) / 120 - rw * 0.15, y: strip.base - rh - bh * 0.2 };
-      const hopMs = Math.max(900, Math.min(1600, ((edges.right - paw.x) / rw) * 120));
-      await this.animate(rabbit, this.hops(edges.right + rw, paw.x, strip.base - rh, 5, rh * 0.45), hopMs, 'linear', signal);
-      bear.classList.remove('straining');
-      // Grabbed.
-      rabbit.classList.add('shock');
-      sound.rabbitSqueak();
-      await this.animate(rabbit, [{ transform: at(paw.x, strip.base - rh) }, { transform: at(paw.x, paw.y) }], 160, 'ease-out', signal);
-      await sleep(300, signal);
-      // Round the back for a wipe: scrub, scrub, scrub.
-      bear.classList.add('wiping');
-      const rump = { x: squatX + (bw * 10) / 120 - rw * 0.5, y: strip.base - rh - bh * 0.12 };
-      const rub = bh * 0.1;
-      await this.animate(rabbit, [{ transform: at(paw.x, paw.y) }, { transform: at(rump.x, rump.y) }], 220, 'ease-in-out', signal);
-      sound.rabbitSqueak();
-      const scrub: Keyframe[] = [];
-      for (let i = 0; i < 4; i++) scrub.push({ transform: at(rump.x, rump.y) }, { transform: at(rump.x + rub * 0.3, rump.y - rub) });
-      scrub.push({ transform: at(rump.x, rump.y) });
-      await this.animate(rabbit, scrub, 900, 'linear', signal);
-      sound.rabbitSqueak();
-      // Let go: both bolt, opposite ways.
-      bear.classList.remove('wiping', 'squatting');
-      bear.classList.add('walking', 'running', 'facing-left');
-      rabbit.classList.add('flat', 'facing-right');
-      sound.bearHuff();
-      const runRabbit = this.animate(rabbit, this.hops(rump.x, edges.right + rw * 2, strip.base - rh, 4, rh * 0.3), 650, 'linear', signal);
-      const runBear = this.animate(bear, [{ transform: at(squatX) }, { transform: at(edges.left - bw * 1.3) }], 1100, 'cubic-bezier(0.4, 0, 0.9, 0.6)', signal);
-      await sleep(500, signal);
-      const fade = this.animate(bush, [{ opacity: 1 }, { opacity: 0 }], 500, 'ease-in', signal);
-      await Promise.all([runRabbit, runBear, fade]);
-    } finally {
-      cleanup();
-    }
+    this.bearPlan = bearLayout({ screenL: edges.left, screenR: edges.right, cell: this.host.cellPx, stripH: strip.h, biffy: this.biffyBelow() });
+    const { bushX, bushW, bushH } = this.bearPlan;
+    Object.assign(el.style, { width: `${bushW}px`, height: `${bushH}px`, transform: `translate(${bushX}px, ${strip.base - bushH}px)` });
+  }
+
+  /** Bear (Montney): the full puppet-rig scene beside the bush (bear-scene.ts). */
+  private async bear(signal: AbortSignal): Promise<void> {
+    if (!this.bush || !this.bearPlan) return;
+    const edges = this.screenEdges();
+    await playBear(this.host.el, this.bearPlan, { ground: this.groundStrip().base, screenL: edges.left, screenR: edges.right }, signal);
   }
 
   /** Moose (Duvernay): plods along the bottom, stops, turns his head and stares at you, plods off. */
@@ -757,7 +711,7 @@ export class GagLayer {
     const h = Math.max(cell * 1.1, Math.min(cell * 2.4, strip.h * 0.94));
     const w = (h * 140) / 120;
     const edges = this.screenEdges();
-    const stopX = squatSpot(size, w, this.biffyBelow()) ?? size / 2 - w / 2;
+    const stopX = fitSpan(size * 0.06, size * 0.94, w, this.biffyBelow()) ?? size / 2 - w / 2;
     const y = strip.base - h;
     const at = (x: number) => `translate(${x}px, ${y}px)`;
     const moose = this.figure('gag wild moose walking', MOOSE_SVG, w, h);
