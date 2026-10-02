@@ -74,6 +74,25 @@ something, give exact clicks and one command at a time.
 - Settings → "Unlock everything (demo mode)": a flag in progress that opens everything without
   touching scores or streak. Off restores normal locks. Reset progress turns it off.
 
+## Characters and gags (M4)
+- `src/ui/gags.ts` (pure, tested): idle timing, Company Man line by tier, biffy spot, cord geometry.
+  `src/ui/cast.ts`: SVG art. `src/ui/gag-layer.ts`: runs them on the board. Lines in `lines.ts`.
+- Rules: gags never take touches (`pointer-events: none`) and stay outside the 6x6 grid or on truck
+  roofs (block heater cords lie on the ground in the truck's own lane, under the trucks). Reduced
+  motion: shown as still frames, no animation.
+- Magpie: 10s with no touch or move: lands on a random truck's roof, poops (splat rides on that truck
+  until it exits), driver says "Seriously?", flies off. Once per level (a cancelled one may retry).
+- Spotter: 20s idle: jogs on outside the fence, flag dance, jogs off. Once per idle stretch.
+- Any touch cancels the magpie/spotter instantly and restarts the idle clock.
+- Company Man on the win card: line by tier (par / +1..+3 / worse), 3 per tier, no repeats in a row.
+- Biffy: below the bottom fence by a gate-free column; a bump by a truck touching the bottom two
+  rows within one column of it opens the door; a worker stumbles out and goes back in.
+- Block heater cords (Duvernay): each truck plugged into a post in the fence behind it; first move
+  rips the cord out (whip + sparks); the post keeps a dangling plug. Restart re-plugs.
+- Landowner (Montney): first time any lane wears to `WEAR_CAP`, he rides up on his quad outside the
+  fence, shakes his fist, "Who's paying for these ruts?", rides off. Once per level.
+- Preview/test hook: `?idle=0.1` makes idle gags come 10x sooner. `npm run test:e2e:gags` tests them.
+
 ## Daily Pad (M3)
 - 60 pre-generated medium pads in `src/levels/daily.json` (generated like the regions; par 6-8, 5-6
   trucks, 1-2 obstacles). Pad #1 is 2026-09-30 (`DAILY_EPOCH` in `src/ui/daily.ts`); the pad is
@@ -149,6 +168,7 @@ something, give exact clicks and one command at a time.
 - `npm run gen-levels [-- c05 m08]` – regenerate levels (named slots are forced to rerun)
 - `npm run check-levels` – print levels and solutions
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
+- `npm run test:e2e:gags` – gags test (Playwright; start the dev server first)
 
 ## Out of scope (M2)
 Daily puzzle, sound, haptics, confetti, skins, Company Man character, magpie.
