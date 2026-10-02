@@ -12,12 +12,14 @@ import { Rig, show, type Joint } from './rig.ts';
 import { BEAR_RIG, RABBIT_RIG } from './rigs.ts';
 
 /** Bear art: feet centre, sitting height, rump (left edge sitting) and reach (right edge reaching), in art units. */
-const BEAR_FEET = { x: 100, y: 186 };
+const BEAR_FEET = { x: 100, y: 191 }; // bottom of his paws, outline included
 const BEAR_SIT_H = 145;
 const BEAR_RUMP = 26;
 const BEAR_REACH = 236;
+/** His own right edge sitting (head and paw), without the rabbit's patch in front of him. */
+const BEAR_BODY_R = 200;
 /** Rabbit art: feet centre, the scruff of his back (where the paw holds him), height. */
-const RABBIT_FEET = { x: 32, y: 52 };
+const RABBIT_FEET = { x: 32, y: 54 };
 const RABBIT_BODY = { x: 33, y: 27 };
 const RABBIT_H = 56;
 /** The bush (cast.ts BUSH) drawing is 60 x 48. */
@@ -48,15 +50,19 @@ export function bearLayout(o: {
   biffy: { left: number; right: number } | null;
 }): BearLayout {
   const old = Math.max(o.cell * 0.9, Math.min(o.cell * 2, o.stripH)) * 0.95;
-  const lo = o.screenL + 6;
   const hi = o.screenR - 6;
-  for (const f of [1, 0.85, 0.72, 0]) {
+  // Biggest first; if the biffy leaves too little room, a smaller bear; then let only the rabbit's
+  // patch cross in front of the biffy; last resort, ignore it.
+  const tries: [number, number][] = [1, 0.85, 0.72].map((f) => [f, BEAR_REACH] as [number, number]);
+  tries.push([0.85, BEAR_BODY_R], [0.72, BEAR_BODY_R], [0.6, BEAR_BODY_R], [0, 0]);
+  for (const [f, reach] of tries) {
     const sitH = old * 1.7 * (f || 0.72);
     const k = sitH / BEAR_SIT_H;
     const bushH = Math.max(18, Math.min(sitH * 0.5, o.stripH - 4));
     const bushW = bushH * BUSH_RATIO;
-    const span = bushW * 0.7 + (BEAR_REACH - BEAR_RUMP) * k;
-    // Last resort: ignore the biffy and use the left end.
+    const span = bushW * 0.7 + (reach - BEAR_RUMP) * k;
+    // Half the bush may hang off the left edge of the screen; it's only scenery.
+    const lo = o.screenL - bushW * 0.5;
     const left = f ? fitSpan(lo, hi, span, o.biffy) : lo;
     if (left === null) continue;
     return { k, kr: (sitH * 0.46) / RABBIT_H, bushX: left, bushW, bushH, sitX: left + bushW * 0.7 + (BEAR_FEET.x - BEAR_RUMP) * k };
@@ -69,7 +75,7 @@ type Pose = Record<string, Partial<Pick<Joint, 'x' | 'y' | 'rot' | 'sx' | 'sy'>>
 const BEAR_JOINTS = ['face', 'hips', 'body', 'head', 'jaw', 'ear', 'earF', 'eye', 'belly', 'tail', 'thigh', 'shin', 'thighF', 'shinF', 'armF', 'arm', 'fore', 'paw', 'sweat'];
 const STAND: Pose = Object.fromEntries(BEAR_JOINTS.map((n) => [n, { x: 0, y: 0, rot: 0, ...(n === 'face' ? {} : { sx: 1, sy: 1 }) }]));
 const SIT: Pose = {
-  hips: { y: 26 },
+  hips: { y: 21 },
   body: { rot: -62 },
   head: { rot: 50 },
   thigh: { rot: -80 },
@@ -104,12 +110,16 @@ export async function playBear(host: HTMLElement, L: BearLayout, g: { ground: nu
   stage.className = 'gag wild bear-stage';
   Object.assign(stage.style, { width: `${W}px`, height: `${H}px`, transform: `translate(${g.screenL}px, ${g.ground - H}px)` });
   stage.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" overflow="visible" aria-hidden="true">
+    <ellipse class="shadow-b" rx="${70 * L.k}" ry="${7 * L.k}" fill="rgba(0,0,0,0.22)"/>
+    <ellipse class="shadow-r" rx="${18 * L.kr}" ry="${3.5 * L.kr}" fill="rgba(0,0,0,0.22)"/>
     <g class="bear">${inner(BEAR_RIG)}</g><g class="rabbit">${inner(RABBIT_RIG)}</g></svg>`;
   host.append(stage);
   const svg = stage.querySelector('svg')!;
   const bearEl = svg.querySelector<SVGGElement>('.bear')!;
   const rabbitEl = svg.querySelector<SVGGElement>('.rabbit')!;
   const grip = bearEl.querySelector<SVGGElement>('.grip')!;
+  const shadowB = svg.querySelector<SVGEllipseElement>('.shadow-b')!;
+  const shadowR = svg.querySelector<SVGEllipseElement>('.shadow-r')!;
   const bear = new Rig(bearEl);
   const rabbit = new Rig(rabbitEl);
   const B = (n: string) => bear.get(n);
@@ -118,6 +128,14 @@ export async function playBear(host: HTMLElement, L: BearLayout, g: { ground: nu
   const bp = { x: -BEAR_REACH * L.k, y: H, sqx: 1, sqy: 1, jitter: 0 };
   const rp = { x: W + RABBIT_H * L.kr, y: H, dir: 1, held: false, tilt: 0 };
   const place = () => {
+    // Shadows stay on the ground and shrink as their owner leaves it.
+    shadowB.setAttribute('cx', String(bp.x + bp.jitter - 10 * L.k));
+    shadowB.setAttribute('cy', String(H - 2));
+    shadowB.setAttribute('transform', `translate(${bp.x - 10 * L.k} ${H - 2}) scale(${Math.max(0.4, 1 - (H - bp.y) / (60 * L.k))}) translate(${-(bp.x - 10 * L.k)} ${-(H - 2)})`);
+    shadowR.style.display = rp.held ? 'none' : '';
+    shadowR.setAttribute('cx', String(rp.x));
+    shadowR.setAttribute('cy', String(H - 1));
+    shadowR.setAttribute('transform', `translate(${rp.x} ${H - 1}) scale(${Math.max(0.4, 1 - (H - rp.y) / (30 * L.kr))}) translate(${-rp.x} ${-(H - 1)})`);
     bearEl.setAttribute('transform', `translate(${bp.x + bp.jitter} ${bp.y}) scale(${L.k * bp.sqx} ${L.k * bp.sqy}) translate(${-BEAR_FEET.x} ${-BEAR_FEET.y})`);
     if (rp.held) {
       // Riding in his paw: undo the arm's rotation so the rabbit stays readable, plus a tilt.
@@ -218,7 +236,11 @@ export async function playBear(host: HTMLElement, L: BearLayout, g: { ground: nu
     // 2. Squat: a little rise (anticipation), drop onto his haunches, squash on landing, settle.
     beat('squat');
     await run(pose(bear, { hips: { y: -5 }, body: { rot: 6 }, head: { rot: -6 } }, 0.22, 'power2.out'));
-    const sit = pose(bear, SIT, 0.42, 'power3.in');
+    // Legs fold quickly; the hips drop last, so his feet never push into the ground.
+    const LEGS = ['thigh', 'shin', 'thighF', 'shinF'];
+    const sit = pose(bear, Object.fromEntries(Object.entries(SIT).filter(([n]) => n !== 'hips' && !LEGS.includes(n))), 0.42, 'power3.in');
+    sit.add(pose(bear, Object.fromEntries(LEGS.map((n) => [n, SIT[n]])), 0.3, 'power2.out'), 0);
+    sit.add(pose(bear, { hips: SIT.hips }, 0.42, 'power3.in'), 0);
     sit.to(bp, { sqy: 0.86, sqx: 1.1, duration: 0.09, ease: 'power2.out' }, 0.38);
     sit.to(B('belly'), { y: 6, duration: 0.09, ease: 'power2.out' }, 0.38);
     sit.to(bp, { sqy: 1, sqx: 1, duration: 0.4, ease: 'elastic.out(1, 0.45)' }, 0.47);
