@@ -32,7 +32,21 @@ const PICKUP = svg(
     `<rect class="v-glass" x="150" y="15" width="15" height="70" rx="6"/>` +
     `<rect class="v-mirror" x="152" y="-5" width="9" height="12" rx="3"/>` +
     `<rect class="v-mirror" x="152" y="93" width="9" height="12" rx="3"/>` +
-    `<rect class="v-bumper" x="190" y="14" width="8" height="72" rx="3"/>`,
+    `<rect class="v-bumper" x="190" y="14" width="8" height="72" rx="3"/>` +
+    // Camo pickups (Wildlife Log reward): blotches over the paint, which still shows its color.
+    `<g class="v-camo">` +
+    `<path class="cm-dk" d="M10 12 Q26 6 38 14 Q46 22 34 30 Q20 34 12 26 Z"/>` +
+    `<path class="cm-lt" d="M54 8 Q72 6 80 14 Q84 24 70 26 Q56 24 52 16 Z"/>` +
+    `<path class="cm-br" d="M86 30 Q104 26 108 40 Q106 54 92 52 Q80 46 86 30 Z"/>` +
+    `<path class="cm-dk" d="M22 44 Q40 40 50 50 Q52 62 38 64 Q22 62 20 52 Z"/>` +
+    `<path class="cm-lt" d="M58 58 Q76 54 84 64 Q84 76 68 78 Q54 74 58 58 Z"/>` +
+    `<path class="cm-br" d="M10 70 Q24 68 30 78 Q28 90 16 90 Q8 84 10 70 Z"/>` +
+    `<path class="cm-dk" d="M86 74 Q102 70 108 80 Q106 92 92 90 Q82 86 86 74 Z"/>` +
+    `<path class="cm-dk" d="M126 30 Q140 28 146 38 Q146 50 134 52 Q124 46 126 30 Z"/>` +
+    `<path class="cm-lt" d="M168 54 Q182 50 186 60 Q186 72 174 74 Q166 66 168 54 Z"/>` +
+    `<path class="cm-br" d="M126 62 Q140 60 146 70 Q144 84 132 84 Q122 76 126 62 Z"/>` +
+    `<path class="cm-dk" d="M168 18 Q182 14 186 26 Q184 38 172 36 Q166 28 168 18 Z"/>` +
+    `</g>`,
 );
 
 // Picker: short flatdeck with a knuckle crane folded flat along the deck behind the cab.
