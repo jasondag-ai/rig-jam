@@ -97,7 +97,16 @@ something, give exact clicks and one command at a time.
   rips the cord out (whip + sparks); the post keeps a dangling plug. Restart re-plugs.
 - Landowner (Montney): first time any lane wears to `WEAR_CAP`, he rides along below the board on
   his quad, shakes his fist, "Who's paying for these ruts?", rides off. Once per level.
-- Preview/test hook: `?idle=0.1` makes idle gags come 10x sooner. `npm run test:e2e:gags` tests them.
+- Wildlife and traffic, in the strip between the board and the buttons (the hint line fades while
+  they pass). Touches never cancel them; each waits while another gag is on stage (and the landowner
+  or biffy wait for them). Reduced motion: skipped entirely. Once per level each:
+  - Bear (Montney): after 15s idle or a random moment 20-50s in. Walks in, squats side-on with his
+    back to a bush (placed clear of the biffy), strains, grabs a passing rabbit, wipes with it, and
+    they bolt opposite ways (rabbit's ears flat).
+  - Moose (Duvernay): same timing. Plods in, stops, stares at you front-on for 2s, plods off.
+  - Hot shot (all regions): random moment 8-45s in. Pickup screams across in <1s in dust/mud/snow.
+- Preview/test hooks: `?idle=0.1` makes idle gags (and wildlife) come 10x sooner; `?wild=0` turns
+  wildlife off. `npm run test:e2e:gags` tests them all.
 
 ## Sound (M4)
 

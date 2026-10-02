@@ -8,7 +8,9 @@ import { getMoveRange, newGame, solve } from '../src/engine/index.ts';
 import { COMPANY_LINES } from '../src/ui/lines.ts';
 import { biffySpot, reverseDirection } from '../src/ui/gags.ts';
 
-const BASE = (process.env.URL ?? 'http://localhost:5173/') + '?idle=0.1';
+const ROOT = process.env.URL ?? 'http://localhost:5173/';
+// The bear, moose and hot shot have their own section below; off here so they don't make the others wait.
+const BASE = ROOT + '?idle=0.1&audiolog&wild=0';
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;
 const check = (ok, text) => {
@@ -16,11 +18,11 @@ const check = (ok, text) => {
   console.log(`   ${ok ? 'ok  ' : 'FAIL'} ${text}`);
 };
 
-async function open(reducedMotion) {
+async function open(reducedMotion, base = BASE) {
   const browser = await chromium.launch();
   const context = await browser.newContext({ ...devices['iPhone 13'], reducedMotion });
   const page = await context.newPage();
-  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.goto(base, { waitUntil: 'networkidle' });
   await page.evaluate(() => {
     localStorage.clear();
     localStorage.setItem('rush-hour-rigs:v2', JSON.stringify({ best: {}, hints: 3, perfect: [], dailyCleared: [], demo: true, announced: [] }));
@@ -65,6 +67,9 @@ const enter = async (page, tab, index) => {
   await page.$eval(`.level-btn[data-index="${index}"]`, (b) => b.click());
   await wait(500);
 };
+/** Which sound cues have played since the last call (from the ?audiolog hook), then clears the log. */
+const heardSince = (page) => page.evaluate(() => { const a = window.__rhrAudio; const l = a ? [...a.log] : []; if (a) a.log.length = 0; return l; });
+const hearAll = (log, names) => names.every((n) => log.includes(n));
 const rect = (page, sel) => page.$eval(sel, (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; });
 const overlaps = (a, b) => a.l < b.r - 1 && a.r > b.l + 1 && a.t < b.b - 1 && a.b > b.t + 1;
 const play = async (page, touch, level) => {
@@ -90,6 +95,8 @@ const play = async (page, touch, level) => {
   const splatTruck = drops.trucks[0];
   check(drops.n >= 2 && drops.n <= 3 && drops.trucks.length === 1 && !!splatTruck, `${drops.n} droppings land on one truck roof (truck ${splatTruck})`);
   check(bubble === 'Seriously?', `that driver yells "${bubble}"`);
+  const magpieLog = await heardSince(page);
+  check(hearAll(magpieLog, ['squawk', 'plop', 'grunt']) && magpieLog.filter((n) => n === 'plop').length === drops.n, `sounds: squawk, a plop per dropping, the grunt (${[...new Set(magpieLog)].join(' ')})`);
   const onRoof = await page.evaluate(() => {
     const bird = document.querySelector('.magpie');
     if (!bird) return 'gone';
@@ -118,6 +125,8 @@ const play = async (page, touch, level) => {
   const zzz = await page.$eval('.spotter.asleep .zzz', (z) => getComputedStyle(z).display !== 'none' && z.textContent).catch(() => null);
   check(!!spotter && spotter.t >= pad.b, 'he sits on his pail below the fence, under the board');
   check(zzz === 'Zzz', `and falls asleep: "${zzz}"`);
+  await wait(300);
+  check((await heardSince(page)).includes('snore'), 'sound: he snores');
   // 3. A touch wakes him: he jolts, falls off the pail and scrambles off.
   await touch.tapAt(20, 400);
   await wait(120);
@@ -125,6 +134,8 @@ const play = async (page, touch, level) => {
   check(/startled|fallen/.test(startled), `a touch jolts him awake (${startled})`);
   await wait(500);
   check(await page.$eval('.spotter', (s) => s.classList.contains('fallen')).catch(() => false), 'he falls off the pail');
+  const fallLog = await heardSince(page);
+  check(fallLog.includes('clatter'), `sound: the pail clatters (${[...new Set(fallLog)].join(' ')})`);
   const touchedAt = Date.now() - 620;
   await page.waitForSelector('.spotter', { state: 'detached', timeout: 3000 }).catch(() => {});
   check(!(await page.$('.spotter')), `and scrambles off (gone ${((Date.now() - touchedAt) / 1000).toFixed(1)}s after the touch)`);
@@ -206,8 +217,11 @@ const play = async (page, touch, level) => {
       check(geo.b.l >= 0 && geo.b.r <= geo.vw, 'the whole biffy is on screen');
       const gateThere = level.gates.some((g) => g.side === spot.side && g.index === spot.index);
       check(!gateThere, 'that stretch of fence has no gate');
+      await heardSince(page);
       await touch.drag(t.id, [back * Math.abs(reach)]);
       const worker = await page.$('.worker-bent');
+      const biffyLog = await heardSince(page);
+      check(hearAll(biffyLog, ['door-bang', 'feet', 'beeper']), `sounds: backup beeper, door bang, shuffling feet (${[...new Set(biffyLog)].join(' ')})`);
       check(!!worker && (await page.$eval('.biffy', (e) => e.classList.contains('open'))), 'backing that truck up bangs the door open and a worker comes out');
       await wait(1200);
       const w = await rect(page, '.worker-bent').catch(() => null);
@@ -236,7 +250,9 @@ const play = async (page, touch, level) => {
   check(postsOff, 'posts stand in the fence, off the grid');
   const first = solve(duv)[0];
   const cordsBefore = await page.$$eval('.cord', (e) => e.length);
+  await heardSince(page);
   await touch.drag(first.id, [first.delta]);
+  check(hearAll(await heardSince(page), ['cord-snap', 'crackle']), 'sound: cord snap and spark crackle');
   const sparks = await page.$$eval('.spark', (e) => e.length);
   await wait(300);
   const ripped = await page.$$eval('.plug-post.ripped', (e) => e.length);
@@ -266,8 +282,124 @@ const play = async (page, touch, level) => {
     if (expect) {
       check(!!quad && said === "Who's paying for these ruts?", `${name}: deepest rut brings the landowner: "${said}"`);
       if (quad) check((await rect(page, '.landowner')).t >= (await rect(page, '.pad')).b, 'he rides along below the board');
+      check((await heardSince(page)).includes('quad'), 'sound: his quad');
     } else check(!quad, `${name}: no landowner (${lv.name})`);
   }
+  await browser.close();
+}
+
+// ---------------- Wildlife and traffic along the bottom ----------------
+{
+  const { browser, page, touch } = await open('no-preference', ROOT + '?idle=0.1&audiolog');
+  console.log('\nchromium iPhone 13, wildlife and hot shot (idle x0.1)');
+  /** Watches the stage every 40ms: what showed up, in which poses, where, and whether two gags ever overlapped in time. */
+  const watch = () =>
+    page.evaluate(() => {
+      const w = { classes: {}, overlap: [], outside: [], onButtons: [], hotshot: [], moose: { stare: 0 }, alongside: [] };
+      window.__wild = w;
+      let hsStart = null;
+      let stareStart = null;
+      const R = (e) => e.getBoundingClientRect();
+      window.__wildTimer = setInterval(() => {
+        const board = document.querySelector('.board');
+        const buttons = document.querySelector('.controls');
+        if (!board || !buttons) return;
+        const b = R(board);
+        const c = R(buttons);
+        const wild = [...document.querySelectorAll('.gag.wild')];
+        for (const el of wild) {
+          for (const k of el.classList) w.classes[k] = true;
+          const r = R(el);
+          const bodyOnly = el.classList.contains('bear') || el.classList.contains('moose') || el.classList.contains('hotshot') || el.classList.contains('rabbit') || el.classList.contains('bush');
+          if (bodyOnly && r.width > 0 && r.top < b.bottom - 1) w.outside.push(`${el.className} top ${Math.round(r.top)} < board ${Math.round(b.bottom)}`);
+          if (bodyOnly && r.bottom > c.top + 1) w.onButtons.push(`${el.className} bottom ${Math.round(r.bottom)} > buttons ${Math.round(c.top)}`);
+        }
+        const others = ['.magpie', '.spotter', '.landowner', '.worker-bent'].filter((s) => document.querySelector(s));
+        const kinds = new Set(wild.filter((e) => !e.classList.contains('bush') && !e.classList.contains('rabbit')).map((e) => (e.classList.contains('hotshot') ? 'hotshot' : e.classList.contains('bear') ? 'bear' : 'moose')));
+        if (kinds.size + others.length > 1 && wild.length) w.overlap.push([...kinds, ...others].join('+'));
+        const hs = document.querySelector('.gag.hotshot');
+        if (hs && hsStart === null) hsStart = performance.now();
+        if (!hs && hsStart !== null) {
+          w.hotshot.push(performance.now() - hsStart);
+          hsStart = null;
+        }
+        const st = document.querySelector('.moose.staring');
+        if (st && stareStart === null) stareStart = performance.now();
+        if (!st && stareStart !== null) {
+          w.moose.stare = performance.now() - stareStart;
+          stareStart = null;
+        }
+        // The hint line fades out (0.25s) once something's passing.
+        const note = document.querySelector('.note');
+        w.since = wild.length ? (w.since ?? performance.now()) : null;
+        if (w.since && performance.now() - w.since > 350 && note && Number(getComputedStyle(note).opacity) > 0.05) w.alongside.push('note visible');
+      }, 40);
+    });
+  const stopWatch = () => page.evaluate(() => (clearInterval(window.__wildTimer), window.__wild));
+  const heardNow = () => page.evaluate(() => { const a = window.__rhrAudio; const l = a ? [...a.log] : []; if (a) a.log.length = 0; return l; });
+
+  // Montney: the bear's whole routine, then the hot shot. A touch mid-routine doesn't cancel him.
+  await enter(page, 2, 0);
+  await watch();
+  await page.waitForSelector('.bear.squatting', { timeout: 15000 }).catch(() => {});
+  await touch.tapAt(195, 300);
+  await wait(150);
+  check(!!(await page.$('.bear')), 'Montney: a touch mid-routine does not cancel the bear');
+  await page.waitForSelector('.bear', { state: 'detached', timeout: 15000 }).catch(() => {});
+  await page.waitForSelector('.hotshot', { timeout: 15000 }).catch(() => {});
+  await page.waitForSelector('.hotshot', { state: 'detached', timeout: 3000 }).catch(() => {});
+  await wait(200);
+  let w = await stopWatch();
+  let log = await heardNow();
+  const poses = ['walking', 'squatting', 'straining', 'wiping', 'running', 'facing-left'].filter((k) => w.classes[k]);
+  check(poses.length === 6, `bear walks in, squats, strains, wipes, runs off left (${poses.join(', ')})`);
+  check(w.classes.bush && w.classes.rabbit && w.classes.shock && w.classes.flat && w.classes['facing-right'], 'with his back to a bush; the rabbit gets grabbed (shocked) and bolts right, ears flat');
+  check(['bear-grunt', 'bear-huff', 'rabbit-squeak'].every((n) => log.includes(n)), `sounds: bear grunt and huff, rabbit squeak (${[...new Set(log)].join(' ')})`);
+  check(w.hotshot.length === 1 && w.hotshot[0] < 1000, `hot shot screams past in under a second (${w.hotshot.map(Math.round).join(', ')}ms)`);
+  check(log.includes('hotshot'), 'sound: hot shot roar');
+  check(w.outside.length === 0, `never on the board (${w.outside[0] ?? 'clear'})`);
+  check(w.onButtons.length === 0, `never on the buttons (${w.onButtons[0] ?? 'clear'})`);
+  check(w.overlap.length === 0, `one gag at a time: magpie, bear, hot shot and spotter wait their turn (${w.overlap[0] ?? 'never together'})`);
+  check(w.alongside.length === 0, 'the hint line steps aside while they pass');
+  check(!w.classes.moose, 'no moose in Montney');
+
+  // Duvernay: the moose plods in, stares at you for 2 seconds, plods off.
+  await enter(page, 3, 0);
+  await watch();
+  await page.waitForSelector('.moose.staring', { timeout: 15000 }).catch(() => {});
+  const stare = await page.evaluate(() => {
+    const m = document.querySelector('.moose');
+    if (!m) return null;
+    const front = m.querySelector('.mh-front');
+    return { front: getComputedStyle(front).display !== 'none', side: getComputedStyle(m.querySelector('.mh-side')).display !== 'none' };
+  });
+  check(!!stare && stare.front && !stare.side, 'Duvernay: the moose stops and turns his head to stare at you');
+  await page.waitForSelector('.moose', { state: 'detached', timeout: 15000 }).catch(() => {});
+  w = await stopWatch();
+  log = await heardNow();
+  check(w.moose.stare >= 1800 && w.moose.stare <= 2400, `for about 2 seconds (${Math.round(w.moose.stare)}ms)`);
+  check(w.classes.walking, 'then plods off');
+  check(log.includes('moose-groan'), 'sound: low moose groan');
+  check(!w.classes.bear, 'no bear in Duvernay');
+  check(w.outside.length === 0 && w.onButtons.length === 0, `clear of the board and buttons (${w.outside[0] ?? w.onButtons[0] ?? 'clear'})`);
+
+  // Cardium: hot shot only, no animal.
+  await enter(page, 1, 3);
+  await watch();
+  await page.waitForSelector('.hotshot', { timeout: 15000 }).catch(() => {});
+  await wait(4000);
+  w = await stopWatch();
+  check(w.classes.hotshot && !w.classes.bear && !w.classes.moose, 'Cardium: hot shot, no bear or moose');
+  await browser.close();
+}
+
+// Reduced motion: none of them.
+{
+  const { browser, page } = await open('reduce', ROOT + '?idle=0.1');
+  await enter(page, 2, 0);
+  await wait(8000);
+  const any = await page.evaluate(() => document.querySelectorAll('.gag.wild').length);
+  check(any === 0, 'reduced motion: no bear, moose or hot shot');
   await browser.close();
 }
 

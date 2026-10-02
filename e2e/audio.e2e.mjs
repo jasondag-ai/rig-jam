@@ -11,7 +11,7 @@ import { dayKey, padLevelIndex, padNumber } from '../src/ui/daily.ts';
 import { hardHats } from '../src/ui/progress.ts';
 
 const LIVE = !!process.env.URL;
-const BASE = (process.env.URL ?? 'http://localhost:5173/') + '?audiolog';
+const BASE = (process.env.URL ?? 'http://localhost:5173/') + '?audiolog&wild=0'; // wildlife sounds are checked in the gags test
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;
 const check = (ok, text) => {
