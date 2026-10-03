@@ -35,7 +35,8 @@ something, give exact clicks and one command at a time.
 - Trucks have a cosmetic `kind` that must suit their length: 2-cell `pickup`/`picker`, 3-cell
   `vac`/`frac`/`water` (missing = pickup or vac). The engine and solver never read it.
 - Obstacles are fixed 1-cell lease equipment. Nothing moves through them. Each has a cosmetic
-  `kind` (pumpjack, tank, wellhead; missing = pumpjack). The engine and solver never read it.
+  `kind` (pumpjack, tank, wellhead, flare; missing = pumpjack). `flare` is drawn and blocks like
+  the rest but isn't placed in levels yet (`LEVEL_OBSTACLE_KINDS` is what the generator uses). The engine and solver never read it.
 - Convoys (Duvernay): a convoy is the two trucks of one color, numbered 1 and 2, each with its own
   gate of that color. Every gate of that color only accepts the lowest number still on the pad; for
   the other truck it's a wall. A truck parked against its gate while it was closed drives out with
@@ -190,13 +191,25 @@ something, give exact clicks and one command at a time.
 - Wildlife and traffic. Touches never cancel them; each waits while another gag is on stage (and the
   landowner or biffy wait for them; a sleeping spotter holds them up until he's woken). Reduced
   motion: skipped entirely.
-- Rarity (`gags.ts`, tested): each level visit plays `WILD_SLOTS` (2) scenes drawn without repeats
-  from the level's pool (`wildPool`: Cardium gopher, Duvernay moose, plus hot shot, geese, pumper
-  anywhere). Unfound Wildlife Log entries weigh `UNFOUND_WEIGHT` (3x) found ones (`weightedPick`).
-  The first comes after 15s idle or 10-30s in; the second 12-30s after that.
+- GAG PACING RULES (enforced in `GagLayer.tick`, pure logic in `gags.ts`, tested):
+  1. Only one gag plays at a time, anywhere on screen (`busy()` covers every gag and reaction).
+     Gags the player sets off (biffy, landowner) and reactions queue in `pending` and start when the
+     stage is free.
+  2. No gag starts while a truck is being dragged or moving (`host.moving()`: drag, snap, drive-out).
+  3. Perimeter gags (the scheduled scenes outside the fence: gopher, moose, bear, hot shot, geese,
+     pumper): at most one every 30 to 45 seconds (`PERIMETER_GAP_MS`, counted from the last one
+     ending; the first 30-45s into the level), random order, no repeats until every enabled one has
+     played (`perimeterBag`; unfound Wildlife Log entries are `UNFOUND_WEIGHT` 3x as likely to be
+     drawn earlier; a refill never starts with the one that just played). The biffy and landowner
+     also push the next one back 30-45s. The spotter (20s idle) and magpie (10s idle) are idle gags:
+     they obey rules 1 and 2, and the spotter doesn't return until a perimeter gag has played since.
+  4. In-lease reaction slots, reserved for upcoming art and EMPTY for now (`GagLayer.reactions`):
+     `great-move` (two trucks exit within `GREAT_MOVE_MS` 3.5s) and `stuck` (no move for `STUCK_MS`
+     20s). When due they only set `data-reaction` on the board. Register a player to fill one.
+  Demo mode and `?gag=` links keep their own faster schedules but obey rules 1 and 2.
 - The Bear is legendary: eligible only in Duvernay levels 8-10 (`bearEligible`), rolled once per
-  level visit at `BEAR_CHANCE` (1 in 3; restarts don't re-roll); when he comes he takes the first
-  slot. A bush stands in every eligible level whether he comes or not. Not in Montney any more.
+  level visit at `BEAR_CHANCE` (1 in 3; restarts don't re-roll); when he comes he joins that
+  visit's perimeter bag. A bush stands in every eligible level whether he comes or not. Not in Montney any more.
 - Demo mode (Settings → Unlock everything): `tickDemo` plays a gag about 5s in, then about every
   15s (`DEMO_FIRST_MS`, `DEMO_EVERY_MS`), unfound first (`demoNext`), from `demoPool` (magpie,
   spotter, biffy, Montney's landowner, the Bear in ANY level, plus the level's pool). The spotter

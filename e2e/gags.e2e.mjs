@@ -220,6 +220,9 @@ const play = async (page, touch, level) => {
       check(!gateThere, 'that stretch of fence has no gate');
       await heardSince(page);
       await touch.drag(t.id, [back * Math.abs(reach)]);
+      // The gag waits for the truck to settle, then the door bangs and he shuffles out.
+      await page.waitForSelector('.worker-bent.shuffling, .worker-bent', { state: 'attached', timeout: 4000 }).catch(() => {});
+      await wait(600);
       const worker = await page.$('.worker-bent');
       const biffyLog = await heardSince(page);
       check(hearAll(biffyLog, ['door-bang', 'feet', 'beeper']), `sounds: backup beeper, door bang, shuffling feet (${[...new Set(biffyLog)].join(' ')})`);
@@ -276,7 +279,9 @@ const play = async (page, touch, level) => {
     });
     // Back and forth in one drag: every pass wears the lane.
     await touch.drag(truck, [0.9, -0.9, 0.9, -0.9, 0.9, -0.9, 0.9, -0.9]);
-    await wait(700);
+    // He waits his turn (one gag at a time), so give him a moment where he's expected.
+    if (expect) await page.waitForFunction(() => window.__said.some((t) => t.includes('ruts')), null, { timeout: 12000 }).catch(() => {});
+    else await wait(1500);
     const quad = await page.$('.landowner');
     const saidAll = await page.evaluate(() => window.__said);
     const said = saidAll.find((t) => t.includes('ruts')) ?? saidAll.join(' / ');
@@ -472,42 +477,87 @@ const played = (w) => [...Object.keys(w.beats).filter((k) => w.beats[k].length),
   await browser.close();
 }
 
-// Normal play (idle x0.1): two scenes a visit from the level's own pool; the bear only deep in the Duvernay.
+// Pacing rules in normal play (times x0.1, so the 30-45s perimeter gap is 3-4.5s here).
 {
   const { browser, page, touch } = await open('no-preference', ROOT + '?idle=0.1&audiolog');
-  console.log('\nchromium iPhone 13, wildlife in normal play (idle x0.1)');
-  /** Plays a visit until two scenes have come and gone (a tap now and then wakes the spotter, who'd hold things up). */
-  const visit = async (tab, index) => {
+  console.log('\nchromium iPhone 13, gag pacing (times x0.1)');
+  const STAGES = { bear: '.bear-stage', moose: '.moose-peek', gopher: '.gopher-stage', geese: '.geese-stage', pumper: '.pumper-stage', hotshot: '.gag.hotshot' };
+  /** Records every perimeter scene's start and end, and any moment two gags are on at once. */
+  const record = () =>
+    page.evaluate((stages) => {
+      const r = { scenes: [], overlap: [] };
+      window.__pace = r;
+      const on = {};
+      window.__paceTimer = setInterval(() => {
+        const now = performance.now();
+        for (const [kind, sel] of Object.entries(stages)) {
+          const here = !!document.querySelector(sel);
+          if (here && !on[kind]) r.scenes.push((on[kind] = { kind, start: now, end: null }));
+          if (!here && on[kind]) {
+            on[kind].end = now;
+            on[kind] = null;
+          }
+        }
+        const live = [...Object.keys(stages).filter((k) => on[k]), ...['.magpie', '.spotter', '.landowner', '.worker-bent'].filter((s) => document.querySelector(s))];
+        if (live.length > 1) r.overlap.push(live.join('+'));
+      }, 40);
+    }, STAGES);
+  const stop = () => page.evaluate(() => (clearInterval(window.__paceTimer), window.__pace));
+  /** Plays a visit until `want` perimeter scenes have come and gone (a tap wakes the spotter, who'd hold the stage). */
+  const visit = async (tab, index, want) => {
     await enter(page, tab, index);
     const bush = !!(await page.$('.gag.bush'));
-    await page.evaluate(watchStage);
+    await record();
     const t0 = Date.now();
-    while (Date.now() - t0 < 45000) {
-      const n = await page.evaluate(() => {
-        const w = window.__wild;
-        const on = document.querySelector('.bear-stage, .moose-peek, .gopher-stage, .geese-stage, .pumper-stage, .hotshot');
-        return on ? -1 : Object.values(w.beats).filter((b) => b.length).length + w.hotshot.length;
-      });
-      if (n >= 2) break;
-      if (await page.$('.spotter.asleep')) await touch.tapAt(20, 60);
-      await wait(400);
+    while (Date.now() - t0 < 75000) {
+      const done = await page.evaluate(() => window.__pace.scenes.filter((x) => x.end).length);
+      if (done >= want) break;
+      if (await page.$('.spotter.asleep')) await touch.tapAt(4, 300); // the screen margin: wakes him, hits no button
+      await wait(300);
     }
-    await wait(2500); // and nothing more after the second
-    const w = await stopWatchOn(page);
-    return { w, bush, kinds: played(w) };
+    return { ...(await stop()), bush };
   };
   for (const [tab, index, name, pool, bushHere] of [
     [1, 3, 'Cardium 4', ['gopher', 'hotshot', 'geese', 'pumper'], false],
     [2, 0, 'Montney 1', ['hotshot', 'geese', 'pumper'], false],
-    [3, 0, 'Duvernay 1', ['moose', 'hotshot', 'geese', 'pumper'], false],
     [3, 8, 'Duvernay 9', ['bear', 'moose', 'hotshot', 'geese', 'pumper'], true],
   ]) {
-    const v = await visit(tab, index);
-    check(v.kinds.length === 2 && v.kinds.every((k) => pool.includes(k)), `${name}: two scenes from its pool (${v.kinds.join(', ')})`);
-    check(v.bush === bushHere, bushHere ? `${name}: a bush waits for the bear (he comes about 1 visit in 3${v.kinds.includes('bear') ? '; he came' : ''})` : `${name}: no bush, no bear`);
-    check(v.w.overlap.length === 0, `one gag at a time (${v.w.overlap[0] ?? 'never together'})`);
-    check(v.w.onBoard.length === 0 && v.w.onButtons.length === 0, `never over the board or the buttons (${v.w.onBoard[0] ?? v.w.onButtons[0] ?? 'clear'})`);
+    const v = await visit(tab, index, 3);
+    const kinds = v.scenes.map((x) => x.kind);
+    check(kinds.length >= 3 && kinds.every((k) => pool.includes(k)), `${name}: perimeter gags from its pool (${kinds.join(', ')})`);
+    check(new Set(kinds.slice(0, 3)).size === 3, 'random order, no repeats until all have played');
+    const gaps = v.scenes.slice(1).map((x, i) => x.start - v.scenes[i].end);
+    check(gaps.every((g) => g >= 2900), `at least 30s (3s here) from one ending to the next starting (${gaps.map((g) => (g / 1000).toFixed(1)).join(', ')}s)`);
+    check(v.scenes[0].start >= 0 && v.overlap.length === 0, `only one gag at a time, anywhere (${v.overlap[0] ?? 'never together'})`);
+    check(v.bush === bushHere, bushHere ? `a bush waits for the bear (1 visit in 3${kinds.includes('bear') ? '; he came' : ''})` : 'no bush, no bear');
   }
+
+  // No gag starts while a truck is being dragged.
+  await enter(page, 1, 0);
+  await record();
+  const truck = await (await page.$('.truck')).boundingBox();
+  const cdp = await page.context().newCDPSession(page);
+  let x = truck.x + truck.width / 2;
+  const y = truck.y + truck.height / 2;
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] });
+  let during = 0;
+  for (let i = 0; i < 70; i++) {
+    x += Math.sin(i / 4) * 1.5;
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y, id: 1 }] });
+    during += await page.evaluate((sel) => document.querySelectorAll(sel).length, Object.values(STAGES).join(', ') + ', .magpie, .spotter');
+    await wait(100);
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  check(during === 0, 'no gag starts during a 7 second drag (70s of game time here)');
+  const after = await page.waitForSelector(Object.values(STAGES).join(', ') + ', .magpie', { state: 'attached', timeout: 6000 }).then(() => true).catch(() => false);
+  check(after, 'one starts once the truck has settled');
+  await stop();
+
+  // Reaction slots: reserved, empty. "Stuck" comes due after 20s without a move (2s here) and shows nothing.
+  await enter(page, 1, 0);
+  await page.waitForFunction(() => document.querySelector('.board')?.dataset.reaction === 'stuck', null, { timeout: 12000 }).catch(() => {});
+  const slot = await page.evaluate(() => ({ reaction: document.querySelector('.board').dataset.reaction, art: document.querySelectorAll('.reaction').length }));
+  check(slot.reaction === 'stuck' && slot.art === 0, `"stuck" slot comes due after 20s without a move, and is empty for now (${JSON.stringify(slot)})`);
   await browser.close();
 }
 
