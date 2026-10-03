@@ -3241,3 +3241,6 @@ img.hat { width: 100%; height: auto; }
 .gag.uses-sprite.drawn > svg,
 .gag.uses-sprite.drawn > .pose { visibility: visible; }
 .gag.uses-sprite.drawn > .sprite-anim { visibility: hidden; }
+.pumper-stage .uses-sprite > svg { visibility: hidden; }
+.pumper-stage .uses-sprite.drawn > svg { visibility: visible; }
+.pumper-stage .uses-sprite.drawn > .sprite-anim { visibility: hidden; }

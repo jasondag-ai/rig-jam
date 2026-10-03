@@ -195,6 +195,18 @@ export async function playPumper(layer: HTMLElement, g: Strip, signal: AbortSign
   face(truck, ltr ? 1 : -1);
   man.style.opacity = '0';
   gsap.set(gauge, { x: gaugeX, opacity: 0 });
+  // The animated pumper and gauge post (Batch C). The drawn pumper still gets in and out of the
+  // (drawn) truck and writes on his clipboard until those are redone.
+  const pumper = new Sprite('pumper-art', (mh * 1.05) / 226);
+  pumper.el.style.transform = `translate(${mw / 2}px, ${mh}px)`;
+  man.append(pumper.el);
+  man.classList.add('uses-sprite', 'drawn');
+  const post = new Sprite('gauge-art', (gh * 1.1) / 226);
+  post.el.style.transform = `translate(${gw / 2}px, ${gh}px)`;
+  gauge.append(post.el);
+  gauge.classList.add('uses-sprite');
+  post.show('gauge_post_needle_wiggle', 0);
+  const drawnMan = (on: boolean) => man.classList.toggle('drawn', on);
   layer.append(stage);
   const truckRig = new Rig(truck);
   const manRig = new Rig(man);
@@ -240,9 +252,19 @@ export async function playPumper(layer: HTMLElement, g: Strip, signal: AbortSign
     await run(gsap.to(man, { opacity: 1, y: 0, duration: 0.2, ease: 'power2.out' }));
     // Over to the gauge.
     beat('walk');
+    drawnMan(false);
+    pumper.play('pumper_walk', { fps: 12, loop: -1 });
     await run(walk(standX, ltr ? 1 : -1));
     // Leans in, reads the gauge (the needle settles).
     beat('check');
+    // His own check-gauge art includes the post: it stands in for the separate one meanwhile.
+    pumper.el.classList.toggle('flip', !ltr);
+    gauge.style.visibility = 'hidden';
+    await run(pumper.play('pumper_check_gauge', { fps: 7 }));
+    gauge.style.visibility = '';
+    pumper.el.classList.remove('flip');
+    post.play('gauge_post_needle_wiggle', { fps: 12 });
+    drawnMan(true);
     const check = gsap.timeline();
     check.to(M('head'), { rot: 10, duration: 0.2, ease: 'power2.out' }, 0);
     check.fromTo(gaugeRig.get('needle'), { rot: -10 }, { rot: 38, duration: 0.8, ease: 'elastic.out(1, 0.3)' }, 0.1);
@@ -260,7 +282,10 @@ export async function playPumper(layer: HTMLElement, g: Strip, signal: AbortSign
     await hold(0.15);
     // Back to the truck, in, door shut, and off he goes.
     beat('back');
+    drawnMan(false);
+    pumper.play('pumper_walk', { fps: 12, loop: -1 });
     await run(walk(doorX, ltr ? -1 : 1));
+    drawnMan(true);
     await run(gsap.to(man, { opacity: 0, y: 3, duration: 0.18, ease: 'power2.in' }));
     sound.carDoor();
     await run(gsap.to(truckRig.get('door'), { sx: 1, duration: 0.14, ease: 'power2.in' }));
@@ -274,6 +299,8 @@ export async function playPumper(layer: HTMLElement, g: Strip, signal: AbortSign
   } finally {
     stop();
     [truckRig, manRig, gaugeRig].forEach((r) => r.destroy());
+    pumper.destroy();
+    post.destroy();
     stage.remove();
   }
 }
