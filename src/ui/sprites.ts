@@ -81,3 +81,25 @@ export function preloadObstacles(kinds: ObstacleKind[]): void {
     img.src = src;
   }
 }
+
+// ---------- Pipe-rail fence (public/sprites/fence, made by tools/fence-sprites.py) ----------
+
+const FENCE_PARTS = ['rail-h', 'rail-v', 'corner-tl', 'corner-tr', 'corner-br', 'corner-bl'];
+let fenceReady: Promise<boolean> | null = null;
+
+/** Gives a board its pipe-rail fence (`.pipe-on`) once every piece has loaded; else the drawn fence stays. */
+export function pipeFence(board: HTMLElement): void {
+  for (const part of FENCE_PARTS) board.style.setProperty(`--${part}`, `url("${new URL(`./sprites/fence/${part}.webp`, location.href).href}")`);
+  fenceReady ??= Promise.all(
+    FENCE_PARTS.map(
+      (part) =>
+        new Promise<boolean>((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve(true);
+          img.onerror = () => resolve(false);
+          img.src = `./sprites/fence/${part}.webp`;
+        }),
+    ),
+  ).then((ok) => ok.every(Boolean));
+  void fenceReady.then((ok) => board.classList.toggle('pipe-on', ok));
+}

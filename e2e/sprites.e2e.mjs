@@ -65,6 +65,27 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
       return { tex: scr.classList.contains('ground-tex'), theme: scr.dataset.theme, pad: getComputedStyle(document.querySelector('.pad')).backgroundImage, outside: getComputedStyle(scr).backgroundImage };
     });
     check(g.tex && g.pad.includes(`pad-${g.theme}.webp`) && g.outside.includes(`grass-${g.theme}.webp`), `${g.theme} ground: pad and grass textures`);
+    const f = await page.evaluate(() => {
+      const board = document.querySelector('.board');
+      const R = (s) => board.querySelector(s).getBoundingClientRect();
+      const mid = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+      const [top, bottom, left, right] = ['.pf-rail.top', '.pf-rail.bottom', '.pf-rail.left', '.pf-rail.right'].map((s) => R(s));
+      const c = Object.fromEntries(['tl', 'tr', 'br', 'bl'].map((k) => [k, mid(R(`.pf-corner.${k}`))]));
+      // Each rail's pipe line passes through both corner posts it runs between, and starts/ends at them.
+      const off = Math.max(
+        Math.abs(mid(top).y - c.tl.y), Math.abs(mid(top).y - c.tr.y), Math.abs(mid(bottom).y - c.bl.y), Math.abs(mid(bottom).y - c.br.y),
+        Math.abs(mid(left).x - c.tl.x), Math.abs(mid(left).x - c.bl.x), Math.abs(mid(right).x - c.tr.x), Math.abs(mid(right).x - c.br.x),
+        Math.abs(top.left - c.tl.x), Math.abs(top.right - c.tr.x), Math.abs(left.top - c.tl.y), Math.abs(left.bottom - c.bl.y),
+      );
+      const gatesOnTop = [...board.querySelectorAll('.gate')].every((g) => {
+        const r = g.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return !!hit?.closest('.gate');
+      });
+      return { on: board.classList.contains('pipe-on'), off, gatesOnTop };
+    });
+    check(f.on && f.off < 1.5, `pipe-rail fence; rails meet the corner posts (${f.off.toFixed(2)}px off)`);
+    check(f.gatesOnTop, 'gates sit on top of the rail');
   }
   await browser.close();
 }
@@ -119,6 +140,7 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
   const t = await trucks(page);
   check(t.length > 0 && t.every((x) => !x.on && x.svgShown && !x.imgShown), `every truck falls back to the drawing (${t.length})`);
   check(!(await page.$eval('.screen.game', (e) => e.classList.contains('ground-tex'))), 'the ground falls back to the flat colors and drawn detail');
+  check(!(await page.$eval('.board', (e) => e.classList.contains('pipe-on'))), 'the fence falls back to the drawn boards');
   await enter(page, 2, 9);
   const obs = await page.$$eval('.obstacle', (os) => os.map((o) => !o.classList.contains('sprite-on') && getComputedStyle(o.querySelector('svg')).display !== 'none' && !o.querySelector('img')));
   check(obs.length > 0 && obs.every(Boolean), `every obstacle falls back to the drawing (${obs.length})`);

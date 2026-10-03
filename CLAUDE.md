@@ -69,6 +69,12 @@ something, give exact clicks and one command at a time.
   `applyTheme` loads both tiles and adds `.ground-tex` once they're in (until then, or if they
   fail, the flat colors and `pad-decor.ts` detail show). The pad tile is 3 cells square; drawn pad
   decor is hidden over it. Tire tracks have `.ground-tex` overrides tuned for the photos.
+- Pipe-rail fence: `public/sprites/fence/` (rail-h, rail-v, corner-tl/tr/br/bl) from
+  `tools/fence-art/` by `python3 tools/fence-sprites.py` (rail cropped centred on its pipe;
+  fence_corner_v1 turned to each corner). `pipeFence` (sprites.ts) adds `.pipe-on` to the board once
+  all six load: rails run post centre to post centre on the fence band's centreline, corners on top,
+  pipe thickness `--p` matched (sources: 23px rail, 18px corner); the band shows the ground behind.
+  Gates sit on top. Drawn board fence is the fallback. `gate_open_v2.png` is saved, not used yet.
 - Puddles are flat, low-contrast stains (no outline, rim, glint or shadow) centred on grid corners,
   never on a cell, and drawn under the `.pad-grid` cell lines. If they ever read as objects, remove them.
 - `src/ui/scenery.ts` (border trees) and `src/ui/pad-decor.ts` (gravel/mud/snow detail) are seeded,

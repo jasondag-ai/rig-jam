@@ -1720,6 +1720,56 @@ input,
   .lease-banner { opacity: 1; }
 }
 
+/* ---------- Pipe-rail fence (sprites.ts pipeFence): replaces the board fence once loaded ---------- */
+
+/* The fence band shows the ground through it; the pipes sit on its centreline. Pipe thickness --p
+   is the same in rails and corners (their sources are 23px and 18px thick pipes). */
+.board.pipe-on .yard {
+  border-color: transparent;
+  background: transparent;
+}
+.board.pipe-on { filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.12)); }
+.pipe-fence {
+  --p: calc(var(--fence) * 0.32);
+  --rail: calc(var(--p) * 60 / 23);
+  --post: calc(var(--p) * 128 / 18);
+  position: absolute;
+  inset: -3px;
+  display: none;
+  pointer-events: none;
+}
+.board.pipe-on .pipe-fence { display: block; }
+.pf-rail,
+.pf-corner {
+  position: absolute;
+  background-repeat: no-repeat;
+}
+.pf-rail.h {
+  left: calc(var(--fence) / 2);
+  right: calc(var(--fence) / 2);
+  height: var(--rail);
+  background: var(--rail-h) left center / auto 100% repeat-x;
+}
+.pf-rail.top { top: calc(var(--fence) / 2 - var(--rail) / 2); }
+.pf-rail.bottom { bottom: calc(var(--fence) / 2 - var(--rail) / 2); }
+.pf-rail.v {
+  top: calc(var(--fence) / 2);
+  bottom: calc(var(--fence) / 2);
+  width: var(--rail);
+  background: var(--rail-v) center top / 100% auto repeat-y;
+}
+.pf-rail.left { left: calc(var(--fence) / 2 - var(--rail) / 2); }
+.pf-rail.right { right: calc(var(--fence) / 2 - var(--rail) / 2); }
+.pf-corner {
+  width: var(--post);
+  height: var(--post);
+  background-size: 100% 100%;
+}
+.pf-corner.tl { left: calc(var(--fence) / 2 - var(--post) / 2); top: calc(var(--fence) / 2 - var(--post) / 2); background-image: var(--corner-tl); }
+.pf-corner.tr { right: calc(var(--fence) / 2 - var(--post) / 2); top: calc(var(--fence) / 2 - var(--post) / 2); background-image: var(--corner-tr); }
+.pf-corner.br { right: calc(var(--fence) / 2 - var(--post) / 2); bottom: calc(var(--fence) / 2 - var(--post) / 2); background-image: var(--corner-br); }
+.pf-corner.bl { left: calc(var(--fence) / 2 - var(--post) / 2); bottom: calc(var(--fence) / 2 - var(--post) / 2); background-image: var(--corner-bl); }
+
 /* ---------- Ground textures (themes.ts groundTextures): photo tiles once loaded ---------- */
 
 /* Outside the fence: grass (or winter's snowy grass) below the horizon; the sky stays drawn. */

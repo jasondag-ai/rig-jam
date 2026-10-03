@@ -4,7 +4,7 @@ import { pickLine, type BumpHit } from './lines.ts';
 import { OBSTACLE_SVG } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
 import { Spray } from './spray.ts';
-import { obstacleFit, obstacleImgs, spriteImg, wireSprite } from './sprites.ts';
+import { obstacleFit, obstacleImgs, pipeFence, spriteImg, wireSprite } from './sprites.ts';
 import { TrackLayer } from './track-layer.ts';
 import type { Ground } from './themes.ts';
 import { SYMBOL } from './palette.ts';
@@ -66,6 +66,16 @@ export class BoardView {
     // The yard clips trucks driving out; bubbles sit on the board so they can overhang.
     this.yard = document.createElement('div');
     this.yard.className = 'yard';
+    // Pipe-rail fence (sprites.ts): rails post centre to post centre, a corner post at each corner.
+    // Behind the gates; the board keeps its drawn fence until the pieces have loaded.
+    this.yard.insertAdjacentHTML(
+      'afterbegin',
+      '<div class="pipe-fence" aria-hidden="true">' +
+        ['h top', 'h bottom', 'v left', 'v right'].map((c) => `<i class="pf-rail ${c}"></i>`).join('') +
+        ['tl', 'tr', 'br', 'bl'].map((c) => `<i class="pf-corner ${c}"></i>`).join('') +
+        '</div>',
+    );
+    pipeFence(this.el);
     this.pad = document.createElement('div');
     this.pad.className = 'pad';
     this.yard.append(this.pad);
