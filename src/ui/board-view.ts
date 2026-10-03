@@ -4,7 +4,7 @@ import { pickLine, type BumpHit } from './lines.ts';
 import { OBSTACLE_SVG } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
 import { Spray } from './spray.ts';
-import { spriteImg, wireSprite } from './sprites.ts';
+import { obstacleFit, obstacleImgs, spriteImg, wireSprite } from './sprites.ts';
 import { TrackLayer } from './track-layer.ts';
 import type { Ground } from './themes.ts';
 import { SYMBOL } from './palette.ts';
@@ -108,7 +108,13 @@ export class BoardView {
       ob.className = `obstacle ${kind}`;
       ob.dataset.row = String(o.row);
       ob.dataset.col = String(o.col);
-      ob.innerHTML = OBSTACLE_SVG[kind];
+      // Lower rows stand in front of the ones above.
+      ob.style.zIndex = String(1 + o.row);
+      const fit = obstacleFit(kind, o.row);
+      ob.style.setProperty('--ob-w', String(fit.w));
+      ob.style.setProperty('--ob-over', `${fit.over * 100}%`);
+      ob.innerHTML = `<div class="ground-shadow"></div>${obstacleImgs(kind)}${OBSTACLE_SVG[kind]}`;
+      wireSprite(ob);
       this.pad.append(ob);
     }
     this.layout();
@@ -171,6 +177,13 @@ export class BoardView {
       if (id === exitedId) this.driveOut(el);
       else el.remove();
     }
+    // Where a tall obstacle's top sticks up over a truck in the cell above, fade that part.
+    const taken = new Set<string>();
+    for (const t of state.trucks)
+      for (let i = 0; i < t.length; i++) taken.add(t.orient === 'h' ? `${t.row},${t.col + i}` : `${t.row + i},${t.col}`);
+    this.pad.querySelectorAll<HTMLElement>('.obstacle').forEach((ob) => {
+      ob.classList.toggle('under-truck', taken.has(`${Number(ob.dataset.row) - 1},${ob.dataset.col}`));
+    });
     for (const t of state.trucks) {
       let el = this.trucks.get(t.id);
       const fresh = !el;

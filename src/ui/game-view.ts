@@ -11,7 +11,7 @@ import { hardHats, loadProgress, recordDailyClear, recordWin, saveProgress, spen
 import { streakSignHtml } from './sign.ts';
 import { sound } from '../audio/engine.ts';
 import { toast } from './toast.ts';
-import { preloadSprites } from './sprites.ts';
+import { preloadObstacles, preloadSprites } from './sprites.ts';
 import { defaultKind } from './vehicles.ts';
 import { applyCamo, loadLog, record, saveLog, sightingToast } from './wildlife-log.ts';
 import { COMPANY_MAN } from './cast.ts';
@@ -78,6 +78,7 @@ export class GameView {
     this.daily = daily;
     this.handlers = handlers;
     this.state = newGame(level);
+    preloadObstacles(level.obstacles.map((o) => o.kind ?? 'pumpjack'));
     preloadSprites(level.trucks.map((t) => ({ kind: t.kind ?? defaultKind(t.length), color: t.color })));
     this.board = new BoardView(
       () => this.state,

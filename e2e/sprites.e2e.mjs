@@ -19,7 +19,7 @@ const open = async (type, block = false) => {
   // No service worker: on the live site it would answer from its cache and the block would never bite.
   const context = await browser.newContext({ ...devices['iPhone 13'], viewport: { width: 375, height: 667 }, serviceWorkers: 'block' });
   const page = await context.newPage();
-  if (block) await page.route('**/sprites/trucks/**', (r) => r.abort());
+  if (block) await page.route('**/sprites/**', (r) => r.abort());
   await page.goto(ROOT + '?wild=0', { waitUntil: 'networkidle' });
   await page.evaluate((p) => localStorage.setItem('rush-hour-rigs:v2', p), UNLOCKED);
   return { browser, page };
@@ -64,6 +64,48 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
   await browser.close();
 }
 
+// Obstacles: illustrated, standing on their cells, lower rows in front, never over a truck or gate.
+{
+  console.log('\nobstacles (Montney)');
+  const { browser, page } = await open(chromium);
+  for (const index of [5, 8, 9]) {
+    await enter(page, 2, index);
+    const o = await page.evaluate(() => {
+      const pad = document.querySelector('.pad').getBoundingClientRect();
+      const cell = pad.width / 6;
+      const trucks = [...document.querySelectorAll('.truck')].map((t) => t.getBoundingClientRect());
+      return [...document.querySelectorAll('.obstacle')].map((ob) => {
+        const row = Number(ob.dataset.row);
+        const col = Number(ob.dataset.col);
+        const base = ob.querySelector('.ob-base').getBoundingClientRect();
+        const top = ob.querySelector('.ob-top');
+        const cellTop = pad.top + row * cell;
+        // Is a truck in the cell above, and is the part sticking up faded over it?
+        const above = trucks.some((t) => t.left < pad.left + (col + 0.5) * cell && t.right > pad.left + (col + 0.5) * cell && t.top < cellTop - cell * 0.5 && t.bottom > cellTop - cell * 0.5);
+        return {
+          kind: ob.className.split(' ')[1],
+          row,
+          on: ob.classList.contains('sprite-on'),
+          z: Number(getComputedStyle(ob).zIndex),
+          footOk: base.bottom <= cellTop + cell + 1 && base.bottom >= cellTop + cell * 0.9,
+          sticksUp: cellTop - base.top,
+          topFade: Number(getComputedStyle(top).opacity),
+          above,
+          inPadTop: base.top >= pad.top - 1,
+          shadow: getComputedStyle(ob.querySelector('.ground-shadow')).display !== 'none',
+        };
+      });
+    });
+    const truckZ = await page.$eval('.truck', (t) => Number(getComputedStyle(t).zIndex));
+    check(o.length > 0 && o.every((x) => x.on && x.shadow), `Montney ${index + 1}: obstacles illustrated, with ground shadows (${o.map((x) => x.kind).join(', ')})`);
+    check(o.every((x) => x.footOk), 'each stands on its own cell');
+    check(o.every((x) => x.z === 1 + x.row) && truckZ < Math.min(...o.map((x) => x.z)), 'lower rows in front of rows above');
+    check(o.every((x) => x.row !== 0 || (x.inPadTop && x.sticksUp <= 1)), 'top row: nothing over the fence or a gate');
+    check(o.every((x) => !x.above || x.sticksUp <= 1 || x.topFade < 0.6), `the part sticking up fades over a truck (${o.filter((x) => x.above && x.sticksUp > 1).map((x) => `${x.kind} ${x.topFade}`).join(', ') || 'none above'})`);
+  }
+  await browser.close();
+}
+
 // Sprites blocked: the old drawings stand in.
 {
   console.log('\nsprites fail to load');
@@ -71,6 +113,9 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
   await enter(page, 1, 5);
   const t = await trucks(page);
   check(t.length > 0 && t.every((x) => !x.on && x.svgShown && !x.imgShown), `every truck falls back to the drawing (${t.length})`);
+  await enter(page, 2, 9);
+  const obs = await page.$$eval('.obstacle', (os) => os.map((o) => !o.classList.contains('sprite-on') && getComputedStyle(o.querySelector('svg')).display !== 'none' && !o.querySelector('img')));
+  check(obs.length > 0 && obs.every(Boolean), `every obstacle falls back to the drawing (${obs.length})`);
   await browser.close();
 }
 

@@ -229,6 +229,15 @@ something, give exact clicks and one command at a time.
   SVG stays as the fallback until it loads (`.sprite-on`) or if it fails. Roof snow on sprites is a
   soft drift placed per kind (`--roof-at`, `--roof-len`). Soft `.ground-shadow` under every truck.
   Sprites preload per level and all in idle time. `npm run test:e2e:sprites`.
+- Obstacle sprites: `public/sprites/obstacles/<kind>(@2x).webp` from `tools/obstacle-art/` (3/4
+  high-angle on a concrete slab, intentionally unlike the top-down trucks), made by `python3
+  tools/obstacle-sprites.py` (trim, outline, writes `src/ui/obstacle-sprites.json` aspect ratios).
+  The slab stands on its cell (bottom edge on the cell's bottom); tank and wellhead stick up above
+  it, except in the top row where they're shrunk to fit (`obstacleFit`) so nothing covers the fence
+  or a gate. Obstacles stack by row (`z-index: 1 + row`; trucks 0, dragging 10). The part sticking
+  up is a second clipped layer (`.ob-top`) that fades to 45% when a truck is in the cell above
+  (`.under-truck`, set in `sync`). Same ground shadow as trucks. SVG fallback. The pumpjack stays
+  still: the source art can't be cleanly split into beam and frame.
 - `src/ui/obstacles.ts` – SVG art for each obstacle kind (colors and nod/crank motion in style.css).
 - `src/ui/vehicles.ts` – top-down SVG art per truck kind, drawn cab-right and rotated by CSS to face
   the gate. Body panels use the truck color; the gate symbol sits on an upright color badge.

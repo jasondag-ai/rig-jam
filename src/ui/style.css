@@ -824,6 +824,43 @@ input,
 
 /* ---------- Obstacles: chunky lease equipment (art in obstacles.ts) ---------- */
 
+/* Trucks ride above obstacles' z order (1 + row) unless an obstacle's top sticks up in front. */
+.truck { z-index: 0; }
+.truck.dragging { z-index: 10; }
+.truck.exiting { z-index: 9; }
+
+/* Illustrated obstacle sprites (sprites.ts): 3/4 view, the slab on the cell, taller ones sticking up.
+   Two layers of the same image: the base (on the cell) and the top that sticks up above it, which
+   fades when a truck is in the cell above so it never hides the truck's color or badge. */
+.obstacle .ob-base,
+.obstacle .ob-top {
+  position: absolute;
+  left: 50%;
+  bottom: 1%;
+  display: none;
+  width: calc(var(--ob-w, 0.98) * 100%);
+  height: auto;
+  transform: translateX(-50%);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.obstacle.sprite-on .ob-base,
+.obstacle.sprite-on .ob-top { display: block; }
+.obstacle.sprite-on svg { display: none; }
+.obstacle .ob-base { clip-path: inset(var(--ob-over, 0%) 0 0 0); }
+.obstacle .ob-top { clip-path: inset(0 0 calc(100% - var(--ob-over, 0%)) 0); transition: opacity 0.2s; }
+.obstacle.under-truck .ob-top { opacity: 0.45; }
+.obstacle .ground-shadow {
+  position: absolute;
+  inset: 34% 0 -6% 4%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(30, 20, 10, 0.38), rgba(30, 20, 10, 0.18) 60%, transparent);
+  pointer-events: none;
+  display: none;
+}
+.obstacle.sprite-on .ground-shadow { display: block; }
+
 .obstacle {
   position: absolute;
   left: 0;

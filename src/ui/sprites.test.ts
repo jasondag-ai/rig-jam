@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, statSync } from 'node:fs';
 import { THEMES } from './themes.ts';
 import manifest from './truck-sprites.json' with { type: 'json' };
+import { OB_FILL, obstacleAspect, obstacleFit } from './sprites.ts';
 
 // Gate fills, kept in sync with :root in style.css (and tools/truck-sprites.py).
 const GATES: Record<string, string> = { red: '#ff4747', blue: '#2f8bff', yellow: '#ffd21f', green: '#22c55e', orange: '#ff8a00', purple: '#a55cff' };
@@ -55,5 +56,27 @@ describe('truck sprites', () => {
 
   it('enough of each truck is painted to see the color', () => {
     for (const kind of KINDS) expect(paint(kind, 'red').share, kind).toBeGreaterThan(0.08);
+  });
+});
+
+describe('obstacle sprites', () => {
+  const KINDS = ['pumpjack', 'tank', 'wellhead'] as const;
+  it('each kind at 1x and 2x, as WebP', () => {
+    for (const kind of KINDS)
+      for (const suffix of ['', '@2x']) expect(existsSync(`public/sprites/obstacles/${kind}${suffix}.webp`), kind).toBe(true);
+  });
+
+  it('tall ones stick up above their cell; the pumpjack sits inside it', () => {
+    expect(obstacleFit('pumpjack', 3).over).toBe(0);
+    expect(obstacleFit('tank', 3).over).toBeGreaterThan(0.1);
+    expect(obstacleFit('wellhead', 3).over).toBeGreaterThan(0.05);
+  });
+
+  it('in the top row nothing sticks up over the fence or a gate', () => {
+    for (const kind of KINDS) {
+      const f = obstacleFit(kind, 0);
+      expect(f.over, kind).toBeCloseTo(0, 6);
+      expect(f.w * obstacleAspect(kind), kind).toBeLessThanOrEqual(OB_FILL + 1e-9);
+    }
   });
 });
