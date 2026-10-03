@@ -82,8 +82,8 @@ export const THEMES: Record<ThemeId, Theme> = {
     vars: {
       '--sky-top': '#78c2f0',
       '--sky-bottom': '#e2f3f8',
-      '--ground': '#709926',
-      '--ground-dark': '#477019',
+      '--ground': '#5f8a1c',
+      '--ground-dark': '#3a6612',
       '--fence-color': '#6e4423',
       '--fence-post': '#4a2b12',
       '--fence-cap': NONE,

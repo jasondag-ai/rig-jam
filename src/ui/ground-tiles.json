@@ -20,9 +20,9 @@
     "light": "#83a734"
   },
   "grass-spring": {
-    "mean": "#709926",
-    "dark": "#477019",
-    "light": "#9ec538"
+    "mean": "#5f8a1c",
+    "dark": "#3a6612",
+    "light": "#89ae30"
   },
   "grass-winter": {
     "mean": "#b9aea6",

@@ -37,11 +37,9 @@ def soften_puddles(im: Image.Image) -> Image.Image:
 
 
 def spring_grass(summer: Image.Image) -> Image.Image:
-    """Stand-in: summer grass, drier and paler, toward a spring yellow-green."""
-    im = ImageEnhance.Color(summer).enhance(0.7)
-    im = ImageEnhance.Brightness(im).enhance(1.18)
-    tint = Image.new('RGB', im.size, (196, 206, 120))
-    return ImageChops.multiply(im, tint).point(lambda v: min(255, int(v * 1.32)))
+    """Stand-in: summer grass tinted slightly toward early spring (a little paler and yellower)."""
+    warm = ImageChops.multiply(ImageEnhance.Brightness(summer).enhance(1.25), Image.new('RGB', summer.size, (236, 232, 168)))
+    return Image.blend(summer, warm, 0.4)
 
 
 def tones(im: Image.Image) -> dict:
