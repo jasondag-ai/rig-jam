@@ -3,6 +3,25 @@
 Mobile-first web puzzle game (hackathon, due Nov 1). Owner is a beginner: when they need to do
 something, give exact clicks and one command at a time.
 
+## Art inbox (ART_BIBLE.md is the authority for all art)
+- `ART_BIBLE.md` (project root) sets the style, camera, accuracy spec, never-draw list and batch
+  list for every image. New art arrives in `art-inbox/`.
+- When the owner says "process art inbox": FIRST copy every file from the iCloud folder
+  `~/Library/Mobile Documents/com~apple~CloudDocs/RHR Art Inbox/` (top level only, not `done/`)
+  into `art-inbox/` (if the folder is missing or empty, say so). Then check EVERY image in
+  `art-inbox/` against ART_BIBLE.md
+  before using any of it: style (Pixar-like 3D matching the cover), technical rules (transparent PNG
+  except tiles, no shadow/glow/halo, no text or logos, exact file name, size), camera (top-down vs
+  3/4 for that item), the accuracy spec for that item, and the never-draw list. Look at each image;
+  don't trust file names.
+- Accepted images go through the matching `tools/*.py` pipeline into `public/sprites/` (keep the
+  source in `tools/<kind>-art/`). Rejected ones are not used: write `art-inbox/REJECTS.md` with one
+  ready-to-paste Manus re-prompt per rejected item that names the exact file, the exact problem
+  seen, and the ART_BIBLE.md section/spec it broke, and restates the correct spec and file name.
+- After processing, move the files that were USED from that iCloud folder into its `done/`
+  subfolder (create it if needed). Rejected files stay where they are so they're easy to find.
+- Tell the owner what was accepted, what was rejected, and that REJECTS.md is ready to paste.
+
 ## Game rules (source of truth)
 - 6x6 top-down oilfield lease pad, surrounded by a fence.
 - Trucks are 2 or 3 cells long and slide only along their length (horizontal or vertical).
@@ -75,6 +94,10 @@ something, give exact clicks and one command at a time.
   all six load: rails run post centre to post centre on the fence band's centreline, corners on top,
   pipe thickness `--p` matched (sources: 23px rail, 18px corner); the band shows the ground behind.
   Gates sit on top. Drawn board fence is the fallback. `gate_open_v2.png` is saved, not used yet.
+- Lighting pass (end of style.css): warm top-left light graded into the pad and outside-ground
+  backgrounds, a slight sepia on the trees, soft down-right drop shadows on the fence, gates, trees
+  and HUD, and a warm vignette (`.vignette`, z 0: over the scenery, under the board, HUD and
+  buttons). Nothing that changes color may sit on a truck or gate (tested in sprites e2e).
 - Puddles are flat, low-contrast stains (no outline, rim, glint or shadow) centred on grid corners,
   never on a cell, and drawn under the `.pad-grid` cell lines. If they ever read as objects, remove them.
 - `src/ui/scenery.ts` (border trees) and `src/ui/pad-decor.ts` (gravel/mud/snow detail) are seeded,
