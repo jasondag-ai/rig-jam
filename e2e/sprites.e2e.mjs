@@ -86,6 +86,21 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
     });
     check(f.on && f.off < 1.5, `pipe-rail fence; rails meet the corner posts (${f.off.toFixed(2)}px off)`);
     check(f.gatesOnTop, 'gates sit on top of the rail');
+    const gates = await page.evaluate(() =>
+      [...document.querySelectorAll('.gate')].map((g) => {
+        const vis = (sel) => { const e = g.querySelector(sel); return !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0; };
+        const rail = document.querySelector(`.pf-rail.${g.dataset.side}`);
+        return {
+          parts: vis('.g-leaf') && vis('.g-hinge') && vis('.g-latch') && vis('.g-badge'),
+          tab: getComputedStyle(g.querySelector('.sym')).display !== 'none',
+          leafColor: g.querySelector('.g-leaf img').src.includes(`gate-leaf-${[...g.classList].find((c) => c.startsWith('c-')).slice(2)}`),
+          railGap: /transparent|rgba\(0, 0, 0, 0\)/.test(getComputedStyle(rail).maskImage || getComputedStyle(rail).webkitMaskImage),
+          wait: g.classList.contains('convoy-gate') ? vis('.wait') : true,
+        };
+      }),
+    );
+    check(gates.length > 0 && gates.every((x) => x.parts && !x.tab && x.leafColor), `pipe gates: hinge post, ${'leaf in its color'}, latch post and badge (${gates.length})`);
+    check(gates.every((x) => x.railGap && x.wait), 'the rail stops at each gate; convoy chips showing');
     // Lighting pass: only the world behind is graded. Gates and trucks keep their exact colors.
     const light = await page.evaluate(() => {
       const colorFilter = (el) => /sepia|saturate|hue|brightness|contrast|grayscale|invert/.test(getComputedStyle(el).filter);
@@ -146,6 +161,53 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
   await browser.close();
 }
 
+// Gates swing open on their hinge while their truck drives out, then shut (not with reduced motion).
+for (const reducedMotion of ['no-preference', 'reduce']) {
+  console.log(`\ngate swing (${reducedMotion})`);
+  const browser = await chromium.launch();
+  const context = await browser.newContext({ ...devices['iPhone 13'], reducedMotion });
+  const page = await context.newPage();
+  const cdp = await context.newCDPSession(page);
+  await page.goto(ROOT + '?wild=0', { waitUntil: 'networkidle' });
+  await page.evaluate((p) => localStorage.setItem('rush-hour-rigs:v2', p), UNLOCKED);
+  await enter(page, 1, 0);
+  const lv = REGIONS[0].levels[0];
+  const moves = (await import('../src/engine/index.ts')).solve(lv);
+  const m = moves[0];
+  await page.evaluate(() => {
+    window.__swing = [];
+    const f = () => {
+      for (const g of document.querySelectorAll('.gate.open')) window.__swing.push(new DOMMatrix(getComputedStyle(g.querySelector('.g-leaf')).transform).b);
+      if (window.__swing.length < 600) requestAnimationFrame(f);
+    };
+    requestAnimationFrame(f);
+  });
+  const el = await page.$(`.truck[data-id="${m.id}"]`);
+  const bb = await el.boundingBox();
+  const cell = await page.$eval('.board', (e) => parseFloat(e.style.getPropertyValue('--cell')));
+  let x = bb.x + bb.width / 2;
+  let y = bb.y + bb.height / 2;
+  const h = bb.width > bb.height;
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] });
+  for (let k = 0; k < 8; k++) {
+    if (h) x += (m.delta * cell) / 8;
+    else y += (m.delta * cell) / 8;
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y, id: 1 }] });
+    await wait(16);
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await wait(1500);
+  const swing = await page.evaluate(() => window.__swing);
+  const opened = swing.some((b) => Math.abs(b) > 0.95);
+  const shut = await page.$$eval('.gate', (gs) => gs.every((g) => !g.classList.contains('open') && new DOMMatrix(getComputedStyle(g.querySelector('.g-leaf')).transform).b === 0));
+  if (reducedMotion === 'reduce') check(!opened && shut, 'reduced motion: no swing');
+  else {
+    check(opened, `the gate swings open about 90 degrees as the truck drives out (${swing.length} frames open)`);
+    check(shut, 'and swings shut after');
+  }
+  await browser.close();
+}
+
 // Sprites blocked: the old drawings stand in.
 {
   console.log('\nsprites fail to load');
@@ -155,6 +217,7 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
   check(t.length > 0 && t.every((x) => !x.on && x.svgShown && !x.imgShown), `every truck falls back to the drawing (${t.length})`);
   check(!(await page.$eval('.screen.game', (e) => e.classList.contains('ground-tex'))), 'the ground falls back to the flat colors and drawn detail');
   check(!(await page.$eval('.board', (e) => e.classList.contains('pipe-on'))), 'the fence falls back to the drawn boards');
+  check(await page.$$eval('.gate', (gs) => gs.every((g) => getComputedStyle(g.querySelector('.sym')).display !== 'none' && getComputedStyle(g.querySelector('.gw')).display === 'none')), 'the gates fall back to the colored tabs');
   await enter(page, 2, 9);
   const obs = await page.$$eval('.obstacle', (os) => os.map((o) => !o.classList.contains('sprite-on') && getComputedStyle(o.querySelector('svg')).display !== 'none' && !o.querySelector('img')));
   check(obs.length > 0 && obs.every(Boolean), `every obstacle falls back to the drawing (${obs.length})`);

@@ -104,13 +104,21 @@ export class BoardView {
       g.className = `gate c-${gate.color}`;
       g.dataset.side = gate.side;
       g.dataset.index = String(gate.index);
-      g.innerHTML = `<span class="sym">${SYMBOL[gate.color]}</span><span class="boom"></span>`;
+      // The drawn tab (sym + boom) is the fallback; the pipe gate (.gw) shows once its pieces load.
+      g.innerHTML =
+        `<span class="sym">${SYMBOL[gate.color]}</span><span class="boom"></span>` +
+        `<span class="gw" aria-hidden="true">` +
+        `<span class="g-leaf"><img alt="" draggable="false" src="./sprites/fence/gate-leaf-${gate.color}.webp" />` +
+        `<span class="g-badge">${SYMBOL[gate.color]}</span></span>` +
+        `<img class="g-hinge" alt="" draggable="false" src="./sprites/fence/gate-hinge.webp" />` +
+        `<img class="g-latch" alt="" draggable="false" src="./sprites/fence/gate-latch.webp" /></span>`;
       // Convoy gates show the number they're waiting for.
       if (level.trucks.some((t) => t.color === gate.color && t.convoy)) {
         g.classList.add('convoy-gate');
         g.insertAdjacentHTML('beforeend', '<span class="wait" aria-label="waiting for convoy truck"></span>');
       }
-      this.yard.append(g);
+      // On the board, not in the yard: the yard clips trucks driving out, and the gate swings out past it.
+      this.el.append(g);
     }
     for (const o of level.obstacles) {
       const kind = o.kind ?? 'pumpjack';
@@ -159,6 +167,7 @@ export class BoardView {
         height: `${vertical ? cell : fence}px`,
       });
     });
+    this.cutRails();
     this.el.querySelectorAll<HTMLElement>('.obstacle').forEach((ob) => {
       Object.assign(ob.style, {
         width: `${cell}px`,
@@ -168,6 +177,37 @@ export class BoardView {
     });
     const state = this.level ? this.getState() : null;
     if (state) this.sync(state, false);
+  }
+
+  /**
+   * Cuts a gap in the pipe rail behind each gate (a mask on each rail), so the rail stops at the gate
+   * posts and an open gate is a real opening.
+   */
+  private cutRails(): void {
+    const { cell, fence } = this;
+    const total = cell * SIZE + fence * 2;
+    const rails = { top: 'h', bottom: 'h', left: 'v', right: 'v' } as const;
+    for (const side of Object.keys(rails) as Side[]) {
+      const rail = this.el.querySelector<HTMLElement>(`.pf-rail.${side}`);
+      if (!rail) continue;
+      // Rails run from post centre to post centre: fence/2 in from the board's outer edge.
+      const len = total - fence;
+      const gaps = (this.level?.gates ?? [])
+        .filter((g) => g.side === side)
+        .map((g) => fence + g.index * cell - fence / 2)
+        .sort((a, b) => a - b);
+      const stops: string[] = [];
+      let at = 0;
+      for (const a of gaps) {
+        stops.push(`#000 ${at}px ${a}px`, `transparent ${a}px ${a + cell}px`);
+        at = a + cell;
+      }
+      stops.push(`#000 ${at}px ${len}px`);
+      const dir = rails[side] === 'h' ? 'to right' : 'to bottom';
+      const mask = gaps.length ? `linear-gradient(${dir}, ${stops.join(', ')})` : '';
+      rail.style.maskImage = mask;
+      rail.style.setProperty('-webkit-mask-image', mask);
+    }
   }
 
   /** Brings truck elements in line with the game state. */

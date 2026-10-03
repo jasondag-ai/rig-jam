@@ -542,6 +542,8 @@ input,
     inset 0 0 0 4px var(--cream);
 }
 
+/* Gates sit on the board over the yard (whose 3px border they used to sit inside). */
+.gate { margin: 3px 0 0 3px; z-index: 2; }
 .gate[data-side='top'] { border-radius: 8px 8px 0 0; }
 .gate[data-side='bottom'] { border-radius: 0 0 8px 8px; }
 .gate[data-side='left'] { border-radius: 8px 0 0 8px; }
@@ -2913,4 +2915,101 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
   z-index: 0;
   pointer-events: none;
   background: radial-gradient(ellipse 75% 70% at 50% 48%, transparent 62%, rgba(45, 22, 4, 0.34) 100%);
+}
+
+/* ---------- Pipe swing gates (with .pipe-on): hinge post, tinted leaf with the symbol badge, latch
+   post. The leaf swings 90 degrees outward on its hinge while its truck drives out (.open). ---------- */
+
+.gate .gw { display: none; }
+.board.pipe-on .gate {
+  background: none;
+  box-shadow: none;
+}
+.board.pipe-on .gate > .sym,
+.board.pipe-on .gate > .boom { display: none; }
+.board.pipe-on .gate .gw {
+  /* Drawn lying along the top fence (hinge left, outside up), turned to fit each side. */
+  --turn: 0deg;
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--cell);
+  height: var(--fence);
+  transform: translate(-50%, -50%) rotate(var(--turn));
+  pointer-events: none;
+}
+.board.pipe-on .gate[data-side='right'] .gw { --turn: 90deg; }
+.board.pipe-on .gate[data-side='bottom'] .gw { --turn: 180deg; }
+.board.pipe-on .gate[data-side='left'] .gw { --turn: -90deg; }
+
+.gw img { display: block; user-select: none; -webkit-user-drag: none; }
+.gw .g-leaf {
+  position: absolute;
+  left: calc(var(--cell) * 0.05);
+  width: calc(var(--cell) * 0.9);
+  top: calc(var(--fence) * 0.1);
+  height: calc(var(--fence) * 0.8);
+  transform-origin: 0 50%;
+  transition: transform 260ms cubic-bezier(0.15, 0.9, 0.3, 1);
+}
+.gw .g-leaf img { position: relative; width: 100%; height: 100%; }
+/* A mesh panel in the gate's color inside the frame, so the color reads at a glance. */
+.gw .g-leaf::before {
+  content: '';
+  position: absolute;
+  inset: 16% 3% 16% 3%;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--c) 70%, transparent);
+}
+.gate.open .gw .g-leaf { transform: rotate(-90deg); }
+/* Side gates have only a thin screen margin outside them: they swing in, where you can see it. */
+.gate[data-side='left'].open .gw .g-leaf,
+.gate[data-side='right'].open .gw .g-leaf { transform: rotate(90deg); }
+.gw .g-hinge,
+.gw .g-latch {
+  position: absolute;
+  top: 50%;
+  height: calc(var(--fence) * 1.2);
+  width: auto;
+  transform: translateY(-50%);
+}
+.gw .g-hinge { left: calc(var(--fence) * -0.3); }
+.gw .g-latch { right: calc(var(--fence) * -0.28); }
+
+/* The symbol badge rides on the leaf, upright when the gate is shut. */
+.gw .g-badge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: calc(var(--fence) * 1.1);
+  height: calc(var(--fence) * 1.1);
+  border: 2.5px solid var(--outline);
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45);
+  font-size: calc(var(--fence) * 0.62);
+  line-height: 1;
+  color: #fff;
+  text-shadow: -1.5px -1.5px 0 var(--outline), 1.5px -1.5px 0 var(--outline), -1.5px 1.5px 0 var(--outline), 1.5px 1.5px 0 var(--outline);
+  transform: translate(-50%, -50%) rotate(calc(var(--turn) * -1));
+}
+
+/* Convoy gates: badge to one side, the chip with the waiting number to the other (upright). */
+.board.pipe-on .gate.convoy-gate .gw .g-badge { left: 32%; }
+.board.pipe-on .gate.convoy-gate .wait {
+  position: absolute;
+  z-index: 1;
+  width: calc(var(--fence) * 0.78);
+  height: calc(var(--fence) * 0.78);
+}
+.board.pipe-on .gate.convoy-gate[data-side='top'] .wait { left: 68%; top: 50%; transform: translate(-50%, -50%); }
+.board.pipe-on .gate.convoy-gate[data-side='bottom'] .wait { left: 32%; top: 50%; transform: translate(-50%, -50%); }
+.board.pipe-on .gate.convoy-gate[data-side='left'] .wait { left: 50%; top: 32%; transform: translate(-50%, -50%); }
+.board.pipe-on .gate.convoy-gate[data-side='right'] .wait { left: 50%; top: 68%; transform: translate(-50%, -50%); }
+
+@media (prefers-reduced-motion: reduce) {
+  .gw .g-leaf { transition: none; }
 }

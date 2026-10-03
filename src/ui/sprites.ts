@@ -85,13 +85,15 @@ export function preloadObstacles(kinds: ObstacleKind[]): void {
 // ---------- Pipe-rail fence (public/sprites/fence, made by tools/fence-sprites.py) ----------
 
 const FENCE_PARTS = ['rail-h', 'rail-v', 'corner-tl', 'corner-tr', 'corner-br', 'corner-bl'];
+/** Loaded too before the fence switches over (the gates are part of it). */
+const GATE_PARTS = ['gate-hinge', 'gate-latch', ...['red', 'blue', 'yellow', 'green', 'orange', 'purple'].map((c) => `gate-leaf-${c}`)];
 let fenceReady: Promise<boolean> | null = null;
 
 /** Gives a board its pipe-rail fence (`.pipe-on`) once every piece has loaded; else the drawn fence stays. */
 export function pipeFence(board: HTMLElement): void {
   for (const part of FENCE_PARTS) board.style.setProperty(`--${part}`, `url("${new URL(`./sprites/fence/${part}.webp`, location.href).href}")`);
   fenceReady ??= Promise.all(
-    FENCE_PARTS.map(
+    [...FENCE_PARTS, ...GATE_PARTS].map(
       (part) =>
         new Promise<boolean>((resolve) => {
           const img = new Image();
