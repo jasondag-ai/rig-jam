@@ -105,6 +105,7 @@ export class GameView {
         say: (anchor, text) => board.say(anchor, text),
         addGround: (el) => board.addGround(el),
         state: () => this.state,
+        moving: () => board.moving,
       },
       {
         ...gagOptions,
@@ -225,6 +226,7 @@ export class GameView {
     }
     this.state = result.state;
     this.gags.moved(id, delta);
+    if (result.exited) this.gags.exited();
     this.resetHint();
     this.showLevelHint();
     this.board.sync(this.state, true, result.exited ? id : undefined);

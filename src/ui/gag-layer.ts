@@ -17,7 +17,10 @@ import {
   biffySpot,
   cordFor,
   dueGag,
-  dueWildlife,
+  isGreatMove,
+  isStuck,
+  nextPerimeter,
+  perimeterDone,
   planWildlife,
   freshIdle,
   magpieTarget,
@@ -32,6 +35,7 @@ import {
   wildPool,
   type BiffySpot,
   type DemoGag,
+  type Reaction,
   type WildGag,
   type Cord,
   type IdleState,
@@ -59,6 +63,8 @@ export interface GagHost {
   say(anchor: Element, text: string): HTMLElement;
   addGround(el: Element): void;
   state(): GameState;
+  /** A truck is being dragged, or is still snapping into place or driving out. */
+  moving(): boolean;
 }
 
 export interface GagOptions {
@@ -108,7 +114,7 @@ export class GagLayer {
   private timer = 0;
   private stopped = false;
   private bands: Bands = { above: 60, below: 60, ground: 100 };
-  private wild: WildState = { queue: [], next: 0 };
+  private wild: WildState = { bag: [], nextAt: Infinity, last: null };
   /** The bear's roll for this visit (once, however often the level restarts), and whether he's been.
    */
   private bearVisit: boolean;
@@ -123,8 +129,20 @@ export class GagLayer {
   private landownerPlaying = false;
   private biffyPlaying = false;
   /** Waiting for the wildlife to finish before they go. */
-  private landownerPending = false;
-  private biffyPending = false;
+  /** Gags set off by the player (or a reaction) that are waiting for the stage to be free. */
+  private pending: ('landowner' | 'biffy' | Reaction)[] = [];
+  private reactionPlaying = false;
+  private lastMoveAt = performance.now();
+  private lastExitAt: number | null = null;
+  private stuckFired = false;
+  /** The spotter has had his turn: he doesn't come back until a perimeter gag has played since. */
+  private spotterTurnTaken = false;
+  /**
+   * In-lease reaction slots, reserved for upcoming art: "great-move" (two trucks exit back to back)
+   * and "stuck" (no move for 20 seconds). Empty for now: when one comes due it's only noted on the
+   * board (`data-reaction`). Register a player here to make it show.
+   */
+  reactions: Partial<Record<Reaction, (signal: AbortSignal) => Promise<void>>> = {};
   /** The magpie (or the spotter walking on) right now; a touch cancels it. */
   private idleGag: AbortController | null = null;
   private spotter: { el: HTMLElement; state: SpotterState; x: number; y: number; w: number; h: number } | null = null;
@@ -155,12 +173,16 @@ export class GagLayer {
     this.landownerDone = false;
     this.wildGag?.abort();
     this.wildGag = null;
-    this.wild = planWildlife(wildPool(this.opts.regionId), this.opts.found(), this.bearVisit && !this.bearDone);
+    this.wild = planWildlife(this.perimeterPool(), this.opts.found());
     this.demoAt = performance.now() + DEMO_FIRST_MS * this.opts.idleScale;
     this.demoTried = [];
     this.levelStart = performance.now();
-    this.landownerPending = false;
-    this.biffyPending = false;
+    this.pending = [];
+    this.lastMoveAt = performance.now();
+    this.lastExitAt = null;
+    this.stuckFired = false;
+    this.spotterTurnTaken = false;
+    delete this.host.el.dataset.reaction;
     this.lastActivity = performance.now();
     this.stopped = false;
     this.host.el.querySelectorAll('.gag').forEach((n) => n.remove());
@@ -206,20 +228,30 @@ export class GagLayer {
     this.touch();
     const c = this.cords.get(truckId);
     if (c) this.rip(truckId, c);
-    if (this.biffyTruckReversing(truckId, Math.sign(delta))) void this.biffyGag();
+    if (this.biffyTruckReversing(truckId, Math.sign(delta))) this.queueBiffy();
+    this.lastMoveAt = performance.now();
+    this.stuckFired = false;
+    // Whatever this move set off starts as soon as the truck has settled.
+    setTimeout(() => this.tick(), 300);
+  }
+
+  /** A truck drove out. Two exits back to back are a "great move" (reaction slot). */
+  exited(): void {
+    const now = performance.now();
+    if (isGreatMove(this.lastExitAt, now)) this.pending.push('great-move');
+    this.lastExitAt = now;
   }
 
   /** A bump: the biffy's truck backing into the fence sets it off. */
   bumped(truckId: string, direction: 1 | -1, hit: BumpHit): void {
-    if (hit === 'wall' && this.biffyTruckReversing(truckId, direction)) void this.biffyGag();
+    if (hit === 'wall' && this.biffyTruckReversing(truckId, direction)) this.queueBiffy();
   }
 
   /** Lane wear: the landowner shows up the first time any lane wears to the deepest rut. */
   worn(level: number): void {
     if (this.opts.landowner && !this.landownerDone && level >= WEAR_CAP && !this.stopped) {
       this.landownerDone = true;
-      if (this.wildGag) this.landownerPending = true;
-      else void this.landowner();
+      this.pending.push('landowner');
     }
   }
 
@@ -235,15 +267,26 @@ export class GagLayer {
   private tick(): void {
     if (!this.host.el.isConnected) return this.stop();
     if (this.stopped || document.hidden) return;
+    // Pacing rules: one gag at a time, anywhere on screen; none starts while a truck is moving.
+    if (this.host.moving()) return;
+    if (!this.stuckFired && isStuck((performance.now() - this.lastMoveAt) / this.opts.idleScale)) {
+      this.stuckFired = true;
+      this.pending.push('stuck');
+    }
+    if (this.busy()) {
+      if (this.opts.demo) this.demoBusy();
+      return;
+    }
+    if (this.startPending()) return;
     if (this.opts.force) return this.tickForced(this.opts.force);
     if (this.opts.demo && !reducedMotion()) return this.tickDemo();
     this.tickWild();
-    if (this.idleGag || this.spotter || this.wildGag) return;
+    if (this.busy()) return;
     const due = dueGag((performance.now() - this.lastActivity) / this.opts.idleScale, this.idle);
     if (due === 'magpie') {
       this.idle = { ...this.idle, magpieThisIdle: true };
       this.runIdleGag((s) => this.magpie(s));
-    } else if (due === 'spotter') {
+    } else if (due === 'spotter' && (!this.spotterTurnTaken || !this.opts.wildlife)) {
       this.idle = { ...this.idle, spotterThisIdle: true };
       this.runIdleGag((s) => this.spotterWalksOn(s));
     }
@@ -406,6 +449,7 @@ export class GagLayer {
     el.classList.replace('walking', 'asleep');
     if (this.spotter?.el === el) {
       this.spotter.state = 'asleep';
+      this.spotterTurnTaken = true;
       this.onSeen('spotter');
       sound.snore(true);
     }
@@ -492,10 +536,6 @@ export class GagLayer {
   private async biffyGag(): Promise<void> {
     const b = this.biffy!;
     b.done = true;
-    if (this.wildGag) {
-      this.biffyPending = true;
-      return;
-    }
     this.biffyPlaying = true;
     const { el } = b;
     el.classList.add('open');
@@ -543,6 +583,7 @@ export class GagLayer {
       guy.remove();
       el.classList.remove('open');
       this.biffyPlaying = false;
+      this.perimeterEnded();
     }
   }
 
@@ -690,6 +731,7 @@ export class GagLayer {
       await this.landownerRide();
     } finally {
       this.landownerPlaying = false;
+      this.perimeterEnded();
     }
   }
 
@@ -741,16 +783,62 @@ export class GagLayer {
 
   /** Anything else on stage right now? The bear, moose and hot shot wait for it to finish. */
   private busy(): boolean {
-    return !!(this.idleGag || this.spotter || this.wildGag || this.landownerPlaying || this.biffyPlaying);
+    return !!(this.idleGag || this.spotter || this.wildGag || this.landownerPlaying || this.biffyPlaying || this.reactionPlaying);
+  }
+
+  /** The biffy's truck backed up: the gag is queued (once per level) and starts when the stage is free. */
+  private queueBiffy(): void {
+    this.biffy!.done = true;
+    if (!this.pending.includes('biffy')) this.pending.push('biffy');
+  }
+
+  /** Starts the next waiting gag or reaction, if any. The caller has checked the stage is free. */
+  private startPending(): boolean {
+    const next = this.pending.shift();
+    if (!next) return false;
+    if (next === 'landowner') void this.landowner();
+    else if (next === 'biffy') void this.biffyGag();
+    else void this.react(next);
+    return true;
+  }
+
+  /** Plays a reaction slot's art if any is registered; otherwise just notes it on the board. */
+  private async react(kind: Reaction): Promise<void> {
+    this.host.el.dataset.reaction = kind;
+    const play = this.reactions[kind];
+    if (!play || reducedMotion()) return;
+    const ctl = new AbortController();
+    this.reactionPlaying = true;
+    try {
+      await play(ctl.signal);
+    } catch {
+      // Cleared by a new level.
+    } finally {
+      this.reactionPlaying = false;
+    }
+  }
+
+  /** Perimeter gags enabled on this level: the region's pool, plus the bear on a visit he's coming. */
+  private perimeterPool(): WildGag[] {
+    return [...wildPool(this.opts.regionId), ...(this.bearVisit && !this.bearDone ? (['bear'] as const) : [])];
+  }
+
+  private levelMs(): number {
+    return (performance.now() - this.levelStart) / this.opts.idleScale;
+  }
+
+  /** A perimeter gag just ended (scheduled or set off by the player): the next waits 30 to 45 seconds. */
+  private perimeterEnded(): void {
+    this.spotterTurnTaken = false;
+    this.wild = perimeterDone(this.levelMs(), this.wild);
   }
 
   private tickWild(): void {
     if (!this.opts.wildlife || reducedMotion() || this.busy()) return;
-    const now = performance.now();
-    const due = dueWildlife((now - this.levelStart) / this.opts.idleScale, (now - this.lastActivity) / this.opts.idleScale, this.wild);
+    const due = nextPerimeter(this.levelMs(), this.wild, this.perimeterPool(), this.opts.found());
     if (!due) return;
-    this.wild = { ...this.wild, next: this.wild.next + 1 };
-    this.startWild(due);
+    this.wild = due.state;
+    this.startWild(due.gag);
   }
 
   /**
@@ -760,15 +848,6 @@ export class GagLayer {
   private tickDemo(): void {
     const now = performance.now();
     const scale = this.opts.idleScale;
-    // Nobody's going to wake the spotter in a demo: after a short doze he startles himself.
-    if (this.spotter?.state === 'asleep') {
-      if (!this.asleepAt) this.asleepAt = now;
-      else if (now - this.asleepAt > 2500 * scale) void this.wakeSpotter();
-    } else this.asleepAt = 0;
-    if (this.busy()) {
-      this.demoAt = Math.max(this.demoAt, now + 1500 * scale); // a breath between gags
-      return;
-    }
     if (now < this.demoAt) return;
     const pool = demoPool(this.opts.regionId, !!this.biffy).filter((g) => g !== 'magpie' || this.host.state().trucks.length > 0);
     const gag = demoNext(pool, this.opts.found(), this.demoTried);
@@ -784,6 +863,18 @@ export class GagLayer {
     } else this.startWild(gag);
   }
 
+  /** Demo mode while something's on stage: wake a dozing spotter, and leave a breath before the next gag. */
+  private demoBusy(): void {
+    const now = performance.now();
+    const scale = this.opts.idleScale;
+    // Nobody's going to wake the spotter in a demo: after a short doze he startles himself.
+    if (this.spotter?.state === 'asleep') {
+      if (!this.asleepAt) this.asleepAt = now;
+      else if (now - this.asleepAt > 2500 * scale) void this.wakeSpotter();
+    } else this.asleepAt = 0;
+    this.demoAt = Math.max(this.demoAt, now + 1500 * scale);
+  }
+
   private startWild(gag: WildGag): void {
     const ctl = new AbortController();
     this.wildGag = ctl;
@@ -793,14 +884,7 @@ export class GagLayer {
       .finally(() => {
         if (this.wildGag !== ctl) return;
         this.wildGag = null;
-        // Whatever was waiting goes now.
-        if (this.landownerPending && !this.stopped) {
-          this.landownerPending = false;
-          void this.landowner();
-        } else if (this.biffyPending && !this.stopped) {
-          this.biffyPending = false;
-          void this.biffyGag();
-        }
+        this.perimeterEnded();
       });
   }
 

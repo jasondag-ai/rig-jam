@@ -52,6 +52,7 @@ export class BoardView {
   private getState: () => GameState;
   private onMove: (id: string, delta: number) => void;
   private onBump: (truckId: string, direction: 1 | -1, hit: BumpHit) => void;
+  private movingUntil = 0;
 
   constructor(
     getState: () => GameState,
@@ -414,6 +415,11 @@ export class BoardView {
 
   // ---------- For the gags (gag-layer.ts) ----------
 
+  /** A truck is being dragged, or is still snapping into place or driving out. */
+  get moving(): boolean {
+    return this.drag !== null || performance.now() < this.movingUntil;
+  }
+
   get cellPx(): number {
     return this.cell;
   }
@@ -550,6 +556,7 @@ export class BoardView {
     // Keep laying marks while the truck snaps into place, or all the way out through its gate.
     const settle = delta !== 0 && delta === d.range.exitDelta ? WAVE_MS + DRIVE_MS + 80 : 260;
     this.tracks.release(delta !== 0, settle);
+    this.movingUntil = performance.now() + settle;
     sound.reversing(false);
     setTimeout(() => {
       if (!this.drag) sound.dragEnd();
@@ -562,6 +569,7 @@ export class BoardView {
     if (!this.drag || e.pointerId !== this.drag.pointerId) return;
     this.endDrag();
     this.tracks.release(false, 260);
+    this.movingUntil = performance.now() + 260;
     sound.dragEnd();
     this.sync(this.getState());
   }
