@@ -129,6 +129,7 @@ export class GagLayer {
   private idleGag: AbortController | null = null;
   private spotter: { el: HTMLElement; state: SpotterState; x: number; y: number; w: number; h: number } | null = null;
   private biffy: { el: HTMLElement; spot: BiffySpot; done: boolean } | null = null;
+  private biffySprite: Sprite | null = null;
   private cords = new Map<string, { cord: Cord; post: HTMLElement; line: SVGPathElement | null }>();
   private cordLayer: SVGSVGElement | null = null;
   private landownerDone = false;
@@ -479,6 +480,10 @@ export class GagLayer {
     };
     const p = pos[spot.side];
     Object.assign(el.style, { width: `${w}px`, height: `${h}px`, left: `${p.left}px`, top: `${p.top}px` });
+    // The animated biffy (Batch C), sized to fit the same box, standing on its bottom edge.
+    this.biffySprite?.destroy();
+    this.biffySprite = this.withSprite(el, 'biffy-art', Math.min(h / 225, (w * 1.15) / 178), w / 2, h);
+    this.biffySprite.show('biffy_door_open', this.biffy?.el === el && el.classList.contains('open') ? 7 : 0);
     el.dataset.side = spot.side;
     el.dataset.truck = spot.truckId;
   }
@@ -494,6 +499,7 @@ export class GagLayer {
     this.biffyPlaying = true;
     const { el } = b;
     el.classList.add('open');
+    this.biffySprite?.play('biffy_door_open', { fps: 28 });
     sound.doorBang();
     const r = { left: parseFloat(el.style.left), top: parseFloat(el.style.top), w: parseFloat(el.style.width), h: parseFloat(el.style.height) };
     const wh = r.h * 1.4;
@@ -531,6 +537,7 @@ export class GagLayer {
       // Stage cleared.
     } finally {
       sound.feet(false);
+      this.biffySprite?.play('biffy_door_close', { fps: 20 });
       shuffle.kill();
       rig.destroy();
       guy.remove();
@@ -690,35 +697,43 @@ export class GagLayer {
     const { cellPx: cell, fencePx: fence } = this.host;
     const size = cell * SIZE + fence * 2;
     const h = Math.max(cell * 0.9, Math.min(cell * 1.3, this.bands.below - 6));
-    const w = h * 1.04;
+    const w = h * 0.6;
     const y = this.belowBand(h);
-    const quad = this.figure('gag landowner', LANDOWNER, w, h);
+    // The animated landowner (Batch C) walks in on foot, wags his finger, shakes his head, walks off.
+    const man = this.figure('gag landowner', LANDOWNER, w, h);
+    const rancher = this.withSprite(man, 'landowner-art', (h * 1.08) / 225, w / 2, h);
     const at = (x: number) => `translate(${x}px, ${y}px)`;
     const stopAt = size - w - cell * 0.4;
+    const facing = (left: boolean) => rancher.el.classList.toggle('flip', left);
     try {
-      sound.quad('start');
       if (reducedMotion()) {
-        quad.style.transform = at(stopAt);
-        sound.quad('idle');
-        this.host.say(quad, LANDOWNER_LINE);
+        man.style.transform = at(stopAt);
+        rancher.show('landowner_finger_wag', 4);
+        this.host.say(rancher.el.querySelector('.sheet') ?? man, LANDOWNER_LINE);
         await sleep(2600);
         this.onSeen('landowner');
         return;
       }
-      await this.animate(quad, [{ transform: at(size + w) }, { transform: at(stopAt) }], 1300, 'cubic-bezier(0.2, 0.7, 0.3, 1)');
-      quad.classList.add('shaking');
-      sound.quad('idle');
-      this.host.say(quad, LANDOWNER_LINE);
+      facing(true);
+      rancher.play('landowner_walk', { fps: 12, loop: -1 });
+      sound.feet(true);
+      await this.animate(man, [{ transform: at(size + w) }, { transform: at(stopAt) }], 1300, 'cubic-bezier(0.2, 0.7, 0.3, 1)');
+      sound.feet(false);
+      // The bubble points at the top of his frame, above his hat.
+      this.host.say(rancher.el.querySelector('.sheet') ?? man, LANDOWNER_LINE);
+      rancher.play('landowner_finger_wag', { fps: 8 }).eventCallback('onComplete', () => rancher.play('landowner_head_shake', { fps: 8 }));
       await sleep(2200);
-      quad.classList.remove('shaking');
-      sound.quad('rev');
-      await this.animate(quad, [{ transform: at(stopAt) }, { transform: at(size + w * 1.5) }], 1100, 'cubic-bezier(0.5, 0, 0.8, 0.5)');
+      facing(false);
+      rancher.play('landowner_walk', { fps: 14, loop: -1 });
+      sound.feet(true);
+      await this.animate(man, [{ transform: at(stopAt) }, { transform: at(size + w * 1.5) }], 1100, 'cubic-bezier(0.5, 0, 0.8, 0.5)');
       this.onSeen('landowner');
     } catch {
       // Interrupted by a new level.
     } finally {
-      sound.quad('stop');
-      quad.remove();
+      sound.feet(false);
+      rancher.destroy();
+      man.remove();
     }
   }
 

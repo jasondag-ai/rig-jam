@@ -282,8 +282,8 @@ const play = async (page, touch, level) => {
     const said = saidAll.find((t) => t.includes('ruts')) ?? saidAll.join(' / ');
     if (expect) {
       check(!!quad && said === "Who's paying for these ruts?", `${name}: deepest rut brings the landowner: "${said}"`);
-      if (quad) check((await rect(page, '.landowner')).t >= (await rect(page, '.pad')).b, 'he rides along below the board');
-      check((await heardSince(page)).includes('quad'), 'sound: his quad');
+      if (quad) check((await rect(page, '.landowner')).t >= (await rect(page, '.pad')).b, 'he walks along below the board');
+      check((await heardSince(page)).includes('feet'), 'sound: his footsteps');
     } else check(!quad, `${name}: no landowner (${lv.name})`);
   }
   await browser.close();
