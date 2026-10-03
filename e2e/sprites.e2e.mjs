@@ -86,6 +86,20 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
     });
     check(f.on && f.off < 1.5, `pipe-rail fence; rails meet the corner posts (${f.off.toFixed(2)}px off)`);
     check(f.gatesOnTop, 'gates sit on top of the rail');
+    // Lighting pass: only the world behind is graded. Gates and trucks keep their exact colors.
+    const light = await page.evaluate(() => {
+      const colorFilter = (el) => /sepia|saturate|hue|brightness|contrast|grayscale|invert/.test(getComputedStyle(el).filter);
+      const z = (sel) => Number(getComputedStyle(document.querySelector(sel)).zIndex) || 0;
+      // Walk up from each gate and truck: nothing above them may change color.
+      const clean = (el) => { for (let e = el; e; e = e.parentElement) if (colorFilter(e)) return false; return true; };
+      return {
+        vignetteUnder: z('.vignette') < z('.stage') && z('.vignette') < z('.controls') && z('.vignette') < z('.hud'),
+        gates: [...document.querySelectorAll('.gate')].every(clean),
+        trucks: [...document.querySelectorAll('.truck')].every(clean),
+        warm: getComputedStyle(document.querySelector('.pad')).backgroundImage.includes('radial-gradient'),
+      };
+    });
+    check(light.warm && light.vignetteUnder && light.gates && light.trucks, `lighting: warm grade and vignette behind; gates and trucks untinted (${JSON.stringify(light)})`);
   }
   await browser.close();
 }

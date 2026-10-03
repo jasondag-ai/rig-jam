@@ -113,7 +113,7 @@ input,
   overflow: hidden;
 }
 
-.screen:not(.cover) > *:not(.scenery):not(.overlay):not(.scene-layer) {
+.screen:not(.cover) > *:not(.scenery):not(.overlay):not(.scene-layer):not(.vignette) {
   position: relative;
   z-index: 1;
 }
@@ -2870,4 +2870,47 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
   .cover-dust {
     display: none;
   }
+}
+
+/* ---------- Lighting pass: warm, soft, cinematic (the cover's top-left sun) ----------
+   Only the world behind the play pieces is graded: trucks, badges, gates and buttons keep their exact
+   colors. The vignette sits above the scenery but under the board, HUD and buttons. */
+
+/* Warm sun from the top left over the pad, falling off to a slightly cooler, darker corner. */
+.screen.ground-tex .pad {
+  background:
+    radial-gradient(ellipse 85% 75% at 22% 18%, rgba(255, 210, 140, 0.24), transparent 70%),
+    linear-gradient(135deg, transparent 50%, rgba(50, 25, 5, 0.16)),
+    var(--pad-tile) 0 0 / calc(var(--cell) * 3) calc(var(--cell) * 3) repeat,
+    var(--pad);
+}
+
+/* The same light outside the fence. */
+.screen.ground-tex {
+  background:
+    linear-gradient(to bottom, var(--sky-top) 0, var(--sky-bottom) var(--horizon), transparent var(--horizon)),
+    radial-gradient(ellipse 90% 60% at 15% 30%, rgba(255, 205, 130, 0.22), transparent 70%),
+    linear-gradient(to bottom, transparent 60%, rgba(40, 20, 0, 0.18)),
+    var(--grass-tile) 0 0 / 180px 180px repeat,
+    var(--ground);
+}
+
+/* Trees: a touch warmer, and a soft shadow cast down and to the right. */
+.screen.game .scenery,
+.screen.levels .scenery {
+  filter: sepia(0.14) saturate(1.06) drop-shadow(3px 4px 3px rgba(40, 25, 5, 0.28));
+}
+
+/* Soft shadows under the fence and gates (cast down-right, like the trucks'). */
+.board.pipe-on .pipe-fence { filter: drop-shadow(2px 3px 2px rgba(40, 25, 10, 0.38)); }
+.gate { filter: drop-shadow(2px 3px 2px rgba(30, 18, 6, 0.35)); }
+.screen.game .hud { filter: drop-shadow(0 3px 3px rgba(30, 18, 6, 0.18)); }
+
+/* A gentle warm-dark vignette round the screen edges, over the scenery only. */
+.vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 75% 70% at 50% 48%, transparent 62%, rgba(45, 22, 4, 0.34) 100%);
 }
