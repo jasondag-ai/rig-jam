@@ -8,6 +8,7 @@
 import { gsap } from 'gsap';
 import { sound } from '../audio/engine.ts';
 import { fitSpan } from './gags.ts';
+import { Sprite } from './anim.ts';
 import { Rig, show, type Joint } from './rig.ts';
 import { BEAR_RIG, RABBIT_RIG } from './rigs.ts';
 
@@ -158,6 +159,14 @@ export async function playBear(host: HTMLElement, L: BearLayout, g: { ground: nu
     <ellipse class="reach-paw" style="display:none" fill="#2e2622" stroke="#2a1a0c"/></svg>`;
   host.append(stage);
   const svg = stage.querySelector('svg')!;
+  // The animated bear (Batch C) walks in, sits and walks off; the drawn rig does the beats with the
+  // rabbit (strain to shake-off) until the wipe and rabbit art are redone. Same size sitting.
+  const art = new Sprite('bear-art', (BEAR_SIT_H * L.k) / 226);
+  stage.append(art.el);
+  const useArt = (on: boolean) => {
+    art.el.style.visibility = on ? 'visible' : 'hidden';
+    svg.querySelector<SVGGElement>('.bear')!.style.visibility = on ? 'hidden' : 'visible';
+  };
   const bearEl = svg.querySelector<SVGGElement>('.bear')!;
   const rabbitEl = svg.querySelector<SVGGElement>('.rabbit')!;
   const grip = bearEl.querySelector<SVGGElement>('.grip')!;
@@ -191,6 +200,7 @@ export async function playBear(host: HTMLElement, L: BearLayout, g: { ground: nu
     shadowR.setAttribute('cx', String(rp.x));
     shadowR.setAttribute('cy', String(H - 1));
     shadowR.setAttribute('transform', `translate(${rp.x} ${H - 1}) scale(${Math.max(0.4, 1 - (H - rp.y) / (30 * L.kr))}) translate(${-rp.x} ${-(H - 1)})`);
+    art.el.style.transform = `translate(${bp.x - (BEAR_FEET.x - 100) * L.k}px, ${bp.y}px)`;
     bearEl.setAttribute('transform', `translate(${bp.x + bp.jitter} ${bp.y}) scale(${L.k * bp.sqx} ${L.k * bp.sqy}) translate(${-BEAR_FEET.x} ${-BEAR_FEET.y})`);
     if (rp.wiping) {
       // On the rump (and on the way there and back): the rabbit rides the grip, in front of the thigh.
@@ -299,6 +309,8 @@ export async function playBear(host: HTMLElement, L: BearLayout, g: { ground: nu
   try {
     // 1. Walk in from the left, alternating legs, and ease to a stop beside the bush.
     beat('walk');
+    useArt(true);
+    art.play('bear_walk', { fps: 11, loop: -1 });
     const sitX = X(L.sitX);
     await run(walk(sitX - 20 * L.k, Math.min(2.4, Math.max(1.5, (sitX + BEAR_REACH * L.k) / (140 * L.k))), 22));
     await run(walk(sitX, 0.45, 12, 'power2.out'));
@@ -307,6 +319,7 @@ export async function playBear(host: HTMLElement, L: BearLayout, g: { ground: nu
 
     // 2. Squat: a little rise (anticipation), drop onto his haunches, squash on landing, settle.
     beat('squat');
+    art.play('bear_sit', { fps: 11 });
     await run(pose(bear, { hips: { y: -5 }, body: { rot: 6 }, head: { rot: -6 } }, 0.22, 'power2.out'));
     // Legs fold quickly; the hips drop last, so his feet never push into the ground.
     const LEGS = ['thigh', 'shin', 'thighF', 'shinF'];
@@ -324,6 +337,7 @@ export async function playBear(host: HTMLElement, L: BearLayout, g: { ground: nu
 
     // 3. Strain: eyes squeezed shut, jaw clenched, the whole body quivering, sweat dripping.
     beat('strain');
+    useArt(false);
     show(bearEl, 'eye', 'shut');
     show(bearEl, 'brow', 'strain');
     B('sweat').el.style.display = '';
@@ -520,6 +534,9 @@ export async function playBear(host: HTMLElement, L: BearLayout, g: { ground: nu
       jump.to(bp, { sqy: 0.88, sqx: 1.08, duration: 0.06, ease: 'power2.out' });
       jump.to(bp, { sqy: 1, sqx: 1, duration: 0.2, ease: 'back.out(3)' });
       await run(jump);
+      useArt(true);
+      art.el.classList.add('flip');
+      art.play('bear_walk', { fps: 18, loop: -1 });
       await run(walk(-BEAR_REACH * L.k * 1.2, 1.1, 30, 'power1.in'));
     })();
     await Promise.all([rabbitRun, bearRun]);
@@ -527,6 +544,7 @@ export async function playBear(host: HTMLElement, L: BearLayout, g: { ground: nu
   } finally {
     live.forEach((t) => t.kill());
     gsap.ticker.remove(place);
+    art.destroy();
     bear.destroy();
     rabbit.destroy();
     stage.remove();
