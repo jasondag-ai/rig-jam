@@ -1,0 +1,139 @@
+{
+  "across": 52,
+  "along": {
+    "2": 112,
+    "3": 168
+  },
+  "paint": {
+    "pickup": {
+      "red": {
+        "mean": "#e84344",
+        "share": 0.589
+      },
+      "blue": {
+        "mean": "#2e80eb",
+        "share": 0.589
+      },
+      "yellow": {
+        "mean": "#e8c020",
+        "share": 0.589
+      },
+      "green": {
+        "mean": "#22b559",
+        "share": 0.589
+      },
+      "orange": {
+        "mean": "#e87f04",
+        "share": 0.589
+      },
+      "purple": {
+        "mean": "#9756eb",
+        "share": 0.589
+      }
+    },
+    "picker": {
+      "red": {
+        "mean": "#e64445",
+        "share": 0.391
+      },
+      "blue": {
+        "mean": "#2f81eb",
+        "share": 0.391
+      },
+      "yellow": {
+        "mean": "#e6c021",
+        "share": 0.391
+      },
+      "green": {
+        "mean": "#23b45a",
+        "share": 0.391
+      },
+      "orange": {
+        "mean": "#e68006",
+        "share": 0.391
+      },
+      "purple": {
+        "mean": "#9757eb",
+        "share": 0.391
+      }
+    },
+    "vac": {
+      "red": {
+        "mean": "#ed4445",
+        "share": 0.152
+      },
+      "blue": {
+        "mean": "#2e83f1",
+        "share": 0.152
+      },
+      "yellow": {
+        "mean": "#edc420",
+        "share": 0.152
+      },
+      "green": {
+        "mean": "#22b85a",
+        "share": 0.152
+      },
+      "orange": {
+        "mean": "#ed8204",
+        "share": 0.152
+      },
+      "purple": {
+        "mean": "#9a58f1",
+        "share": 0.152
+      }
+    },
+    "frac": {
+      "red": {
+        "mean": "#ec4445",
+        "share": 0.174
+      },
+      "blue": {
+        "mean": "#2e82ef",
+        "share": 0.174
+      },
+      "yellow": {
+        "mean": "#ecc320",
+        "share": 0.174
+      },
+      "green": {
+        "mean": "#23b75a",
+        "share": 0.174
+      },
+      "orange": {
+        "mean": "#ec8204",
+        "share": 0.174
+      },
+      "purple": {
+        "mean": "#9a58ef",
+        "share": 0.174
+      }
+    },
+    "water": {
+      "red": {
+        "mean": "#ec4445",
+        "share": 0.169
+      },
+      "blue": {
+        "mean": "#2e83f0",
+        "share": 0.169
+      },
+      "yellow": {
+        "mean": "#ecc420",
+        "share": 0.169
+      },
+      "green": {
+        "mean": "#22b85a",
+        "share": 0.169
+      },
+      "orange": {
+        "mean": "#ec8204",
+        "share": 0.169
+      },
+      "purple": {
+        "mean": "#9a58f0",
+        "share": 0.169
+      }
+    }
+  }
+}

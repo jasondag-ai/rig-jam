@@ -701,6 +701,54 @@ input,
 .v-ladder { fill: none; stroke: var(--outline); stroke-width: 4; }
 .v-rung { stroke: var(--outline); stroke-width: 3; }
 
+/* Illustrated sprites (sprites.ts): shown once loaded, the SVG drawing until then (or if it fails). */
+.truck .art img.sprite {
+  position: absolute;
+  inset: 0;
+  display: none;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.truck.sprite-on .art img.sprite { display: block; }
+.truck.sprite-on .art svg { display: none; }
+
+/* A soft ground shadow under every truck (cheaper than a filter, and it reads as standing on the pad). */
+.truck .ground-shadow {
+  position: absolute;
+  inset: 6% -3% -9% 3%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(30, 20, 10, 0.38), rgba(30, 20, 10, 0.18) 60%, transparent);
+  pointer-events: none;
+}
+
+.truck.sprite-on { filter: drop-shadow(0 1.5px 0.5px rgba(0, 0, 0, 0.22)); }
+.truck.sprite-on.dragging { filter: drop-shadow(0 6px 4px rgba(0, 0, 0, 0.3)); }
+.truck.dragging .ground-shadow { inset: 14% -6% -16% 8%; opacity: 0.8; }
+
+/* Snow on the sprite's cab roof (winter), placed per kind in cab-right drawing space. */
+.truck .art .roof { display: none; }
+.truck.sprite-on .art .roof {
+  display: block;
+  position: absolute;
+  top: 30%;
+  bottom: 30%;
+  right: calc(var(--roof-at, 25%) + var(--roof-len, 30%) * 0.15);
+  width: calc(var(--roof-len, 30%) * 0.7);
+  /* A soft drift in the middle of the roof: the paint still shows round it. */
+  background: radial-gradient(closest-side, var(--truck-roof) 55%, transparent);
+  pointer-events: none;
+}
+.truck.sprite-on .cab::before { display: none; }
+.truck[data-kind='pickup'] { --roof-at: 26%; --roof-len: 31%; }
+.truck[data-kind='picker'] { --roof-at: 17%; --roof-len: 22%; }
+.truck[data-kind='vac'] { --roof-at: 17.5%; --roof-len: 11%; }
+.truck[data-kind='frac'] { --roof-at: 15.5%; --roof-len: 13%; }
+.truck[data-kind='water'] { --roof-at: 15%; --roof-len: 11.5%; }
+
 /* Upright overlays: the color badge with the gate symbol, and the cab area (driver's arm, roof snow). */
 .truck .bed,
 .truck .cab {

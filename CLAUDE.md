@@ -219,6 +219,16 @@ something, give exact clicks and one command at a time.
 - `src/engine/` – pure rules. No DOM, no `window`, no `localStorage`. Every rule has a Vitest test
   next to it (`*.test.ts`).
 - `src/ui/` – DOM rendering, drag input, screens, local progress.
+- Truck sprites: `public/sprites/trucks/<kind>-<color>(@2x).webp`, made by `python3
+  tools/truck-sprites.py` from the sources in `tools/truck-art/` (top-down, cab at the top, white).
+  The script trims, turns each cab-right, tints ONLY the paint (cab; whole body on pickup and
+  picker) by multiplying a light/neutral-pixel mask inside each kind's paint rows with the gate
+  color, bakes the dark toy outline, and writes `src/ui/truck-sprites.json` (measured paint color;
+  `sprites.test.ts` checks it matches its gate, colors stay apart, and each stands out from every
+  season's pad). `sprites.ts` adds the `<img>` in the truck's `.art` (rotated like the SVG) and the
+  SVG stays as the fallback until it loads (`.sprite-on`) or if it fails. Roof snow on sprites is a
+  soft drift placed per kind (`--roof-at`, `--roof-len`). Soft `.ground-shadow` under every truck.
+  Sprites preload per level and all in idle time. `npm run test:e2e:sprites`.
 - `src/ui/obstacles.ts` – SVG art for each obstacle kind (colors and nod/crank motion in style.css).
 - `src/ui/vehicles.ts` – top-down SVG art per truck kind, drawn cab-right and rotated by CSS to face
   the gate. Body panels use the truck color; the gate symbol sits on an upright color badge.
@@ -272,6 +282,7 @@ something, give exact clicks and one command at a time.
 - `npm run check-levels` – print levels and solutions
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
 - `npm run test:e2e:gags` – gags test (Playwright; start the dev server first)
+- `npm run test:e2e:sprites` – truck sprites, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)
 - `npm run test:e2e:audio` – sound cues, settings and music-style distinctness (start the dev server first)

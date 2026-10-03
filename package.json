@@ -14,7 +14,8 @@
     "test:e2e:gags": "node e2e/gags.e2e.mjs",
     "test:e2e:audio": "node e2e/audio.e2e.mjs",
     "test:e2e:log": "node e2e/log.e2e.mjs",
-    "test:e2e:cover": "node e2e/cover.e2e.mjs"
+    "test:e2e:cover": "node e2e/cover.e2e.mjs",
+    "test:e2e:sprites": "node e2e/sprites.e2e.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",

@@ -4,6 +4,7 @@ import { pickLine, type BumpHit } from './lines.ts';
 import { OBSTACLE_SVG } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
 import { Spray } from './spray.ts';
+import { spriteImg, wireSprite } from './sprites.ts';
 import { TrackLayer } from './track-layer.ts';
 import type { Ground } from './themes.ts';
 import { SYMBOL } from './palette.ts';
@@ -190,12 +191,15 @@ export class BoardView {
     el.className = `truck c-${t.color} ${t.orient === 'h' ? 'horiz' : 'vert'}`;
     el.dataset.id = t.id;
     el.dataset.cab = cabSide(this.level!, t);
-    el.dataset.kind = t.kind ?? defaultKind(t.length);
+    const kind = t.kind ?? defaultKind(t.length);
+    el.dataset.kind = kind;
     // The art is drawn cab-right and rotated by CSS; the symbol badge and cab overlay stay upright.
     el.innerHTML =
-      `<div class="body"><div class="art">${VEHICLE_SVG[t.kind ?? defaultKind(t.length)]}</div>` +
+      `<div class="ground-shadow"></div>` +
+      `<div class="body"><div class="art">${spriteImg(kind, t.color)}${VEHICLE_SVG[kind]}<i class="roof"></i></div>` +
       `<div class="bed"><span class="sym">${SYMBOL[t.color]}</span>${t.convoy ? `<span class="convoy-no" aria-label="convoy ${t.convoy}">${t.convoy}</span>` : ''}</div>` +
       `<div class="cab"><span class="driver-arm"></span></div></div>`;
+    wireSprite(el);
     el.addEventListener('pointerdown', (e) => this.onPointerDown(e, t.id, el));
     el.addEventListener('pointermove', (e) => this.onPointerMove(e));
     el.addEventListener('pointerup', (e) => this.onPointerUp(e));
