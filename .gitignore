@@ -3,3 +3,8 @@ dist/
 .DS_Store
 *.log
 tools/.gen-cache/
+
+# Incoming art (big): only the rejects list is kept
+art-inbox/*
+!art-inbox/REJECTS.md
+!art-inbox/.gitkeep

@@ -6,21 +6,22 @@ something, give exact clicks and one command at a time.
 ## Art inbox (ART_BIBLE.md is the authority for all art)
 - `ART_BIBLE.md` (project root) sets the style, camera, accuracy spec, never-draw list and batch
   list for every image. New art arrives in `art-inbox/`.
-- When the owner says "process art inbox": FIRST copy every file from the OneDrive (stragentic.com)
-  folder `~/Library/CloudStorage/OneDrive-stragentic.com/RHR Art Inbox/` (top level only, not
-  `done/`) into `art-inbox/`. Cloud-only files must be downloaded first: read each file fully (e.g.
-  `cat file > /dev/null`) and check its size is non-zero before copying. If the folder is missing
-  or empty, say so (OneDrive may not have synced it to the Mac yet). Then check EVERY image in
+- When the owner says "process art inbox": FIRST copy every file from `~/Desktop/RHR Art Inbox/`
+  (top level only, not `done/`) into `art-inbox/` and unzip any zips there. If the folder is
+  missing or empty, say so. Then check EVERY image in
   `art-inbox/` against ART_BIBLE.md
   before using any of it: style (Pixar-like 3D matching the cover), technical rules (transparent PNG
   except tiles, no shadow/glow/halo, no text or logos, exact file name, size), camera (top-down vs
   3/4 for that item), the accuracy spec for that item, and the never-draw list. Look at each image;
   don't trust file names.
-- Accepted images go through the matching `tools/*.py` pipeline into `public/sprites/` (keep the
-  source in `tools/<kind>-art/`). Rejected ones are not used: write `art-inbox/REJECTS.md` with one
+- Accepted images go through the matching `tools/*.py` pipeline into `public/sprites/`. Batches
+  A to C: `python3 tools/inbox-sprites.py art-inbox` (world/ui statics at 1x and 2x, animation sheets
+  as 256px-frame WebPs + `src/ui/anim-sprites.json`; add rejected items to its `REJECTED` set). Big
+  originals stay out of git (`art-inbox/` is gitignored except REJECTS.md); small single sources
+  go in `tools/<kind>-art/`. Rejected ones are not used: write `art-inbox/REJECTS.md` with one
   ready-to-paste Manus re-prompt per rejected item that names the exact file, the exact problem
   seen, and the ART_BIBLE.md section/spec it broke, and restates the correct spec and file name.
-- After processing, move the files that were USED from that OneDrive folder into its `done/`
+- After processing, move the files that were USED from that Desktop folder into its `done/`
   subfolder (create it if needed). Rejected files stay where they are so they're easy to find.
 - Tell the owner what was accepted, what was rejected, and that REJECTS.md is ready to paste.
 

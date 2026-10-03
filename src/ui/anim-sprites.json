@@ -1,0 +1,237 @@
+{
+  "bear_half_squat": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "bear_set_down": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "bear_sit": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "bear_sniff": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "bear_walk": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "biffy_door_close": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "biffy_door_open": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "biffy_rock_shake": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "biffy_worker_step_out": {
+    "frames": 12,
+    "h": 256,
+    "w": 256
+  },
+  "biffy_worker_stretch": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "biffy_worker_walk": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "canada_goose_flap": {
+    "frames": 8,
+    "h": 128,
+    "w": 128
+  },
+  "canada_goose_glide": {
+    "frames": 4,
+    "h": 128,
+    "w": 128
+  },
+  "canada_goose_honk": {
+    "frames": 6,
+    "h": 128,
+    "w": 128
+  },
+  "company_man_idle": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "company_man_nod": {
+    "frames": 6,
+    "h": 256,
+    "w": 256
+  },
+  "company_man_scowl": {
+    "frames": 6,
+    "h": 256,
+    "w": 256
+  },
+  "company_man_shock": {
+    "frames": 6,
+    "h": 256,
+    "w": 256
+  },
+  "gauge_post_needle_wiggle": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "gopher_drop_down": {
+    "frames": 6,
+    "h": 256,
+    "w": 256
+  },
+  "gopher_hole_close": {
+    "frames": 6,
+    "h": 256,
+    "w": 256
+  },
+  "gopher_hole_open": {
+    "frames": 6,
+    "h": 256,
+    "w": 256
+  },
+  "gopher_look_left_right": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "gopher_peek": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "gopher_stand_tall": {
+    "frames": 6,
+    "h": 256,
+    "w": 256
+  },
+  "gopher_whistle": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "hotshot_dust_puff": {
+    "frames": 8,
+    "h": 256,
+    "w": 512
+  },
+  "landowner_arms_cross": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "landowner_finger_wag": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "landowner_head_shake": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "landowner_walk": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "magpie_fly": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "magpie_land": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "magpie_take_off": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "moose_blink": {
+    "frames": 6,
+    "h": 256,
+    "w": 256
+  },
+  "moose_duck": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "moose_rise": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "moose_stare": {
+    "frames": 6,
+    "h": 256,
+    "w": 256
+  },
+  "pumper_check_gauge": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "pumper_walk": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "roughneck_mascot_celebrate": {
+    "frames": 12,
+    "h": 256,
+    "w": 256
+  },
+  "roughneck_mascot_facepalm": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "roughneck_mascot_idle": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "spotter_flag_wave": {
+    "frames": 12,
+    "h": 256,
+    "w": 256
+  },
+  "spotter_jog": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "spotter_shrug": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  },
+  "spotter_sit_on_bucket": {
+    "frames": 8,
+    "h": 256,
+    "w": 256
+  }
+}

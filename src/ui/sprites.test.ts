@@ -96,3 +96,20 @@ describe('ground tiles', () => {
     for (const t of Object.values(THEMES)) expect(dE(t.vars['--pad'], (GROUND as Record<string, { mean: string }>)[`pad-${t.id}`].mean), t.id).toBeLessThan(6);
   });
 });
+
+describe('art inbox sprites', () => {
+  it('every accepted animation has its sheet, and no rejected one slipped in', async () => {
+    const anim = (await import('./anim-sprites.json', { with: { type: 'json' } })).default as Record<string, { frames: number; w: number; h: number }>;
+    for (const [name, a] of Object.entries(anim)) {
+      expect(existsSync(`public/sprites/anim/${name}.webp`), name).toBe(true);
+      expect(a.frames, name).toBeGreaterThanOrEqual(4);
+    }
+    for (const rejected of ['bear_wipe', 'magpie_hop', 'moose_chew', 'spotter_sleep', 'hotshot_drive', 'pumper_truck_drive'])
+      expect(anim[rejected], rejected).toBeUndefined();
+  });
+
+  it('batch A world and batch B UI at 1x and 2x', () => {
+    for (const f of ['world/tree_spruce_summer', 'world/bush_willow', 'ui/btn_hint', 'ui/icon_gear', 'ui/panel_win'])
+      for (const s of ['', '@2x']) expect(existsSync(`public/sprites/${f}${s}.webp`), f + s).toBe(true);
+  });
+});
