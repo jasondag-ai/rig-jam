@@ -11,7 +11,7 @@ import { biffySpot, reverseDirection } from '../src/ui/gags.ts';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
 // The bear, moose and hot shot have their own section below; off here so they don't make the others wait.
-const BASE = ROOT + '?idle=0.1&audiolog&wild=0';
+const BASE = ROOT + '?gags=1&idle=0.1&audiolog&wild=0';
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;
 const check = (ok, text) => {
@@ -394,7 +394,7 @@ const played = (w) => [...Object.keys(w.beats).filter((k) => w.beats[k].length),
   const cdp = await context.newCDPSession(page);
   console.log('\nchromium iPhone 13, each scene (?gag= links)');
   const scene = async (gag, sel, during = async () => {}) => {
-    await page.goto(`${ROOT}?gag=${gag}&audiolog`, { waitUntil: 'networkidle' });
+    await page.goto(`${ROOT}?gags=1&gag=${gag}&audiolog`, { waitUntil: 'networkidle' });
     await page.evaluate(() => document.body.click()); // a tap starts the audio
     await page.waitForSelector(sel, { state: 'attached', timeout: 20000 });
     await page.waitForSelector(sel, { state: 'detached', timeout: 25000 });
@@ -479,7 +479,7 @@ const played = (w) => [...Object.keys(w.beats).filter((k) => w.beats[k].length),
 
 // Pacing rules in normal play (times x0.1, so the 30-45s perimeter gap is 3-4.5s here).
 {
-  const { browser, page, touch } = await open('no-preference', ROOT + '?idle=0.1&audiolog');
+  const { browser, page, touch } = await open('no-preference', ROOT + '?gags=1&idle=0.1&audiolog');
   console.log('\nchromium iPhone 13, gag pacing (times x0.1)');
   const STAGES = { bear: '.bear-stage', moose: '.moose-peek', gopher: '.gopher-stage', geese: '.geese-stage', pumper: '.pumper-stage', hotshot: '.gag.hotshot' };
   /** Records every perimeter scene's start and end, and any moment two gags are on at once. */
@@ -568,7 +568,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }
   const page = await context.newPage();
   console.log(`\n${viewport.width}x${viewport.height}`);
   for (const [gag, sel] of [['bear', '.bear-stage'], ['moose', '.moose-peek'], ['gopher', '.gopher-stage'], ['geese', '.geese-stage'], ['pumper', '.pumper-stage']]) {
-    await page.goto(`${ROOT}?gag=${gag}`, { waitUntil: 'networkidle' });
+    await page.goto(`${ROOT}?gags=1&gag=${gag}`, { waitUntil: 'networkidle' });
     await page.evaluate(watchStage);
     await page.waitForSelector(sel, { timeout: 3000 }).catch(() => {});
     await page.waitForSelector(sel, { state: 'detached', timeout: 25000 }).catch(() => {});
@@ -588,7 +588,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }
   console.log('\n?gag= links');
   for (const [gag, sel] of [['bear', '.bear-stage'], ['moose', '.moose-peek'], ['biffy', '.worker-bent'], ['gopher', '.gopher-stage'], ['geese', '.geese-stage'], ['pumper', '.pumper-stage'], ['hotshot', '.hotshot']]) {
     const t0 = Date.now();
-    await page.goto(`${ROOT}?gag=${gag}`, { waitUntil: 'networkidle' });
+    await page.goto(`${ROOT}?gags=1&gag=${gag}`, { waitUntil: 'networkidle' });
     const ok = await page.waitForSelector(sel, { timeout: 3000 }).then(() => true).catch(() => false);
     check(ok, `?gag=${gag} starts at once (${((Date.now() - t0) / 1000).toFixed(1)}s after load)`);
     if (gag === 'geese') {
@@ -624,7 +624,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }
 
 // Reduced motion: none of them.
 {
-  const { browser, page } = await open('reduce', ROOT + '?idle=0.1');
+  const { browser, page } = await open('reduce', ROOT + '?gags=1&idle=0.1');
   await enter(page, 1, 0);
   let any = 0;
   for (let i = 0; i < 16; i++) {

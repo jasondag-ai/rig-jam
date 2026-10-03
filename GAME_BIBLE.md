@@ -52,6 +52,12 @@ Every gag belongs to ONE zone, and the zone sets the camera. All clips for a gag
 | D. Board | 3/4 high angle, matching the equipment sprites | People about 0.6 to 1.2 cells (35 to 65 px) | 1080 x 1080 |
 | E. Bottom strip | Pure side view at ground level, ground line at 80% of frame height | Characters 40 to 90 px tall; trucks about 6x a gopher | 1080 x 1080, or 1920 x 1080 for vehicles crossing the strip |
 
+**IN-PLACE RULE (most important):** a clip never moves a character across its frame, and never has him walk or fly in or out of frame. All travel across the phone screen is done by Code, which slides the clip layer along the screen at a speed matched to the stride so feet don't skate, and mirrors it for direction. Clips come in two kinds only:
+- **In-place loops:** walk, shuffle, waddle, fly or drive cycles, on the spot, as if the camera tracks the character. 1 to 2 s, the last frame matches the first.
+- **Stationary actions:** the character stays on one spot (door bangs open, sits, sleeps, wipes, rises over the fence, eats the marshmallow).
+**CONTINUITY RULE:** every clip starts and ends on a defined hand-off pose. A loop's last frame matches its first frame exactly. In a sequence, each clip's first frame matches the previous clip's last frame (same pose, position, scale and facing), so clips chain with no jump. Every Manus prompt names the hand-off pose for each clip. Every delivered clip is checked frame by frame for this before Code touches it.
+A gag is a sequence Code assembles: stationary action > loop while Code moves it > stationary action > loop off screen.
+
 **Readability rule:** at these sizes, fine detail disappears. Characters need bold silhouettes, big gestures and clear expressions. Jay's rule: "If it's subtle, it works. If it's oversized, we're trying too hard."
 
 **Manus never draws text.** Speech bubbles, Zs and "Near miss!" are added by Code.
@@ -73,7 +79,7 @@ Every gag belongs to ONE zone, and the zone sets the camera. All clips for a gag
 |---|---|---|---|---|---|
 | 1 | **Magpie** | D. 10 s idle. Once per level | Flies in, lands on a random truck's roof, hops, cheeky look, drops 2 to 3 small droppings clustered at roof center (white blob, dark center, small drip). They ride on that truck until it exits. Driver bubble: "Seriously?" Flies off | magpie_land, magpie_poop, magpie_fly_off (side view) | Clips delivered. Wire in |
 | 2 | **Sleeping spotter** | E. 20 s idle | Walks on below the fence carrying a pail, sits on it, dozes (Zs by Code). Touch while asleep: jolts awake, topples off the pail (pail stays), scrambles off. Never points at trucks. The flag dance was cut | spotter_sit, spotter_sleep_loop, spotter_wake (front 3/4) | Clips delivered. Wire in. spotter_wave not used |
-| 3 | **Biffy** (CONFIRMED BY JAY, Oct 3) | E (or top/sides), standing quietly from level start just outside the fence, directly behind one truck's tailgate, on fence with no gate. Trigger: the player backs that truck into the fence at the biffy. Nothing else triggers it. Once per level | The tailgate hits the fence: the biffy jolts and rocks from BEHIND (the fence and truck side), door bangs open. The worker, caught mid-business, steps out bent over with his pants down round his ankles, trying to pull them up. Strict side profile only, never facing the camera. Tiny quick shuffling steps because of the pants, side of a round bare cartoon cheek showing (no detail), toilet paper stuck to his boot trailing behind, mortified face. Shuffles off the edge of the screen and never comes back | biffy_bump, biffy_shuffle | Redo pending. The Oct 3 redo task had the hit from the wrong side; cancel it |
+| 3 | **Biffy** (CONFIRMED BY JAY, Oct 3) | E (or top/sides), standing quietly from level start just outside the fence, directly behind one truck's tailgate, on fence with no gate. Trigger: the player backs that truck into the fence at the biffy. Nothing else triggers it. Once per level | The tailgate hits the fence: the biffy jolts and rocks from BEHIND (the fence and truck side), door bangs open. The worker, caught mid-business, steps out bent over with his pants down round his ankles, trying to pull them up. Strict side profile only, never facing the camera. Tiny quick shuffling steps because of the pants, side of a round bare cartoon cheek showing (no detail), toilet paper stuck to his boot trailing behind, mortified face. Shuffles off the edge of the screen and never comes back | biffy_bump (stationary), worker_step_out (stationary: steps out of the door, bent over, turns to side profile, stays on the spot), worker_shuffle_loop (in place). Code slides him from the door to the screen edge | Redo pending. The Oct 3 redo task had the hit from the wrong side; cancel it |
 | 4 | **Landowner** | E. Montney only. Trigger: the first time any lane wears to the deepest rut. Once per level | Rides in along the bottom on his **quad**, stops, shakes his fist. Bubble: "Who's paying for these ruts?" Rides off | landowner_quad (side view) | **Needs a corrected task.** The Oct 3 prompt asked for a walking scold, which doesn't match the spec |
 | 5 | **Bear + rabbit** (LEGENDARY) | E. Duvernay 8 to 10 only, 1 in 3 level visits. A bush stands at the bottom from level start | Walks in, squats side-on beside the bush, strains. Rabbit hops in. Bear notices, grabs it, half-squat, rump back, holds rabbit flat on rump under the tail, two wipes, relieved. Sets it down; rabbit frozen, deadpan, shakes off. Both bolt opposite ways | bear_enter, bear_wipe, rabbit_deadpan, bear_exit (side view facing right) | Clips delivered. Wire in |
 | 6 | **Moose** | C. Duvernay only. Perimeter | Small peekaboo: head and antlers rise over the top fence, slow blink, chews once, stares about 2 s, groans, ducks down. Under 3 s | moose_peek (front view) | Clip delivered. Wire in |
@@ -111,6 +117,17 @@ Conventional beam pumping unit. The motor drives the gearbox by belt; the cranks
 - Style references: ref_spotter, ref_landowner, ref_mascot, ref_company_man (Desktop > RHR Art Inbox > _audit > style_refs).
 - Equipment style: pumpjack_topdown_v1 and oilfield_tank_v2 (3/4 view).
 - Cover: front power stance roughneck.
+
+## 9b. Build order (Jay, Oct 3, after the clip audit)
+
+Fundamentals first, then gags ONE AT A TIME. Each step is its own Claude Code job and Jay checks it on his phone before the next one starts.
+
+1. All gags off (code kept). Fit to every iPhone screen, nothing cut off.
+2. Seamless lease pad: one continuous ground, no visible tile repeats.
+3. Fence restyled to match the Pixar look.
+4. Then gags, one at a time, each through: beats confirmed by Jay > Manus clips (in-place, hand-off poses) > audit > wire in > phone check.
+
+Gag notes from the audit: landowner must drive in and out on his quad (in-place drive loop slid by Code, then a stationary fist shake); lost goose needs a more erratic flight path (Code's path wobble plus a clumsier flap loop); biffy needs biffy_bump to hand off to the open door before the worker clip. Clip audit report: Desktop > RHR Art Inbox > clip_audit > CLIP_AUDIT.md.
 
 ## 10. Decisions log
 

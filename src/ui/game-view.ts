@@ -16,6 +16,7 @@ import { preloadObstacles, preloadSprites } from './sprites.ts';
 import { defaultKind } from './vehicles.ts';
 import { applyCamo, loadLog, record, saveLog, sightingToast } from './wildlife-log.ts';
 import { GagLayer, type GagOptions } from './gag-layer.ts';
+import { gagsOn } from './flags.ts';
 import { companyLine, tierFor } from './gags.ts';
 import { Sprite } from './anim.ts';
 import { onTap } from './tap.ts';
@@ -68,7 +69,8 @@ export class GameView {
   private shareMessage = '';
   private scenery: HTMLElement;
 
-  private gags: GagLayer;
+  /** Null while gags are switched off (flags.ts). */
+  private gags: GagLayer | null;
 
   constructor(
     level: Level,
@@ -92,7 +94,7 @@ export class GameView {
     );
     const board = this.board;
     const demo = loadProgress().demo;
-    this.gags = new GagLayer(
+    this.gags = !gagsOn() ? null : new GagLayer(
       {
         el: board.el,
         get cellPx() {
@@ -116,10 +118,10 @@ export class GameView {
         found: () => new Set(loadLog(demo).found),
       },
     );
-    board.onWear = (lvl) => this.gags.worn(lvl);
+    board.onWear = (lvl) => this.gags?.worn(lvl);
     // The Wildlife Log collects each gag the first time it plays all the way through.
     // In demo mode they go to the separate demo log, never the real one (and never earn camo).
-    this.gags.onSeen = (id) => {
+    if (this.gags) this.gags.onSeen = (id) => {
       // A scene still finishing after you've left the level (or reset) doesn't count.
       if (!this.el.isConnected) return;
       const before = loadLog(demo);
@@ -174,9 +176,9 @@ export class GameView {
     this.board.setLevel(level);
     this.board.setDecor(padDecor(theme.ground, seedFrom(level.id)), theme.ground);
     sound.setGround(theme.ground);
-    this.gags.setLevel(level);
+    this.gags?.setLevel(level);
     // Any touch anywhere on the screen cancels an idle gag and restarts the idle clock.
-    this.el.addEventListener('pointerdown', () => this.gags.touch(), { capture: true });
+    this.el.addEventListener('pointerdown', () => this.gags?.touch(), { capture: true });
     this.showLevelHint();
 
     onTap(this.el, TAPPED, (el) => this.act(el));
@@ -185,6 +187,15 @@ export class GameView {
       if (el && !el.matches(TAPPED)) this.act(el); // the rest (Undo, Hint, Restart) use plain clicks
     });
     this.updateHud();
+    // Refit whenever the room for the lease changes (Safari's toolbars, rotation, a longer tip line).
+    if (typeof ResizeObserver !== 'undefined') {
+      let seen = '';
+      new ResizeObserver(([entry]) => {
+        const size = `${Math.round(entry.contentRect.width)}x${Math.round(entry.contentRect.height)}`;
+        if (size !== seen && this.el.isConnected) this.fit();
+        seen = size;
+      }).observe(this.stage);
+    }
   }
 
   private act(el: HTMLElement): void {
@@ -211,7 +222,7 @@ export class GameView {
     // Room outside the fence for the characters: between the HUD and the board, and below it.
     const hudBottom = this.el.querySelector('.hud')!.getBoundingClientRect().bottom - screen.top;
     const buttonsTop = this.el.querySelector('.controls')!.getBoundingClientRect().top - screen.top;
-    this.gags.layout({
+    this.gags?.layout({
       above: Math.max(0, box.y - hudBottom),
       below: Math.max(0, controlsTop - (box.y + box.height)),
       ground: Math.max(0, buttonsTop - (box.y + box.height)),
@@ -225,14 +236,14 @@ export class GameView {
       return;
     }
     this.state = result.state;
-    this.gags.moved(id, delta);
-    if (result.exited) this.gags.exited();
+    this.gags?.moved(id, delta);
+    if (result.exited) this.gags?.exited();
     this.resetHint();
     this.showLevelHint();
     this.board.sync(this.state, true, result.exited ? id : undefined);
     this.updateHud();
     if (isWon(this.state)) {
-      this.gags.stop();
+      this.gags?.stop();
       setTimeout(() => this.showWin(), WIN_DELAY_MS);
     }
   }
@@ -253,7 +264,7 @@ export class GameView {
     this.showMisses();
     this.resetHint();
     this.board.setLevel(this.level);
-    this.gags.setLevel(this.level);
+    this.gags?.setLevel(this.level);
     this.winEl.hidden = true;
     this.showLevelHint();
     this.updateHud();
@@ -261,7 +272,7 @@ export class GameView {
 
   /** A bump: count it and give the hazard counter a quick shake. */
   private onBump(truckId: string, direction: 1 | -1, hit: BumpHit): void {
-    this.gags.bumped(truckId, direction, hit);
+    this.gags?.bumped(truckId, direction, hit);
     this.bumps++;
     this.showMisses();
     this.missesEl.classList.remove('tick');

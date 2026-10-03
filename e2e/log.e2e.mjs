@@ -21,7 +21,7 @@ const browser = await chromium.launch();
 const context = await browser.newContext({ ...devices['iPhone 13'] });
 const page = await context.newPage();
 const fresh = async (query = '', log = null) => {
-  await page.goto(ROOT + query, { waitUntil: 'networkidle' });
+  await page.goto(ROOT + (query ? query + '&gags=1' : '?gags=1'), { waitUntil: 'networkidle' });
   await page.evaluate(([p, l]) => {
     localStorage.clear();
     localStorage.setItem('rush-hour-rigs:v2', p);
@@ -83,7 +83,7 @@ await wait(200);
 check(!!(await page.$('.level-btn')), '"‹ Levels" goes back');
 
 // 2. Play: the magpie, then the spotter falling asleep, each a new sighting with a toast.
-await page.goto(ROOT + '?idle=0.1&wild=0', { waitUntil: 'networkidle' });
+await page.goto(ROOT + '?gags=1&idle=0.1&wild=0', { waitUntil: 'networkidle' });
 await page.$eval('.level-btn[data-index="0"]', (b) => b.click());
 await watchToasts();
 await page.waitForSelector('.spotter.asleep', { timeout: 12000 }).catch(() => {});
@@ -103,7 +103,7 @@ check(log.cards.find((c) => c.id === 'spotter').text === 'On the clock. Allegedl
 // 3. The seventh sighting: celebration, and every pickup goes camo.
 await fresh('', JSON.stringify({ v: 2, found: ALL.filter((x) => x !== 'bear'), camo: true }));
 check(!(await page.evaluate(() => document.body.classList.contains('camo-pickups'))), 'no camo with 9 of 10');
-await page.goto(ROOT + '?gag=bear', { waitUntil: 'networkidle' });
+await page.goto(ROOT + '?gags=1&gag=bear', { waitUntil: 'networkidle' });
 await watchToasts();
 await page.waitForSelector('.bear-stage', { timeout: 4000 }).catch(() => {});
 await page.waitForSelector('.bear-stage', { state: 'detached', timeout: 25000 }).catch(() => {});
@@ -129,7 +129,7 @@ check(!(await page.evaluate(() => document.body.classList.contains('camo-pickups
 
 // 4. Settings switch: on by default once earned; off hides the camo, and it's remembered.
 await fresh('', JSON.stringify({ v: 2, found: ALL, camo: true, camoEarned: true }));
-await page.goto(ROOT + '?gag=none', { waitUntil: 'networkidle' });
+await page.goto(ROOT + '?gags=1&gag=none', { waitUntil: 'networkidle' });
 await page.$eval('.region-tab:nth-child(1)', (b) => b.click());
 await page.$eval('.level-btn[data-index="0"]', (b) => b.click());
 await wait(500);
@@ -176,7 +176,7 @@ check(!(await page.evaluate(() => document.body.classList.contains('camo-pickups
 // 8. Demo mode: gags come fast, unfound first, the bear anywhere; sightings go to a separate demo log.
 console.log('\ndemo mode (times x0.1)');
 const REAL = JSON.stringify({ v: 2, found: ['magpie'], camo: true, camoEarned: false });
-await page.goto(ROOT + '?idle=0.1', { waitUntil: 'networkidle' });
+await page.goto(ROOT + '?gags=1&idle=0.1', { waitUntil: 'networkidle' });
 await page.evaluate(([p, l]) => {
   localStorage.clear();
   localStorage.setItem('rush-hour-rigs:v2', p);

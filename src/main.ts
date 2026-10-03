@@ -17,6 +17,7 @@ import { WORKER_RIG } from './ui/rigs.ts';
 import { LOG_ENTRIES, applyCamo, complete, loadLog, saveLog, type Sighting } from './ui/wildlife-log.ts';
 import type { ForcedGag } from './ui/gag-layer.ts';
 import { sceneryHtml } from './ui/scenery.ts';
+import { gagsOn } from './ui/flags.ts';
 import { THEMES, applyTheme, themeOverride } from './ui/themes.ts';
 import { audio, sound } from './audio/engine.ts';
 import { MUSIC_STYLES, type MusicStyle } from './audio/settings.ts';
@@ -87,7 +88,7 @@ function showLevels(requested = savedRegion()): void {
   screen.innerHTML = `
     <div class="scenery" aria-hidden="true"></div>
     <header class="brand">
-      <button class="binoculars" aria-label="Wildlife Log">${BINOCULARS}</button>
+      ${gagsOn() ? `<button class="binoculars" aria-label="Wildlife Log">${BINOCULARS}</button>` : ''}
       <button class="gear" aria-label="Settings">${uiImg('icon_gear')}</button>
       <h1>Rush Hour Rigs</h1>
       <p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>
@@ -238,7 +239,7 @@ function showSettings(screen: HTMLElement): void {
             (m) => `<button class="btn style-pick" role="radio" data-style="${m.id}" aria-checked="${audio.settings.style === m.id}">${m.name}</button>`,
           ).join('')}
         </div>
-        <label class="switch${loadLog().camoEarned ? '' : ' locked'}">
+        <label class="switch${loadLog().camoEarned ? '' : ' locked'}"${gagsOn() || loadLog().camoEarned ? '' : ' hidden'}>
           <input type="checkbox" role="switch" data-act="camo" ${loadLog().camoEarned ? '' : 'disabled'} ${loadLog().camoEarned && loadLog().camo ? 'checked' : ''} />
           <span class="track" aria-hidden="true"><span class="knob"></span></span>
           <span class="switch-label">Camo pickups${loadLog().camoEarned ? '' : `<small>Find all ${LOG_ENTRIES.length} in the Wildlife Log</small>`}</span>
