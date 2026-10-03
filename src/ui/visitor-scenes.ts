@@ -8,8 +8,9 @@
 import { gsap } from 'gsap';
 import { sound } from '../audio/engine.ts';
 import { freeSpot } from './gags.ts';
-import { Rig, sceneRunner, show } from './rig.ts';
-import { GAUGE_RIG, GOOSE_RIG, GOPHER_HOLE, GOPHER_RIG, PUMPER_RIG, PUMPER_TRUCK } from './rigs.ts';
+import { Sprite } from './anim.ts';
+import { Rig, sceneRunner } from './rig.ts';
+import { GAUGE_RIG, GOOSE_RIG, PUMPER_RIG, PUMPER_TRUCK } from './rigs.ts';
 
 /** The strip between the board and the buttons, in board px, plus things already standing in it. */
 export interface Strip {
@@ -34,88 +35,42 @@ const face = (el: HTMLElement, dir: 1 | -1) => (el.querySelector<SVGElement>(':s
 
 // ---------- Gopher ----------
 
-/** Gopher art: feet (and the hole's rim) at y = 60; ear tips at y = 8; root at x = 20. */
-const GOPHER_FEET = 60;
-const GOPHER_TOP = 8;
 
 export async function playGopher(layer: HTMLElement, g: Strip, signal: AbortSignal): Promise<void> {
-  const gh = Math.min(g.h * 0.8, g.cell * 1.15);
-  const k = gh / (GOPHER_FEET - GOPHER_TOP);
-  const holeW = 40 * k * 1.15;
-  const holeH = 12 * k * 1.15;
-  const noteRoom = 14 * k;
-  const w = holeW + noteRoom * 2;
+  // The sprite frames include the mound and hole. A frame is as tall as the strip allows.
+  const fh = Math.min(g.h * 0.95, g.cell * 1.45);
+  const w = fh * 0.95;
   const x = freeSpot(g.screenL + 8, g.screenR - 8, w, g.avoid, 0.15 + Math.random() * 0.7) ?? g.screenL + 8;
-  const H = gh + noteRoom;
   const stage = div('gag wild gopher-stage');
-  size(stage, w, H);
-  stage.style.transform = `translate(${x}px, ${g.base - H}px)`;
-  // He's seen through a window whose bottom edge is the middle of the hole.
-  const win = div('gopher-window', GOPHER_RIG);
-  const winH = H - holeH * 0.5;
-  Object.assign(win.style, { position: 'absolute', left: '0', top: '0', width: `${w}px`, height: `${winH}px`, overflow: 'hidden' });
-  const svg = win.querySelector('svg')!;
-  Object.assign(svg.style, { position: 'absolute', width: `${52 * k}px`, height: `${72 * k}px`, left: `${w / 2 - 26 * k}px`, top: `${winH - (GOPHER_FEET + 10) * k}px` });
-  const hole = div('gopher-hole', GOPHER_HOLE);
-  Object.assign(hole.style, { position: 'absolute', left: `${w / 2 - holeW / 2}px`, top: `${H - holeH}px`, width: `${holeW}px`, height: `${holeH}px` });
-  stage.append(hole, win);
+  size(stage, w, fh);
+  stage.style.transform = `translate(${x}px, ${g.base - fh}px)`;
+  const gopher = new Sprite('gopher', fh / 256);
+  gopher.el.style.transform = `translate(${w / 2}px, ${fh}px)`;
+  stage.append(gopher.el);
   layer.append(stage);
-  const rig = new Rig(win);
-  const J = (n: string) => rig.get(n);
   const beat = (b: string) => (stage.dataset.beat = b);
   const { run, hold, stop } = sceneRunner(signal);
-  const hidden = GOPHER_FEET - GOPHER_TOP + 6;
-  J('root').y = hidden;
-  rig.render();
   try {
     beat('hole');
-    await run(gsap.fromTo(hole, { scale: 0 }, { scale: 1, duration: 0.25, ease: 'back.out(2.5)' }));
-    // Peeks out (just his head), looks left, looks right.
+    await run(gopher.play('gopher_hole_open', { fps: 24 }));
     beat('peek');
-    await run(gsap.to(J('root'), { y: hidden * 0.52, duration: 0.22, ease: 'back.out(2)' }));
-    await hold(0.2);
-    const look = gsap.timeline();
-    look.to(J('head'), { rot: -14, duration: 0.14, ease: 'power2.out' });
-    look.to(J('head'), { rot: 14, duration: 0.2, ease: 'power2.inOut' }, '+=0.12');
-    look.to(J('head'), { rot: 0, duration: 0.14, ease: 'power2.out' }, '+=0.12');
-    await run(look);
-    // Pops right up, stretching tall like a picket pin, and settles.
+    await run(gopher.play('gopher_peek', { fps: 14 }));
+    await run(gopher.play('gopher_look_left_right', { fps: 10 }));
     beat('up');
-    const up = gsap.timeline();
-    up.to(J('root'), { y: -3, sy: 1.12, sx: 0.92, duration: 0.16, ease: 'power2.out' }, 0);
-    up.to(J('root'), { y: 0, sy: 1, sx: 1, duration: 0.3, ease: 'back.out(3)' }, 0.16);
-    up.to(J('tail'), { rot: -25, duration: 0.12, yoyo: true, repeat: 1, ease: 'power2.out' }, 0.1);
-    up.to(J('paws'), { y: -1.5, duration: 0.15, ease: 'power2.out' }, 0.2);
-    await run(up);
-    await hold(0.25);
-    // Whistles, twice: head back, mouth pursed, a note floating up.
-    beat('whistle');
-    for (let i = 0; i < 2; i++) {
-      show(win, 'mouth', 'whistle');
-      show(win, 'note', 'on');
-      sound.whistle();
-      const w2 = gsap.timeline();
-      w2.to(J('head'), { rot: -8, duration: 0.1, ease: 'power2.out' }, 0);
-      w2.to(J('root'), { sy: 1.06, duration: 0.1, yoyo: true, repeat: 1, ease: 'sine.inOut' }, 0);
-      w2.fromTo(J('note'), { y: 2, sx: 0.6, sy: 0.6 }, { y: -6, sx: 1, sy: 1, duration: 0.35, ease: 'power2.out' }, 0);
-      w2.to(J('head'), { rot: 0, duration: 0.15, ease: 'power2.inOut' }, 0.25);
-      await run(w2);
-      show(win, 'mouth', 'shut');
-      show(win, 'note', 'off');
-      await hold(0.12);
-    }
+    await run(gopher.play('gopher_stand_tall', { fps: 14 }));
     await hold(0.2);
-    // Drops back down the hole: a tiny lift, then gone; the hole closes after him.
+    beat('whistle');
+    sound.whistle();
+    sound.whistle(0.5);
+    await run(gopher.play('gopher_whistle', { fps: 9 }));
+    await hold(0.15);
     beat('down');
-    const down = gsap.timeline();
-    down.to(J('root'), { y: -2, sy: 1.05, duration: 0.08, ease: 'power2.out' });
-    down.to(J('root'), { y: hidden, sy: 0.9, duration: 0.16, ease: 'power3.in' });
-    down.to(hole, { scale: 0, duration: 0.25, ease: 'back.in(2)' }, '+=0.1');
-    await run(down);
+    await run(gopher.play('gopher_drop_down', { fps: 24 }));
+    await run(gopher.play('gopher_hole_close', { fps: 24 }));
     beat('done');
   } finally {
     stop();
-    rig.destroy();
+    gopher.destroy();
     stage.remove();
   }
 }

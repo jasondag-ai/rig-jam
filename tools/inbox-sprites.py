@@ -56,8 +56,14 @@ def main(root: str) -> None:
         frames = round(sheet.width / single.width)
         h = 128 if single.height <= 256 else 256
         w = round(single.width * h / single.height)
-        sheet.resize((w * frames, h), Image.Resampling.LANCZOS).save(os.path.join(out, f'{name}.webp'), 'WEBP', quality=80, method=6)
-        manifest[name] = {'frames': frames, 'w': w, 'h': h}
+        small = sheet.resize((w * frames, h), Image.Resampling.LANCZOS)
+        small.save(os.path.join(out, f'{name}.webp'), 'WEBP', quality=80, method=6)
+        # Where the character is inside a frame (union over all frames, in output px), so the game
+        # can stand it on the ground and size it the same in every action.
+        boxes = [small.crop((i * w, 0, (i + 1) * w, h)).getchannel('A').point(lambda v: 255 if v > 40 else 0).getbbox() for i in range(frames)]
+        boxes = [b for b in boxes if b]
+        box = [min(b[0] for b in boxes), min(b[1] for b in boxes), max(b[2] for b in boxes), max(b[3] for b in boxes)]
+        manifest[name] = {'frames': frames, 'w': w, 'h': h, 'box': box}
     with open(MANIFEST, 'w') as fh:
         json.dump(manifest, fh, indent=2, sort_keys=True)
         fh.write('\n')
