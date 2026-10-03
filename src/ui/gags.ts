@@ -123,12 +123,9 @@ export type WildGag = 'gopher' | 'moose' | 'bear' | 'hotshot' | 'geese' | 'pumpe
 
 /** Unfound Wildlife Log entries are this much more likely to be picked than found ones. */
 export const UNFOUND_WEIGHT = 3;
-/** Scenes per level visit (drawn from the pool, so found ones turn up less and less). */
-export const WILD_SLOTS = 2;
-/** The first one comes after this long with no touch or move, or at its random moment, whichever is first. */
-export const ANIMAL_IDLE_MS = 15_000;
-/** At least this far apart, so nothing crowds anything else. */
-export const WILD_GAP_MS = 12_000;
+/** Perimeter gags (outside the fence): at most one every 30 to 45 seconds. */
+export const PERIMETER_GAP_MS = { min: 30_000, max: 45_000 } as const;
+export const perimeterGap = (random: () => number = Math.random) => PERIMETER_GAP_MS.min + random() * (PERIMETER_GAP_MS.max - PERIMETER_GAP_MS.min);
 /** The bear is legendary: only Duvernay levels 8 to 10, and only about one visit in three. */
 export const BEAR_CHANCE = 1 / 3;
 
@@ -164,43 +161,58 @@ export function weightedPick<T extends string>(candidates: readonly T[], found: 
   return candidates[candidates.length - 1];
 }
 
-export interface WildState {
-  /** This visit's scenes, in order, with the level time (ms) each is due. */
-  queue: { gag: WildGag; at: number }[];
-  /** How many have played. */
-  next: number;
-}
-
 /**
- * This visit's scenes: WILD_SLOTS weighted picks (no repeats) from the pool, the bear first if he's
- * coming. The first is due 10-30s in, each later one 12-30s after the one before.
+ * A bag of perimeter gags: every enabled one once, in random order (an unfound Wildlife Log entry
+ * is UNFOUND_WEIGHT times as likely to be drawn before a found one). Nothing repeats until the bag
+ * is empty; then it's refilled, never starting with the one that just played.
  */
-export function planWildlife(pool: readonly WildGag[], found: ReadonlySet<string>, bear: boolean, random: () => number = Math.random): WildState {
-  const picks: WildGag[] = bear ? ['bear'] : [];
-  let left = pool.filter((g) => g !== 'bear');
-  while (picks.length < WILD_SLOTS && left.length) {
-    const g = weightedPick(left, found, random);
-    picks.push(g);
+export function perimeterBag(pool: readonly WildGag[], found: ReadonlySet<string>, last: WildGag | null = null, random: () => number = Math.random): WildGag[] {
+  let left = [...pool];
+  const bag: WildGag[] = [];
+  while (left.length) {
+    const candidates = bag.length === 0 && last && left.length > 1 ? left.filter((g) => g !== last) : left;
+    const g = weightedPick(candidates, found, random);
+    bag.push(g);
     left = left.filter((x) => x !== g);
   }
-  let at = 10_000 + random() * 20_000;
-  const queue = picks.map((gag) => {
-    const item = { gag, at };
-    at += WILD_GAP_MS + random() * 18_000;
-    return item;
-  });
-  return { queue, next: 0 };
+  return bag;
+}
+
+export interface WildState {
+  /** Perimeter gags still to play before any repeats, in order. */
+  bag: WildGag[];
+  /** Level time (ms) before which no perimeter gag may start. */
+  nextAt: number;
+  last: WildGag | null;
+}
+
+/** A level visit starts with a full bag; the first perimeter gag comes 30 to 45 seconds in. */
+export function planWildlife(pool: readonly WildGag[], found: ReadonlySet<string>, random: () => number = Math.random): WildState {
+  return { bag: perimeterBag(pool, found, null, random), nextAt: perimeterGap(random), last: null };
 }
 
 /**
- * The scene that's due, `levelMs` into the level with `idleMs` since the last touch (or null).
- * The caller only asks when nothing else is playing.
+ * The perimeter gag to start `levelMs` into the level, if the gap has passed (the caller only asks
+ * when nothing else is playing and no truck is moving), with the state after taking it.
  */
-export function dueWildlife(levelMs: number, idleMs: number, s: WildState): WildGag | null {
-  const item = s.queue[s.next];
-  if (!item) return null;
-  return levelMs >= item.at || (s.next === 0 && idleMs >= ANIMAL_IDLE_MS) ? item.gag : null;
+export function nextPerimeter(levelMs: number, s: WildState, pool: readonly WildGag[], found: ReadonlySet<string>, random: () => number = Math.random): { gag: WildGag; state: WildState } | null {
+  if (levelMs < s.nextAt || !pool.length) return null;
+  const bag = s.bag.length ? s.bag : perimeterBag(pool, found, s.last, random);
+  const [gag, ...rest] = bag;
+  return { gag, state: { bag: rest, nextAt: Infinity, last: gag } };
 }
+
+/** A perimeter gag (scheduled, or set off by the player) just ended: the next waits 30 to 45 seconds. */
+export const perimeterDone = (levelMs: number, s: WildState, random: () => number = Math.random): WildState => ({ ...s, nextAt: levelMs + perimeterGap(random) });
+
+// ---------- In-lease reaction slots (art to come; empty for now) ----------
+
+/** "great-move": two trucks exit back to back. "stuck": no move for 20 seconds. */
+export type Reaction = 'great-move' | 'stuck';
+export const GREAT_MOVE_MS = 3_500;
+export const STUCK_MS = 20_000;
+export const isGreatMove = (lastExitAt: number | null, now: number) => lastExitAt !== null && now - lastExitAt <= GREAT_MOVE_MS;
+export const isStuck = (sinceMoveMs: number) => sinceMoveMs >= STUCK_MS;
 
 // ---------- Demo mode: everything turns up fast, unfound first ----------
 

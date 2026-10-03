@@ -2,13 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { parseLevel } from '../engine/index.ts';
 import { mulberry32 } from '../engine/rng.ts';
 import {
-  ANIMAL_IDLE_MS,
   BEAR_CHANCE,
   DEMO_EVERY_MS,
   DEMO_FIRST_MS,
   UNFOUND_WEIGHT,
-  WILD_GAP_MS,
-  WILD_SLOTS,
   bearComes,
   bearEligible,
   demoNext,
@@ -16,9 +13,16 @@ import {
   weightedPick,
   wildPool,
   type DemoGag,
-  type WildState,
   MAGPIE_IDLE_MS,
-  dueWildlife,
+  GREAT_MOVE_MS,
+  PERIMETER_GAP_MS,
+  STUCK_MS,
+  isGreatMove,
+  isStuck,
+  nextPerimeter,
+  perimeterBag,
+  perimeterDone,
+  perimeterGap,
   planWildlife,
   fitSpan,
   freeSpot,
@@ -191,42 +195,61 @@ describe('wildlife and traffic', () => {
     }
   });
 
-  it('a visit plays two different scenes, unfound ones far more often, well apart in time', () => {
+  it('perimeter gags: every enabled one once before any repeats, in random order', () => {
     const rand = mulberry32(7);
-    const seen = { gopher: 0, hotshot: 0, geese: 0, pumper: 0 } as Record<string, number>;
-    for (let i = 0; i < 3000; i++) {
-      const p = planWildlife(wildPool('cardium'), new Set(['hotshot', 'geese', 'pumper']), false, rand);
-      expect(p.queue).toHaveLength(WILD_SLOTS);
-      expect(new Set(p.queue.map((q) => q.gag)).size).toBe(WILD_SLOTS);
-      expect(p.queue[0].at).toBeGreaterThanOrEqual(10_000);
-      expect(p.queue[0].at).toBeLessThanOrEqual(30_000);
-      expect(p.queue[1].at - p.queue[0].at).toBeGreaterThanOrEqual(WILD_GAP_MS);
-      for (const q of p.queue) seen[q.gag]++;
+    const pool = [...wildPool('duvernay'), 'bear'] as const;
+    const firsts = new Set<string>();
+    for (let i = 0; i < 300; i++) {
+      const bag = perimeterBag(pool, new Set(), null, rand);
+      expect([...bag].sort()).toEqual([...pool].sort());
+      firsts.add(bag[0]);
     }
-    // The one unfound entry (the gopher) is in most visits; each found one in far fewer.
-    expect(seen.gopher / 3000).toBeGreaterThan(0.7);
-    for (const g of ['hotshot', 'geese', 'pumper']) expect(seen[g]).toBeLessThan(seen.gopher * 0.65);
-    for (const g of ['hotshot', 'geese', 'pumper']) expect(seen[g]).toBeGreaterThan(300);
+    expect(firsts.size).toBe(pool.length); // any of them can come first
   });
 
-  it('when the bear comes he goes first, and only then', () => {
-    const rand = mulberry32(3);
-    for (let i = 0; i < 200; i++) {
-      const withBear = planWildlife(wildPool('duvernay'), new Set(), true, rand);
-      expect(withBear.queue[0].gag).toBe('bear');
-      expect(withBear.queue).toHaveLength(WILD_SLOTS);
-      expect(planWildlife(wildPool('duvernay'), new Set(), false, rand).queue.some((q) => q.gag === 'bear')).toBe(false);
-    }
+  it('an unfound entry tends to come earlier in the bag; a refill never starts with the last one played', () => {
+    const rand = mulberry32(4);
+    let gopherFirst = 0;
+    for (let i = 0; i < 4000; i++) if (perimeterBag(wildPool('cardium'), new Set(['hotshot', 'geese', 'pumper']), null, rand)[0] === 'gopher') gopherFirst++;
+    expect(gopherFirst / 4000).toBeGreaterThan(0.45); // 3 of 6 weights
+    expect(gopherFirst / 4000).toBeLessThan(0.55);
+    for (let i = 0; i < 200; i++) expect(perimeterBag(wildPool('cardium'), new Set(), 'geese', rand)[0]).not.toBe('geese');
   });
 
-  it('the first scene comes after 15s idle or at its moment; later ones only at theirs', () => {
-    const s: WildState = { queue: [{ gag: 'moose', at: 30_000 }, { gag: 'geese', at: 50_000 }], next: 0 };
-    expect(dueWildlife(10_000, 5_000, s)).toBeNull();
-    expect(dueWildlife(16_000, ANIMAL_IDLE_MS, s)).toBe('moose');
-    expect(dueWildlife(30_000, 200, s)).toBe('moose');
-    expect(dueWildlife(40_000, 20_000, { ...s, next: 1 })).toBeNull();
-    expect(dueWildlife(50_000, 0, { ...s, next: 1 })).toBe('geese');
-    expect(dueWildlife(90_000, 90_000, { ...s, next: 2 })).toBeNull();
+  it('at most one perimeter gag every 30 to 45 seconds, no repeats until all have played', () => {
+    const rand = mulberry32(12);
+    const pool = wildPool('cardium');
+    for (let i = 0; i < 500; i++) {
+      const gap = perimeterGap(rand);
+      expect(gap).toBeGreaterThanOrEqual(PERIMETER_GAP_MS.min);
+      expect(gap).toBeLessThanOrEqual(PERIMETER_GAP_MS.max);
+    }
+    let s = planWildlife(pool, new Set(), rand);
+    expect(s.nextAt).toBeGreaterThanOrEqual(30_000);
+    expect(nextPerimeter(s.nextAt - 1, s, pool, new Set(), rand)).toBeNull();
+    const played: string[] = [];
+    let t = 0;
+    for (let i = 0; i < pool.length * 3; i++) {
+      t = s.nextAt;
+      const n = nextPerimeter(t, s, pool, new Set(), rand)!;
+      played.push(n.gag);
+      // While it plays, and until the gap after it has passed, nothing else may start.
+      expect(nextPerimeter(t + 5_000, n.state, pool, new Set(), rand)).toBeNull();
+      s = perimeterDone(t + 5_000, n.state, rand);
+      expect(s.nextAt - (t + 5_000)).toBeGreaterThanOrEqual(30_000);
+      expect(nextPerimeter(s.nextAt - 1, s, pool, new Set(), rand)).toBeNull();
+    }
+    for (let r = 0; r < 3; r++) expect(new Set(played.slice(r * pool.length, (r + 1) * pool.length)).size).toBe(pool.length);
+    for (let i = 1; i < played.length; i++) expect(played[i]).not.toBe(played[i - 1]);
+  });
+
+  it('reaction slots: a great move is two exits back to back; stuck is 20 seconds without a move', () => {
+    expect(isGreatMove(null, 1000)).toBe(false);
+    expect(isGreatMove(1000, 1000 + GREAT_MOVE_MS)).toBe(true);
+    expect(isGreatMove(1000, 1001 + GREAT_MOVE_MS)).toBe(false);
+    expect(isStuck(STUCK_MS - 1)).toBe(false);
+    expect(isStuck(STUCK_MS)).toBe(true);
+    expect(STUCK_MS).toBe(20_000);
   });
 
   it('demo mode: the bear anywhere, others where they live', () => {
