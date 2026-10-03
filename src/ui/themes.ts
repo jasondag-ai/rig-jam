@@ -10,15 +10,12 @@ export type Ground = 'gravel' | 'mud' | 'snow';
 export const THEME_VARS = [
   '--sky-top', // top of the sky gradient behind the HUD
   '--sky-bottom', // sky at the horizon
-  '--ground', // grass or snow outside the fence
+  '--ground', // grass or snow outside the berm
   '--ground-dark', // patches and the bottom of the screen
-  '--fence-color', // fence boards
-  '--fence-post', // fence posts
-  '--fence-cap', // snow along the fence top (transparent if none)
   '--pad', // the lease pad surface
   '--pad-light', // highlights on the pad
   '--pad-dark', // shadows, ruts, speckles on the pad
-  '--pad-grid', // faint cell lines
+  '--pad-grid', // very faint cell lines: just enough to judge distances
   '--accent', // titles, Hint button, earned hats
   '--tree-spruce',
   '--tree-spruce-dark',
@@ -55,13 +52,10 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--sky-bottom': '#c4ecff',
       '--ground': '#5a831f',
       '--ground-dark': '#386114',
-      '--fence-color': '#7a4a22',
-      '--fence-post': '#533013',
-      '--fence-cap': NONE,
       '--pad': '#bea890',
       '--pad-light': '#d9c6ae',
       '--pad-dark': '#7d6650',
-      '--pad-grid': 'rgba(60, 40, 20, 0.2)',
+      '--pad-grid': 'rgba(60, 40, 20, 0.11)',
       '--accent': '#ffc21a',
       '--tree-spruce': '#2e9a52',
       '--tree-spruce-dark': '#1d6e39',
@@ -84,13 +78,10 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--sky-bottom': '#e2f3f8',
       '--ground': '#5f8a1c',
       '--ground-dark': '#3a6612',
-      '--fence-color': '#6e4423',
-      '--fence-post': '#4a2b12',
-      '--fence-cap': NONE,
       '--pad': '#573f2e',
       '--pad-light': '#8a6e57',
       '--pad-dark': '#2e1c10',
-      '--pad-grid': 'rgba(255, 225, 190, 0.15)',
+      '--pad-grid': 'rgba(255, 225, 190, 0.08)',
       '--accent': '#ffc21a',
       '--tree-spruce': '#2b8048',
       '--tree-spruce-dark': '#1b5a31',
@@ -113,13 +104,10 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--sky-bottom': '#e8f2fa',
       '--ground': '#b9aea6',
       '--ground-dark': '#827267',
-      '--fence-color': '#74492a',
-      '--fence-post': '#4f3019',
-      '--fence-cap': '#ffffff',
       '--pad': '#e0e8f5',
       '--pad-light': '#f9fbfd',
       '--pad-dark': '#a9c0de',
-      '--pad-grid': 'rgba(50, 85, 135, 0.18)',
+      '--pad-grid': 'rgba(50, 85, 135, 0.11)',
       '--accent': '#ffc21a',
       '--tree-spruce': '#23734b',
       '--tree-spruce-dark': '#16523a',
@@ -147,8 +135,11 @@ export function applyTheme(el: HTMLElement, theme: Theme): void {
   groundTextures(el, theme.id);
 }
 
-/** The season's ground photos (public/sprites/ground, from tools/ground-tiles.py): pad and grass. */
-export const groundTiles = (id: string) => [`./sprites/ground/pad-${id}.webp`, `./sprites/ground/grass-${id}.webp`];
+/**
+ * The season's ground (public/sprites/ground, from tools/ground-tiles.py): the lease, one continuous
+ * surface stretched over the whole board and never tiled, and the grass tile outside the berm.
+ */
+export const groundTiles = (id: string) => [`./sprites/ground/lease-${id}.webp`, `./sprites/ground/grass-${id}.webp`];
 const loaded = new Map<string, Promise<boolean>>();
 const loadTile = (src: string) => {
   let p = loaded.get(src);
@@ -172,7 +163,7 @@ const ready = new Set<string>();
 function groundTextures(el: HTMLElement, id: string): void {
   if (typeof Image === 'undefined') return;
   const [pad, grass] = groundTiles(id).map((src) => `url("${new URL(src, location.href).href}")`);
-  el.style.setProperty('--pad-tile', pad);
+  el.style.setProperty('--lease-img', pad);
   el.style.setProperty('--grass-tile', grass);
   if (ready.has(id)) return void el.classList.add('ground-tex');
   void Promise.all(groundTiles(id).map(loadTile)).then((ok) => {

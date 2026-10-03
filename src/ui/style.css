@@ -475,31 +475,33 @@ input,
 .board {
   position: relative;
   touch-action: none;
-  filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.18));
 }
 
-/* The yard clips trucks as they drive out. Boards between posts, with snow on top in winter. */
+/* The lease's ground: one continuous surface under the pad and the berm band alike (it shows through
+   each gate's gap, like the lease road). Flat color until the season's image is in. */
+.lease-ground {
+  position: absolute;
+  inset: 0;
+  border-radius: calc(var(--fence) * 0.9);
+  background: var(--pad);
+}
+
+/* The dirt berm (berm.ts): a canvas a little larger than the board, under the trucks and gates. */
+canvas.berm {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* The yard clips trucks as they drive out. */
 .yard {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  border: 3px solid var(--outline);
-  border-radius: 16px;
-  background:
-    repeating-linear-gradient(90deg, transparent 0 calc(var(--fence) - 6px), var(--fence-post) 0 var(--fence)),
-    linear-gradient(var(--fence-cap), var(--fence-cap)) top / 100% 5px no-repeat,
-    linear-gradient(rgba(255, 255, 255, 0.18), transparent 40%, rgba(0, 0, 0, 0.18)),
-    var(--fence-color);
 }
 
 .pad {
   position: absolute;
   overflow: hidden;
-  border-radius: 6px;
-  background:
-    radial-gradient(ellipse at 30% 25%, var(--pad-light), transparent 60%),
-    var(--pad);
-  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.25), inset 0 6px 10px rgba(0, 0, 0, 0.25);
 }
 
 /* Cell lines sit over the ground detail (puddle stains are under them) and under the tracks. */
@@ -1738,56 +1740,6 @@ input,
   .lease-banner { opacity: 1; }
 }
 
-/* ---------- Pipe-rail fence (sprites.ts pipeFence): replaces the board fence once loaded ---------- */
-
-/* The fence band shows the ground through it; the pipes sit on its centreline. Pipe thickness --p
-   is the same in rails and corners (their sources are 23px and 18px thick pipes). */
-.board.pipe-on .yard {
-  border-color: transparent;
-  background: transparent;
-}
-.board.pipe-on { filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.12)); }
-.pipe-fence {
-  --p: calc(var(--fence) * 0.32);
-  --rail: calc(var(--p) * 60 / 23);
-  --post: calc(var(--p) * 128 / 18);
-  position: absolute;
-  inset: -3px;
-  display: none;
-  pointer-events: none;
-}
-.board.pipe-on .pipe-fence { display: block; }
-.pf-rail,
-.pf-corner {
-  position: absolute;
-  background-repeat: no-repeat;
-}
-.pf-rail.h {
-  left: calc(var(--fence) / 2);
-  right: calc(var(--fence) / 2);
-  height: var(--rail);
-  background: var(--rail-h) left center / auto 100% repeat-x;
-}
-.pf-rail.top { top: calc(var(--fence) / 2 - var(--rail) / 2); }
-.pf-rail.bottom { bottom: calc(var(--fence) / 2 - var(--rail) / 2); }
-.pf-rail.v {
-  top: calc(var(--fence) / 2);
-  bottom: calc(var(--fence) / 2);
-  width: var(--rail);
-  background: var(--rail-v) center top / 100% auto repeat-y;
-}
-.pf-rail.left { left: calc(var(--fence) / 2 - var(--rail) / 2); }
-.pf-rail.right { right: calc(var(--fence) / 2 - var(--rail) / 2); }
-.pf-corner {
-  width: var(--post);
-  height: var(--post);
-  background-size: 100% 100%;
-}
-.pf-corner.tl { left: calc(var(--fence) / 2 - var(--post) / 2); top: calc(var(--fence) / 2 - var(--post) / 2); background-image: var(--corner-tl); }
-.pf-corner.tr { right: calc(var(--fence) / 2 - var(--post) / 2); top: calc(var(--fence) / 2 - var(--post) / 2); background-image: var(--corner-tr); }
-.pf-corner.br { right: calc(var(--fence) / 2 - var(--post) / 2); bottom: calc(var(--fence) / 2 - var(--post) / 2); background-image: var(--corner-br); }
-.pf-corner.bl { left: calc(var(--fence) / 2 - var(--post) / 2); bottom: calc(var(--fence) / 2 - var(--post) / 2); background-image: var(--corner-bl); }
-
 /* ---------- Ground textures (themes.ts groundTextures): photo tiles once loaded ---------- */
 
 /* Outside the fence: grass (or winter's snowy grass) below the horizon; the sky stays drawn. */
@@ -1799,13 +1751,10 @@ input,
     var(--ground);
 }
 
-/* The pad: the season's ground, about three cells to a tile, with a soft light from the top left.
-   The drawn speckles and puddle stains give way to the photo. */
-.screen.ground-tex .pad {
-  background:
-    radial-gradient(ellipse at 30% 25%, rgba(255, 255, 255, 0.12), transparent 60%),
-    var(--pad-tile) 0 0 / calc(var(--cell) * 3) calc(var(--cell) * 3) repeat,
-    var(--pad);
+/* The lease: the season's ground as ONE image over the whole board, never tiled. The drawn speckles
+   and puddle stains give way to it. */
+.screen.ground-tex .lease-ground {
+  background: var(--lease-img) center / 100% 100% no-repeat, var(--pad);
 }
 .screen.ground-tex .pad-decor { display: none; }
 
@@ -2895,12 +2844,12 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
    Only the world behind the play pieces is graded: trucks, badges, gates and buttons keep their exact
    colors. The vignette sits above the scenery but under the board, HUD and buttons. */
 
-/* Warm sun from the top left over the pad, falling off to a slightly cooler, darker corner. */
-.screen.ground-tex .pad {
+/* Warm sun from the top left over the lease, falling off to a slightly cooler, darker corner. */
+.screen.ground-tex .lease-ground {
   background:
     radial-gradient(ellipse 85% 75% at 22% 18%, rgba(255, 210, 140, 0.24), transparent 70%),
     linear-gradient(135deg, transparent 50%, rgba(50, 25, 5, 0.16)),
-    var(--pad-tile) 0 0 / calc(var(--cell) * 3) calc(var(--cell) * 3) repeat,
+    var(--lease-img) center / 100% 100% no-repeat,
     var(--pad);
 }
 
@@ -2921,7 +2870,6 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
 }
 
 /* Soft shadows under the fence and gates (cast down-right, like the trucks'). */
-.board.pipe-on .pipe-fence { filter: drop-shadow(2px 3px 2px rgba(40, 25, 10, 0.38)); }
 .gate { filter: drop-shadow(2px 3px 2px rgba(30, 18, 6, 0.35)); }
 .screen.game .hud { filter: drop-shadow(0 3px 3px rgba(30, 18, 6, 0.18)); }
 
@@ -2938,13 +2886,13 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
    post. The leaf swings 90 degrees outward on its hinge while its truck drives out (.open). ---------- */
 
 .gate .gw { display: none; }
-.board.pipe-on .gate {
+.board.gate-art .gate {
   background: none;
   box-shadow: none;
 }
-.board.pipe-on .gate > .sym,
-.board.pipe-on .gate > .boom { display: none; }
-.board.pipe-on .gate .gw {
+.board.gate-art .gate > .sym,
+.board.gate-art .gate > .boom { display: none; }
+.board.gate-art .gate .gw {
   /* Drawn lying along the top fence (hinge left, outside up), turned to fit each side. */
   --turn: 0deg;
   display: block;
@@ -2956,9 +2904,9 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
   transform: translate(-50%, -50%) rotate(var(--turn));
   pointer-events: none;
 }
-.board.pipe-on .gate[data-side='right'] .gw { --turn: 90deg; }
-.board.pipe-on .gate[data-side='bottom'] .gw { --turn: 180deg; }
-.board.pipe-on .gate[data-side='left'] .gw { --turn: -90deg; }
+.board.gate-art .gate[data-side='right'] .gw { --turn: 90deg; }
+.board.gate-art .gate[data-side='bottom'] .gw { --turn: 180deg; }
+.board.gate-art .gate[data-side='left'] .gw { --turn: -90deg; }
 
 .gw img { display: block; user-select: none; -webkit-user-drag: none; }
 .gw .g-leaf {
@@ -3015,17 +2963,17 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
 }
 
 /* Convoy gates: badge to one side, the chip with the waiting number to the other (upright). */
-.board.pipe-on .gate.convoy-gate .gw .g-badge { left: 32%; }
-.board.pipe-on .gate.convoy-gate .wait {
+.board.gate-art .gate.convoy-gate .gw .g-badge { left: 32%; }
+.board.gate-art .gate.convoy-gate .wait {
   position: absolute;
   z-index: 1;
   width: calc(var(--fence) * 0.78);
   height: calc(var(--fence) * 0.78);
 }
-.board.pipe-on .gate.convoy-gate[data-side='top'] .wait { left: 68%; top: 50%; transform: translate(-50%, -50%); }
-.board.pipe-on .gate.convoy-gate[data-side='bottom'] .wait { left: 32%; top: 50%; transform: translate(-50%, -50%); }
-.board.pipe-on .gate.convoy-gate[data-side='left'] .wait { left: 50%; top: 32%; transform: translate(-50%, -50%); }
-.board.pipe-on .gate.convoy-gate[data-side='right'] .wait { left: 50%; top: 68%; transform: translate(-50%, -50%); }
+.board.gate-art .gate.convoy-gate[data-side='top'] .wait { left: 68%; top: 50%; transform: translate(-50%, -50%); }
+.board.gate-art .gate.convoy-gate[data-side='bottom'] .wait { left: 32%; top: 50%; transform: translate(-50%, -50%); }
+.board.gate-art .gate.convoy-gate[data-side='left'] .wait { left: 50%; top: 32%; transform: translate(-50%, -50%); }
+.board.gate-art .gate.convoy-gate[data-side='right'] .wait { left: 50%; top: 68%; transform: translate(-50%, -50%); }
 
 @media (prefers-reduced-motion: reduce) {
   .gw .g-leaf { transition: none; }

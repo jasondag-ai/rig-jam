@@ -26,11 +26,11 @@ something, give exact clicks and one command at a time.
 - Tell the owner what was accepted, what was rejected, and that REJECTS.md is ready to paste.
 
 ## Game rules (source of truth)
-- 6x6 top-down oilfield lease pad, surrounded by a fence.
+- 6x6 top-down oilfield lease pad, surrounded by a dirt berm (the wall; it blocks trucks).
 - Trucks are 2 or 3 cells long and slide only along their length (horizontal or vertical).
 - One drag = one move. A drag slides a truck any distance until it is blocked.
-- Colored gates sit in the fence. A truck exits when it slides into a gate of its own color.
-  Wrong-color gates act as walls, same as the fence.
+- Colored gates sit in gaps in the berm. A truck exits when it slides into a gate of its own color.
+  Wrong-color gates act as walls, same as the berm.
 - Each truck has exactly one gate of its color in line with it. The cab faces that gate.
 - Trucks have a cosmetic `kind` that must suit their length: 2-cell `pickup`/`picker`, 3-cell
   `vac`/`frac`/`water` (missing = pickup or vac). The engine and solver never read it.
@@ -60,7 +60,7 @@ something, give exact clicks and one command at a time.
 - `src/ui/themes.ts` – each theme sets every variable in `THEME_VARS` (sky, ground, fence, pad,
   trees, truck grime/roof snow) plus a pad ground style. A region picks its theme in
   `src/levels/regions.ts`. Tests check every theme is complete and every gate color has at least
-  1.8:1 contrast with every fence.
+  1.8:1 contrast with the dark ring round its badge (what sets it apart on any ground, snow included).
 - Tire tracks: every level starts clean. The path a truck actually drives during a drag is written
   into the ground, live under the finger: `DragPath` (`src/ui/tracks.ts`) splits a drag into sweeps
   at each reversal (> `REVERSE` cells; snap-backs don't count), and every sweep wears the lane cells
@@ -84,31 +84,42 @@ something, give exact clicks and one command at a time.
 - Touch tests: `setPointerCapture` is wrapped in try/catch so synthetic/edge-case pointers can't
   kill a drag. Playwright iPhone emulation: Chromium with real touch events (CDP
   `Input.dispatchTouchEvent`); WebKit with touch-type PointerEvents (its build has no touch drag API).
-- Ground textures: `public/sprites/ground/pad-<season>.webp` (summer gravel, spring mud, winter
-  snow) and `grass-<season>.webp` (outside the fence), 512px seamless tiles made by `python3
-  tools/ground-tiles.py` from `tools/ground-art/` (mud puddle highlights toned down so they never
-  read as objects; spring grass is a stand-in: summer grass tinted slightly toward early spring, until a real one is added). Writes
-  `src/ui/ground-tiles.json`; each theme's `--pad`/`--ground` colors match the textures' tones.
-  `applyTheme` loads both tiles and adds `.ground-tex` once they're in (until then, or if they
-  fail, the flat colors and `pad-decor.ts` detail show). The pad tile is 3 cells square; drawn pad
-  decor is hidden over it. Tire tracks have `.ground-tex` overrides tuned for the photos.
-- Pipe-rail fence: `public/sprites/fence/` (rail-h, rail-v, corner-tl/tr/br/bl) from
-  `tools/fence-art/` by `python3 tools/fence-sprites.py` (rail cropped centred on its pipe;
-  fence_corner_v1 turned to each corner). `pipeFence` (sprites.ts) adds `.pipe-on` to the board once
-  all six load: rails run post centre to post centre on the fence band's centreline, corners on top,
-  pipe thickness `--p` matched (sources: 23px rail, 18px corner); the band shows the ground behind.
-  Drawn board fence is the fallback.
-- Pipe swing gates (with `.pipe-on`; pieces from `gate_open_v2.png`, cut by fence-sprites.py):
-  hinge post, leaf (white frame tinted per gate color + a translucent color panel) carrying the
-  symbol badge, latch post. Drawn lying along the top fence and turned per side (`--turn`); the
-  badge counter-rotates to stay upright. Each rail gets a mask gap at its gates (`cutRails`). Gates
-  live on the board (not the clipping yard) so the leaf can swing past it. On exit (`.open`) the
-  leaf swings 90 degrees (260ms ease-out): outward on top/bottom, inward on the sides (only a thin
-  screen margin outside them); none with reduced motion. Wrong-color gates simply stay shut.
-  Convoy gates put the badge to one side and the waiting-number chip to the other. Fallback: the
-  colored tabs (`.sym` + `.boom`).
+- GAGS ARE OFF (`src/ui/flags.ts`, `GAGS_ON = false`, the one switch): no magpie, spotter, biffy,
+  landowner, wildlife, traffic, cords or reactions, no Wildlife Log button or toasts (the saved log
+  is untouched). `GameView.gags` is null. `?gags=1` turns them on for one page load (the gag and log
+  e2e suites use it). Build order is GAME_BIBLE 9b: fundamentals first, then gags one at a time.
+- Fit: `#app` is `100dvh`; `--safe-top/-bottom/-left/-right` (style.css `:root`) carry the safe-area
+  insets and every screen pads with them. The game screen is HUD, stage (flex), note, controls; the
+  lease is the largest square that fits the stage, so the sky band and bottom strip give way first.
+  `GameView` refits on window resize and whenever the stage changes size (ResizeObserver).
+  `npm run test:e2e:fit` checks 375x667, 390x844, 393x852 and 430x932, each with Safari's toolbars
+  (100px less) and as a home-screen app (insets faked through the variables), and saves screenshots.
+- Lease ground: ONE continuous surface per season, `public/sprites/ground/lease-<season>.webp`
+  (1024px), stretched over the whole board (`.lease-ground`: pad and berm band alike, so it also shows
+  through each gate's gap) and never tiled. `python3 tools/ground-tiles.py` builds it from the
+  seamless sources in `tools/ground-art/` by blending four shifted copies (half turns only, so ruts
+  and drifts keep one direction) through soft random masks, plus a slow tone drift; mud puddle
+  highlights are toned down. It also writes the `grass-<season>.webp` tiles for outside the berm
+  (spring grass is a stand-in) and `src/ui/ground-tiles.json` (tones; each theme's `--pad`/`--ground`
+  match them). `applyTheme` adds `.ground-tex` once both images are in (flat colors and `pad-decor.ts`
+  detail until then). Cell lines (`--pad-grid`) are very faint. Tire tracks draw on top as before.
+- Dirt berm (`src/ui/berm.ts`, tested): no fence. `bermHeight` is a rounded mound across the band
+  (crest toward the pad, outer slope running `BERM_OVER` past the board) that slopes to nothing at
+  each gate's gap; `paintBerm` shades it on a canvas (`canvas.berm`, under the yard) from a height
+  map with seeded lumps, lit from the top left, soft shadow down-right onto the pad, grass creeping
+  up the outer slope and tufts. Looks per ground (`BERM_LOOKS`): brown dirt (gravel), wet dark mud
+  with shine (mud), snow with dry stalks (snow). Repainted only when size, level or season changes.
+  Picture only: the engine's walls block trucks. `--fence` is still the band's thickness in px.
+- Pipe swing gates (`.gate-art`, set by `gateArt` once the pieces from `gate_open_v2.png` load, cut
+  by `tools/fence-sprites.py`): each sits in its gap in the berm: hinge post, leaf (white frame
+  tinted per gate color + a translucent color panel) carrying the symbol badge, latch post. Drawn
+  lying along the top side and turned per side (`--turn`); the badge counter-rotates to stay upright.
+  Gates live on the board (not the clipping yard) so the leaf can swing past it. On exit (`.open`)
+  the leaf swings 90 degrees (260ms ease-out): outward on top/bottom, inward on the sides; none with
+  reduced motion. Wrong-color gates simply stay shut. Convoy gates put the badge to one side and the
+  waiting-number chip to the other. Fallback: the colored tabs (`.sym` + `.boom`).
 - Lighting pass (end of style.css): warm top-left light graded into the pad and outside-ground
-  backgrounds, a slight sepia on the trees, soft down-right drop shadows on the fence, gates, trees
+  backgrounds, a slight sepia on the trees, soft down-right drop shadows on the berm, gates, trees
   and HUD, and a warm vignette (`.vignette`, z 0: over the scenery, under the board, HUD and
   buttons). Nothing that changes color may sit on a truck or gate (tested in sprites e2e).
 - Puddles are flat, low-contrast stains (no outline, rim, glint or shadow) centred on grid corners,
@@ -126,7 +137,7 @@ something, give exact clicks and one command at a time.
   (`seasonArt`: winter is all snowy spruce; spring uses the young aspen), with cattails and the blank
   lease sign as accents. All under the board, gates and buttons. The bear's bush is the willow.
 - `src/ui/pad-decor.ts` (gravel/mud/snow detail) are seeded,
-  cosmetic, and never affect play. `--fence` is the fence thickness in px; its color is `--fence-color`.
+  cosmetic, and never affect play.
 
 ## Cover (title screen)
 - `src/ui/cover.ts`: shown on every app open (never between levels). Hero image `public/cover.webp`
@@ -376,7 +387,8 @@ something, give exact clicks and one command at a time.
 - `npm run check-levels` – print levels and solutions
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
 - `npm run test:e2e:gags` – gags test (Playwright; start the dev server first)
-- `npm run test:e2e:sprites` – truck sprites, fallback, drag frame rate (start the dev server first)
+- `npm run test:e2e:fit` – every iPhone size, Safari and home-screen app, with screenshots (start the dev server first)
+- `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)
 - `npm run test:e2e:audio` – sound cues, settings and music-style distinctness (start the dev server first)

@@ -55,7 +55,7 @@ const REGIONS: RegionConfig[] = [
       { name: 'Spud Day', trucks: 2, pumpjacks: 0, minPar: 2, maxPar: 2, minExtra: 0, decoys: 0, seed: 101,
         hint: 'Drag a truck along its length. It drives out through the gate with its color and symbol.' },
       { name: 'Wrong Gate', trucks: 3, pumpjacks: 0, minPar: 3, maxPar: 3, minExtra: 0, decoys: 1, seed: 102,
-        hint: 'A gate of the wrong color is just more fence.' },
+        hint: 'A gate of the wrong color stays shut, like the berm.' },
       { name: 'Pecking Order', trucks: 4, pumpjacks: 0, minPar: 4, maxPar: 4, minExtra: 0, decoys: 1, seed: 103 },
       { name: 'Back It Up', trucks: 4, pumpjacks: 0, minPar: 5, maxPar: 5, minExtra: 1, decoys: 1, seed: 104,
         hint: 'Sometimes a truck has to back away from its gate to let another one through.' },

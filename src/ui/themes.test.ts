@@ -12,6 +12,9 @@ const GATE_COLORS = {
   purple: '#a55cff',
 };
 
+// The toy outline (--outline in style.css).
+const OUTLINE = '#2a1a0c';
+
 function luminance(hex: string): number {
   const [r, g, b] = [1, 3, 5].map((i) => {
     const c = parseInt(hex.slice(i, i + 2), 16) / 255;
@@ -40,11 +43,10 @@ describe('themes', () => {
     for (const r of REGIONS) expect(THEMES[r.theme]).toBeDefined();
   });
 
-  it.each(Object.values(THEMES))('$id: every gate color stands out from the fence', (theme) => {
-    for (const [color, hex] of Object.entries(GATE_COLORS)) {
-      const ratio = contrast(hex, theme.vars['--fence-color']);
-      expect(ratio, `${color} gate on ${theme.id} fence`).toBeGreaterThanOrEqual(1.8);
-    }
+  // Gates sit in gaps in the berm, over the season's ground (snow in winter, where no bright color
+  // can contrast by itself): the badge's dark ring is what sets each color apart on any ground.
+  it('every gate color stands out from the dark ring round its badge', () => {
+    for (const [color, hex] of Object.entries(GATE_COLORS)) expect(contrast(hex, OUTLINE), color).toBeGreaterThanOrEqual(1.8);
   });
 
   it('accepts only known themes from the URL override', () => {

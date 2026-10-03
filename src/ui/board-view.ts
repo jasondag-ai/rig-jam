@@ -4,7 +4,9 @@ import { pickLine, type BumpHit } from './lines.ts';
 import { OBSTACLE_SVG } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
 import { Spray } from './spray.ts';
-import { obstacleFit, obstacleImgs, pipeFence, spriteImg, wireSprite } from './sprites.ts';
+import { gateArt, obstacleFit, obstacleImgs, spriteImg, wireSprite } from './sprites.ts';
+import { BERM_OVER, paintBerm } from './berm.ts';
+import { seedFrom } from '../engine/rng.ts';
 import { TrackLayer } from './track-layer.ts';
 import type { Ground } from './themes.ts';
 import { SYMBOL } from './palette.ts';
@@ -43,6 +45,10 @@ export class BoardView {
   private cell = 48;
   private fence = 20;
   private drag: Drag | null = null;
+  /** The dirt berm round the pad (berm.ts), repainted when the size, level or season changes. */
+  private berm: HTMLCanvasElement;
+  private ground: Ground = 'gravel';
+  private bermKey = '';
   private lastLine: string | null = null;
   /** Tire tracks laid by drags, under obstacles and trucks; wheel spray while trucks move. */
   private tracks: TrackLayer;
@@ -67,16 +73,10 @@ export class BoardView {
     // The yard clips trucks driving out; bubbles sit on the board so they can overhang.
     this.yard = document.createElement('div');
     this.yard.className = 'yard';
-    // Pipe-rail fence (sprites.ts): rails post centre to post centre, a corner post at each corner.
-    // Behind the gates; the board keeps its drawn fence until the pieces have loaded.
-    this.yard.insertAdjacentHTML(
-      'afterbegin',
-      '<div class="pipe-fence" aria-hidden="true">' +
-        ['h top', 'h bottom', 'v left', 'v right'].map((c) => `<i class="pf-rail ${c}"></i>`).join('') +
-        ['tl', 'tr', 'br', 'bl'].map((c) => `<i class="pf-corner ${c}"></i>`).join('') +
-        '</div>',
-    );
-    pipeFence(this.el);
+    // Under everything: the lease's one continuous ground (pad and berm band alike), then the berm.
+    this.el.insertAdjacentHTML('afterbegin', '<div class="lease-ground" aria-hidden="true"></div><canvas class="berm" aria-hidden="true"></canvas>');
+    this.berm = this.el.querySelector('canvas.berm')!;
+    gateArt(this.el);
     this.pad = document.createElement('div');
     this.pad.className = 'pad';
     this.yard.append(this.pad);
@@ -168,7 +168,7 @@ export class BoardView {
         height: `${vertical ? cell : fence}px`,
       });
     });
-    this.cutRails();
+    this.paintBerm();
     this.el.querySelectorAll<HTMLElement>('.obstacle').forEach((ob) => {
       Object.assign(ob.style, {
         width: `${cell}px`,
@@ -180,35 +180,18 @@ export class BoardView {
     if (state) this.sync(state, false);
   }
 
-  /**
-   * Cuts a gap in the pipe rail behind each gate (a mask on each rail), so the rail stops at the gate
-   * posts and an open gate is a real opening.
-   */
-  private cutRails(): void {
-    const { cell, fence } = this;
-    const total = cell * SIZE + fence * 2;
-    const rails = { top: 'h', bottom: 'h', left: 'v', right: 'v' } as const;
-    for (const side of Object.keys(rails) as Side[]) {
-      const rail = this.el.querySelector<HTMLElement>(`.pf-rail.${side}`);
-      if (!rail) continue;
-      // Rails run from post centre to post centre: fence/2 in from the board's outer edge.
-      const len = total - fence;
-      const gaps = (this.level?.gates ?? [])
-        .filter((g) => g.side === side)
-        .map((g) => fence + g.index * cell - fence / 2)
-        .sort((a, b) => a - b);
-      const stops: string[] = [];
-      let at = 0;
-      for (const a of gaps) {
-        stops.push(`#000 ${at}px ${a}px`, `transparent ${a}px ${a + cell}px`);
-        at = a + cell;
-      }
-      stops.push(`#000 ${at}px ${len}px`);
-      const dir = rails[side] === 'h' ? 'to right' : 'to bottom';
-      const mask = gaps.length ? `linear-gradient(${dir}, ${stops.join(', ')})` : '';
-      rail.style.maskImage = mask;
-      rail.style.setProperty('-webkit-mask-image', mask);
-    }
+  /** Draws the berm for this board size, level (gate gaps) and season; skipped when nothing changed. */
+  private paintBerm(): void {
+    if (!this.level) return;
+    const { cell, fence, ground } = this;
+    const over = Math.round(fence * BERM_OVER);
+    const scale = Math.min(3, window.devicePixelRatio || 1);
+    const key = [cell, fence, ground, scale, this.level.id, this.level.gates.map((g) => g.side + g.index).join()].join('|');
+    if (key === this.bermKey) return;
+    this.bermKey = key;
+    const size = cell * SIZE + (fence + over) * 2;
+    Object.assign(this.berm.style, { left: `${-over}px`, top: `${-over}px`, width: `${size}px`, height: `${size}px` });
+    paintBerm(this.berm, { cell, band: fence, over, gates: this.level.gates }, ground, seedFrom(this.level.id), scale);
   }
 
   /** Brings truck elements in line with the game state. */
@@ -447,6 +430,8 @@ export class BoardView {
     this.pad.querySelector('.pad-decor')?.remove();
     this.pad.insertAdjacentHTML('afterbegin', svg);
     this.tracks.setGround(ground);
+    this.ground = ground;
+    this.paintBerm();
     this.spray.setGround(ground);
   }
 

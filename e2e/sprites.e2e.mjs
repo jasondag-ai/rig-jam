@@ -7,6 +7,8 @@ import { chromium, webkit, devices } from 'playwright';
 import { REGIONS } from '../src/levels/regions.ts';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
+/** How many ground images the lease's background uses (one: a single surface, not tiles). */
+const getPadTiles = (bg) => (bg.match(/url\(/g) ?? []).length;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;
 const check = (ok, text) => {
@@ -62,45 +64,59 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
     check(t.every((x) => x.badge && x.shadow), 'symbol badge on top, ground shadow under');
     const g = await page.evaluate(() => {
       const scr = document.querySelector('.screen.game');
-      return { tex: scr.classList.contains('ground-tex'), theme: scr.dataset.theme, pad: getComputedStyle(document.querySelector('.pad')).backgroundImage, outside: getComputedStyle(scr).backgroundImage };
+      return { tex: scr.classList.contains('ground-tex'), theme: scr.dataset.theme, pad: getComputedStyle(document.querySelector('.lease-ground')).backgroundImage, size: getComputedStyle(document.querySelector('.lease-ground')).backgroundSize, repeat: getComputedStyle(document.querySelector('.lease-ground')).backgroundRepeat, outside: getComputedStyle(scr).backgroundImage };
     });
-    check(g.tex && g.pad.includes(`pad-${g.theme}.webp`) && g.outside.includes(`grass-${g.theme}.webp`), `${g.theme} ground: pad and grass textures`);
+    check(g.tex && g.pad.includes(`lease-${g.theme}.webp`) && g.outside.includes(`grass-${g.theme}.webp`), `${g.theme} ground: lease and grass textures`);
+    check(g.size.includes('100% 100%') && g.repeat.includes('no-repeat') && getPadTiles(g.pad) === 1, 'the lease ground is one image over the whole board, never tiled');
     const f = await page.evaluate(() => {
       const board = document.querySelector('.board');
-      const R = (s) => board.querySelector(s).getBoundingClientRect();
-      const mid = (r) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
-      const [top, bottom, left, right] = ['.pf-rail.top', '.pf-rail.bottom', '.pf-rail.left', '.pf-rail.right'].map((s) => R(s));
-      const c = Object.fromEntries(['tl', 'tr', 'br', 'bl'].map((k) => [k, mid(R(`.pf-corner.${k}`))]));
-      // Each rail's pipe line passes through both corner posts it runs between, and starts/ends at them.
-      const off = Math.max(
-        Math.abs(mid(top).y - c.tl.y), Math.abs(mid(top).y - c.tr.y), Math.abs(mid(bottom).y - c.bl.y), Math.abs(mid(bottom).y - c.br.y),
-        Math.abs(mid(left).x - c.tl.x), Math.abs(mid(left).x - c.bl.x), Math.abs(mid(right).x - c.tr.x), Math.abs(mid(right).x - c.br.x),
-        Math.abs(top.left - c.tl.x), Math.abs(top.right - c.tr.x), Math.abs(left.top - c.tl.y), Math.abs(left.bottom - c.bl.y),
-      );
+      // The berm: painted all round the pad's band, with nothing in a gate's gap.
+      const canvas = board.querySelector('canvas.berm');
+      const ctx = canvas.getContext('2d');
+      const cr = canvas.getBoundingClientRect();
+      const pad = board.querySelector('.pad').getBoundingClientRect();
+      const k = canvas.width / cr.width;
+      const alpha = (x, y) => ctx.getImageData(Math.round((x - cr.left) * k), Math.round((y - cr.top) * k), 1, 1).data[3];
+      const band = (pad.top - board.getBoundingClientRect().top) / 2;
+      const cell = pad.width / 6;
+      const at = (side, i) => {
+        const along = (side === 'top' || side === 'bottom' ? pad.left : pad.top) + (i + 0.5) * cell;
+        if (side === 'top') return [along, pad.top - band];
+        if (side === 'bottom') return [along, pad.bottom + band];
+        return side === 'left' ? [pad.left - band, along] : [pad.right + band, along];
+      };
+      const gated = new Set([...board.querySelectorAll('.gate')].map((g) => `${g.dataset.side}${g.dataset.index}`));
+      let solid = 0, wall = 0, open = 0, gaps = 0;
+      for (const side of ['top', 'bottom', 'left', 'right'])
+        for (let i = 0; i < 6; i++) {
+          const a = alpha(...at(side, i));
+          if (gated.has(side + i)) { gaps++; if (a < 10) open++; }
+          else { wall++; if (a > 245) solid++; }
+        }
+      const off = wall - solid + (gaps - open);
       const gatesOnTop = [...board.querySelectorAll('.gate')].every((g) => {
         const r = g.getBoundingClientRect();
         const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
         return !!hit?.closest('.gate');
       });
-      return { on: board.classList.contains('pipe-on'), off, gatesOnTop };
+      return { on: board.classList.contains('gate-art'), off, gatesOnTop, rails: board.querySelectorAll('.pf-rail, .pf-corner, .pipe-fence').length, padOver: alpha(pad.left + pad.width / 2, pad.top + pad.height / 2) };
     });
-    check(f.on && f.off < 1.5, `pipe-rail fence; rails meet the corner posts (${f.off.toFixed(2)}px off)`);
-    check(f.gatesOnTop, 'gates sit on top of the rail');
+    check(f.off === 0 && f.padOver === 0, `dirt berm all round the pad, a gap at every gate, nothing on the pad (${f.off} wrong)`);
+    check(f.rails === 0, 'no pipe-rail fence or corner posts');
+    check(f.on && f.gatesOnTop, 'gates sit in the gaps, on top');
     const gates = await page.evaluate(() =>
       [...document.querySelectorAll('.gate')].map((g) => {
         const vis = (sel) => { const e = g.querySelector(sel); return !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0; };
-        const rail = document.querySelector(`.pf-rail.${g.dataset.side}`);
         return {
           parts: vis('.g-leaf') && vis('.g-hinge') && vis('.g-latch') && vis('.g-badge'),
           tab: getComputedStyle(g.querySelector('.sym')).display !== 'none',
           leafColor: g.querySelector('.g-leaf img').src.includes(`gate-leaf-${[...g.classList].find((c) => c.startsWith('c-')).slice(2)}`),
-          railGap: /transparent|rgba\(0, 0, 0, 0\)/.test(getComputedStyle(rail).maskImage || getComputedStyle(rail).webkitMaskImage),
           wait: g.classList.contains('convoy-gate') ? vis('.wait') : true,
         };
       }),
     );
     check(gates.length > 0 && gates.every((x) => x.parts && !x.tab && x.leafColor), `pipe gates: hinge post, ${'leaf in its color'}, latch post and badge (${gates.length})`);
-    check(gates.every((x) => x.railGap && x.wait), 'the rail stops at each gate; convoy chips showing');
+    check(gates.every((x) => x.wait), 'convoy chips showing');
     // Lighting pass: only the world behind is graded. Gates and trucks keep their exact colors.
     const light = await page.evaluate(() => {
       const colorFilter = (el) => /sepia|saturate|hue|brightness|contrast|grayscale|invert/.test(getComputedStyle(el).filter);
@@ -111,7 +127,7 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
         vignetteUnder: z('.vignette') < z('.stage') && z('.vignette') < z('.controls') && z('.vignette') < z('.hud'),
         gates: [...document.querySelectorAll('.gate')].every(clean),
         trucks: [...document.querySelectorAll('.truck')].every(clean),
-        warm: getComputedStyle(document.querySelector('.pad')).backgroundImage.includes('radial-gradient'),
+        warm: getComputedStyle(document.querySelector('.lease-ground')).backgroundImage.includes('radial-gradient'),
       };
     });
     check(light.warm && light.vignetteUnder && light.gates && light.trucks, `lighting: warm grade and vignette behind; gates and trucks untinted (${JSON.stringify(light)})`);
@@ -216,7 +232,7 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
   const t = await trucks(page);
   check(t.length > 0 && t.every((x) => !x.on && x.svgShown && !x.imgShown), `every truck falls back to the drawing (${t.length})`);
   check(!(await page.$eval('.screen.game', (e) => e.classList.contains('ground-tex'))), 'the ground falls back to the flat colors and drawn detail');
-  check(!(await page.$eval('.board', (e) => e.classList.contains('pipe-on'))), 'the fence falls back to the drawn boards');
+  check(!(await page.$eval('.board', (e) => e.classList.contains('gate-art'))), 'the berm is still drawn (it needs no images)');
   check(await page.$$eval('.gate', (gs) => gs.every((g) => getComputedStyle(g.querySelector('.sym')).display !== 'none' && getComputedStyle(g.querySelector('.gw')).display === 'none')), 'the gates fall back to the colored tabs');
   await enter(page, 2, 9);
   const obs = await page.$$eval('.obstacle', (os) => os.map((o) => !o.classList.contains('sprite-on') && getComputedStyle(o.querySelector('svg')).display !== 'none' && !o.querySelector('img')));

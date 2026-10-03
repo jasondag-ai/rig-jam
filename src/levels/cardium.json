@@ -14,7 +14,7 @@
   },
   {
     "id": "c02", "name": "Wrong Gate", "par": 3,
-    "hint": "A gate of the wrong color is just more fence.",
+    "hint": "A gate of the wrong color stays shut, like the berm.",
     "trucks": [
       {"id":"A","color":"red","row":5,"col":1,"length":2,"orient":"h","kind":"pickup"},
       {"id":"B","color":"blue","row":0,"col":3,"length":2,"orient":"h","kind":"picker"},
