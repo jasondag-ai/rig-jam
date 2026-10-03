@@ -61,6 +61,14 @@ something, give exact clicks and one command at a time.
 - Touch tests: `setPointerCapture` is wrapped in try/catch so synthetic/edge-case pointers can't
   kill a drag. Playwright iPhone emulation: Chromium with real touch events (CDP
   `Input.dispatchTouchEvent`); WebKit with touch-type PointerEvents (its build has no touch drag API).
+- Ground textures: `public/sprites/ground/pad-<season>.webp` (summer gravel, spring mud, winter
+  snow) and `grass-<season>.webp` (outside the fence), 512px seamless tiles made by `python3
+  tools/ground-tiles.py` from `tools/ground-art/` (mud puddle highlights toned down so they never
+  read as objects; spring grass is a stand-in shifted from summer until a real one is added). Writes
+  `src/ui/ground-tiles.json`; each theme's `--pad`/`--ground` colors match the textures' tones.
+  `applyTheme` loads both tiles and adds `.ground-tex` once they're in (until then, or if they
+  fail, the flat colors and `pad-decor.ts` detail show). The pad tile is 3 cells square; drawn pad
+  decor is hidden over it. Tire tracks have `.ground-tex` overrides tuned for the photos.
 - Puddles are flat, low-contrast stains (no outline, rim, glint or shadow) centred on grid corners,
   never on a cell, and drawn under the `.pad-grid` cell lines. If they ever read as objects, remove them.
 - `src/ui/scenery.ts` (border trees) and `src/ui/pad-decor.ts` (gravel/mud/snow detail) are seeded,

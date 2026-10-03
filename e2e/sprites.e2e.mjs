@@ -60,6 +60,11 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
     check(t.every((x) => x.src?.includes(`/sprites/trucks/${x.kind}-${x.color}`)), 'each in its own gate color');
     check(t.every((x) => /@2x\.webp$/.test(x.src)), 'the sharp 2x version on a phone screen');
     check(t.every((x) => x.badge && x.shadow), 'symbol badge on top, ground shadow under');
+    const g = await page.evaluate(() => {
+      const scr = document.querySelector('.screen.game');
+      return { tex: scr.classList.contains('ground-tex'), theme: scr.dataset.theme, pad: getComputedStyle(document.querySelector('.pad')).backgroundImage, outside: getComputedStyle(scr).backgroundImage };
+    });
+    check(g.tex && g.pad.includes(`pad-${g.theme}.webp`) && g.outside.includes(`grass-${g.theme}.webp`), `${g.theme} ground: pad and grass textures`);
   }
   await browser.close();
 }
@@ -113,6 +118,7 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
   await enter(page, 1, 5);
   const t = await trucks(page);
   check(t.length > 0 && t.every((x) => !x.on && x.svgShown && !x.imgShown), `every truck falls back to the drawing (${t.length})`);
+  check(!(await page.$eval('.screen.game', (e) => e.classList.contains('ground-tex'))), 'the ground falls back to the flat colors and drawn detail');
   await enter(page, 2, 9);
   const obs = await page.$$eval('.obstacle', (os) => os.map((o) => !o.classList.contains('sprite-on') && getComputedStyle(o.querySelector('svg')).display !== 'none' && !o.querySelector('img')));
   check(obs.length > 0 && obs.every(Boolean), `every obstacle falls back to the drawing (${obs.length})`);

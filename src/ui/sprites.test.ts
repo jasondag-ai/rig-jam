@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, statSync } from 'node:fs';
 import { THEMES } from './themes.ts';
 import manifest from './truck-sprites.json' with { type: 'json' };
+import GROUND from './ground-tiles.json' with { type: 'json' };
 import { OB_FILL, obstacleAspect, obstacleFit } from './sprites.ts';
 
 // Gate fills, kept in sync with :root in style.css (and tools/truck-sprites.py).
@@ -78,5 +79,20 @@ describe('obstacle sprites', () => {
       expect(f.over, kind).toBeCloseTo(0, 6);
       expect(f.w * obstacleAspect(kind), kind).toBeLessThanOrEqual(OB_FILL + 1e-9);
     }
+  });
+});
+
+describe('ground tiles', () => {
+  it('pad and grass for every season, as WebP', () => {
+    for (const id of ['summer', 'spring', 'winter'])
+      for (const kind of ['pad', 'grass']) {
+        const file = `public/sprites/ground/${kind}-${id}.webp`;
+        expect(existsSync(file), file).toBe(true);
+        expect(statSync(file).size, file).toBeLessThan(160_000);
+      }
+  });
+
+  it("each theme's pad color is its texture's average tone (tracks and contrast tests use it)", () => {
+    for (const t of Object.values(THEMES)) expect(dE(t.vars['--pad'], (GROUND as Record<string, { mean: string }>)[`pad-${t.id}`].mean), t.id).toBeLessThan(6);
   });
 });

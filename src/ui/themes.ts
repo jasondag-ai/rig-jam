@@ -53,15 +53,15 @@ export const THEMES: Record<ThemeId, Theme> = {
     vars: {
       '--sky-top': '#4fb0ff',
       '--sky-bottom': '#c4ecff',
-      '--ground': '#6cc24a',
-      '--ground-dark': '#4c9a32',
+      '--ground': '#5a831f',
+      '--ground-dark': '#386114',
       '--fence-color': '#7a4a22',
       '--fence-post': '#533013',
       '--fence-cap': NONE,
-      '--pad': '#e8cb92',
-      '--pad-light': '#f7e2b8',
-      '--pad-dark': '#bf9a5c',
-      '--pad-grid': 'rgba(120, 80, 30, 0.13)',
+      '--pad': '#bea890',
+      '--pad-light': '#d9c6ae',
+      '--pad-dark': '#7d6650',
+      '--pad-grid': 'rgba(60, 40, 20, 0.2)',
       '--accent': '#ffc21a',
       '--tree-spruce': '#2e9a52',
       '--tree-spruce-dark': '#1d6e39',
@@ -82,15 +82,15 @@ export const THEMES: Record<ThemeId, Theme> = {
     vars: {
       '--sky-top': '#78c2f0',
       '--sky-bottom': '#e2f3f8',
-      '--ground': '#a6b85c',
-      '--ground-dark': '#7d8a3e',
+      '--ground': '#709926',
+      '--ground-dark': '#477019',
       '--fence-color': '#6e4423',
       '--fence-post': '#4a2b12',
       '--fence-cap': NONE,
-      '--pad': '#563019',
-      '--pad-light': '#8a5532',
-      '--pad-dark': '#2a1408',
-      '--pad-grid': 'rgba(255, 220, 180, 0.09)',
+      '--pad': '#573f2e',
+      '--pad-light': '#8a6e57',
+      '--pad-dark': '#2e1c10',
+      '--pad-grid': 'rgba(255, 225, 190, 0.15)',
       '--accent': '#ffc21a',
       '--tree-spruce': '#2b8048',
       '--tree-spruce-dark': '#1b5a31',
@@ -111,15 +111,15 @@ export const THEMES: Record<ThemeId, Theme> = {
     vars: {
       '--sky-top': '#86b4dc',
       '--sky-bottom': '#e8f2fa',
-      '--ground': '#f5f9fd',
-      '--ground-dark': '#cfdff0',
+      '--ground': '#b9aea6',
+      '--ground-dark': '#827267',
       '--fence-color': '#74492a',
       '--fence-post': '#4f3019',
       '--fence-cap': '#ffffff',
-      '--pad': '#e9f1f9',
-      '--pad-light': '#ffffff',
-      '--pad-dark': '#b4cbe2',
-      '--pad-grid': 'rgba(60, 100, 150, 0.13)',
+      '--pad': '#e0e8f5',
+      '--pad-light': '#f9fbfd',
+      '--pad-dark': '#a9c0de',
+      '--pad-grid': 'rgba(50, 85, 135, 0.18)',
       '--accent': '#ffc21a',
       '--tree-spruce': '#23734b',
       '--tree-spruce-dark': '#16523a',
@@ -144,4 +144,40 @@ export function themeOverride(search: string): ThemeId | null {
 export function applyTheme(el: HTMLElement, theme: Theme): void {
   el.dataset.theme = theme.id;
   for (const [name, value] of Object.entries(theme.vars)) el.style.setProperty(name, value);
+  groundTextures(el, theme.id);
+}
+
+/** The season's ground photos (public/sprites/ground, from tools/ground-tiles.py): pad and grass. */
+export const groundTiles = (id: string) => [`./sprites/ground/pad-${id}.webp`, `./sprites/ground/grass-${id}.webp`];
+const loaded = new Map<string, Promise<boolean>>();
+const loadTile = (src: string) => {
+  let p = loaded.get(src);
+  if (!p) {
+    p = new Promise<boolean>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = src;
+    });
+    loaded.set(src, p);
+  }
+  return p;
+};
+const ready = new Set<string>();
+
+/**
+ * Puts the season's textures on a screen (`.ground-tex`) once both have loaded; until then, or if
+ * they fail, the flat theme colors and drawn pad detail stand in. Instant once cached.
+ */
+function groundTextures(el: HTMLElement, id: string): void {
+  if (typeof Image === 'undefined') return;
+  const [pad, grass] = groundTiles(id).map((src) => `url("${new URL(src, location.href).href}")`);
+  el.style.setProperty('--pad-tile', pad);
+  el.style.setProperty('--grass-tile', grass);
+  if (ready.has(id)) return void el.classList.add('ground-tex');
+  void Promise.all(groundTiles(id).map(loadTile)).then((ok) => {
+    if (!ok.every(Boolean)) return;
+    ready.add(id);
+    if (el.dataset.theme === id) el.classList.add('ground-tex');
+  });
 }

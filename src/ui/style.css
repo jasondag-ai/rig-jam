@@ -1720,6 +1720,37 @@ input,
   .lease-banner { opacity: 1; }
 }
 
+/* ---------- Ground textures (themes.ts groundTextures): photo tiles once loaded ---------- */
+
+/* Outside the fence: grass (or winter's snowy grass) below the horizon; the sky stays drawn. */
+.screen.ground-tex {
+  background:
+    linear-gradient(to bottom, var(--sky-top) 0, var(--sky-bottom) var(--horizon), transparent var(--horizon)),
+    linear-gradient(to bottom, transparent 70%, rgba(0, 0, 0, 0.12)),
+    var(--grass-tile) 0 0 / 180px 180px repeat,
+    var(--ground);
+}
+
+/* The pad: the season's ground, about three cells to a tile, with a soft light from the top left.
+   The drawn speckles and puddle stains give way to the photo. */
+.screen.ground-tex .pad {
+  background:
+    radial-gradient(ellipse at 30% 25%, rgba(255, 255, 255, 0.12), transparent 60%),
+    var(--pad-tile) 0 0 / calc(var(--cell) * 3) calc(var(--cell) * 3) repeat,
+    var(--pad);
+}
+.screen.ground-tex .pad-decor { display: none; }
+
+/* Tracks retuned to sit on the photos: gravel ruts darker, mud ruts deep, snow ruts blue. */
+.ground-tex .tracks[data-ground='gravel'] .tt-mark { stroke: #5e4a36; opacity: 0.42; }
+.ground-tex .tracks[data-ground='gravel'] .tt-mark.w2 { opacity: 0.52; }
+.ground-tex .tracks[data-ground='gravel'] .tt-mark.w3 { opacity: 0.6; }
+.ground-tex .tracks[data-ground='gravel'] .tt-mark.w4 { opacity: 0.68; }
+.ground-tex .tracks[data-ground='gravel'] .tt-tread { stroke: #e3d4bf; opacity: 0.5; }
+.ground-tex .tracks[data-ground='mud'] .tt-edge { stroke: #9a7c62; opacity: 0.4; }
+.ground-tex .tracks[data-ground='mud'] .tt-mark { stroke: #24150b; opacity: 0.72; }
+.ground-tex .tracks[data-ground='snow'] .tt-mark { stroke: #8eaad0; opacity: 0.8; }
+
 /* ---------- Tire tracks: laid by each move, under obstacles and trucks (tracks.ts) ---------- */
 
 .tracks {
