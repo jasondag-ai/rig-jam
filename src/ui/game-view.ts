@@ -114,6 +114,8 @@ export class GameView {
     // The Wildlife Log collects each gag the first time it plays all the way through.
     // In demo mode they go to the separate demo log, never the real one (and never earn camo).
     this.gags.onSeen = (id) => {
+      // A scene still finishing after you've left the level (or reset) doesn't count.
+      if (!this.el.isConnected) return;
       const before = loadLog(demo);
       const r = record(before, id);
       if (!r.isNew) return;
@@ -131,6 +133,7 @@ export class GameView {
     this.el.className = 'screen game';
     this.el.innerHTML = `
       <div class="scenery" aria-hidden="true"></div>
+      <div class="vignette" aria-hidden="true"></div>
       <header class="hud">
         <button class="link" data-act="levels" aria-label="Back to levels">‹ Levels</button>
         <div class="title"><span class="num"></span><span class="name"></span></div>
