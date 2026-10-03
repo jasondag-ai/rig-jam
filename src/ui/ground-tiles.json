@@ -1,18 +1,18 @@
 {
   "pad-summer": {
-    "mean": "#bea890",
-    "dark": "#a38d76",
-    "light": "#d9c6ae"
+    "mean": "#bda78e",
+    "dark": "#af9982",
+    "light": "#cab59d"
   },
   "pad-spring": {
-    "mean": "#573f2e",
-    "dark": "#402a1a",
-    "light": "#705745"
+    "mean": "#523a29",
+    "dark": "#452f1f",
+    "light": "#634a38"
   },
   "pad-winter": {
-    "mean": "#e0e8f5",
-    "dark": "#b9cde9",
-    "light": "#f9fbfd"
+    "mean": "#dce5f1",
+    "dark": "#c0cfe7",
+    "light": "#f2f6fa"
   },
   "grass-summer": {
     "mean": "#5a831f",
