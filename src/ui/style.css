@@ -3235,3 +3235,9 @@ img.hat { width: 100%; height: auto; }
 .sprite-anim .sheet { position: absolute; background-repeat: no-repeat; }
 .sprite-anim.flip .sheet { transform: scaleX(-1); }
 .anim-still { background-repeat: no-repeat; }
+/* Gag figures with a sprite: the old drawing only shows for beats still waiting on new art (.drawn). */
+.gag.uses-sprite > svg,
+.gag.uses-sprite > .pose { visibility: hidden; }
+.gag.uses-sprite.drawn > svg,
+.gag.uses-sprite.drawn > .pose { visibility: visible; }
+.gag.uses-sprite.drawn > .sprite-anim { visibility: hidden; }

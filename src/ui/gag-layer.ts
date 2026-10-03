@@ -8,6 +8,7 @@ import { SIZE, type GameState, type Level, type Side } from '../engine/index.ts'
 import { gsap } from 'gsap';
 import { BIFFY, DROPPING, HOTSHOT, LANDOWNER, MAGPIE, PLUG_POST, SPOTTER_SIT, SPOTTER_WALK } from './cast.ts';
 import { Rig } from './rig.ts';
+import { Sprite } from './anim.ts';
 import { WORKER_RIG } from './rigs.ts';
 import { bearLayout, playBear, type BearLayout } from './bear-scene.ts';
 import { MOOSE_H, playMoose } from './moose-scene.ts';
@@ -95,6 +96,8 @@ export interface Bands {
 const PUFF: Record<GagOptions['ground'], string> = { gravel: '#dcc9a0', mud: '#7a5532', snow: '#ffffff' };
 
 type SpotterState = 'walking' | 'asleep' | 'waking';
+/** The animated spotter riding in each spotter figure (destroyed with it). */
+const spotterSprites = new WeakMap<HTMLElement, Sprite>();
 
 export class GagLayer {
   private host: GagHost;
@@ -269,7 +272,9 @@ export class GagLayer {
     const { cellPx: cell } = this.host;
     const s = cell * 0.82;
     const bird = this.figure('gag magpie flying', MAGPIE, s, s * 0.69);
-    signal.addEventListener('abort', () => bird.remove(), { once: true });
+    // The animated magpie (Batch C); the old drawing still does the hops and the poop until those are redone.
+    const pie = this.withSprite(bird, 'magpie', (s * 1.3) / 256, s / 2, s * 0.69);
+    signal.addEventListener('abort', () => (pie.destroy(), bird.remove()), { once: true });
     const board = this.host.el.getBoundingClientRect();
     const roof = truckEl.getBoundingClientRect();
     const land = { x: roof.left + roof.width / 2 - board.left - s / 2, y: roof.top + roof.height / 2 - board.top - s * 0.62 };
@@ -280,6 +285,7 @@ export class GagLayer {
     if (reducedMotion()) {
       bird.classList.remove('flying');
       bird.style.transform = at(land);
+      pie.show('magpie_land', 7);
       sound.squawk();
       await sleep(500, signal);
       this.droppings(truckEl, s);
@@ -290,9 +296,13 @@ export class GagLayer {
       this.onSeen('magpie');
       return;
     }
+    pie.play('magpie_fly', { fps: 14, loop: -1 });
+    const landing = gsap.delayedCall(0.6, () => pie.play('magpie_land', { fps: 16 }));
+    signal.addEventListener('abort', () => landing.kill(), { once: true });
     await this.animate(bird, [{ transform: at(from) }, { transform: at(land) }], 1100, 'cubic-bezier(0.3, 0.6, 0.4, 1)', signal);
     bird.classList.remove('flying');
     sound.squawk();
+    bird.classList.add('drawn');
     for (let i = 0; i < 2; i++) {
       const hop = { x: land.x + s * 0.12, y: land.y - s * 0.3 };
       const next = { x: land.x + s * 0.2, y: land.y };
@@ -305,8 +315,11 @@ export class GagLayer {
     sound.grunt();
     this.host.say(truckEl.querySelector('.cab') ?? truckEl, MAGPIE_LINE);
     await sleep(500, signal);
+    bird.classList.remove('drawn');
     bird.classList.add('flying');
+    pie.play('magpie_take_off', { fps: 16 }).eventCallback('onComplete', () => pie.play('magpie_fly', { fps: 14, loop: -1 }));
     await this.animate(bird, [{ transform: at(land) }, { transform: at(away) }], 900, 'cubic-bezier(0.5, 0, 0.8, 0.6)', signal);
+    pie.destroy();
     bird.remove();
     this.onSeen('magpie');
   }
@@ -369,12 +382,26 @@ export class GagLayer {
       h,
     );
     this.spotter = { el, state: 'walking', x, y, w, h };
+    // The animated spotter (Batch C) jogs on and sits on his bucket; the old drawing still does the
+    // sleeping and the startled wake-up until those are redone.
+    const guy = this.withSprite(el, 'spotter', (h * 1.12) / 225, w / 2, h);
+    spotterSprites.set(el, guy);
     const at = (px: number) => `translate(${px}px, ${y}px)`;
     el.style.transform = at(-w * 1.5);
-    if (!reducedMotion()) await this.animate(el, [{ transform: at(-w * 1.5) }, { transform: at(x) }], 1800, 'linear', signal);
-    // He sits down on the pail and nods off. From here a touch wakes him instead of cancelling him.
+    if (!reducedMotion()) {
+      guy.play('spotter_jog', { fps: 12, loop: -1 });
+      await this.animate(el, [{ transform: at(-w * 1.5) }, { transform: at(x) }], 1800, 'linear', signal);
+      el.getAnimations().forEach((a) => a.cancel());
+      el.style.transform = at(x);
+      await new Promise<void>((resolve, reject) => {
+        guy.play('spotter_sit_on_bucket', { fps: 13 }).eventCallback('onComplete', () => resolve());
+        signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true });
+      });
+    }
+    // He's on the pail and nods off. From here a touch wakes him instead of cancelling him.
     el.getAnimations().forEach((a) => a.cancel());
     el.style.transform = at(x);
+    el.classList.add('drawn');
     el.classList.replace('walking', 'asleep');
     if (this.spotter?.el === el) {
       this.spotter.state = 'asleep';
@@ -408,6 +435,7 @@ export class GagLayer {
     } catch {
       // New level or win cleared the stage.
     } finally {
+      spotterSprites.get(sp.el)?.destroy();
       sp.el.remove();
       if (this.spotter === sp) this.spotter = null;
     }
@@ -415,6 +443,7 @@ export class GagLayer {
 
   private removeSpotter(): void {
     sound.snore(false);
+    if (this.spotter) spotterSprites.get(this.spotter.el)?.destroy();
     this.spotter?.el.remove();
     this.spotter = null;
   }
@@ -940,6 +969,18 @@ export class GagLayer {
   }
 
   // ---------- helpers ----------
+
+  /**
+   * Gives a gag figure its Batch C animated sprite, with feet at (x, y) inside the figure. The old
+   * drawing stays in the figure for beats whose new art isn't in yet: add `.drawn` to show it.
+   */
+  private withSprite(figure: HTMLElement, cls: string, scale: number, x: number, y: number): Sprite {
+    const sprite = new Sprite(cls, scale);
+    sprite.el.style.transform = `translate(${x}px, ${y}px)`;
+    figure.classList.add('uses-sprite');
+    figure.append(sprite.el);
+    return sprite;
+  }
 
   /** A character element on the board. */
   private figure(className: string, svg: string, w?: number, h?: number): HTMLElement {
