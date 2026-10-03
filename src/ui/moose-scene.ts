@@ -4,6 +4,7 @@
 // The peek window's `data-beat` names the current beat (tests read it).
 import { gsap } from 'gsap';
 import { sound } from '../audio/engine.ts';
+import { Sprite } from './anim.ts';
 import { Rig, show } from './rig.ts';
 import { MOOSE_RIG } from './rigs.ts';
 
@@ -30,6 +31,16 @@ export async function playMoose(host: HTMLElement, g: { cx: number; clipY: numbe
   peek.innerHTML = MOOSE_RIG;
   const svg = peek.querySelector('svg')!;
   Object.assign(svg.style, { width: `${w}px`, height: `${VIEW.h * k}px` });
+  // The new animated moose (Batch C), standing at the fence line (the window's bottom edge). The old
+  // drawn moose stays underneath for the chew beat until moose_chew is redone.
+  const moose = new Sprite('moose', (g.h * 1.1) / 221);
+  moose.el.style.transform = `translate(${w / 2}px, ${winH}px)`;
+  peek.append(moose.el);
+  const drawn = (on: boolean) => {
+    svg.style.visibility = on ? 'visible' : 'hidden';
+    moose.el.style.visibility = on ? 'hidden' : 'visible';
+  };
+  drawn(false);
   host.append(peek);
   const rig = new Rig(peek);
   const J = (n: string) => rig.get(n);
@@ -47,6 +58,7 @@ export async function playMoose(host: HTMLElement, g: { cx: number; clipY: numbe
   try {
     // 1. Pops up over the fence (overshoot, antlers and ears lagging).
     beat('up');
+    moose.play('moose_rise', { fps: 8 / PEEK.up });
     J('lean').y = hidden;
     rig.render();
     const up = gsap.timeline();
@@ -57,6 +69,7 @@ export async function playMoose(host: HTMLElement, g: { cx: number; clipY: numbe
 
     // 2. Blinks, chews once.
     beat('chew');
+    drawn(true);
     const chew = gsap.timeline();
     chew.call(() => show(peek, 'eye', 'shut'), [], 0);
     chew.call(() => show(peek, 'eye', 'open'), [], 0.12);
@@ -69,6 +82,8 @@ export async function playMoose(host: HTMLElement, g: { cx: number; clipY: numbe
 
     // 3. A short, wide-eyed stare right at you.
     beat('stare');
+    drawn(false);
+    moose.play('moose_stare', { fps: 6 / PEEK.stare });
     show(peek, 'eye', 'stare');
     sound.mooseGroan();
     const stare = gsap.timeline();
@@ -79,6 +94,7 @@ export async function playMoose(host: HTMLElement, g: { cx: number; clipY: numbe
 
     // 4. Ducks back out: a tiny lift (anticipation), then down behind the fence.
     beat('down');
+    moose.play('moose_duck', { fps: 8 / PEEK.down });
     const down = gsap.timeline();
     down.to(J('lean'), { y: -3, duration: 0.1, ease: 'power2.out' }, 0);
     down.to(J('lean'), { y: hidden, duration: PEEK.down - 0.1, ease: 'power2.in' }, 0.1);
@@ -87,6 +103,7 @@ export async function playMoose(host: HTMLElement, g: { cx: number; clipY: numbe
     beat('done');
   } finally {
     live.forEach((t) => t.kill());
+    moose.destroy();
     rig.destroy();
     peek.remove();
   }
