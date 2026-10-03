@@ -1,7 +1,7 @@
 // Level generator: random layouts, hill-climbed toward a target par, proven by the solver.
 import {
   COLORS,
-  OBSTACLE_KINDS,
+  LEVEL_OBSTACLE_KINDS,
   TRUCK_KINDS,
   type Cell,
   type Truck,
@@ -362,9 +362,11 @@ export function generate(slot: Slot, seed: number, opts: SearchOptions): Generat
  * Gives each obstacle a cosmetic look. Within a level the kinds don't repeat until all three are
  * used, and the order is shuffled per level by `seed`. Positions are copied unchanged.
  */
+type ObstacleKindName = (typeof LEVEL_OBSTACLE_KINDS)[number];
+
 export function assignKinds(obstacles: readonly Cell[], seed: number): Cell[] {
   const rng = mulberry32(seed);
-  const kinds = [...OBSTACLE_KINDS];
+  const kinds: ObstacleKindName[] = [...LEVEL_OBSTACLE_KINDS];
   for (let i = kinds.length - 1; i > 0; i--) {
     const j = pick(rng, i + 1);
     [kinds[i], kinds[j]] = [kinds[j], kinds[i]];

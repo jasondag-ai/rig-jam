@@ -85,7 +85,20 @@ const WELLHEAD = `
   <path class="wh-needle" d="M50 11 L54 7"/>
 </svg>`;
 
+// Flare stack: a guyed steel stack on a small pad with a flame at the tip (top-down, stack leaning up-right).
+const FLARE = `
+<svg viewBox="0 0 100 100" aria-hidden="true">
+  <ellipse class="ob-ground" cx="50" cy="56" rx="44" ry="38"/>
+  <rect class="ob-concrete" x="30" y="50" width="40" height="32" rx="5"/>
+  <path d="M50 66 L18 88 M50 66 L84 86 M50 66 L50 94" stroke="#55524d" stroke-width="2" stroke-linecap="round"/>
+  <path class="ob-steel" d="M44 72 L48 22 L56 22 L58 72 Z"/>
+  <rect class="ob-steel" x="45" y="16" width="14" height="8" rx="2"/>
+  <path class="fl-flame" d="M52 16 Q40 8 46 -2 Q50 4 53 -8 Q64 2 58 16 Z"/>
+  <path class="fl-core" d="M52 15 Q46 9 50 4 Q53 8 54 2 Q59 8 56 15 Z"/>
+</svg>`;
+
 export const OBSTACLE_SVG: Record<ObstacleKind, string> = {
+  flare: FLARE,
   pumpjack: PUMPJACK,
   tank: TANK,
   wellhead: WELLHEAD,

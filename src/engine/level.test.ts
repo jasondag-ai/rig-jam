@@ -148,3 +148,16 @@ describe('truck kind', () => {
     expect(() => parseLevel(l)).toThrow(/can't be a zamboni/);
   });
 });
+
+describe('flare obstacle', () => {
+  it('is a valid kind that blocks like any other obstacle', async () => {
+    const { getMoveRange, newGame } = await import('./index.ts');
+    const base = { id: 't', name: 't', par: 1, trucks: [{ id: 'A', color: 'red', row: 2, col: 0, length: 2, orient: 'h' }], gates: [{ color: 'red', side: 'right', index: 2 }] };
+    const open = newGame(parseLevel({ ...base, obstacles: [] }));
+    const blocked = newGame(parseLevel({ ...base, obstacles: [{ row: 2, col: 4, kind: 'flare' }] }));
+    expect(getMoveRange(open, 'A')!.max).toBeGreaterThan(getMoveRange(blocked, 'A')!.max);
+    expect(getMoveRange(blocked, 'A')!.max).toBe(2);
+    const tank = newGame(parseLevel({ ...base, obstacles: [{ row: 2, col: 4, kind: 'tank' }] }));
+    expect(getMoveRange(blocked, 'A')).toEqual(getMoveRange(tank, 'A'));
+  });
+});

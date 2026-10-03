@@ -38,7 +38,9 @@ export interface Gate {
   index: number;
 }
 
-export const OBSTACLE_KINDS = ['pumpjack', 'tank', 'wellhead'] as const;
+export const OBSTACLE_KINDS = ['pumpjack', 'tank', 'wellhead', 'flare'] as const;
+/** The kinds shipped levels use. `flare` is ready (blocks like the rest) but not placed in levels yet. */
+export const LEVEL_OBSTACLE_KINDS = ['pumpjack', 'tank', 'wellhead'] as const satisfies readonly (typeof OBSTACLE_KINDS)[number][];
 /** What an obstacle looks like. Purely cosmetic: the rules treat every kind the same. */
 export type ObstacleKind = (typeof OBSTACLE_KINDS)[number];
 

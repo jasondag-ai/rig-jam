@@ -1,13 +1,13 @@
 // Things drivers say when you bump them into something. Edit freely: one line per string.
 // Each bump picks from the pool for what was hit plus the "any" pool, never the same line twice in a row.
-//   any      – any bump (tanks and wellheads only use this pool)
+//   any      – any bump (tanks, wellheads and flare stacks only use this pool)
 //   truck    – bumped another truck
 //   wall     – the fence or a wrong-color gate
 //   pumpjack – a pumpjack obstacle
 //   convoy   – a convoy truck driving at its gate out of order. Uses only this pool, so the
 //              line always explains the rule.
 
-export type BumpHit = 'truck' | 'wall' | 'pumpjack' | 'tank' | 'wellhead' | 'convoy';
+export type BumpHit = 'truck' | 'wall' | 'pumpjack' | 'tank' | 'wellhead' | 'flare' | 'convoy';
 
 export const BUMP_LINES = {
   any: [

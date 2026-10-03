@@ -883,6 +883,10 @@ input,
 .ob-steel { fill: #55524d; stroke: var(--outline); stroke-width: 2; }
 .ob-dark { fill: #2a2725; }
 
+/* Flare stack */
+.fl-flame { fill: #ff8a00; stroke: var(--outline); stroke-width: 2.5; stroke-linejoin: round; }
+.fl-core { fill: #ffe14a; }
+
 /* Pumpjack */
 .pj-paint { fill: #ffbf1f; stroke: var(--outline); stroke-width: 3; }
 .pj-weight { fill: #7d7870; stroke: var(--outline); stroke-width: 2.5; }

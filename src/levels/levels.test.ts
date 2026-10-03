@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { OBSTACLE_KINDS, TRUCK_KINDS, solve } from '../engine/index.ts';
+import { LEVEL_OBSTACLE_KINDS, OBSTACLE_KINDS, TRUCK_KINDS, solve } from '../engine/index.ts';
 import { convoyRaisesPar, everyPumpjackInTheWay, withoutConvoys } from '../../tools/generator.ts';
 import { DAILY_LEVELS, REGIONS } from './regions.ts';
 
@@ -56,10 +56,10 @@ describe('obstacle looks', () => {
 
   it('gives Montney a mix of pumpjacks, tanks and wellheads', () => {
     const kinds = montney.flatMap((l) => l.obstacles.map((o) => o.kind));
-    expect(new Set(kinds)).toEqual(new Set(OBSTACLE_KINDS));
+    expect(new Set(kinds)).toEqual(new Set(LEVEL_OBSTACLE_KINDS));
     for (const l of montney) {
       const own = l.obstacles.map((o) => o.kind);
-      expect(new Set(own).size).toBe(Math.min(own.length, OBSTACLE_KINDS.length));
+      expect(new Set(own).size).toBe(Math.min(own.length, LEVEL_OBSTACLE_KINDS.length));
     }
   });
 });
@@ -106,7 +106,8 @@ describe('Daily Pads', () => {
   it('mixes obstacle looks and vehicle types', () => {
     const obstacleKinds = new Set(DAILY_LEVELS.flatMap((l) => l.obstacles.map((o) => o.kind)));
     const truckKinds = new Set(DAILY_LEVELS.flatMap((l) => l.trucks.map((t) => t.kind)));
-    expect(obstacleKinds).toEqual(new Set(OBSTACLE_KINDS));
+    expect(obstacleKinds).toEqual(new Set(LEVEL_OBSTACLE_KINDS));
+    expect(obstacleKinds.has('flare')).toBe(false); // ready, not placed yet
     expect(truckKinds).toEqual(new Set([...TRUCK_KINDS[2], ...TRUCK_KINDS[3]]));
     for (const l of DAILY_LEVELS) expect(new Set(l.trucks.map((t) => t.kind)).size).toBeGreaterThanOrEqual(2);
   });

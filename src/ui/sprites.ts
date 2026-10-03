@@ -31,7 +31,9 @@ export function preloadSprites(list: { kind: TruckKind; color: Color }[]): void 
 const OB_BASE = './sprites/obstacles/';
 export const obstacleSrc = (kind: ObstacleKind, scale: 1 | 2 = 1) => `${OB_BASE}${kind}${scale === 2 ? '@2x' : ''}.webp`;
 /** Sprite height as a share of its width (taller than 1 sticks up above its cell). */
-export const obstacleAspect = (kind: ObstacleKind) => (OBSTACLES as Record<string, { aspect: number }>)[kind].aspect;
+export const obstacleAspect = (kind: ObstacleKind) => (OBSTACLES as Record<string, { aspect: number }>)[kind]?.aspect ?? 1;
+/** Kinds with illustrated sprites (the flare has only its drawing so far). */
+export const hasObstacleSprite = (kind: ObstacleKind) => kind in OBSTACLES;
 /** How much of a cell the slab's footprint fills across. */
 export const OB_FILL = 0.98;
 
@@ -48,6 +50,7 @@ export function obstacleFit(kind: ObstacleKind, row: number): { w: number; over:
 
 /** The obstacle sprite: a base layer and the part that sticks up above the cell (faded over trucks). */
 export const obstacleImgs = (kind: ObstacleKind) => {
+  if (!hasObstacleSprite(kind)) return '';
   const attrs = `alt="" draggable="false" decoding="async" src="${obstacleSrc(kind)}" srcset="${obstacleSrc(kind)} 1x, ${obstacleSrc(kind, 2)} 2x"`;
   return `<img class="sprite ob-base" ${attrs} /><img class="ob-top" ${attrs} />`;
 };
@@ -74,6 +77,7 @@ export function wireSprite(truckEl: HTMLElement): void {
 export function preloadObstacles(kinds: ObstacleKind[]): void {
   const scale = (window.devicePixelRatio ?? 1) > 1.25 ? 2 : 1;
   for (const kind of kinds) {
+    if (!hasObstacleSprite(kind)) continue;
     const src = obstacleSrc(kind, scale);
     if (warm.has(src)) continue;
     warm.add(src);
