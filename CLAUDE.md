@@ -112,7 +112,19 @@ something, give exact clicks and one command at a time.
   buttons). Nothing that changes color may sit on a truck or gate (tested in sprites e2e).
 - Puddles are flat, low-contrast stains (no outline, rim, glint or shadow) centred on grid corners,
   never on a cell, and drawn under the `.pad-grid` cell lines. If they ever read as objects, remove them.
-- `src/ui/scenery.ts` (border trees) and `src/ui/pad-decor.ts` (gravel/mud/snow detail) are seeded,
+- Illustrated UI (`src/ui/ui-art.ts`, Batch B art in `public/sprites/ui/`): `uiImg()` for icons
+  (gear, binoculars, back arrow, padlock, full/empty hard hats, speaker on/off on the Sound effects
+  switch); `applyUiArt()` sets `--ui-*` CSS variables for art used as backgrounds: Undo/Hint/Restart,
+  the win card's Play again and the Daily Pad button (border-image, stretched through the middle so
+  the round ends keep their shape), the win panel (border-image frame, title on its banner, medal
+  pinned to the corner), the days-without-incident sign (label and count live in its white field),
+  the Zero Incident medal (words live on its ribbon) and the level cards (2-column grid, number in
+  the card's circle, name and hats under it in outlined white). All text and numbers stay live.
+- Scenery (`src/ui/scenery.ts`, Batch A art in `public/sprites/world/`): spruce, aspen and willow
+  sprites placed round the board, seeded per theme, larger toward the screen edges, season-matched
+  (`seasonArt`: winter is all snowy spruce; spring uses the young aspen), with cattails and the blank
+  lease sign as accents. All under the board, gates and buttons. The bear's bush is the willow.
+- `src/ui/pad-decor.ts` (gravel/mud/snow detail) are seeded,
   cosmetic, and never affect play. `--fence` is the fence thickness in px; its color is `--fence-color`.
 
 ## Cover (title screen)
