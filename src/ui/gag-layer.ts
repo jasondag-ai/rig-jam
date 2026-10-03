@@ -6,7 +6,7 @@
 import { sound } from '../audio/engine.ts';
 import { SIZE, type GameState, type Level, type Side } from '../engine/index.ts';
 import { gsap } from 'gsap';
-import { BIFFY, BUSH, DROPPING, HOTSHOT, LANDOWNER, MAGPIE, PLUG_POST, SPOTTER_SIT, SPOTTER_WALK } from './cast.ts';
+import { BIFFY, DROPPING, HOTSHOT, LANDOWNER, MAGPIE, PLUG_POST, SPOTTER_SIT, SPOTTER_WALK } from './cast.ts';
 import { Rig } from './rig.ts';
 import { WORKER_RIG } from './rigs.ts';
 import { bearLayout, playBear, type BearLayout } from './bear-scene.ts';
@@ -165,7 +165,7 @@ export class GagLayer {
     const spot = biffySpot(level);
     this.biffy = spot ? { el: this.figure('gag biffy', BIFFY), spot, done: false } : null;
     // A bush stands waiting wherever the bear might come (so it never gives away whether he will).
-    this.bush = bearEligible(this.opts) || this.opts.force === 'bear' ? this.figure('gag bush', BUSH) : null;
+    this.bush = bearEligible(this.opts) || this.opts.force === 'bear' ? this.figure('gag bush', '<img alt="" draggable="false" src="./sprites/world/bush_willow.webp" srcset="./sprites/world/bush_willow.webp 1x, ./sprites/world/bush_willow@2x.webp 2x" />') : null;
     this.forceAt = performance.now() + 600;
     if (this.opts.cords) this.plugIn(level);
     this.layout(this.bands);

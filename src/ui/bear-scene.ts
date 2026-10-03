@@ -22,8 +22,8 @@ const BEAR_BODY_R = 200;
 const RABBIT_FEET = { x: 32, y: 54 };
 const RABBIT_BODY = { x: 33, y: 27 };
 const RABBIT_H = 56;
-/** The bush (cast.ts BUSH) drawing is 60 x 48. */
-const BUSH_RATIO = 60 / 48;
+/** The willow bush sprite (public/sprites/world/bush_willow) is 485 x 427. */
+const BUSH_RATIO = 485 / 427;
 
 export interface BearLayout {
   /** Bear and rabbit scale (px per art unit). */
