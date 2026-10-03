@@ -15,9 +15,9 @@ import { uiImg } from './ui-art.ts';
 import { preloadObstacles, preloadSprites } from './sprites.ts';
 import { defaultKind } from './vehicles.ts';
 import { applyCamo, loadLog, record, saveLog, sightingToast } from './wildlife-log.ts';
-import { COMPANY_MAN } from './cast.ts';
 import { GagLayer, type GagOptions } from './gag-layer.ts';
-import { companyLine } from './gags.ts';
+import { companyLine, tierFor } from './gags.ts';
+import { Sprite } from './anim.ts';
 import { onTap } from './tap.ts';
 import type { BumpHit } from './lines.ts';
 
@@ -40,6 +40,8 @@ export interface DailyInfo {
 }
 
 /** One level in play: HUD, board, undo/hint/restart, and the win screen. */
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 export class GameView {
   readonly el: HTMLElement;
   private state: GameState;
@@ -50,6 +52,8 @@ export class GameView {
   private hintBtn: HTMLButtonElement;
   private noteEl: HTMLElement;
   private winEl: HTMLElement;
+  /** The win card's animated characters (stopped when it's replaced). */
+  private winSprites: Sprite[] = [];
   private stage: HTMLElement;
   private level: Level;
   private handlers: GameViewHandlers;
@@ -362,14 +366,16 @@ export class GameView {
         ? '<button class="btn primary" data-act="next">Next level ›</button>'
         : '<p class="verdict">That was the last level in this field. Nice work!</p>';
 
+    this.winSprites.forEach((sp) => sp.destroy());
     this.winEl.innerHTML = `
       <div class="card">
         <h2>Pad cleared!</h2>
+        <div class="mascot" aria-hidden="true"></div>
         <div class="hats big" aria-label="${hats} of 3 hard hats">${hatsHtml(hats)}</div>
         ${clean ? `<div class="zero-incident" role="img" aria-label="Zero incident"><span>ZERO INCIDENT</span></div>` : ''}
         <p class="result">${moves} moves · par ${par} · ${misses}</p>
         <div class="company" aria-label="${verdict}">
-          <div class="company-man">${COMPANY_MAN}</div>
+          <div class="company-man"></div>
           <p class="company-says"></p>
         </div>
         ${earnedHint ? '<p class="earned">+1 hint for a perfect solve</p>' : ''}
@@ -381,6 +387,27 @@ export class GameView {
         </div>
       </div>`;
     this.winEl.querySelector('.company-says')!.textContent = companyLine(moves, par);
+    // The Company Man (Batch C portrait): a nod at par, a scowl when it's well over, otherwise his
+    // usual grumpy idle. The roughneck mascot celebrates a perfect solve, otherwise stands there.
+    const tier = tierFor(moves, par);
+    const boss = new Sprite('boss', 66 / 226);
+    boss.el.style.transform = 'translate(33px, 66px)';
+    this.winEl.querySelector('.company-man')!.append(boss.el);
+    const mascot = new Sprite('roughneck', 104 / 226);
+    mascot.el.style.transform = 'translate(52px, 104px)';
+    this.winEl.querySelector('.mascot')!.append(mascot.el);
+    if (reducedMotion()) {
+      boss.show(tier === 'par' ? 'company_man_nod' : tier === 'over' ? 'company_man_scowl' : 'company_man_idle', 3);
+      mascot.show(moves <= par ? 'roughneck_mascot_celebrate' : 'roughneck_mascot_idle', moves <= par ? 4 : 0);
+    } else {
+      const bossIdle = () => boss.play('company_man_idle', { fps: 6, loop: -1 });
+      if (tier === 'par') boss.play('company_man_nod', { fps: 9, loop: 1 }).eventCallback('onComplete', bossIdle);
+      else if (tier === 'over') boss.play('company_man_scowl', { fps: 8 }).eventCallback('onComplete', () => boss.show('company_man_scowl', 5));
+      else bossIdle();
+      if (moves <= par) mascot.play('roughneck_mascot_celebrate', { fps: 12, loop: -1 });
+      else mascot.play('roughneck_mascot_idle', { fps: 7, loop: -1 });
+    }
+    this.winSprites = [boss, mascot];
     this.winEl.hidden = false;
     sound.win(hats, moves, par);
   }

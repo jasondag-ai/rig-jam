@@ -8,11 +8,12 @@ import { hardHats, loadProgress, resetProgress, saveProgress } from './ui/progre
 import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } from './ui/unlocks.ts';
 import { onTap } from './ui/tap.ts';
 import { shouldShowCover, showCover } from './ui/cover.ts';
+import { animStill } from './ui/anim.ts';
 import { applyUiArt, uiImg } from './ui/ui-art.ts';
 import { preloadObstacles, preloadSprites } from './ui/sprites.ts';
 import { biffySpot } from './ui/gags.ts';
-import { BIFFY, HOTSHOT, LANDOWNER, MAGPIE, SPOTTER_SIT } from './ui/cast.ts';
-import { BEAR_RIG, GAUGE_RIG, GOOSE_RIG, GOPHER_HOLE, GOPHER_RIG, MOOSE_RIG, PUMPER_RIG, PUMPER_TRUCK, WORKER_RIG } from './ui/rigs.ts';
+import { HOTSHOT } from './ui/cast.ts';
+import { WORKER_RIG } from './ui/rigs.ts';
 import { LOG_ENTRIES, applyCamo, complete, loadLog, saveLog, type Sighting } from './ui/wildlife-log.ts';
 import type { ForcedGag } from './ui/gag-layer.ts';
 import { sceneryHtml } from './ui/scenery.ts';
@@ -29,17 +30,18 @@ applyCamo();
 const BINOCULARS = uiImg('icon_binoculars');
 
 /** Card art for each Wildlife Log entry (found: in color; not yet: a dark silhouette). */
-const LOG_ART: Record<Sighting, string> = {
-  magpie: MAGPIE,
-  spotter: SPOTTER_SIT,
-  biffy: `<div class="pair">${BIFFY}${WORKER_RIG}</div>`,
-  landowner: LANDOWNER,
-  bear: BEAR_RIG,
-  moose: MOOSE_RIG,
-  hotshot: HOTSHOT,
-  gopher: `<div class="stack">${GOPHER_RIG}${GOPHER_HOLE}</div>`,
-  geese: `<div class="vee">${GOOSE_RIG.repeat(3)}</div>`,
-  pumper: `<div class="pair">${PUMPER_TRUCK}${PUMPER_RIG}${GAUGE_RIG}</div>`,
+const LOG_ART: Record<Sighting, () => string> = {
+  // Batch C character art (a telling frame of each), except the hot shot (its art is being redone).
+  magpie: () => animStill('magpie_land', 84, 7).outerHTML,
+  spotter: () => animStill('spotter_sit_on_bucket', 84, 7).outerHTML,
+  biffy: () => `<div class="pair">${animStill('biffy_door_open', 84, 7).outerHTML}${WORKER_RIG}</div>`,
+  landowner: () => animStill('landowner_finger_wag', 84, 4).outerHTML,
+  bear: () => animStill('bear_sit', 84, 7).outerHTML,
+  moose: () => animStill('moose_stare', 84, 2).outerHTML,
+  hotshot: () => HOTSHOT,
+  gopher: () => animStill('gopher_whistle', 84, 4).outerHTML,
+  geese: () => `<div class="flock">${[0, 3, 5].map((f) => animStill('canada_goose_flap', 48, f).outerHTML).join('')}</div>`,
+  pumper: () => animStill('pumper_check_gauge', 84, 4).outerHTML,
 };
 
 /** The region's season, unless ?theme=… overrides it for previewing. */
@@ -321,7 +323,7 @@ function showLog(regionIndex: number): void {
     const li = document.createElement('li');
     li.className = `log-card ${found ? 'found' : 'unfound'}${e.legendary ? ' legendary' : ''}`;
     li.dataset.id = e.id;
-    li.innerHTML = `${e.legendary ? '<span class="legend-tag">LEGENDARY</span>' : ''}<div class="art art-${e.id}" aria-hidden="true">${LOG_ART[e.id]}</div><h2></h2><p></p>`;
+    li.innerHTML = `${e.legendary ? '<span class="legend-tag">LEGENDARY</span>' : ''}<div class="art art-${e.id}" aria-hidden="true">${LOG_ART[e.id]()}</div><h2></h2><p></p>`;
     li.querySelector('h2')!.textContent = found ? e.name : '???';
     li.querySelector('p')!.textContent = found ? e.caption : e.hint;
     list.append(li);

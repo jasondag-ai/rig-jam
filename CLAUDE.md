@@ -176,6 +176,17 @@ something, give exact clicks and one command at a time.
   easing, overshoot, overlapping action and holds. Big scenes go on screen-level layers outside the
   board (`sceneLayer`: the board's drop-shadow filter would force a redraw every frame); no CSS
   filters on them (ground-shadow ellipses instead). Must hold 60fps (checked with 4x CPU throttle).
+- Batch C character animation (`src/ui/anim.ts`): `Sprite` plays sprite-sheet actions from
+  `public/sprites/anim/` (`anim-sprites.json`: frames, frame size, character box), origin at the
+  feet, GSAP-driven (abortable with the scene). Gags keep their timing, triggers and sizes; each
+  wraps its figure with `withSprite` and the old drawing stays inside for beats whose new art was
+  rejected (`.drawn` shows it): bear wipe/rabbit beats (rig), magpie hop/poop, moose chew, spotter
+  sleep/wake, pumper truck/get-in/out/write, hot shot (old). New art: gopher (all), moose rise/
+  stare/duck, magpie fly/land/take-off, spotter jog/sit, biffy door, landowner (now on foot: walk,
+  finger wag, head shake), bear walk/sit/walk-off, geese, pumper walk/check-gauge, gauge post.
+  Win card: Company Man portrait (nod at par, scowl when well over, idle otherwise) and the
+  roughneck mascot (celebrate on a perfect solve, idle otherwise). Log cards use stills (`animStill`).
+  When redone art arrives, add it to `inbox-sprites.py` (drop it from REJECTED) and swap the beat.
 - Wildlife and traffic. Touches never cancel them; each waits while another gag is on stage (and the
   landowner or biffy wait for them; a sleeping spotter holds them up until he's woken). Reduced
   motion: skipped entirely.

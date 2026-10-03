@@ -3244,3 +3244,13 @@ img.hat { width: 100%; height: auto; }
 .pumper-stage .uses-sprite > svg { visibility: hidden; }
 .pumper-stage .uses-sprite.drawn > svg { visibility: visible; }
 .pumper-stage .uses-sprite.drawn > .sprite-anim { visibility: hidden; }
+
+/* Win card characters (Batch C): the Company Man's portrait, and the roughneck mascot standing on
+   the panel's top-left corner (no row of his own, so the card never grows). */
+.company-man { position: relative; width: 66px; height: 66px; overflow: hidden; border-radius: 10px; }
+.win .card .mascot { position: absolute; left: -30px; top: -62px; width: 104px; height: 104px; z-index: 1; pointer-events: none; }
+@media (max-height: 700px) {
+  .win .card .mascot { transform: scale(0.8); transform-origin: 50% 100%; top: -52px; left: -28px; }
+}
+.log-card .art .flock { display: flex; align-items: center; gap: 2px; height: 84px; }
+.log-card .art .pair .anim-still { flex: none; }
