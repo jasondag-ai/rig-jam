@@ -10,7 +10,7 @@ import { sound } from '../audio/engine.ts';
 import { freeSpot } from './gags.ts';
 import { Sprite } from './anim.ts';
 import { Rig, sceneRunner } from './rig.ts';
-import { GAUGE_RIG, GOOSE_RIG, PUMPER_RIG, PUMPER_TRUCK } from './rigs.ts';
+import { GAUGE_RIG, PUMPER_RIG, PUMPER_TRUCK } from './rigs.ts';
 
 /** The strip between the board and the buttons, in board px, plus things already standing in it. */
 export interface Strip {
@@ -101,15 +101,24 @@ export async function playGeese(layer: HTMLElement, g: { top: number; bottom: nu
   Object.assign(flock.style, { position: 'absolute', left: '0', top: '0' });
   stage.append(flock);
   const cy = g.top + band * 0.5;
-  const geese = slots.map(([sx, sy]) => {
-    const el = div('goose', GOOSE_RIG);
+  // Each goose is the animated Canada goose (Batch C), feet-anchored in a gw x gh box.
+  const birds: Sprite[] = [];
+  const goose = (cls: string) => {
+    const el = div(cls);
+    const b = new Sprite('goose-art', (gw * 1.15) / 113);
+    b.el.style.transform = `translate(${gw / 2}px, ${gh}px)`;
+    el.append(b.el);
+    birds.push(b);
+    return el;
+  };
+  slots.forEach(([sx, sy]) => {
+    const el = goose('goose');
     size(el, gw, gh);
     Object.assign(el.style, { position: 'absolute', left: '0', top: '0' });
     gsap.set(el, { x: span + sx, y: H / 2 - gh / 2 + sy });
     flock.append(el);
-    return el;
   });
-  const straggler = div('goose straggler', GOOSE_RIG);
+  const straggler = goose('goose straggler');
   size(straggler, gw, gh);
   Object.assign(straggler.style, { position: 'absolute', left: '0', top: '0' });
   const lag = { x: -gw * 5.6 };
@@ -117,14 +126,12 @@ export async function playGeese(layer: HTMLElement, g: { top: number; bottom: nu
   flock.append(straggler);
   if (!ltr) flock.style.transform = 'scaleX(-1)';
   layer.append(stage);
-  const rigs = [...geese, straggler].map((el) => new Rig(el));
-  const { run, keep, stop } = sceneRunner(signal);
+  const { run, stop } = sceneRunner(signal);
   // Wings flap, each goose a little out of step; the straggler flaps twice as fast.
-  rigs.forEach((r, i) => {
-    const fast = i === rigs.length - 1;
-    const t = fast ? 0.15 : 0.3;
-    keep(gsap.fromTo(r.get('wing'), { rot: 30 }, { rot: -40, duration: t, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: (i % 3) * 0.09 }));
-    keep(gsap.fromTo(r.get('wingF'), { rot: 24 }, { rot: -32, duration: t, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: (i % 3) * 0.09 + 0.03 }));
+  birds.forEach((b, i) => {
+    const fast = i === birds.length - 1;
+    b.play('canada_goose_flap', { fps: fast ? 22 : 11, loop: -1, from: 0 });
+    gsap.delayedCall((i % 3) * 0.09, () => b.play('canada_goose_flap', { fps: fast ? 22 : 11, loop: -1 }));
   });
   const from = ltr ? g.screenL - W : g.screenR;
   const to = ltr ? g.screenR + gw * 2 : g.screenL - W - gw * 2;
@@ -146,7 +153,7 @@ export async function playGeese(layer: HTMLElement, g: { top: number; bottom: nu
     stage.dataset.beat = 'done';
   } finally {
     stop();
-    rigs.forEach((r) => r.destroy());
+    birds.forEach((b) => b.destroy());
     stage.remove();
   }
 }
