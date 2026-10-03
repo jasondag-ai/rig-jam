@@ -7,6 +7,7 @@ import { hatsHtml } from './ui/hats.ts';
 import { hardHats, loadProgress, resetProgress, saveProgress } from './ui/progress.ts';
 import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } from './ui/unlocks.ts';
 import { onTap } from './ui/tap.ts';
+import { shouldShowCover, showCover } from './ui/cover.ts';
 import { biffySpot } from './ui/gags.ts';
 import { BIFFY, HOTSHOT, LANDOWNER, MAGPIE, SPOTTER_SIT } from './ui/cast.ts';
 import { BEAR_RIG, GAUGE_RIG, GOOSE_RIG, GOPHER_HOLE, GOPHER_RIG, MOOSE_RIG, PUMPER_RIG, PUMPER_TRUCK, WORKER_RIG } from './ui/rigs.ts';
@@ -378,4 +379,8 @@ function forcedGag(): boolean {
   return true;
 }
 
-if (!forcedGag()) showLevels();
+// Each open of the app starts on the cover (one tap gets you in); never between levels.
+if (!forcedGag()) {
+  if (shouldShowCover(location.search, navigator.webdriver === true)) showCover(app, () => showLevels());
+  else showLevels();
+}

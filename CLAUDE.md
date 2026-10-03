@@ -66,6 +66,15 @@ something, give exact clicks and one command at a time.
 - `src/ui/scenery.ts` (border trees) and `src/ui/pad-decor.ts` (gravel/mud/snow detail) are seeded,
   cosmetic, and never affect play. `--fence` is the fence thickness in px; its color is `--fence-color`.
 
+## Cover (title screen)
+- `src/ui/cover.ts`: shown on every app open (never between levels). Hero image `public/cover.webp`
+  (1080x1920, under 300 KB, preloaded in index.html) fills the screen (`object-fit: cover`);
+  "RUSH HOUR RIGS" slams down into the sky with a bounce and a dust puff; 8s push-in; two clouds
+  drift; TAP TO START pulses. One tap anywhere (`onTap`, no ghost click) opens the level list. If the
+  image isn't loaded within 1s (`IMAGE_WAIT_MS`) the title shows over a sky gradient. Reduced motion:
+  all still. Skipped for `?gag=` links and automated browsers (`navigator.webdriver`) unless
+  `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
+
 ## Progression
 - Levels open in order within a region (clear one to open the next). A region opens after clearing
   5 of the previous region's 10 (`REGION_UNLOCK` in `src/ui/unlocks.ts`). Cardium is always open;
@@ -263,6 +272,7 @@ something, give exact clicks and one command at a time.
 - `npm run check-levels` – print levels and solutions
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
 - `npm run test:e2e:gags` – gags test (Playwright; start the dev server first)
+- `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)
 - `npm run test:e2e:audio` – sound cues, settings and music-style distinctness (start the dev server first)
 
