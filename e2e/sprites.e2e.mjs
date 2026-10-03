@@ -16,7 +16,8 @@ const check = (ok, text) => {
 
 const open = async (type, block = false) => {
   const browser = await type.launch();
-  const context = await browser.newContext({ ...devices['iPhone 13'], viewport: { width: 375, height: 667 } });
+  // No service worker: on the live site it would answer from its cache and the block would never bite.
+  const context = await browser.newContext({ ...devices['iPhone 13'], viewport: { width: 375, height: 667 }, serviceWorkers: 'block' });
   const page = await context.newPage();
   if (block) await page.route('**/sprites/trucks/**', (r) => r.abort());
   await page.goto(ROOT + '?wild=0', { waitUntil: 'networkidle' });
