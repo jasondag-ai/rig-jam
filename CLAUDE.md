@@ -6,9 +6,11 @@ something, give exact clicks and one command at a time.
 ## Art inbox (ART_BIBLE.md is the authority for all art)
 - `ART_BIBLE.md` (project root) sets the style, camera, accuracy spec, never-draw list and batch
   list for every image. New art arrives in `art-inbox/`.
-- When the owner says "process art inbox": FIRST copy every file from the iCloud folder
-  `~/Library/Mobile Documents/com~apple~CloudDocs/RHR Art Inbox/` (top level only, not `done/`)
-  into `art-inbox/` (if the folder is missing or empty, say so). Then check EVERY image in
+- When the owner says "process art inbox": FIRST copy every file from the OneDrive (stragentic.com)
+  folder `~/Library/CloudStorage/OneDrive-stragentic.com/RHR Art Inbox/` (top level only, not
+  `done/`) into `art-inbox/`. Cloud-only files must be downloaded first: read each file fully (e.g.
+  `cat file > /dev/null`) and check its size is non-zero before copying. If the folder is missing
+  or empty, say so (OneDrive may not have synced it to the Mac yet). Then check EVERY image in
   `art-inbox/` against ART_BIBLE.md
   before using any of it: style (Pixar-like 3D matching the cover), technical rules (transparent PNG
   except tiles, no shadow/glow/halo, no text or logos, exact file name, size), camera (top-down vs
@@ -18,7 +20,7 @@ something, give exact clicks and one command at a time.
   source in `tools/<kind>-art/`). Rejected ones are not used: write `art-inbox/REJECTS.md` with one
   ready-to-paste Manus re-prompt per rejected item that names the exact file, the exact problem
   seen, and the ART_BIBLE.md section/spec it broke, and restates the correct spec and file name.
-- After processing, move the files that were USED from that iCloud folder into its `done/`
+- After processing, move the files that were USED from that OneDrive folder into its `done/`
   subfolder (create it if needed). Rejected files stay where they are so they're easy to find.
 - Tell the owner what was accepted, what was rejected, and that REJECTS.md is ready to paste.
 
@@ -83,7 +85,7 @@ something, give exact clicks and one command at a time.
 - Ground textures: `public/sprites/ground/pad-<season>.webp` (summer gravel, spring mud, winter
   snow) and `grass-<season>.webp` (outside the fence), 512px seamless tiles made by `python3
   tools/ground-tiles.py` from `tools/ground-art/` (mud puddle highlights toned down so they never
-  read as objects; spring grass is a stand-in shifted from summer until a real one is added). Writes
+  read as objects; spring grass is a stand-in: summer grass tinted slightly toward early spring, until a real one is added). Writes
   `src/ui/ground-tiles.json`; each theme's `--pad`/`--ground` colors match the textures' tones.
   `applyTheme` loads both tiles and adds `.ground-tex` once they're in (until then, or if they
   fail, the flat colors and `pad-decor.ts` detail show). The pad tile is 3 cells square; drawn pad
@@ -93,7 +95,16 @@ something, give exact clicks and one command at a time.
   fence_corner_v1 turned to each corner). `pipeFence` (sprites.ts) adds `.pipe-on` to the board once
   all six load: rails run post centre to post centre on the fence band's centreline, corners on top,
   pipe thickness `--p` matched (sources: 23px rail, 18px corner); the band shows the ground behind.
-  Gates sit on top. Drawn board fence is the fallback. `gate_open_v2.png` is saved, not used yet.
+  Drawn board fence is the fallback.
+- Pipe swing gates (with `.pipe-on`; pieces from `gate_open_v2.png`, cut by fence-sprites.py):
+  hinge post, leaf (white frame tinted per gate color + a translucent color panel) carrying the
+  symbol badge, latch post. Drawn lying along the top fence and turned per side (`--turn`); the
+  badge counter-rotates to stay upright. Each rail gets a mask gap at its gates (`cutRails`). Gates
+  live on the board (not the clipping yard) so the leaf can swing past it. On exit (`.open`) the
+  leaf swings 90 degrees (260ms ease-out): outward on top/bottom, inward on the sides (only a thin
+  screen margin outside them); none with reduced motion. Wrong-color gates simply stay shut.
+  Convoy gates put the badge to one side and the waiting-number chip to the other. Fallback: the
+  colored tabs (`.sym` + `.boom`).
 - Lighting pass (end of style.css): warm top-left light graded into the pad and outside-ground
   backgrounds, a slight sepia on the trees, soft down-right drop shadows on the fence, gates, trees
   and HUD, and a warm vignette (`.vignette`, z 0: over the scenery, under the board, HUD and
