@@ -11,6 +11,7 @@ import { hardHats, loadProgress, recordDailyClear, recordWin, saveProgress, spen
 import { streakSignHtml } from './sign.ts';
 import { sound } from '../audio/engine.ts';
 import { toast } from './toast.ts';
+import { uiImg } from './ui-art.ts';
 import { preloadObstacles, preloadSprites } from './sprites.ts';
 import { defaultKind } from './vehicles.ts';
 import { applyCamo, loadLog, record, saveLog, sightingToast } from './wildlife-log.ts';
@@ -135,7 +136,7 @@ export class GameView {
       <div class="scenery" aria-hidden="true"></div>
       <div class="vignette" aria-hidden="true"></div>
       <header class="hud">
-        <button class="link" data-act="levels" aria-label="Back to levels">‹ Levels</button>
+        <button class="link" data-act="levels" aria-label="Back to levels">${uiImg('icon_back', 'back-icon')}Levels</button>
         <div class="title"><span class="num"></span><span class="name"></span></div>
         <div class="score">
           <span class="score-row">
@@ -365,7 +366,7 @@ export class GameView {
       <div class="card">
         <h2>Pad cleared!</h2>
         <div class="hats big" aria-label="${hats} of 3 hard hats">${hatsHtml(hats)}</div>
-        ${clean ? '<div class="zero-incident">ZERO INCIDENT</div>' : ''}
+        ${clean ? `<div class="zero-incident" role="img" aria-label="Zero incident"><span>ZERO INCIDENT</span></div>` : ''}
         <p class="result">${moves} moves · par ${par} · ${misses}</p>
         <div class="company" aria-label="${verdict}">
           <div class="company-man">${COMPANY_MAN}</div>

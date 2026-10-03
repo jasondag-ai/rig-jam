@@ -8,6 +8,7 @@ import { hardHats, loadProgress, resetProgress, saveProgress } from './ui/progre
 import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } from './ui/unlocks.ts';
 import { onTap } from './ui/tap.ts';
 import { shouldShowCover, showCover } from './ui/cover.ts';
+import { applyUiArt, uiImg } from './ui/ui-art.ts';
 import { preloadObstacles, preloadSprites } from './ui/sprites.ts';
 import { biffySpot } from './ui/gags.ts';
 import { BIFFY, HOTSHOT, LANDOWNER, MAGPIE, SPOTTER_SIT } from './ui/cast.ts';
@@ -21,10 +22,11 @@ import { MUSIC_STYLES, type MusicStyle } from './audio/settings.ts';
 
 // Sound starts on the first tap anywhere (iOS won't play audio before a gesture).
 audio.install();
+applyUiArt();
 // Camo pickups, if the Wildlife Log is complete (and they're switched on).
 applyCamo();
 
-const BINOCULARS = `<svg viewBox="0 0 28 24" aria-hidden="true"><path d="M5 6 Q6 2 10 2 L11 9 M23 6 Q22 2 18 2 L17 9" fill="none" stroke-width="2.6"/><rect x="11" y="7" width="6" height="6" rx="2"/><circle cx="7.5" cy="15" r="6.5"/><circle cx="20.5" cy="15" r="6.5"/><circle class="lens" cx="7.5" cy="15" r="3.4"/><circle class="lens" cx="20.5" cy="15" r="3.4"/></svg>`;
+const BINOCULARS = uiImg('icon_binoculars');
 
 /** Card art for each Wildlife Log entry (found: in color; not yet: a dark silhouette). */
 const LOG_ART: Record<Sighting, string> = {
@@ -45,7 +47,7 @@ const themeFor = (regionIndex: number) => THEMES[themeOverride(location.search) 
 
 const app = document.querySelector<HTMLElement>('#app')!;
 
-const PADLOCK = `<svg class="padlock" viewBox="0 0 20 24" aria-hidden="true"><path d="M5 10V7a5 5 0 0 1 10 0v3" fill="none" stroke="currentColor" stroke-width="3"/><rect x="2" y="10" width="16" height="12" rx="3"/><circle cx="10" cy="16" r="2" class="keyhole"/></svg>`;
+const PADLOCK = uiImg('icon_padlock', 'padlock');
 
 /** Locked things just shake when tapped. */
 function shake(el: HTMLElement): void {
@@ -84,7 +86,7 @@ function showLevels(requested = savedRegion()): void {
     <div class="scenery" aria-hidden="true"></div>
     <header class="brand">
       <button class="binoculars" aria-label="Wildlife Log">${BINOCULARS}</button>
-      <button class="gear" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 2h3.4l.5 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.7c.1.6.1 1.2 0 1.8l2 1.7-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.5 2.6h-3.4l-.5-2.6c-.6-.2-1.2-.5-1.7-.9l-2.5.9-1.7-2.9 2-1.7c-.1-.6-.1-1.2 0-1.8l-2-1.7 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9z"/><circle cx="12" cy="10.8" r="3"/></svg></button>
+      <button class="gear" aria-label="Settings">${uiImg('icon_gear')}</button>
       <h1>Rush Hour Rigs</h1>
       <p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>
     </header>
@@ -222,7 +224,7 @@ function showSettings(screen: HTMLElement): void {
         <label class="switch">
           <input type="checkbox" role="switch" data-act="sfx" ${audio.settings.sfx ? 'checked' : ''} />
           <span class="track" aria-hidden="true"><span class="knob"></span></span>
-          <span class="switch-label">Sound effects</span>
+          <span class="switch-label">${uiImg('icon_speaker_on', 'spk on')}${uiImg('icon_speaker_off', 'spk off')}Sound effects</span>
         </label>
         <label class="switch">
           <input type="checkbox" role="switch" data-act="music" ${audio.settings.music ? 'checked' : ''} />
@@ -307,7 +309,7 @@ function showLog(regionIndex: number): void {
   screen.innerHTML = `
     <div class="scenery" aria-hidden="true"></div>
     <header class="log-head">
-      <button class="link back">‹ Levels</button>
+      <button class="link back">${uiImg('icon_back', 'back-icon')}Levels</button>
       <h1>Wildlife Log${demo ? '<span class="demo-tag">DEMO</span>' : ''}</h1>
       <span class="log-count" aria-label="${log.found.length} of ${LOG_ENTRIES.length} found">${log.found.length}/${LOG_ENTRIES.length}</span>
     </header>
