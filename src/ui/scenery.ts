@@ -192,7 +192,7 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
     const size = Math.max(14, Math.min(34, bandBelow - BERM_CLEAR - 6));
     const y = Math.min(height - 2, floor + BERM_CLEAR + size + 2);
     if (options.anchors.bush) anchors.push({ kind: 'bush', x: box.x + box.width * 0.2, y, w: size * ART.bush_willow, h: size });
-    if (options.anchors.mound) anchors.push({ kind: 'mound', x: box.x + box.width * 0.78, y, w: size * 1.3, h: size * 0.62 });
+    if (options.anchors.mound) anchors.push({ kind: 'mound', x: box.x + box.width * 0.78, y, w: size * 1.5, h: size * 0.8 });
     // Trees give the anchors room.
     items = items.filter((it) => {
       const b = treeBox(it);
@@ -205,14 +205,41 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
   return { items, anchors };
 }
 
-/** The gopher's mound: a low heap of fresh dirt with a dark hole, flat toy shading, dark outline. */
+/**
+ * The gopher's mound, drawn to sit with the illustrated trees: a rounded heap of loose dirt lit from
+ * the top left (shaded gradient, no outline), soil clumps on it, a dark hole with depth, grass tufts
+ * round the base and a soft contact shadow.
+ */
 const mound = (a: Anchor) =>
-  `<svg class="mound" data-anchor="mound" viewBox="0 0 52 26" style="left:${r1(a.x - a.w / 2)}px;top:${r1(a.y - a.h)}px;width:${r1(a.w)}px;height:${r1(a.h)}px">` +
-  '<ellipse cx="27" cy="23" rx="24" ry="3" fill="rgba(30,20,10,0.25)"/>' +
-  '<path d="M3 22 Q5 9 18 6 Q27 2 36 7 Q48 11 49 22 Z" fill="#9a6e44" stroke="#2a1a0c" stroke-width="2" stroke-linejoin="round"/>' +
-  '<path d="M9 17 Q12 10 20 8 Q27 5 33 8" fill="none" stroke="#c39a6b" stroke-width="2.4" stroke-linecap="round"/>' +
-  '<ellipse cx="27" cy="13" rx="9.5" ry="5" fill="#2a1a0c"/><ellipse cx="27" cy="14.4" rx="7" ry="3" fill="#120a04"/>' +
-  '<circle cx="42" cy="21" r="1.6" fill="#7a5632"/><circle cx="9" cy="21.5" r="1.3" fill="#7a5632"/></svg>';
+  `<svg class="mound" data-anchor="mound" viewBox="0 0 64 34" style="left:${r1(a.x - a.w / 2)}px;top:${r1(a.y - a.h)}px;width:${r1(a.w)}px;height:${r1(a.h)}px">` +
+  '<defs>' +
+  '<radialGradient id="md-dirt" cx="34%" cy="22%" r="85%"><stop offset="0" stop-color="#c79b68"/><stop offset="0.45" stop-color="#9a6c42"/><stop offset="1" stop-color="#5c3d24"/></radialGradient>' +
+  '<radialGradient id="md-hole" cx="50%" cy="68%" r="62%"><stop offset="0" stop-color="#050302"/><stop offset="0.7" stop-color="#1c110a"/><stop offset="1" stop-color="#4a3120"/></radialGradient>' +
+  '<radialGradient id="md-shadow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="rgba(20,14,6,0.5)"/><stop offset="1" stop-color="rgba(20,14,6,0)"/></radialGradient>' +
+  '</defs>' +
+  '<ellipse cx="35" cy="30" rx="30" ry="4.6" fill="url(#md-shadow)"/>' +
+  // The heap: a lumpy outline, not a smooth dome.
+  '<path d="M4 29 Q3 22 9 19 Q11 12 19 10 Q24 4 33 5 Q42 3 47 9 Q55 11 56 18 Q62 22 60 29 Q46 32 32 31 Q16 32 4 29 Z" fill="url(#md-dirt)"/>' +
+  // Shaded side (down-right) and a lit rim (up-left).
+  '<path d="M47 9 Q55 11 56 18 Q62 22 60 29 Q50 31 42 31 Q52 24 47 9 Z" fill="rgba(40,24,10,0.3)"/>' +
+  '<path d="M9 19 Q11 12 19 10 Q24 4 33 5" fill="none" stroke="rgba(255,232,196,0.5)" stroke-width="1.6" stroke-linecap="round"/>' +
+  // The hole, with a lip of thrown dirt catching the light above it and darkness below.
+  '<ellipse cx="32" cy="16.5" rx="11.5" ry="6.4" fill="#6f4c2e"/>' +
+  '<ellipse cx="32" cy="17.4" rx="10" ry="5.2" fill="url(#md-hole)"/>' +
+  '<path d="M21.6 15.4 Q32 9.6 42.4 15.4" fill="none" stroke="rgba(255,226,184,0.55)" stroke-width="1.3" stroke-linecap="round"/>' +
+  // Loose clumps of soil, each with a shadow and a highlight.
+  [[12, 23, 2.6], [20, 26.5, 2], [44, 25, 2.8], [52, 22, 2], [27, 8.5, 1.8], [40, 8, 1.5], [15, 15.5, 1.7], [50, 15, 1.6], [34, 27.5, 2.2], [57, 27, 1.5]]
+    .map(([x, y, r]) => `<ellipse cx="${x + r * 0.3}" cy="${y + r * 0.35}" rx="${r}" ry="${r * 0.75}" fill="rgba(30,18,8,0.4)"/><ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 0.75}" fill="#8a5f3a"/><ellipse cx="${x - r * 0.3}" cy="${y - r * 0.28}" rx="${r * 0.5}" ry="${r * 0.32}" fill="#d3aa78"/>`)
+    .join('') +
+  // Grass tufts round the base.
+  [[5, 30, -0.5], [9, 31.5, 0.2], [24, 32, -0.2], [41, 32.5, 0.3], [56, 31, 0.5], [61, 29.5, 0.2]]
+    .map(([x, y, lean]) =>
+      [-1, 0, 1]
+        .map((k) => `<path d="M${x} ${y} q${(lean + k * 0.5) * 2} -3.4 ${(lean + k * 0.8) * 3.4} -6.4" fill="none" stroke="${k ? '#4f8a1e' : '#7fb433'}" stroke-width="1.1" stroke-linecap="round"/>`)
+        .join(''),
+    )
+    .join('') +
+  '</svg>';
 
 /** The scenery layer as HTML (see sceneryItems). */
 export function sceneryHtml(theme: Theme, width: number, height: number, box: Box, options: SceneryOptions = {}): string {
