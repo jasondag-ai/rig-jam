@@ -3358,3 +3358,21 @@ img.hat { width: 100%; height: auto; }
 /* Permanent gag anchors in the scenery (scenery.ts): the gopher's dirt mound (Cardium). The bear's
    willow bush is an ordinary scenery sprite. */
 .trees .mound { position: absolute; display: block; overflow: visible; pointer-events: none; }
+
+/* ---------- Montney's level list: spring breakup ----------
+   The same place as its levels: the pad's mud showing through the dull spring grass in soft
+   patches, and a few shallow puddles (the pads' own low-contrast puddle colour). Soft-edged and
+   behind everything, so the rows, title and buttons read as before. */
+.screen.levels[data-theme='spring'] {
+  background:
+    linear-gradient(to bottom, var(--sky-top) 0, var(--sky-bottom) var(--horizon), transparent var(--horizon)),
+    radial-gradient(ellipse 15% 2.2% at 30% 46%, rgba(140, 116, 96, 0.55), transparent 100%),
+    radial-gradient(ellipse 11% 1.8% at 76% 66%, rgba(140, 116, 96, 0.5), transparent 100%),
+    radial-gradient(ellipse 13% 2% at 22% 88%, rgba(140, 116, 96, 0.5), transparent 100%),
+    radial-gradient(ellipse 46% 9% at 22% 44%, rgba(87, 63, 46, 0.78), transparent 100%),
+    radial-gradient(ellipse 40% 8% at 82% 62%, rgba(87, 63, 46, 0.72), transparent 100%),
+    radial-gradient(ellipse 52% 9% at 30% 86%, rgba(87, 63, 46, 0.75), transparent 100%),
+    radial-gradient(ellipse 34% 6% at 70% 28%, rgba(72, 50, 34, 0.6), transparent 100%),
+    var(--grass-tile) 0 0 / 384px 384px repeat,
+    var(--ground);
+}

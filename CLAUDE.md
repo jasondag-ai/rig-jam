@@ -157,6 +157,11 @@ something, give exact clicks and one command at a time.
   the round ends keep their shape), the win panel (border-image frame, title on its banner, medal
   pinned to the corner), the days-without-incident sign (label and count live in its white field),
   and the Zero Incident medal (words live on its ribbon). All text and numbers stay live.
+- Region look on the level list: each region's list wears its season, the same place as its
+  levels. Cardium: dry summer (bright grass, summer trees, warm blue sky). Montney: spring breakup
+  (the spring theme's cooler grey sky and dull wet grass, spring aspens, plus soft patches of the
+  pad's mud and a few low-contrast puddles in the grass: `.screen.levels[data-theme='spring']`).
+  Duvernay: snow. `node e2e/region-shots.mjs` checks and saves all three side by side.
 - Main page (the level list screen): everything stays inside the screen width with 16px side
   margins at 375 to 430px (`.daily-block` is one `minmax(0, 1fr)` column; the sign is `width: 100%`,
   never sized from its height). The intro paragraph shows only until the first level is cleared.
