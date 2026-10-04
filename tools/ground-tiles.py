@@ -69,9 +69,11 @@ def drifts(im: Image.Image, seed: int) -> Image.Image:
 
 
 def spring_grass(summer: Image.Image) -> Image.Image:
-    """Stand-in: summer grass tinted slightly toward early spring (a little paler and yellower)."""
-    warm = ImageChops.multiply(ImageEnhance.Brightness(summer).enhance(1.25), Image.new('RGB', summer.size, (236, 232, 168)))
-    return Image.blend(summer, warm, 0.4)
+    """Stand-in for spring breakup: last year's grass only just greening. The summer grass, duller
+    (half its saturation), darker and pulled toward a wet olive-brown."""
+    dull = ImageEnhance.Color(summer).enhance(0.5)
+    wet = ImageChops.multiply(dull, Image.new('RGB', summer.size, (196, 190, 150)))
+    return ImageEnhance.Brightness(wet).enhance(0.95)
 
 
 def tiled(tile: Image.Image, size: int, dx: int, dy: int) -> Image.Image:
