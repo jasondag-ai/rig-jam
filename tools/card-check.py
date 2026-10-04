@@ -2,7 +2,7 @@
 """Judges a win card screenshot by its pixels (what the eye sees), not by element boxes.
 Usage: python3 tools/card-check.py shot.png <scale> <cardLeft> <cardTop> <cardWidth> <cardHeight> <f>
 (card box in CSS px; f = CSS px per px of the @2x frame art). Prints JSON, all in CSS px:
-  gapTop / gapBottom: blue ribbon showing above the banner letters' tops and below their baseline,
+  gapTop / gapBottom: blue ribbon showing above and below the banner lettering (outline included),
                       at the text's horizontal centre
   side / bottom:      frame thickness outside the cream box's gold trim, at the sides and the bottom"""
 import json, sys
@@ -24,7 +24,8 @@ bs = [y for y in range(S(top + 26 * f), S(top + 134 * f)) for x in cols if blue(
 ribbon_top, ribbon_bottom = min(bs), max(bs)
 # Letters: pixels of the lettering's own flat yellow (--accent, #ffc21a) inside the ribbon. The gold
 # trim is shaded, never this exact flat colour for more than a stray pixel, so whole rows are needed.
-ink = lambda p: p[0] > 248 and 186 <= p[1] <= 202 and p[2] < 45
+# The lettering is judged as the block the eye sees: yellow letters with their dark outline and lip.
+ink = lambda p: (p[0] > 248 and 186 <= p[1] <= 202 and p[2] < 45) or (abs(p[0] - 42) < 5 and abs(p[1] - 26) < 5 and abs(p[2] - 12) < 5)
 rows = [y for y in range(ribbon_top, ribbon_bottom + 1) if sum(1 for x in range(S(left + width * 0.2), S(left + width * 0.8)) if ink(px[x, y])) >= S(4)]
 text_top, text_bottom = min(rows), max(rows)
 

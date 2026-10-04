@@ -3210,11 +3210,11 @@ img.hat { width: 100%; height: auto; }
   justify-items: stretch;
   gap: 7px;
   /* Even cream margins: the frame's own cream lip is a little deeper at the top. */
-  padding: 1px 6px 5px;
+  padding: 1px 6px 6px;
   border-style: solid;
   border-color: transparent;
-  border-width: calc(262 * var(--f)) calc(118 * var(--f)) calc(115 * var(--f));
-  border-image: var(--ui-frame-win) 262 200 115 fill / calc(262 * var(--f)) calc(200 * var(--f)) calc(115 * var(--f)) stretch;
+  border-width: calc(262 * var(--f)) calc(118 * var(--f)) calc(112 * var(--f));
+  border-image: var(--ui-frame-win) 262 200 112 fill / calc(262 * var(--f)) calc(200 * var(--f)) calc(112 * var(--f)) stretch;
   border-radius: 0;
   background: none;
   box-shadow: none;
@@ -3235,7 +3235,9 @@ img.hat { width: 100%; height: auto; }
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(-262 * var(--f) + 80 * var(--f) - (26.5px - var(--cap) / 2) * var(--t));
+  /* The lettering as a block: its dark outline (2.25) and the lip under it (3 more) count too, which
+     puts the block's middle 1.5 below the capitals' middle. */
+  top: calc(-262 * var(--f) + 80 * var(--f) - (28px - var(--cap) / 2) * var(--t));
   margin: 0;
   line-height: 0;
   text-shadow: none;
