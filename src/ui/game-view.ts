@@ -27,6 +27,14 @@ const TAPPED = '.win [data-act], .hud [data-act="levels"]';
 
 const WIN_DELAY_MS = 900;
 const NOTE_MS = 2600;
+/**
+ * "Pad cleared!" as SVG text on a shallow arc, so it follows the curve of the win card's banner.
+ * Two copies: a dark one a little lower (the lettering's bottom lip) and the yellow one on top.
+ */
+const BANNER_TEXT =
+  '<svg viewBox="0 0 220 44" aria-hidden="true"><defs><path id="banner-arc" d="M8 31.5 Q110 21.5 212 31.5"/></defs>' +
+  ['lip', 'ink'].map((c) => `<text class="${c}"${c === 'lip' ? ' transform="translate(0 3)"' : ''}><textPath href="#banner-arc" startOffset="50%" text-anchor="middle">Pad cleared!</textPath></text>`).join('') +
+  '</svg>';
 /** The perfect-solve confetti: how long the whole burst lasts, and how many pieces. */
 const CONFETTI_MS = 1600;
 const CONFETTI_PIECES = 40;
@@ -302,7 +310,7 @@ export class GameView {
       const range = getMoveRange(this.state, this.hint.id);
       this.board.showHintTarget(this.hint, this.state, range?.exitDelta === this.hint.delta);
       this.hintStep = 2;
-      this.note('Drag it to the outline.', true);
+      this.note(range?.exitDelta === this.hint.delta ? 'Drive it out through its gate.' : 'Drag it onto its ghost.', true);
       this.updateHud();
       return;
     }
@@ -328,7 +336,7 @@ export class GameView {
     this.hint = move;
     this.hintStep = 1;
     this.board.showHintTruck(move.id);
-    this.note('Move the glowing truck. Tap Where? to see where.', true);
+    this.note('Move the truck with the bright rim. Tap Where? to see where.', true);
     this.updateHud();
   }
 
@@ -391,7 +399,7 @@ export class GameView {
     this.winMotion = [];
     this.winEl.innerHTML = `
       <div class="card">
-        <h2>Pad cleared!</h2>
+        <h2 aria-label="Pad cleared!">${BANNER_TEXT}</h2>
         ${clean ? `<div class="zero-incident" role="img" aria-label="Zero incident"><span>ZERO INCIDENT</span></div>` : ''}
         <div class="score-row">
           <div class="mascot" aria-hidden="true"></div>

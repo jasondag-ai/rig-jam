@@ -150,6 +150,19 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
           check(!!early.confetti && early.confetti.pieces >= 30 && early.confetti.hats >= 6 && early.confetti.under && !!early.confetti.before && early.confetti.noTouch, `perfect solve: confetti (${early.confetti?.pieces} pieces, ${early.confetti?.hats} hard hats) falls behind the card`);
           check(m.confetti === null, 'and is gone within about 1.5 s');
         } else check(early.confetti === null, 'over par: no confetti');
+        // "Pad cleared!" is centred in the banner's ribbon, top to bottom (the ribbon's middle is 88
+        // art px down the frame's 262px top slice), and curved with it.
+        const banner = await page.evaluate(() => {
+          const c = document.querySelector('.win .card');
+          const f = parseFloat(getComputedStyle(c).borderTopWidth) / 262;
+          const card = c.getBoundingClientRect();
+          const ink = c.querySelector('h2 .ink').getBoundingClientRect();
+          const lip = c.querySelector('h2 .lip').getBoundingClientRect();
+          const mid = (Math.min(ink.top, lip.top) + Math.max(ink.bottom, lip.bottom)) / 2;
+          return { off: mid - (card.top + 88 * f), side: (ink.left + ink.width / 2) - (card.left + card.width / 2), curved: !!c.querySelector('h2 textPath'), inRibbon: ink.top >= card.top + 30 * f && lip.bottom <= card.top + 150 * f, clip: { x: card.left - 6, y: card.top - 8, width: card.width + 12, height: 262 * f + 30 } };
+        });
+        check(Math.abs(banner.off) <= 2 && Math.abs(banner.side) <= 1.5 && banner.curved && banner.inRibbon, `"Pad cleared!" is centred in the banner and follows its curve (${banner.off.toFixed(1)}px off vertically)`);
+        if (engine === 'webkit' && kind === 'perfect') await page.screenshot({ path: join(OUT, `banner_${game}_${size}.png`), clip: banner.clip });
         if (engine === 'webkit') await page.screenshot({ path: join(OUT, `card_${game}_${kind}_${size}.png`) });
         await context.close();
       }
