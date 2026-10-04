@@ -12,7 +12,8 @@ import { chromium, webkit } from 'playwright';
 import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { REGIONS } from '../src/levels/regions.ts';
+import { DAILY_LEVELS, REGIONS } from '../src/levels/regions.ts';
+import { dayKey, padLevelIndex, padNumber } from '../src/ui/daily.ts';
 import { getMoveRange, newGame, solve } from '../src/engine/index.ts';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
@@ -57,10 +58,10 @@ const offScreen = (page, root) =>
       .map((e) => `${e.className || e.tagName} ${Math.round(e.getBoundingClientRect().left)}..${Math.round(e.getBoundingClientRect().right)}`);
   }, root);
 
-async function play(page, moves) {
+async function play(page, moves, lvl = level) {
   const cell = await page.$eval('.board', (el) => parseFloat(el.style.getPropertyValue('--cell')));
   for (const m of moves) {
-    const t = level.trucks.find((x) => x.id === m.id);
+    const t = lvl.trucks.find((x) => x.id === m.id);
     await page.evaluate(
       ({ id, d, h }) =>
         new Promise(async (res) => {
@@ -213,6 +214,37 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       if (engine === 'webkit') await page.screenshot({ path: join(OUT, `menu_win_${kind}_${size}.png`) });
       await context.close();
     }
+  }
+
+  // Daily Pad win card: it also carries the streak sign and the Share button. Everything stays
+  // inside the panel (only the roughneck and the medal may overhang it), and nothing overlaps.
+  for (const [w, h] of [[375, 553], [375, 667], [390, 844], [430, 932]]) {
+    const daily = DAILY_LEVELS[padLevelIndex(padNumber(dayKey(new Date())), DAILY_LEVELS.length)];
+    const context = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 3, hasTouch: true });
+    const page = await context.newPage();
+    await fresh(page, UNLOCKED);
+    await page.locator('.daily-btn').click();
+    await page.waitForSelector('.board .truck');
+    await wait(400);
+    await play(page, solve(daily), daily);
+    await wait(1500);
+    console.log(`\n${engine} ${w}x${h} Daily Pad win card`);
+    const d = await page.evaluate(() => {
+      const o = document.querySelector('.win');
+      const card = document.querySelector('.win .card').getBoundingClientRect();
+      const out = [...document.querySelectorAll('.win .card *')]
+        .filter((e) => !e.closest('.mascot') && !e.closest('.zero-incident') && !e.closest('h2'))
+        .filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && (r.left < card.left - 0.5 || r.right > card.right + 0.5 || r.bottom > card.bottom + 0.5); })
+        .map((e) => `${e.className || e.tagName} ${Math.round(e.getBoundingClientRect().left - card.left)}..${Math.round(e.getBoundingClientRect().right - card.left)} of ${Math.round(card.width)}`);
+      const R = (s) => document.querySelector(`.win ${s}`)?.getBoundingClientRect();
+      const [sign, share, row, count] = [R('.safety-sign'), R('.share'), R('.btn-row'), R('.sign-count')];
+      return { out, scrolls: o.scrollHeight > o.clientHeight + 1, fits: card.bottom <= innerHeight && card.right <= innerWidth && card.left >= 0, stacked: !!sign && !!share && count.right <= sign.right - sign.width * 0.06 && sign.bottom <= share.top + 0.5 && share.bottom <= row.top + 0.5, foot: !!R('.sign-foot') && R('.sign-foot').width > 0 };
+    });
+    check(d.out.length === 0, `sign, Share and buttons stay inside the panel (${d.out[0] ?? 'clear'})`);
+    check(d.stacked && !d.foot, 'streak count inside the sign; sign above Share above the button row, nothing overlapping');
+    check(d.fits && !d.scrolls, 'fits the screen without scrolling');
+    if (engine === 'webkit') await page.screenshot({ path: join(OUT, `polish_win_daily_${w}x${h}.png`) });
+    await context.close();
   }
 
   // Reduced motion: stills, no movement at all.

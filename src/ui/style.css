@@ -3270,3 +3270,21 @@ img.hat { width: 100%; height: auto; }
   .win .card .zero-incident { width: 60px; right: -14px; top: -20px; }
   .company-man { width: 50px; height: 50px; }
 }
+
+/* Daily Pad win card: the streak sign and Share button stay inside the panel. The card is one
+   column that can never grow wider than the panel (the sign's aspect-ratio box used to stretch it
+   and push everything off the right edge); the sign here is the compact one, with no stand-down
+   note (that lives on the main page), so nothing hangs over the Share button. */
+.win .card { grid-template-columns: minmax(0, 1fr); }
+.win .card > * { min-width: 0; }
+.win .card .safety-sign {
+  width: 100%;
+  max-width: 250px;
+  height: auto;
+  margin: 0 auto;
+  justify-self: center;
+}
+.win .card .safety-sign .sign-foot { display: none; }
+.win .card .safety-sign .sign-main { right: 11%; gap: 4px; }
+.win .card .safety-sign .sign-label { font-size: 10px; letter-spacing: 0; }
+.win .card .safety-sign .sign-count { min-width: 1.7em; padding: 0 4px; font-size: 18px; border-width: 2px; }

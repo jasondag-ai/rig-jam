@@ -146,7 +146,8 @@ something, give exact clicks and one command at a time.
   name, three small hard hats (empty until earned), or for a locked level a padlock and "Clear level
   N to unlock". All 10 need under 200px of scroll at 390x844. The big level-card art is not used.
 - Win card: slim panel (52px banner, 18px sides; 46/16 on short screens), fits 375x553 with no
-  scroll. Its two characters are ONE still image each (`animStill`), never sprite-frame cycles (the
+  scroll. It is one `minmax(0, 1fr)` column, so the Daily Pad's streak sign (compact, no stand-down note)
+  and Share button can never push past the panel's edge. Its two characters are ONE still image each (`animStill`), never sprite-frame cycles (the
   frames don't line up and jitter), moved only by GSAP about a fixed origin: the roughneck (wrench-up
   still on a perfect solve, else standing) stands in `.score-row` beside the hard hats, boots on the
   row's bottom line, covering nothing; he does one squash-and-stretch bounce on a perfect solve and
