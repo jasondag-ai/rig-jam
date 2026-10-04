@@ -20,6 +20,10 @@ UI = os.path.join(HERE, '..', 'public', 'sprites', 'ui')
 KEEP_TO = 1046
 RESUME = 1196
 FADE = 6
+# The plain blue band under the cream box's gold trim (rows of the cut image), and how tall to make it.
+BAND_FROM = 1043
+BAND_TO = 1068
+BAND = 39
 # 9-slice (in @2x pixels of the output): banner + top trim corner, side walls + trim corner, bottom.
 SLICE = {'top': 262, 'side': 118}
 
@@ -37,6 +41,15 @@ def main() -> None:
         b = bottom.crop((0, i, w, i + 1))
         out.paste(Image.blend(a, b, (i + 1) / (FADE + 1)), (0, KEEP_TO - FADE + i))
     out.paste(bottom.crop((0, FADE, w, bottom.height)), (0, KEEP_TO))
+    # The bottom of the frame as thick as its sides: the art's blue band under the trim is thinner
+    # (25 rows, plus the 22-row underside lip) than the side walls (61 px), so it is stretched to
+    # BAND rows. Trim, band and lip then add up to the same 61 px all round.
+    band = out.crop((0, BAND_FROM, w, BAND_TO)).resize((w, BAND), Image.Resampling.BICUBIC)
+    tall = Image.new('RGBA', (w, out.height + BAND - (BAND_TO - BAND_FROM)), (0, 0, 0, 0))
+    tall.paste(out.crop((0, 0, w, BAND_FROM)), (0, 0))
+    tall.paste(band, (0, BAND_FROM))
+    tall.paste(out.crop((0, BAND_TO, w, out.height)), (0, BAND_FROM + BAND))
+    out = tall
     out.save(os.path.join(UI, 'frame_win@2x.webp'), 'WEBP', quality=90, method=6)
     out.resize((w // 2, out.height // 2), Image.Resampling.LANCZOS).save(os.path.join(UI, 'frame_win.webp'), 'WEBP', quality=90, method=6)
     print('frame', out.size, 'slices (@2x px): top', SLICE['top'], 'side', SLICE['side'], 'bottom', out.height - 990)
