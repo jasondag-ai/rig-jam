@@ -3,7 +3,7 @@
 
 export type ThemeId = 'summer' | 'spring' | 'winter';
 
-/** How the pad surface is decorated (see pad-decor.ts). */
+/** The pad's surface: picks the base image, the ground detail (lease-detail.ts), the berm and the tracks. */
 export type Ground = 'gravel' | 'mud' | 'snow';
 
 /** Every theme must set all of these. */
@@ -15,7 +15,6 @@ export const THEME_VARS = [
   '--pad', // the lease pad surface
   '--pad-light', // highlights on the pad
   '--pad-dark', // shadows, ruts, speckles on the pad
-  '--pad-grid', // very faint cell lines: just enough to judge distances
   '--accent', // titles, Hint button, earned hats
   '--tree-spruce',
   '--tree-spruce-dark',
@@ -55,7 +54,6 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--pad': '#bea890',
       '--pad-light': '#d9c6ae',
       '--pad-dark': '#7d6650',
-      '--pad-grid': 'rgba(60, 40, 20, 0.11)',
       '--accent': '#ffc21a',
       '--tree-spruce': '#2e9a52',
       '--tree-spruce-dark': '#1d6e39',
@@ -81,7 +79,6 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--pad': '#573f2e',
       '--pad-light': '#8a6e57',
       '--pad-dark': '#2e1c10',
-      '--pad-grid': 'rgba(255, 225, 190, 0.08)',
       '--accent': '#ffc21a',
       '--tree-spruce': '#2b8048',
       '--tree-spruce-dark': '#1b5a31',
@@ -107,7 +104,6 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--pad': '#e0e8f5',
       '--pad-light': '#f9fbfd',
       '--pad-dark': '#a9c0de',
-      '--pad-grid': 'rgba(50, 85, 135, 0.11)',
       '--accent': '#ffc21a',
       '--tree-spruce': '#23734b',
       '--tree-spruce-dark': '#16523a',

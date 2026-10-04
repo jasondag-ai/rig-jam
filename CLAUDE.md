@@ -94,15 +94,24 @@ something, give exact clicks and one command at a time.
   `GameView` refits on window resize and whenever the stage changes size (ResizeObserver).
   `npm run test:e2e:fit` checks 375x667, 390x844, 393x852 and 430x932, each with Safari's toolbars
   (100px less) and as a home-screen app (insets faked through the variables), and saves screenshots.
-- Lease ground: ONE continuous surface per season, `public/sprites/ground/lease-<season>.webp`
+- Lease ground: ONE continuous base surface per season, `public/sprites/ground/lease-<season>.webp`
   (1024px), stretched over the whole board (`.lease-ground`: pad and berm band alike, so it also shows
-  through each gate's gap) and never tiled. `python3 tools/ground-tiles.py` builds it from the
-  seamless sources in `tools/ground-art/` by blending four shifted copies (half turns only, so ruts
-  and drifts keep one direction) through soft random masks, plus a slow tone drift; mud puddle
-  highlights are toned down. It also writes the `grass-<season>.webp` tiles for outside the berm
-  (spring grass is a stand-in) and `src/ui/ground-tiles.json` (tones; each theme's `--pad`/`--ground`
-  match them). `applyTheme` adds `.ground-tex` once both images are in (flat colors and `pad-decor.ts`
-  detail until then). Cell lines (`--pad-grid`) are very faint. Tire tracks draw on top as before.
+  through each gate's gap) and never tiled. NO GRID: there are no cell lines; trucks still snap to cells.
+  `python3 tools/ground-tiles.py` builds every ground image with `field()`: shifted copies of the
+  seamless source in `tools/ground-art/` blended through soft random masks, plus a slow tone drift.
+  Sources are cleaned first: the mud's puddles are filled in with mud (`fill_puddles`), the snow's
+  baked tire ruts are smoothed away (`smooth_snow`). Outside the berm: `grass-<season>.webp`, a 768px
+  field that wraps, drawn at 384px, the source repeating every 96px inside it (fine blades, same
+  scale every season; winter's rows are also quarter-turned so its weave doesn't show; spring grass
+  is a stand-in tinted from summer). Writes `src/ui/ground-tiles.json` (tones; each theme's
+  `--pad`/`--ground` match them). `applyTheme` adds `.ground-tex` once both images are in (flat
+  colors until then).
+- Ground variety (`src/ui/lease-detail.ts`, tested): `planDetail(level, ground, seed)` is pure and
+  seeded by level id, so every level differs and a level always looks the same: 9-12 large soft
+  light and dark patches, plus pebbles (gravel), 2-4 shallow puddles (mud: flat, low contrast, no
+  rim or glint, never touching a gate's cell or an obstacle, `keepDry`) or wind drifts lying one
+  way (snow). `paintDetail` draws it on `canvas.lease-detail` inside `.lease-ground`, under the berm
+  and the tire tracks. If puddles ever read as objects, tone them down.
 - Dirt berm (`src/ui/berm.ts`, tested): no fence. `bermHeight` is a rounded mound across the band
   (crest toward the pad, outer slope running `BERM_OVER` past the board) that slopes to nothing at
   each gate's gap; `paintBerm` shades it on a canvas (`canvas.berm`, under the yard) from a height
@@ -122,8 +131,6 @@ something, give exact clicks and one command at a time.
   backgrounds, a slight sepia on the trees, soft down-right drop shadows on the berm, gates, trees
   and HUD, and a warm vignette (`.vignette`, z 0: over the scenery, under the board, HUD and
   buttons). Nothing that changes color may sit on a truck or gate (tested in sprites e2e).
-- Puddles are flat, low-contrast stains (no outline, rim, glint or shadow) centred on grid corners,
-  never on a cell, and drawn under the `.pad-grid` cell lines. If they ever read as objects, remove them.
 - Illustrated UI (`src/ui/ui-art.ts`, Batch B art in `public/sprites/ui/`): `uiImg()` for icons
   (gear, binoculars, back arrow, padlock, full/empty hard hats, speaker on/off on the Sound effects
   switch); `applyUiArt()` sets `--ui-*` CSS variables for art used as backgrounds: Undo/Hint/Restart,
@@ -133,11 +140,13 @@ something, give exact clicks and one command at a time.
   the Zero Incident medal (words live on its ribbon) and the level cards (2-column grid, number in
   the card's circle, name and hats under it in outlined white). All text and numbers stay live.
 - Scenery (`src/ui/scenery.ts`, Batch A art in `public/sprites/world/`): spruce, aspen and willow
-  sprites placed round the board, seeded per theme, larger toward the screen edges, season-matched
-  (`seasonArt`: winter is all snowy spruce; spring uses the young aspen), with cattails and the blank
-  lease sign as accents. All under the board, gates and buttons. The bear's bush is the willow.
-- `src/ui/pad-decor.ts` (gravel/mud/snow detail) are seeded,
-  cosmetic, and never affect play.
+  in natural scattered groves (`groveRow`: loose clusters of mostly one species, random spacing,
+  clearings, slight overlaps, varied sizes). Above the lease: three staggered rows in depth, small
+  on the horizon to large at the berm, standing on a strip of ground (`depth`; `--horizon` sits that
+  far above the board). Below: one to three rows down the bottom strip, sized to it. Seeded per level
+  in the game (`seed`), season-matched (`seasonArt`: winter is all snowy spruce; spring uses the young
+  aspen), with cattails and the blank lease sign as accents. The whole layer is under the board,
+  gates and buttons.
 
 ## Cover (title screen)
 - `src/ui/cover.ts`: shown on every app open (never between levels). Hero image `public/cover.webp`

@@ -6,6 +6,7 @@ import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
 import { Spray } from './spray.ts';
 import { gateArt, obstacleFit, obstacleImgs, spriteImg, wireSprite } from './sprites.ts';
 import { BERM_OVER, paintBerm } from './berm.ts';
+import { paintDetail, planDetail } from './lease-detail.ts';
 import { seedFrom } from '../engine/rng.ts';
 import { TrackLayer } from './track-layer.ts';
 import type { Ground } from './themes.ts';
@@ -47,14 +48,14 @@ export class BoardView {
   private drag: Drag | null = null;
   /** The dirt berm round the pad (berm.ts), repainted when the size, level or season changes. */
   private berm: HTMLCanvasElement;
+  /** The level's own ground variety (lease-detail.ts), over the season's base image. */
+  private detail: HTMLCanvasElement;
   private ground: Ground = 'gravel';
   private bermKey = '';
   private lastLine: string | null = null;
   /** Tire tracks laid by drags, under obstacles and trucks; wheel spray while trucks move. */
   private tracks: TrackLayer;
   private spray: Spray;
-  /** Cell lines, drawn over the ground (so puddles sit under them) and under the tracks. */
-  private grid: HTMLElement;
   private getState: () => GameState;
   private onMove: (id: string, delta: number) => void;
   private onBump: (truckId: string, direction: 1 | -1, hit: BumpHit) => void;
@@ -74,15 +75,14 @@ export class BoardView {
     this.yard = document.createElement('div');
     this.yard.className = 'yard';
     // Under everything: the lease's one continuous ground (pad and berm band alike), then the berm.
-    this.el.insertAdjacentHTML('afterbegin', '<div class="lease-ground" aria-hidden="true"></div><canvas class="berm" aria-hidden="true"></canvas>');
+    this.el.insertAdjacentHTML('afterbegin', '<div class="lease-ground" aria-hidden="true"><canvas class="lease-detail"></canvas></div><canvas class="berm" aria-hidden="true"></canvas>');
     this.berm = this.el.querySelector('canvas.berm')!;
+    this.detail = this.el.querySelector('canvas.lease-detail')!;
     gateArt(this.el);
     this.pad = document.createElement('div');
     this.pad.className = 'pad';
     this.yard.append(this.pad);
     this.el.append(this.yard);
-    this.grid = document.createElement('div');
-    this.grid.className = 'pad-grid';
     this.spray = new Spray(this.pad, () => this.pad.querySelector('.truck'));
     this.tracks = new TrackLayer((m) => {
       this.spray.emit(m, this.cell);
@@ -96,10 +96,10 @@ export class BoardView {
     this.el.querySelectorAll('.gate, .obstacle, .ghost, .bubble, .dust').forEach((n) => n.remove());
     this.trucks.forEach((t) => t.remove());
     this.trucks.clear();
-    // A clean pad: grid and track layer go in first so obstacles and trucks sit on top of them.
+    // A clean pad: the track layer goes in first so obstacles and trucks sit on top of it.
     this.tracks.clear();
     this.spray.clear();
-    this.pad.append(this.grid, this.tracks.svg);
+    this.pad.append(this.tracks.svg);
     for (const gate of level.gates) {
       const g = document.createElement('div');
       g.className = `gate c-${gate.color}`;
@@ -180,7 +180,7 @@ export class BoardView {
     if (state) this.sync(state, false);
   }
 
-  /** Draws the berm for this board size, level (gate gaps) and season; skipped when nothing changed. */
+  /** Draws the berm and the ground detail for this board size, level and season; skipped when nothing changed. */
   private paintBerm(): void {
     if (!this.level) return;
     const { cell, fence, ground } = this;
@@ -192,6 +192,7 @@ export class BoardView {
     const size = cell * SIZE + (fence + over) * 2;
     Object.assign(this.berm.style, { left: `${-over}px`, top: `${-over}px`, width: `${size}px`, height: `${size}px` });
     paintBerm(this.berm, { cell, band: fence, over, gates: this.level.gates }, ground, seedFrom(this.level.id), scale);
+    paintDetail(this.detail, planDetail(this.level, ground, seedFrom(this.level.id)), cell, fence, scale);
   }
 
   /** Brings truck elements in line with the game state. */
@@ -425,14 +426,12 @@ export class BoardView {
     this.tracks.onWear = cb;
   }
 
-  /** Paints the ground (gravel, mud, snow) under everything else on the pad. */
-  setDecor(svg: string, ground: Ground): void {
-    this.pad.querySelector('.pad-decor')?.remove();
-    this.pad.insertAdjacentHTML('afterbegin', svg);
+  /** The season's ground (gravel, mud, snow): sets the berm, the ground detail, the tracks and the spray. */
+  setGround(ground: Ground): void {
     this.tracks.setGround(ground);
+    this.spray.setGround(ground);
     this.ground = ground;
     this.paintBerm();
-    this.spray.setGround(ground);
   }
 
   /** Undo: every track (and the wear) from the last drag that moved a truck goes away. */

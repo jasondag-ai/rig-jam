@@ -99,10 +99,21 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
         const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
         return !!hit?.closest('.gate');
       });
-      return { on: board.classList.contains('gate-art'), off, gatesOnTop, rails: board.querySelectorAll('.pf-rail, .pf-corner, .pipe-fence').length, padOver: alpha(pad.left + pad.width / 2, pad.top + pad.height / 2) };
+      const detail = board.querySelector('canvas.lease-detail');
+      const dpx = detail.getContext('2d').getImageData(0, 0, detail.width, detail.height).data;
+      let painted = 0;
+      for (let i = 3; i < dpx.length; i += 4 * 97) if (dpx[i] > 0) painted++;
+      const leaf = board.querySelector('.g-leaf').getBoundingClientRect();
+      const badge = board.querySelector('.g-badge').getBoundingClientRect();
+      const thin = Math.min(leaf.width, leaf.height) / (band * 2);
+      return { grid: document.querySelectorAll('.pad-grid').length, painted, thin, badge: Math.min(badge.width, badge.height), trees: document.querySelectorAll('.scenery .sc').length, on: board.classList.contains('gate-art'), off, gatesOnTop, rails: board.querySelectorAll('.pf-rail, .pf-corner, .pipe-fence').length, padOver: alpha(pad.left + pad.width / 2, pad.top + pad.height / 2) };
     });
     check(f.off === 0 && f.padOver === 0, `dirt berm all round the pad, a gap at every gate, nothing on the pad (${f.off} wrong)`);
     check(f.rails === 0, 'no pipe-rail fence or corner posts');
+    check(f.grid === 0, 'no grid lines on the pad');
+    check(f.painted > 200, `the level's own ground variety is painted over the base (${f.painted} samples)`);
+    check(f.thin > 0.5 && f.thin < 0.6 && f.badge >= 20, `gates about 30% thinner (${(f.thin * 100).toFixed(0)}% of the band), badge still ${f.badge.toFixed(0)}px`);
+    check(f.trees > 25, `groves of trees round the lease (${f.trees})`);
     check(f.on && f.gatesOnTop, 'gates sit in the gaps, on top');
     const gates = await page.evaluate(() =>
       [...document.querySelectorAll('.gate')].map((g) => {
@@ -231,7 +242,7 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
   await enter(page, 1, 5);
   const t = await trucks(page);
   check(t.length > 0 && t.every((x) => !x.on && x.svgShown && !x.imgShown), `every truck falls back to the drawing (${t.length})`);
-  check(!(await page.$eval('.screen.game', (e) => e.classList.contains('ground-tex'))), 'the ground falls back to the flat colors and drawn detail');
+  check(!(await page.$eval('.screen.game', (e) => e.classList.contains('ground-tex'))), 'the ground falls back to the flat colors (the code-drawn variety stays)');
   check(!(await page.$eval('.board', (e) => e.classList.contains('gate-art'))), 'the berm is still drawn (it needs no images)');
   check(await page.$$eval('.gate', (gs) => gs.every((g) => getComputedStyle(g.querySelector('.sym')).display !== 'none' && getComputedStyle(g.querySelector('.gw')).display === 'none')), 'the gates fall back to the colored tabs');
   await enter(page, 2, 9);

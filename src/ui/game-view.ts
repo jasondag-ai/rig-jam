@@ -1,7 +1,6 @@
 import { SolverLimitError, canUndo, getMoveRange, isWon, newGame, nextMove, tryMove, undo, type GameState, type Level, type Move } from '../engine/index.ts';
 import { seedFrom } from '../engine/rng.ts';
 import { BoardView } from './board-view.ts';
-import { padDecor } from './pad-decor.ts';
 import { sceneryHtml } from './scenery.ts';
 import { applyTheme, type Theme } from './themes.ts';
 import { hatsHtml } from './hats.ts';
@@ -174,7 +173,7 @@ export class GameView {
     applyTheme(this.el, theme);
     this.stage.append(this.board.el);
     this.board.setLevel(level);
-    this.board.setDecor(padDecor(theme.ground, seedFrom(level.id)), theme.ground);
+    this.board.setGround(theme.ground);
     sound.setGround(theme.ground);
     this.gags?.setLevel(level);
     // Any touch anywhere on the screen cancels an idle gag and restarts the idle clock.
@@ -217,10 +216,12 @@ export class GameView {
     const b = this.board.el.getBoundingClientRect();
     const box = { x: b.left - screen.left, y: b.top - screen.top, width: b.width, height: b.height };
     const controlsTop = this.el.querySelector('.note')!.getBoundingClientRect().top - screen.top;
-    this.el.style.setProperty('--horizon', `${Math.round(box.y - 4)}px`);
-    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box);
-    // Room outside the fence for the characters: between the HUD and the board, and below it.
+    // The groves above the lease stand on a strip of ground: the horizon sits that far above the berm.
     const hudBottom = this.el.querySelector('.hud')!.getBoundingClientRect().bottom - screen.top;
+    const depth = Math.round(Math.max(8, Math.min(40, (box.y - hudBottom) * 0.3)));
+    this.el.style.setProperty('--horizon', `${Math.round(box.y - 4 - depth)}px`);
+    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth });
+    // Room outside the fence for the characters: between the HUD and the board, and below it.
     const buttonsTop = this.el.querySelector('.controls')!.getBoundingClientRect().top - screen.top;
     this.gags?.layout({
       above: Math.max(0, box.y - hudBottom),
