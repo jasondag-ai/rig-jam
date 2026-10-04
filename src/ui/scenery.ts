@@ -27,7 +27,7 @@ export function seasonArt(id: string): { spruce: WorldArt; aspen: WorldArt | nul
   return { spruce: 'tree_spruce_summer', aspen: 'tree_aspen_summer', bush: 'bush_willow', accents: ['cattails', 'lease_sign_blank'] };
 }
 
-interface Item {
+export interface Item {
   x: number; // base centre
   y: number; // ground line
   h: number;
@@ -60,6 +60,26 @@ export interface SceneryOptions {
   seed?: number;
   /** Depth of the ground the top groves stand on, px: the back row's feet are this far above the box's top. */
   depth?: number;
+  /** Permanent gag anchors below the box: the bear's willow bush (every region), the gopher's dirt mound (Cardium). */
+  anchors?: { bush?: boolean; mound?: boolean };
+}
+
+/** Clear grass kept between the berm and any tree, px. */
+export const BERM_CLEAR = 10;
+
+/** Where a tree stands on screen: its box, a little narrower than the sprite (the art has soft edges). */
+export const treeBox = (it: { x: number; y: number; h: number; art: WorldArt }) => {
+  const w = it.h * ART[it.art] * 0.8;
+  return { left: it.x - w / 2, right: it.x + w / 2, top: it.y - it.h, bottom: it.y };
+};
+
+/** Gag anchors placed by the last `sceneryItems` call are returned with it, in layer px. */
+export interface Anchor {
+  kind: 'bush' | 'mound';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 /**
@@ -113,14 +133,16 @@ function winterStalks(rng: Rng, width: number, from: number, to: number): string
  * Trees around a box (the board, or the level list), in a layer `width` x `height` px, as natural
  * scattered groves: staggered rows in depth (smaller toward the back), loose clusters with random
  * spacing and clearings, mixed species for the season, slight overlaps. Above the box they stand on
- * a strip of ground `depth` px deep; below it they fill the strip down to `height`. Everything sits
- * under the board, gates and buttons (the scenery layer is behind them).
+ * a strip of ground `depth` px deep; below it they fill the strip down to `height`. Beside the box
+ * there are none: any tree that would come within BERM_CLEAR of the box's sides is left out, so the
+ * berm always has clear grass beside it. Everything sits under the board, gates and buttons.
  */
-export function sceneryHtml(theme: Theme, width: number, height: number, box: Box, options: SceneryOptions = {}): string {
+export function sceneryItems(theme: Theme, width: number, height: number, box: Box, options: SceneryOptions = {}): { items: Item[]; anchors: Anchor[] } {
   const { below = true, maxTree = 96, depth = 0 } = options;
   const rng: Rng = mulberry32((options.seed ?? 0) ^ (theme.id.length * 7919 + 13));
   const art = seasonArt(theme.id);
-  const items: Item[] = [];
+  let items: Item[] = [];
+  const anchors: Anchor[] = [];
   const pick = (): WorldArt => (art.aspen && rng() >= theme.spruceShare ? art.aspen : art.spruce);
   const top = box.y;
   const bandAbove = Math.max(0, top);
@@ -130,14 +152,7 @@ export function sceneryHtml(theme: Theme, width: number, height: number, box: Bo
   const tall = Math.min(maxTree, Math.max(34, (bandAbove - depth) * 0.82));
   items.push(...groveRow(rng, -20, width + 20, top - depth, tall * 0.5, depth * 0.12, 0.25, pick, null));
   items.push(...groveRow(rng, -30, width + 20, top - depth * 0.5, tall * 0.72, depth * 0.25, 0.8, pick, bandAbove > 40 ? art.bush : null));
-  items.push(...groveRow(rng, -24, width + 20, top + 6, tall * 0.95, Math.min(8, depth * 0.3), 1.5, pick, bandAbove > 40 ? art.bush : null));
-
-  // Sides: trees peeking out from behind the berm (under the board), unevenly spaced.
-  for (let y = top + 30 + rng() * 40; y < box.y + box.height; y += 34 + rng() * 60) {
-    const h = 40 + rng() * 34;
-    if (rng() < 0.8) items.push({ x: box.x - 2 + rng() * 6, y, h, art: pick(), flip: rng() < 0.5 });
-    if (rng() < 0.8) items.push({ x: box.x + box.width + 2 - rng() * 6, y: y + rng() * 30, h: 40 + rng() * 34, art: pick(), flip: rng() < 0.5 });
-  }
+  items.push(...groveRow(rng, -24, width + 20, top - 2, tall * 0.95, Math.min(6, depth * 0.3), 1.5, pick, bandAbove > 40 ? art.bush : null));
 
   // Below: the same groves, sized to the strip so they never reach the buttons. Rows step down the
   // strip from the back (near the board, small) to the front (bigger).
@@ -160,8 +175,52 @@ export function sceneryHtml(theme: Theme, width: number, height: number, box: Bo
     for (const it of items) if (it.y > height - 1) it.y = height - 1;
   }
 
+  // The berm keeps clear grass round it: no tree may reach into the box (grown by BERM_CLEAR)
+  // anywhere along its sides. Trees above stand behind the top berm with their feet at its edge.
+  const keepOut = { left: box.x - BERM_CLEAR, right: box.x + box.width + BERM_CLEAR, top: box.y + 2, bottom: box.y + box.height + BERM_CLEAR };
+  if (box.height > 0)
+    items = items.filter((it) => {
+      const b = treeBox(it);
+      return !(b.right > keepOut.left && b.left < keepOut.right && b.bottom > keepOut.top && b.top < keepOut.bottom);
+    });
+
+  // Gag anchors, always there (gags on or off), on the grass just below the berm: the willow bush
+  // the bear stops at (toward the left), and in Cardium the gopher's dirt mound (toward the right).
+  // Sized to the strip so they never reach the board, a gate's swing or the buttons.
+  if (below && options.anchors && bandBelow > 20) {
+    const floor = box.y + box.height;
+    const size = Math.max(14, Math.min(34, bandBelow - BERM_CLEAR - 6));
+    const y = Math.min(height - 2, floor + BERM_CLEAR + size + 2);
+    if (options.anchors.bush) anchors.push({ kind: 'bush', x: box.x + box.width * 0.2, y, w: size * ART.bush_willow, h: size });
+    if (options.anchors.mound) anchors.push({ kind: 'mound', x: box.x + box.width * 0.78, y, w: size * 1.3, h: size * 0.62 });
+    // Trees give the anchors room.
+    items = items.filter((it) => {
+      const b = treeBox(it);
+      return !anchors.some((a) => b.right > a.x - a.w / 2 - 4 && b.left < a.x + a.w / 2 + 4 && b.bottom > a.y - a.h - 4 && b.top < a.y + 4);
+    });
+    for (const a of anchors) if (a.kind === 'bush') items.push({ x: a.x, y: a.y, h: a.h, art: 'bush_willow', flip: false });
+  }
+
   items.sort((a, b) => a.y - b.y); // nearer (lower on screen) in front
+  return { items, anchors };
+}
+
+/** The gopher's mound: a low heap of fresh dirt with a dark hole, flat toy shading, dark outline. */
+const mound = (a: Anchor) =>
+  `<svg class="mound" data-anchor="mound" viewBox="0 0 52 26" style="left:${r1(a.x - a.w / 2)}px;top:${r1(a.y - a.h)}px;width:${r1(a.w)}px;height:${r1(a.h)}px">` +
+  '<ellipse cx="27" cy="23" rx="24" ry="3" fill="rgba(30,20,10,0.25)"/>' +
+  '<path d="M3 22 Q5 9 18 6 Q27 2 36 7 Q48 11 49 22 Z" fill="#9a6e44" stroke="#2a1a0c" stroke-width="2" stroke-linejoin="round"/>' +
+  '<path d="M9 17 Q12 10 20 8 Q27 5 33 8" fill="none" stroke="#c39a6b" stroke-width="2.4" stroke-linecap="round"/>' +
+  '<ellipse cx="27" cy="13" rx="9.5" ry="5" fill="#2a1a0c"/><ellipse cx="27" cy="14.4" rx="7" ry="3" fill="#120a04"/>' +
+  '<circle cx="42" cy="21" r="1.6" fill="#7a5632"/><circle cx="9" cy="21.5" r="1.3" fill="#7a5632"/></svg>';
+
+/** The scenery layer as HTML (see sceneryItems). */
+export function sceneryHtml(theme: Theme, width: number, height: number, box: Box, options: SceneryOptions = {}): string {
+  const { items, anchors } = sceneryItems(theme, width, height, box, options);
+  const depth = options.depth ?? 0;
   // Winter: a few dry tan grass stalks poke through the snow, here and there, never in a row.
-  const stalks = theme.id === 'winter' ? winterStalks(rng, width, top - depth + 4, height) : '';
-  return `<div class="trees" style="width:${r1(width)}px;height:${r1(height)}px" aria-hidden="true">${stalks}${items.map(img).join('')}</div>`;
+  const stalks = theme.id === 'winter' ? winterStalks(mulberry32((options.seed ?? 0) ^ 0x5a17), width, box.y - depth + 4, height) : '';
+  const anchorHtml = anchors.filter((a) => a.kind === 'mound').map(mound).join('');
+  const html = items.map((it) => (it.art === 'bush_willow' && anchors.some((a) => a.kind === 'bush' && a.x === it.x && a.y === it.y) ? img(it).replace('class="sc ', 'data-anchor="bush" class="sc ') : img(it))).join('');
+  return `<div class="trees" style="width:${r1(width)}px;height:${r1(height)}px" aria-hidden="true">${stalks}${html}${anchorHtml}</div>`;
 }
