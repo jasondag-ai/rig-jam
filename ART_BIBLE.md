@@ -7,6 +7,7 @@ Every image for the game follows this file. If an image breaks a rule here, it i
 - Stylized Pixar-like 3D. Match the cover image (the roughneck with the pipe wrench): exaggerated proportions, expressive comedic faces, realistic materials (FR cotton, hi-vis fabric, weathered steel, rubber, fur), soft warm cinematic lighting from the top left.
 - Light weathering: dust, a little mud, worn paint edges. Never heavy rust or junk.
 - Colors bright and saturated, but believable. Equipment colors follow the specs below.
+- **The board (Jay, Oct 4): table-top toy look.** Everything on the board and the lease surroundings (pad, berm, gates, trees, bushes, equipment, tracks) is a flat-shaded, chunky toy with a dark outline matching the trucks, one light from the top left, low-frequency colour fields, no photographic texture or grain. The trucks are the reference. The cover image stays Pixar 3D (it is a poster). Equipment keeps its 3/4 camera but is drawn in the same flat outlined language. Season overlays (snow, mud) are clipped to the sprite shape.
 
 ## 2. Technical rules (every file)
 
