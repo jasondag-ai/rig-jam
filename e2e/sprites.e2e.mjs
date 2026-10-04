@@ -46,7 +46,12 @@ const trucks = (page) =>
         svgShown: getComputedStyle(svg).display !== 'none',
         color: [...t.classList].find((c) => c.startsWith('c-'))?.slice(2),
         badge: !!t.querySelector('.sym'),
-        shadow: !!t.querySelector('.ground-shadow'),
+        shadow: !!t.querySelector('.ground-shadow') && getComputedStyle(t).filter === 'none',
+        badgeW: t.querySelector('.sym').getBoundingClientRect().width,
+        inBody: (() => { const b = t.querySelector('.sym').getBoundingClientRect(); const r = t.getBoundingClientRect(); return b.left >= r.left + 2 && b.right <= r.right - 2 && b.top >= r.top + 2 && b.bottom <= r.bottom - 2; })(),
+        coat: getComputedStyle(t.querySelector('.coat')).display === 'none' ? '' : getComputedStyle(t.querySelector('.coat')).backgroundImage,
+        cssSeason: getComputedStyle(t.querySelector('.body'), '::after').content !== 'none' || getComputedStyle(t.querySelector('.cab'), '::before').content !== 'none',
+        tag: t.querySelector('.convoy-no') ? !!t.querySelector('.cab .convoy-no') : true,
       };
     }),
   );
@@ -61,7 +66,11 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
     check(t.length > 0 && t.every((x) => x.on && x.imgShown && !x.svgShown), `${region} 6: every truck shows its sprite (${t.length})`);
     check(t.every((x) => x.src?.includes(`/sprites/trucks/${x.kind}-${x.color}`)), 'each in its own gate color');
     check(t.every((x) => /@2x\.webp$/.test(x.src)), 'the sharp 2x version on a phone screen');
-    check(t.every((x) => x.badge && x.shadow), 'symbol badge on top, ground shadow under');
+    check(t.every((x) => x.badge && x.shadow), 'symbol badge on top; one shadow (the ground shadow, no filter shadow)');
+    check(t.every((x) => x.inBody && x.badgeW < 24 && x.badgeW > 16), `the badge is small and sits inside the truck body (${t[0].badgeW.toFixed(0)}px)`);
+    const season = tab === 2 ? 'mud-' : tab === 3 ? 'snow-' : '';
+    check(t.every((x) => (season ? x.coat.includes(`/sprites/trucks/${season}${x.kind}`) : x.coat === '') && !x.cssSeason), season ? `baked ${season.slice(0, -1)} coat on every truck; no CSS-drawn snow or grime` : 'no season coat in summer');
+    check(t.every((x) => x.tag), 'convoy numbers are tags on the cab');
     const g = await page.evaluate(() => {
       const scr = document.querySelector('.screen.game');
       return { tex: scr.classList.contains('ground-tex'), theme: scr.dataset.theme, pad: getComputedStyle(document.querySelector('.lease-ground')).backgroundImage, size: getComputedStyle(document.querySelector('.lease-ground')).backgroundSize, repeat: getComputedStyle(document.querySelector('.lease-ground')).backgroundRepeat, outside: getComputedStyle(scr).backgroundImage };
@@ -123,11 +132,12 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
           tab: getComputedStyle(g.querySelector('.sym')).display !== 'none',
           leafColor: g.querySelector('.g-leaf img').src.includes(`gate-leaf-${[...g.classList].find((c) => c.startsWith('c-')).slice(2)}`),
           wait: g.classList.contains('convoy-gate') ? vis('.wait') : true,
+          clear: (() => { if (!g.classList.contains('convoy-gate') || g.classList.contains('convoy-done')) return true; const w = g.querySelector('.wait').getBoundingClientRect(); const b = g.querySelector('.g-badge').getBoundingClientRect(); return w.right <= b.left + 1 || w.left >= b.right - 1 || w.bottom <= b.top + 1 || w.top >= b.bottom - 1; })(),
         };
       }),
     );
     check(gates.length > 0 && gates.every((x) => x.parts && !x.tab && x.leafColor), `pipe gates: hinge post, ${'leaf in its color'}, latch post and badge (${gates.length})`);
-    check(gates.every((x) => x.wait), 'convoy chips showing');
+    check(gates.every((x) => x.wait && x.clear), 'convoy chips showing, on the latch post, clear of the badge');
     // Lighting pass: only the world behind is graded. Gates and trucks keep their exact colors.
     const light = await page.evaluate(() => {
       const colorFilter = (el) => /sepia|saturate|hue|brightness|contrast|grayscale|invert/.test(getComputedStyle(el).filter);

@@ -42,7 +42,7 @@ something, give exact clicks and one command at a time.
   the other truck it's a wall. A truck parked against its gate while it was closed drives out with
   one more cell once it opens. (Partners can't share one physical gate: the truck in front would
   always leave first, so the order would never matter.) Convoy gates show the number they're
-  waiting for; convoy trucks carry a big number plate. Generator rule: the convoy order must raise
+  waiting for; convoy trucks carry a small number tag on the cab. Generator rule: the convoy order must raise
   par (`convoyRaisesPar`). Out-of-order bumps use only the `convoy` line pool; truck 1 speaks.
 - Clear all trucks to win. Score = moves vs par (par = optimal move count from the solver).
 - Rating is hard hats: at par = 3, up to par + 3 = 2, otherwise 1.
@@ -58,7 +58,7 @@ something, give exact clicks and one command at a time.
 - Bright, chunky toy style: dark outlines (`--outline`), light top edge, darker bottom lip, soft
   drop shadow. Fredoka (bundled via @fontsource) with outlined white text for titles and buttons.
 - `src/ui/themes.ts` – each theme sets every variable in `THEME_VARS` (sky, ground, fence, pad,
-  trees, truck grime/roof snow) plus a pad ground style. A region picks its theme in
+  trees) plus a pad ground style. A region picks its theme in
   `src/levels/regions.ts`. Tests check every theme is complete and every gate color has at least
   1.8:1 contrast with the dark ring round its badge (what sets it apart on any ground, snow included).
 - Tire tracks: every level starts clean. The path a truck actually drives during a drag is written
@@ -125,8 +125,8 @@ something, give exact clicks and one command at a time.
   lying along the top side and turned per side (`--turn`); the badge counter-rotates to stay upright.
   Gates live on the board (not the clipping yard) so the leaf can swing past it. On exit (`.open`)
   the leaf swings 90 degrees (260ms ease-out): outward on top/bottom, inward on the sides; none with
-  reduced motion. Wrong-color gates simply stay shut. Convoy gates put the badge to one side and the
-  waiting-number chip to the other. Fallback: the colored tabs (`.sym` + `.boom`).
+  reduced motion. Wrong-color gates simply stay shut. Convoy gates keep the badge centred and put the
+  waiting-number chip (gate color, white numeral) on the latch post, clear of it. Fallback: the colored tabs (`.sym` + `.boom`).
 - Lighting pass (end of style.css): warm top-left light graded into the pad and outside-ground
   backgrounds, a slight sepia on the trees, soft down-right drop shadows on the berm, gates, trees
   and HUD, and a warm vignette (`.vignette`, z 0: over the scenery, under the board, HUD and
@@ -341,14 +341,26 @@ something, give exact clicks and one command at a time.
 - `src/ui/` – DOM rendering, drag input, screens, local progress.
 - Truck sprites: `public/sprites/trucks/<kind>-<color>(@2x).webp`, made by `python3
   tools/truck-sprites.py` from the sources in `tools/truck-art/` (top-down, cab at the top, white).
-  The script trims, turns each cab-right, tints ONLY the paint (cab; whole body on pickup and
-  picker) by multiplying a light/neutral-pixel mask inside each kind's paint rows with the gate
-  color, bakes the dark toy outline, and writes `src/ui/truck-sprites.json` (measured paint color;
-  `sprites.test.ts` checks it matches its gate, colors stay apart, and each stands out from every
-  season's pad). `sprites.ts` adds the `<img>` in the truck's `.art` (rotated like the SVG) and the
-  SVG stays as the fallback until it loads (`.sprite-on`) or if it fails. Roof snow on sprites is a
-  soft drift placed per kind (`--roof-at`, `--roof-len`). Soft `.ground-shadow` under every truck.
+  The script drops any soft shadow in the source, trims, turns each cab-right, and repaints the
+  gate color through per-kind regions (`PAINT`): the cab on every truck, the whole body on pickup
+  and picker, the tank shell on vac and water (plus water's rear fenders), and the engine housing
+  and deck on the frac unit (it has no tank). Chrome, tires, walkways, hatches, hose reels and the
+  pump's fluid end stay neutral. It bakes the dark toy outline and writes
+  `src/ui/truck-sprites.json` (measured paint color and painted share; `sprites.test.ts` checks the
+  color matches its gate, colors stay apart, each stands out from every season's pad, and the
+  share is at least 0.40 for every kind). `sprites.ts` adds the `<img>` in the truck's `.art`
+  (rotated like the SVG) and the SVG stays as the fallback until it loads (`.sprite-on`) or fails.
   Sprites preload per level and all in idle time. `npm run test:e2e:sprites`.
+- Season coats: the same script bakes `snow-<kind>(@2x).webp` (winter: a light dusting on the top
+  surfaces) and `mud-<kind>(@2x).webp` (spring: spatter along the sides and back), one layer per
+  kind for every color, clipped inside the truck's own shape with soft edges. The truck's `.coat`
+  element (in `.art`, so it turns with the sprite) shows one by theme. No CSS-drawn snow or grime.
+- ONE shadow per truck: the soft `.ground-shadow` (it spreads while dragging). No filter shadows on
+  trucks and none in the sprites.
+- Truck markings: the symbol badge (`.sym`) is a small disc (0.37 cell) in the truck's color with a
+  thin white keyline inside a hairline dark edge, centred on the body clear of the cab. A convoy
+  truck's number is a small tag on the cab roof (`.convoy-no`, in `.cab`): the truck's color a shade
+  deeper, white numeral, fine dark keyline. `node e2e/truck-shots.mjs` saves judging screenshots.
 - Obstacle sprites: `public/sprites/obstacles/<kind>(@2x).webp` from `tools/obstacle-art/` (3/4
   high-angle on a concrete slab, intentionally unlike the top-down trucks), made by `python3
   tools/obstacle-sprites.py` (trim, outline, writes `src/ui/obstacle-sprites.json` aspect ratios).
