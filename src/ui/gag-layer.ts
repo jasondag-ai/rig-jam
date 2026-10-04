@@ -646,12 +646,12 @@ export class GagLayer {
 
   private placePost(post: HTMLElement, cord: Cord): void {
     const { cellPx: cell, fencePx: fence } = this.host;
-    // On the berm's inner slope, right at the pad's edge, so the cord plugs straight into it and
+    // On the berm's inner slope, just clear of the pad (never on the grid), so the cord plugs into it and
     // nothing (post, cord or dangling plug) reaches outside the berm.
     const h = fence * 0.78;
     const w = h * 0.67;
     const along = fence + (cord.index + 0.5) * cell;
-    const across = cord.side === 'left' || cord.side === 'top' ? fence * 0.68 : fence * 1.32 + cell * SIZE;
+    const across = cord.side === 'left' || cord.side === 'top' ? fence * 0.6 : fence * 1.4 + cell * SIZE;
     const vertical = cord.side === 'left' || cord.side === 'right';
     Object.assign(post.style, {
       width: `${w}px`,
