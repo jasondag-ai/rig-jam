@@ -181,7 +181,7 @@ function showLevels(requested = savedRegion()): void {
     y: horizon,
     width: rect.width,
     height: 0,
-  }, false, 64);
+  }, { below: false, maxTree: 64 });
 
   // A region earned for real gets a one-time "NEW LEASE OPEN" banner.
   const fresh = newlyOpened(REGIONS, progress.best, progress.announced);
@@ -342,7 +342,7 @@ function showLog(regionIndex: number): void {
   const rect = screen.getBoundingClientRect();
   const horizon = screen.querySelector('.log-head')!.getBoundingClientRect().bottom - rect.top + 8;
   screen.style.setProperty('--horizon', `${Math.round(horizon)}px`);
-  screen.querySelector('.scenery')!.innerHTML = sceneryHtml(themeFor(regionIndex), rect.width, horizon + 40, { x: 0, y: horizon, width: rect.width, height: 0 }, false, 64);
+  screen.querySelector('.scenery')!.innerHTML = sceneryHtml(themeFor(regionIndex), rect.width, horizon + 40, { x: 0, y: horizon, width: rect.width, height: 0 }, { below: false, maxTree: 64 });
 }
 
 /** Today's Daily Pad, picked by the phone's local date. */

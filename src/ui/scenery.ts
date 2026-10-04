@@ -1,6 +1,7 @@
 // Border scenery: illustrated spruce, aspen and willow (public/sprites/world, from the art inbox)
-// standing on the ground around the fenced pad, season-matched, with the odd cattail clump and a
-// blank lease sign as accents. Seeded per theme, so a season always looks the same.
+// standing in scattered groves on the ground around the bermed pad, season-matched, with the odd
+// cattail clump and a blank lease sign as accents. Seeded (per level in the game), so a level always
+// looks the same.
 import { mulberry32 } from '../engine/rng.ts';
 import type { Theme } from './themes.ts';
 
@@ -50,55 +51,91 @@ const img = ({ x, y, h, art, flip }: Item) => {
   );
 };
 
+export interface SceneryOptions {
+  /** Trees below the box too (the game's bottom strip). */
+  below?: boolean;
+  /** Tallest tree, px. */
+  maxTree?: number;
+  /** Seeds the layout: a level id's seed gives every level its own groves; the same seed, the same trees. */
+  seed?: number;
+  /** Depth of the ground the top groves stand on, px: the back row's feet are this far above the box's top. */
+  depth?: number;
+}
+
 /**
- * Trees around a box (the board, or the level list), in a layer `width` x `height` px. Rows stand
- * along the top edge (bigger toward the screen edges), peek out at the sides, and fill the space
- * below if there is room. Everything sits under the board, gates and buttons.
+ * A grove row: trees standing in loose clusters with gaps between, from `from` to `to` px. `h` is
+ * the row's tree height, `baseY` its ground line, `wobble` how much each tree's feet stray (px).
+ * `gap` scales the clearings between clusters (0 = an unbroken tree line).
  */
-export function sceneryHtml(theme: Theme, width: number, height: number, box: Box, below = true, maxTree = 96): string {
-  const rng: Rng = mulberry32(theme.id.length * 7919 + 13);
+function groveRow(rng: Rng, from: number, to: number, baseY: number, h: number, wobble: number, gap: number, pick: (lean: WorldArt | null) => WorldArt, bush: WorldArt | null): Item[] {
+  const row: Item[] = [];
+  let x = from + rng() * h * 0.6;
+  while (x < to) {
+    // One cluster: a few trees of mostly one kind, crowding each other a little.
+    const lean = pick(null);
+    const count = 1 + Math.floor(rng() * 4.4);
+    for (let i = 0; i < count && x < to; i++) {
+      const art = rng() < 0.72 ? lean : pick(null);
+      const size = h * (0.72 + rng() * 0.5);
+      row.push({ x, y: baseY + (rng() - 0.5) * wobble, h: size, art, flip: rng() < 0.5 });
+      x += size * ART[art] * (0.42 + rng() * 0.42);
+    }
+    // Now and then a bush at the edge of the cluster.
+    if (bush && rng() < 0.3) row.push({ x: x + h * 0.1, y: baseY + wobble * 0.5, h: h * (0.34 + rng() * 0.14), art: bush, flip: rng() < 0.5 });
+    x += h * gap * (0.35 + rng() * 1.5);
+  }
+  return row;
+}
+
+/**
+ * Trees around a box (the board, or the level list), in a layer `width` x `height` px, as natural
+ * scattered groves: staggered rows in depth (smaller toward the back), loose clusters with random
+ * spacing and clearings, mixed species for the season, slight overlaps. Above the box they stand on
+ * a strip of ground `depth` px deep; below it they fill the strip down to `height`. Everything sits
+ * under the board, gates and buttons (the scenery layer is behind them).
+ */
+export function sceneryHtml(theme: Theme, width: number, height: number, box: Box, options: SceneryOptions = {}): string {
+  const { below = true, maxTree = 96, depth = 0 } = options;
+  const rng: Rng = mulberry32((options.seed ?? 0) ^ (theme.id.length * 7919 + 13));
   const art = seasonArt(theme.id);
   const items: Item[] = [];
   const pick = (): WorldArt => (art.aspen && rng() >= theme.spruceShare ? art.aspen : art.spruce);
-  const flip = () => rng() < 0.5;
-  // Bigger toward the screen edges, smaller in the middle (as if the clearing curves away).
-  const edge = (x: number) => 0.82 + 0.4 * Math.abs(x / width - 0.5) * 2;
   const top = box.y;
   const bandAbove = Math.max(0, top);
 
-  const backH = Math.min(maxTree * 0.78, Math.max(30, bandAbove * 0.62));
-  for (let x = -10; x < width + 20; x += backH * 0.42 + rng() * 10) {
-    items.push({ x, y: top + 4, h: backH * (0.8 + rng() * 0.3) * edge(x), art: pick(), flip: flip() });
+  // Above: three rows in depth. The back row is a nearly unbroken, small tree line on the horizon;
+  // the nearer rows are bigger and stand in clusters with clearings.
+  const tall = Math.min(maxTree, Math.max(34, (bandAbove - depth) * 0.82));
+  items.push(...groveRow(rng, -20, width + 20, top - depth, tall * 0.5, depth * 0.12, 0.25, pick, null));
+  items.push(...groveRow(rng, -30, width + 20, top - depth * 0.5, tall * 0.72, depth * 0.25, 0.8, pick, bandAbove > 40 ? art.bush : null));
+  items.push(...groveRow(rng, -24, width + 20, top + 6, tall * 0.95, Math.min(8, depth * 0.3), 1.5, pick, bandAbove > 40 ? art.bush : null));
+
+  // Sides: trees peeking out from behind the berm (under the board), unevenly spaced.
+  for (let y = top + 30 + rng() * 40; y < box.y + box.height; y += 34 + rng() * 60) {
+    const h = 40 + rng() * 34;
+    if (rng() < 0.8) items.push({ x: box.x - 2 + rng() * 6, y, h, art: pick(), flip: rng() < 0.5 });
+    if (rng() < 0.8) items.push({ x: box.x + box.width + 2 - rng() * 6, y: y + rng() * 30, h: 40 + rng() * 34, art: pick(), flip: rng() < 0.5 });
   }
-  const frontH = Math.min(maxTree, Math.max(36, bandAbove * 0.86));
-  for (let x = rng() * 20; x < width + 20; x += frontH * 0.55 + rng() * 22) {
-    items.push({ x, y: top + 10 + rng() * 6, h: frontH * (0.82 + rng() * 0.3) * edge(x), art: pick(), flip: flip() });
-  }
-  // A willow or two along the front of the top row.
-  if (art.bush && bandAbove > 40) {
-    for (const fx of [0.12 + rng() * 0.1, 0.72 + rng() * 0.15]) items.push({ x: width * fx, y: top + 14, h: frontH * 0.42, art: art.bush, flip: flip() });
-  }
-  // Sides: trees peeking out from behind the fence (under the board).
-  for (let y = top + 50; y < box.y + box.height; y += 55 + rng() * 30) {
-    const h = 48 + rng() * 24;
-    items.push({ x: box.x - 4 + rng() * 4, y, h, art: pick(), flip: flip() });
-    items.push({ x: box.x + box.width + 4 - rng() * 4, y: y + 20, h, art: pick(), flip: flip() });
-  }
-  // Below the board, sized to the gap so they never reach the buttons.
+
+  // Below: the same groves, sized to the strip so they never reach the buttons. Rows step down the
+  // strip from the back (near the board, small) to the front (bigger).
   const bandBelow = height - (box.y + box.height);
   if (below && bandBelow > 26) {
-    const h = Math.min(72, bandBelow * 0.92);
-    const ground = box.y + box.height + bandBelow - 2;
-    for (let x = rng() * 30; x < width + 20; x += h * 0.72 + rng() * 26) {
-      const scale = (0.7 + rng() * 0.25) * edge(x);
-      const roll = rng();
-      const kind: WorldArt = roll < 0.22 && art.bush ? art.bush : pick();
-      items.push({ x, y: ground - rng() * 4, h: Math.min(h, h * scale) * (kind === art.bush ? 0.6 : 1), art: kind, flip: flip() });
+    const floor = box.y + box.height;
+    const h = Math.min(74, bandBelow * 0.9);
+    const rows = bandBelow > 120 ? 3 : bandBelow > 64 ? 2 : 1;
+    for (let r = 0; r < rows; r++) {
+      const back = rows === 1 ? 1 : r / (rows - 1); // 0 = back row, 1 = front
+      const baseY = floor + bandBelow * (rows === 1 ? 1 : 0.42 + 0.58 * back) - 2;
+      const size = h * (rows === 1 ? 0.85 : 0.5 + 0.42 * back);
+      items.push(...groveRow(rng, -10, width + 20, baseY, size, Math.min(10, bandBelow * 0.06), 2.2 + back * 1.2, pick, art.bush));
     }
     // Accents: a cattail clump and (now and then) the blank lease sign.
     for (const a of art.accents) {
-      if (rng() < (a === 'cattails' ? 0.8 : 0.5)) items.push({ x: width * (0.2 + rng() * 0.6), y: ground, h: h * (a === 'cattails' ? 0.5 : 0.62), art: a, flip: a === 'cattails' && flip() });
+      if (rng() < (a === 'cattails' ? 0.8 : 0.5)) items.push({ x: width * (0.2 + rng() * 0.6), y: floor + bandBelow - 2, h: h * (a === 'cattails' ? 0.5 : 0.62), art: a, flip: a === 'cattails' && rng() < 0.5 });
     }
+    // Nothing below may stand lower than the strip's floor line (the buttons start there).
+    for (const it of items) if (it.y > height - 1) it.y = height - 1;
   }
 
   items.sort((a, b) => a.y - b.y); // nearer (lower on screen) in front
