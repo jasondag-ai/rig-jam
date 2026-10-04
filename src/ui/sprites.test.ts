@@ -100,8 +100,9 @@ describe('art inbox sprites', () => {
       expect(anim[rejected], rejected).toBeUndefined();
   });
 
-  it('batch A world and batch B UI at 1x and 2x', () => {
-    for (const f of ['world/tree_spruce_summer', 'world/bush_willow', 'ui/btn_hint', 'ui/icon_gear', 'ui/panel_win'])
+  it('batch B UI at 1x and 2x; scenery is drawn in code, so no world photo sprites', () => {
+    expect(existsSync('public/sprites/world')).toBe(false);
+    for (const f of ['ui/btn_hint', 'ui/icon_gear', 'ui/panel_win'])
       for (const s of ['', '@2x']) expect(existsSync(`public/sprites/${f}${s}.webp`), f + s).toBe(true);
   });
 });

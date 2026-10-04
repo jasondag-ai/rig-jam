@@ -45,7 +45,7 @@ describe('scenery', () => {
           expect(a.x + a.w / 2).toBeLessThanOrEqual(s.w);
           // No tree stands on an anchor.
           for (const it of items) {
-            if (it.art === 'bush_willow' && it.x === a.x && it.y === a.y) continue;
+            if (it.art === 'willow' && it.x === a.x && it.y === a.y) continue;
             const b = treeBox(it);
             expect(b.right > a.x - a.w / 2 && b.left < a.x + a.w / 2 && b.bottom > a.y - a.h && b.top < a.y).toBe(false);
           }

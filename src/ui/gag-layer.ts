@@ -3,6 +3,7 @@
 // (Duvernay), and the landowner when the mud gets rutted (Montney). Nothing here takes touches
 // (pointer-events: none), and everything sits outside the 6x6 grid or on a truck roof.
 // Reduced motion: still frames only.
+import { treeSvg } from './trees.ts';
 import { sound } from '../audio/engine.ts';
 import { SIZE, type GameState, type Level, type Side } from '../engine/index.ts';
 import { gsap } from 'gsap';
@@ -193,7 +194,7 @@ export class GagLayer {
     const spot = biffySpot(level);
     this.biffy = spot ? { el: this.figure('gag biffy', BIFFY), spot, done: false } : null;
     // A bush stands waiting wherever the bear might come (so it never gives away whether he will).
-    this.bush = bearEligible(this.opts) || this.opts.force === 'bear' ? this.figure('gag bush', '<img alt="" draggable="false" src="./sprites/world/bush_willow.webp" srcset="./sprites/world/bush_willow.webp 1x, ./sprites/world/bush_willow@2x.webp 2x" />') : null;
+    this.bush = bearEligible(this.opts) || this.opts.force === 'bear' ? this.figure('gag bush', treeSvg('willow', this.opts.ground === 'snow' ? 'winter' : this.opts.ground === 'mud' ? 'spring' : 'summer', 2)) : null;
     this.forceAt = performance.now() + 600;
     if (this.opts.cords) this.plugIn(level);
     this.layout(this.bands);

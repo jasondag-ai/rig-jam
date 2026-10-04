@@ -1,30 +1,21 @@
-// Border scenery: illustrated spruce, aspen and willow (public/sprites/world, from the art inbox)
-// standing in scattered groves on the ground around the bermed pad, season-matched, with the odd
-// cattail clump and a blank lease sign as accents. Seeded (per level in the game), so a level always
-// looks the same.
+// Border scenery in the board's toy look (art drawn in code: trees.ts): white spruce, trembling
+// aspen and willow standing in scattered groves round the bermed pad, in the season's dress, with
+// the odd cattail clump and a blank lease sign as accents. Seeded (per level in the game), so a
+// level always looks the same.
 import { mulberry32 } from '../engine/rng.ts';
 import type { Theme } from './themes.ts';
+import { aspect, seasonSymbols, sizeFor, symbolId, type Season, type Species } from './trees.ts';
 
 type Rng = () => number;
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
-/** Sprite name and its width / height (trimmed art). */
-const ART = {
-  tree_spruce_summer: 251 / 466,
-  tree_spruce_winter: 274 / 471,
-  tree_aspen_summer: 357 / 491,
-  tree_aspen_spring: 288 / 492,
-  bush_willow: 485 / 427,
-  cattails: 334 / 481,
-  lease_sign_blank: 322 / 465,
-} as const;
-export type WorldArt = keyof typeof ART;
+/** A scenery piece's species (the season and size pick its drawing). */
+export type WorldArt = Species;
+const ART = { spruce: aspect('spruce'), aspen: aspect('aspen'), willow: aspect('willow'), cattails: aspect('cattails'), sign: aspect('sign') } as const;
 
-/** Which sprites a season uses: winter is all snowy spruce; spring has the young aspen. */
+/** What stands in a season: spruce, aspen and willow all year (bare aspen and willow under snow in winter); cattails only when the sloughs are open. */
 export function seasonArt(id: string): { spruce: WorldArt; aspen: WorldArt | null; bush: WorldArt | null; accents: WorldArt[] } {
-  if (id === 'winter') return { spruce: 'tree_spruce_winter', aspen: null, bush: null, accents: ['lease_sign_blank'] };
-  if (id === 'spring') return { spruce: 'tree_spruce_summer', aspen: 'tree_aspen_spring', bush: 'bush_willow', accents: ['cattails', 'lease_sign_blank'] };
-  return { spruce: 'tree_spruce_summer', aspen: 'tree_aspen_summer', bush: 'bush_willow', accents: ['cattails', 'lease_sign_blank'] };
+  return { spruce: 'spruce', aspen: 'aspen', bush: 'willow', accents: id === 'winter' ? ['sign'] : ['cattails', 'sign'] };
 }
 
 export interface Item {
@@ -42,12 +33,12 @@ export interface Box {
   height: number;
 }
 
-const src = (art: WorldArt) => `./sprites/world/${art}.webp`;
-const img = ({ x, y, h, art, flip }: Item) => {
+/** One piece: a small <svg> that uses the season's symbol for its species and size. */
+const piece = (season: Season, { x, y, h, art, flip }: Item, anchor = '') => {
   const w = h * ART[art];
   return (
-    `<img class="sc ${art}" alt="" draggable="false" decoding="async" src="${src(art)}" srcset="${src(art)} 1x, ./sprites/world/${art}@2x.webp 2x"` +
-    ` style="left:${r1(x - w / 2)}px;top:${r1(y - h)}px;width:${r1(w)}px;height:${r1(h)}px${flip ? ';transform:scaleX(-1)' : ''}" />`
+    `<svg class="sc tree_${art}_${season}"${anchor} style="left:${r1(x - w / 2)}px;top:${r1(y - h)}px;width:${r1(w)}px;height:${r1(h)}px${flip ? ';transform:scaleX(-1)' : ''}">` +
+    `<use href="#${symbolId(art, season, sizeFor(art, h))}"/></svg>`
   );
 };
 
@@ -101,7 +92,7 @@ function groveRow(rng: Rng, from: number, to: number, baseY: number, h: number, 
       x += size * ART[art] * (0.42 + rng() * 0.42);
     }
     // Now and then a bush at the edge of the cluster.
-    if (bush && rng() < 0.3) row.push({ x: x + h * 0.1, y: baseY + wobble * 0.5, h: h * (0.34 + rng() * 0.14), art: bush, flip: rng() < 0.5 });
+    if (bush && rng() < 0.3) row.push({ x: x + h * 0.1, y: baseY + wobble * 0.5, h: h * (0.3 + rng() * 0.12), art: bush, flip: rng() < 0.5 });
     x += h * gap * (0.35 + rng() * 1.5);
   }
   return row;
@@ -169,7 +160,7 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
     }
     // Accents: a cattail clump and (now and then) the blank lease sign.
     for (const a of art.accents) {
-      if (rng() < (a === 'cattails' ? 0.8 : 0.5)) items.push({ x: width * (0.2 + rng() * 0.6), y: floor + bandBelow - 2, h: h * (a === 'cattails' ? 0.5 : 0.62), art: a, flip: a === 'cattails' && rng() < 0.5 });
+      if (rng() < (a === 'cattails' ? 0.8 : 0.5)) items.push({ x: width * (0.2 + rng() * 0.6), y: floor + bandBelow - 2, h: h * (a === 'cattails' ? 0.42 : 0.5), art: a, flip: a === 'cattails' && rng() < 0.5 });
     }
     // Nothing below may stand lower than the strip's floor line (the buttons start there).
     for (const it of items) if (it.y > height - 1) it.y = height - 1;
@@ -191,14 +182,14 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
     const floor = box.y + box.height;
     const size = Math.max(14, Math.min(34, bandBelow - BERM_CLEAR - 6));
     const y = Math.min(height - 2, floor + BERM_CLEAR + size + 2);
-    if (options.anchors.bush) anchors.push({ kind: 'bush', x: box.x + box.width * 0.2, y, w: size * ART.bush_willow, h: size });
+    if (options.anchors.bush) anchors.push({ kind: 'bush', x: box.x + box.width * 0.2, y, w: size * 0.8 * ART.willow, h: size * 0.8 });
     if (options.anchors.mound) anchors.push({ kind: 'mound', x: box.x + box.width * 0.78, y, w: size * 1.5, h: size * 0.8 });
     // Trees give the anchors room.
     items = items.filter((it) => {
       const b = treeBox(it);
       return !anchors.some((a) => b.right > a.x - a.w / 2 - 4 && b.left < a.x + a.w / 2 + 4 && b.bottom > a.y - a.h - 4 && b.top < a.y + 4);
     });
-    for (const a of anchors) if (a.kind === 'bush') items.push({ x: a.x, y: a.y, h: a.h, art: 'bush_willow', flip: false });
+    for (const a of anchors) if (a.kind === 'bush') items.push({ x: a.x, y: a.y, h: a.h, art: 'willow', flip: false });
   }
 
   items.sort((a, b) => a.y - b.y); // nearer (lower on screen) in front
@@ -206,48 +197,34 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
 }
 
 /**
- * The gopher's mound, drawn to sit with the illustrated trees: a rounded heap of loose dirt lit from
- * the top left (shaded gradient, no outline), soil clumps on it, a dark hole with depth, grass tufts
- * round the base and a soft contact shadow.
+ * The gopher's mound, in the same toy look as the trees: a heap of fresh dirt in two flat tones (lit
+ * left side), a dark hole with a darker throat, a few soil clumps and grass blades, a soft contact
+ * shadow, and the dark outline at the trees' weight.
  */
-const mound = (a: Anchor) =>
-  `<svg class="mound" data-anchor="mound" viewBox="0 0 64 34" style="left:${r1(a.x - a.w / 2)}px;top:${r1(a.y - a.h)}px;width:${r1(a.w)}px;height:${r1(a.h)}px">` +
-  '<defs>' +
-  '<radialGradient id="md-dirt" cx="34%" cy="22%" r="85%"><stop offset="0" stop-color="#c79b68"/><stop offset="0.45" stop-color="#9a6c42"/><stop offset="1" stop-color="#5c3d24"/></radialGradient>' +
-  '<radialGradient id="md-hole" cx="50%" cy="68%" r="62%"><stop offset="0" stop-color="#050302"/><stop offset="0.7" stop-color="#1c110a"/><stop offset="1" stop-color="#4a3120"/></radialGradient>' +
-  '<radialGradient id="md-shadow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="rgba(20,14,6,0.5)"/><stop offset="1" stop-color="rgba(20,14,6,0)"/></radialGradient>' +
-  '</defs>' +
-  '<ellipse cx="35" cy="30" rx="30" ry="4.6" fill="url(#md-shadow)"/>' +
-  // The heap: a lumpy outline, not a smooth dome.
-  '<path d="M4 29 Q3 22 9 19 Q11 12 19 10 Q24 4 33 5 Q42 3 47 9 Q55 11 56 18 Q62 22 60 29 Q46 32 32 31 Q16 32 4 29 Z" fill="url(#md-dirt)"/>' +
-  // Shaded side (down-right) and a lit rim (up-left).
-  '<path d="M47 9 Q55 11 56 18 Q62 22 60 29 Q50 31 42 31 Q52 24 47 9 Z" fill="rgba(40,24,10,0.3)"/>' +
-  '<path d="M9 19 Q11 12 19 10 Q24 4 33 5" fill="none" stroke="rgba(255,232,196,0.5)" stroke-width="1.6" stroke-linecap="round"/>' +
-  // The hole, with a lip of thrown dirt catching the light above it and darkness below.
-  '<ellipse cx="32" cy="16.5" rx="11.5" ry="6.4" fill="#6f4c2e"/>' +
-  '<ellipse cx="32" cy="17.4" rx="10" ry="5.2" fill="url(#md-hole)"/>' +
-  '<path d="M21.6 15.4 Q32 9.6 42.4 15.4" fill="none" stroke="rgba(255,226,184,0.55)" stroke-width="1.3" stroke-linecap="round"/>' +
-  // Loose clumps of soil, each with a shadow and a highlight.
-  [[12, 23, 2.6], [20, 26.5, 2], [44, 25, 2.8], [52, 22, 2], [27, 8.5, 1.8], [40, 8, 1.5], [15, 15.5, 1.7], [50, 15, 1.6], [34, 27.5, 2.2], [57, 27, 1.5]]
-    .map(([x, y, r]) => `<ellipse cx="${x + r * 0.3}" cy="${y + r * 0.35}" rx="${r}" ry="${r * 0.75}" fill="rgba(30,18,8,0.4)"/><ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 0.75}" fill="#8a5f3a"/><ellipse cx="${x - r * 0.3}" cy="${y - r * 0.28}" rx="${r * 0.5}" ry="${r * 0.32}" fill="#d3aa78"/>`)
-    .join('') +
-  // Grass tufts round the base.
-  [[5, 30, -0.5], [9, 31.5, 0.2], [24, 32, -0.2], [41, 32.5, 0.3], [56, 31, 0.5], [61, 29.5, 0.2]]
-    .map(([x, y, lean]) =>
-      [-1, 0, 1]
-        .map((k) => `<path d="M${x} ${y} q${(lean + k * 0.5) * 2} -3.4 ${(lean + k * 0.8) * 3.4} -6.4" fill="none" stroke="${k ? '#4f8a1e' : '#7fb433'}" stroke-width="1.1" stroke-linecap="round"/>`)
-        .join(''),
-    )
-    .join('') +
-  '</svg>';
+const INK = 'stroke="#2a1a0c" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"';
+const mound = (a: Anchor, season: Season) => {
+  const dirt = season === 'winter' ? ['#a9805a', '#c9a57c'] : ['#9a6c42', '#c0935f'];
+  return (
+    `<svg class="mound" data-anchor="mound" viewBox="0 0 64 34" style="left:${r1(a.x - a.w / 2)}px;top:${r1(a.y - a.h)}px;width:${r1(a.w)}px;height:${r1(a.h)}px">` +
+    '<ellipse cx="35" cy="30.5" rx="29" ry="3.6" fill="rgba(20,14,6,0.3)"/>' +
+    `<path d="M4 29 Q3 21 10 18 Q13 9 23 8 Q31 3 41 7 Q52 9 55 18 Q62 21 60 29 Q32 33 4 29 Z" fill="${dirt[0]}" ${INK}/>` +
+    `<path d="M7 27 Q6 21 12 19.5 Q15 11 24 10 Q29 7 34 7.5 Q24 13 22 22 Q20 27 7 27 Z" fill="${dirt[1]}"/>` +
+    `<ellipse cx="33" cy="17" rx="11" ry="6" fill="#3a2414" ${INK}/><ellipse cx="33" cy="18.4" rx="8" ry="3.6" fill="#120a04"/>` +
+    [[13, 24, 2.4], [47, 24, 2.6], [53, 19, 1.8], [22, 28.5, 1.8]].map(([x, y, r]) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 0.75}" fill="${dirt[1]}" ${INK}/>`).join('') +
+    (season === 'winter' ? '' : [[5, 30], [58, 30], [40, 32]].map(([x, y]) => `<path d="M${x} ${y} l-2 -6 M${x} ${y} l0.6 -7 M${x} ${y} l2.6 -5.4" fill="none" stroke="#4f8a1e" stroke-width="1.6" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`).join('')) +
+    '</svg>'
+  );
+};
 
 /** The scenery layer as HTML (see sceneryItems). */
 export function sceneryHtml(theme: Theme, width: number, height: number, box: Box, options: SceneryOptions = {}): string {
   const { items, anchors } = sceneryItems(theme, width, height, box, options);
+  const season = theme.id as Season;
   const depth = options.depth ?? 0;
   // Winter: a few dry tan grass stalks poke through the snow, here and there, never in a row.
-  const stalks = theme.id === 'winter' ? winterStalks(mulberry32((options.seed ?? 0) ^ 0x5a17), width, box.y - depth + 4, height) : '';
-  const anchorHtml = anchors.filter((a) => a.kind === 'mound').map(mound).join('');
-  const html = items.map((it) => (it.art === 'bush_willow' && anchors.some((a) => a.kind === 'bush' && a.x === it.x && a.y === it.y) ? img(it).replace('class="sc ', 'data-anchor="bush" class="sc ') : img(it))).join('');
-  return `<div class="trees" style="width:${r1(width)}px;height:${r1(height)}px" aria-hidden="true">${stalks}${html}${anchorHtml}</div>`;
+  const stalks = season === 'winter' ? winterStalks(mulberry32((options.seed ?? 0) ^ 0x5a17), width, box.y - depth + 4, height) : '';
+  const isAnchor = (it: Item) => it.art === 'willow' && anchors.some((a) => a.kind === 'bush' && a.x === it.x && a.y === it.y);
+  const html = items.map((it) => piece(season, it, isAnchor(it) ? ' data-anchor="bush"' : '')).join('');
+  const mounds = anchors.filter((a) => a.kind === 'mound').map((a) => mound(a, season)).join('');
+  return `<div class="trees" style="width:${r1(width)}px;height:${r1(height)}px" aria-hidden="true"><svg class="tree-defs" width="0" height="0" aria-hidden="true"><defs>${seasonSymbols(season)}</defs></svg>${stalks}${html}${mounds}</div>`;
 }
