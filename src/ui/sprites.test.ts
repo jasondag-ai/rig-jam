@@ -36,7 +36,7 @@ describe('truck sprites', () => {
         }
   });
 
-  it('the painted cab reads as its gate color', () => {
+  it('the paint reads as its gate color', () => {
     for (const kind of KINDS)
       for (const [color, hex] of Object.entries(GATES)) expect(dE(paint(kind, color).mean, hex), `${kind} ${color}`).toBeLessThan(12);
   });
@@ -55,8 +55,18 @@ describe('truck sprites', () => {
       for (const color of Object.keys(GATES)) expect(dE(paint(kind, color).mean, theme.vars['--pad']), `${kind} ${color} on ${theme.id}`).toBeGreaterThan(25);
   });
 
-  it('enough of each truck is painted to see the color', () => {
-    for (const kind of KINDS) expect(paint(kind, 'red').share, kind).toBeGreaterThan(0.08);
+  it('at least 40% of every truck carries its gate color (tank shells and the frac unit included)', () => {
+    for (const kind of KINDS) for (const color of Object.keys(GATES)) expect(paint(kind, color).share, `${kind} ${color}`).toBeGreaterThanOrEqual(0.4);
+  });
+
+  it('a snow coat and a mud coat for every kind, at 1x and 2x (one layer for every color)', () => {
+    for (const kind of KINDS)
+      for (const coat of ['snow', 'mud'])
+        for (const suffix of ['', '@2x']) {
+          const file = `public/sprites/trucks/${coat}-${kind}${suffix}.webp`;
+          expect(existsSync(file), file).toBe(true);
+          expect(statSync(file).size, file).toBeLessThan(12_000);
+        }
   });
 });
 
