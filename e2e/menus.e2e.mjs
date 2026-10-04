@@ -3,7 +3,7 @@
 //    Incident sign and the Daily Pad button keep the normal side margins
 //  - level list: compact rows about 56px tall (number, name, 3 small hats, padlock if locked), the
 //    whole row is the button, and all 10 need at most a short scroll at 390x844
-//  - win card: slim, fits 375x553 without scrolling; the roughneck and the Company Man are one
+//  - win card: fits 375x553 without scrolling (its layout is checked in card.e2e.mjs); the roughneck and the Company Man are one
 //    still image each (no sprite frames cycling), moved smoothly in code, never changing position
 // Saves screenshots at 375x667 and 390x844 to OUT (default ~/Desktop/RHR Art Inbox/fit_check).
 // Run: npm run dev -- --host   (in one terminal), then:  npm run test:e2e:menus
@@ -197,7 +197,6 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       check(Math.abs(stand.feet - stand.row) <= 4, `the roughneck's boots are level with the hard hat row (${(stand.feet - stand.row).toFixed(1)}px off), ${stand.size}px tall`);
       check(stand.covers.length === 0 && stand.onScreen, `he covers nothing: hats, moves line, buttons (${stand.covers.join(', ') || 'clear'})`);
       check(!card.scrolls && card.bottom <= card.vh, `fits without scrolling (card ${Math.round(card.h)}px of ${card.vh}px)`);
-      check(card.side <= 20 && card.top <= 54, `slim frame: ${card.side}px sides, ${card.top}px banner`);
       check(card.sheets === 0 && card.stills === 2 && new Set(seen.map((f) => f.pos)).size === 1, 'roughneck and Company Man are one still image each: no sprite frames cycling');
       // Smooth motion: he never moves sideways, and never faster than the bounce itself (a jump
       // between two poses would be many times that).
@@ -214,37 +213,6 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       if (engine === 'webkit') await page.screenshot({ path: join(OUT, `menu_win_${kind}_${size}.png`) });
       await context.close();
     }
-  }
-
-  // Daily Pad win card: it also carries the streak sign and the Share button. Everything stays
-  // inside the panel (only the roughneck and the medal may overhang it), and nothing overlaps.
-  for (const [w, h] of [[375, 553], [375, 667], [390, 844], [430, 932]]) {
-    const daily = DAILY_LEVELS[padLevelIndex(padNumber(dayKey(new Date())), DAILY_LEVELS.length)];
-    const context = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 3, hasTouch: true });
-    const page = await context.newPage();
-    await fresh(page, UNLOCKED);
-    await page.locator('.daily-btn').click();
-    await page.waitForSelector('.board .truck');
-    await wait(400);
-    await play(page, solve(daily), daily);
-    await wait(1500);
-    console.log(`\n${engine} ${w}x${h} Daily Pad win card`);
-    const d = await page.evaluate(() => {
-      const o = document.querySelector('.win');
-      const card = document.querySelector('.win .card').getBoundingClientRect();
-      const out = [...document.querySelectorAll('.win .card *')]
-        .filter((e) => !e.closest('.mascot') && !e.closest('.zero-incident') && !e.closest('h2'))
-        .filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && (r.left < card.left - 0.5 || r.right > card.right + 0.5 || r.bottom > card.bottom + 0.5); })
-        .map((e) => `${e.className || e.tagName} ${Math.round(e.getBoundingClientRect().left - card.left)}..${Math.round(e.getBoundingClientRect().right - card.left)} of ${Math.round(card.width)}`);
-      const R = (s) => document.querySelector(`.win ${s}`)?.getBoundingClientRect();
-      const [sign, share, row, count] = [R('.safety-sign'), R('.share'), R('.btn-row'), R('.sign-count')];
-      return { out, scrolls: o.scrollHeight > o.clientHeight + 1, fits: card.bottom <= innerHeight && card.right <= innerWidth && card.left >= 0, stacked: !!sign && !!share && count.right <= sign.right - sign.width * 0.06 && sign.bottom <= share.top + 0.5 && share.bottom <= row.top + 0.5, foot: !!R('.sign-foot') && R('.sign-foot').width > 0 };
-    });
-    check(d.out.length === 0, `sign, Share and buttons stay inside the panel (${d.out[0] ?? 'clear'})`);
-    check(d.stacked && !d.foot, 'streak count inside the sign; sign above Share above the button row, nothing overlapping');
-    check(d.fits && !d.scrolls, 'fits the screen without scrolling');
-    if (engine === 'webkit') await page.screenshot({ path: join(OUT, `polish_win_daily_${w}x${h}.png`) });
-    await context.close();
   }
 
   // Reduced motion: stills, no movement at all.

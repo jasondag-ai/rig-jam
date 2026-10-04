@@ -145,15 +145,27 @@ something, give exact clicks and one command at a time.
 - Level list: compact rows 54px tall (`.level-btn`, the whole row is the button): number chip,
   name, three small hard hats (empty until earned), or for a locked level a padlock and "Clear level
   N to unlock". All 10 need under 200px of scroll at 390x844. The big level-card art is not used.
-- Win card: slim panel (52px banner, 18px sides; 46/16 on short screens), fits 375x553 with no
-  scroll. It is one `minmax(0, 1fr)` column, so the Daily Pad's streak sign (compact, no stand-down note)
-  and Share button can never push past the panel's edge. Its two characters are ONE still image each (`animStill`), never sprite-frame cycles (the
+- Win card (level and Daily Pad; `npm run test:e2e:card`): one centered panel. The frame is a
+  9-slice border image, `frame_win(@2x).webp`, made by `python3 tools/win-frame.py` from the panel
+  art with its two drawn button slots cut out, so it grows with its content and the gold trim shows
+  all the way round; the cream is the frame's own (`fill`), never a box drawn over it. Every frame
+  size hangs off `--f` (CSS px per @2x art px: 0.3, 0.26 on short screens); corner slices (200) are
+  wider than the walls (118) so the banner's laurels never stretch. Content is ONE column: score row
+  (the roughneck and the three hard hats centered as one group, his boots on the hats' bottom
+  line), moves line, Company Man line, then for the Daily Pad the compact streak sign and Share,
+  then Next level, then Play again and All levels: all the same width, same centre, inside the
+  cream with even margins. The Zero Incident medal overlaps the top-right shoulder on purpose,
+  drawn on top, never clipped. Fits 375x553 with no scroll.
+- Confetti (`GameView.confetti`): on a perfect solve, 40 small hard hats and orange/yellow scraps
+  fall for about 1.5 s in a layer UNDER the card (never over its buttons), then the layer is
+  removed. Not made under reduced motion.
+- Win card characters: ONE still image each (`animStill`), never sprite-frame cycles (the
   frames don't line up and jitter), moved only by GSAP about a fixed origin: the roughneck (wrench-up
-  still on a perfect solve, else standing) stands in `.score-row` beside the hard hats, boots on the
-  row's bottom line, covering nothing; he does one squash-and-stretch bounce on a perfect solve and
+  still on a perfect solve, else standing) does one squash-and-stretch bounce on a perfect solve and
   then breathes; the Company Man (scowl still when well over, else his usual look) gives one slow
-  small nod, then holds still. Reduced motion: no movement. `npm run test:e2e:menus` checks all of
-  this and saves screenshots.
+  small nod, then holds still. Reduced motion: no movement. `npm run test:e2e:menus` checks this.
+- The Daily Pad button turns green once today's pad is cleared (a hue shift of the orange art); it
+  must have no background fill of its own (a fill shows as a colored box round the button).
 - Scenery (`src/ui/scenery.ts`, Batch A art in `public/sprites/world/`): spruce, aspen and willow
   in natural scattered groves (`groveRow`: loose clusters of mostly one species, random spacing,
   clearings, slight overlaps, varied sizes). Above the lease: three staggered rows in depth, small
@@ -425,6 +437,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:gags` – gags test (Playwright; start the dev server first)
 - `npm run test:e2e:fit` – every iPhone size, Safari and home-screen app, with screenshots (start the dev server first)
 - `npm run test:e2e:menus` – main page, level rows, win card fit and character motion, with screenshots (start the dev server first)
+- `npm run test:e2e:card` – win card frame, column, medal, confetti, with screenshots (start the dev server first)
 - `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)
