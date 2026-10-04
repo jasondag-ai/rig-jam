@@ -1088,16 +1088,25 @@ canvas.lease-detail {
   from { transform: scale(0.5); opacity: 0; }
 }
 
-/* ---------- Hints ---------- */
+/* ---------- Hints ----------
+   Step 1: the truck to move gets a bright rim in its own colour (hugging the sprite's shape), lifts
+   a little off the pad with a stronger ground shadow, and pulses slowly.
+   Step 2: a ghost of the truck itself waits where it should end up, with a dashed keyline in its
+   colour; for a move out through the gate, the gate wears an OUT badge instead. */
 
-.truck.hinted .body {
-  border-radius: 10px;
-  animation: glow 900ms ease-in-out infinite alternate;
+.truck.hinted { z-index: 8; }
+.truck.hinted .art {
+  --rim: color-mix(in srgb, var(--c) 55%, #fff);
+  filter: drop-shadow(2px 0 0 var(--rim)) drop-shadow(-2px 0 0 var(--rim)) drop-shadow(0 2px 0 var(--rim)) drop-shadow(0 -2px 0 var(--rim)) drop-shadow(0 0 5px var(--c));
 }
-
-@keyframes glow {
-  from { box-shadow: 0 0 0 4px #fff, 0 0 10px 5px rgba(255, 194, 26, 0.7); }
-  to { box-shadow: 0 0 0 4px #fff, 0 0 22px 11px rgba(255, 194, 26, 0.95); }
+.truck.hinted .body { animation: hint-lift 1100ms ease-in-out infinite alternate; }
+.truck.hinted .ground-shadow {
+  inset: 12% -7% -18% 7%;
+  background: radial-gradient(closest-side, rgba(20, 12, 4, 0.6), rgba(20, 12, 4, 0.3) 60%, transparent);
+}
+@keyframes hint-lift {
+  from { transform: translateY(-1px) scale(1.02); }
+  to { transform: translateY(-3px) scale(1.09); }
 }
 
 .ghost {
@@ -1105,18 +1114,61 @@ canvas.lease-detail {
   left: 0;
   top: 0;
   z-index: 1;
-  display: grid;
-  place-items: center;
-  border: 4px dashed #fff;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--c) 45%, transparent);
-  color: #fff;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-shadow:
-    -2px -2px 0 var(--outline), 2px -2px 0 var(--outline), -2px 2px 0 var(--outline), 2px 2px 0 var(--outline);
-  box-shadow: 0 0 0 2px var(--outline);
+  border-radius: 9px;
+  outline: 2.5px dashed var(--c);
+  outline-offset: -1px;
+  box-shadow: 0 0 0 1px rgba(42, 26, 12, 0.35);
   pointer-events: none;
+  animation: ghost-pulse 1300ms ease-in-out infinite alternate;
+}
+.ghost .art {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--along);
+  height: var(--across);
+  transform: translate(-50%, -50%);
+  opacity: 0.35;
+}
+.ghost[data-cab='left'] .art { transform: translate(-50%, -50%) rotate(180deg); }
+.ghost[data-cab='top'] .art { transform: translate(-50%, -50%) rotate(-90deg); }
+.ghost[data-cab='bottom'] .art { transform: translate(-50%, -50%) rotate(90deg); }
+.ghost .art img { display: block; width: 100%; height: 100%; }
+/* If the sprite can't load, the ghost is a tint of the truck's colour. */
+.ghost.plain { background: color-mix(in srgb, var(--c) 35%, transparent); }
+@keyframes ghost-pulse {
+  from { opacity: 0.75; }
+  to { opacity: 1; }
+}
+
+/* A move out through the gate: the gate itself says so. */
+.gate .out-badge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  padding: 2px 7px 3px;
+  border: 2px solid var(--outline);
+  border-radius: 9px;
+  background: var(--c);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow: -1px -1px 0 var(--outline), 1px -1px 0 var(--outline), -1px 1px 0 var(--outline), 1px 1px 0 var(--outline);
+  box-shadow: 0 0 0 2px #fff, 0 3px 4px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  animation: out-pulse 1100ms ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.gate.hint-out { z-index: 6; }
+.gate.hint-out .g-badge,
+.gate.hint-out > .sym { visibility: hidden; }
+@keyframes out-pulse {
+  from { transform: translate(-50%, -50%) scale(1); }
+  to { transform: translate(-50%, -50%) scale(1.14); }
 }
 
 /* ---------- Reduced motion: no shaking, nodding, waving or dust ---------- */
@@ -1129,9 +1181,8 @@ canvas.lease-detail {
     transition: none !important;
   }
 
-  .truck.hinted .body {
-    box-shadow: 0 0 0 4px #fff, 0 0 14px 7px rgba(255, 194, 26, 0.9);
-  }
+  /* Hints stay put: a static rim and a fixed small lift, no pulse. */
+  .truck.hinted .body { transform: translateY(-2px) scale(1.05); }
 }
 
 /* ---------- Daily Pad: safety sign, big daily button, win extras ---------- */
@@ -2840,22 +2891,23 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
 .gw img { display: block; user-select: none; -webkit-user-drag: none; }
 .gw .g-leaf {
   position: absolute;
-  left: calc(var(--cell) * 0.05);
-  width: calc(var(--cell) * 0.9);
-  /* 30% thinner than the old fence-height gate; the badge keeps its size so the symbol stays readable. */
-  top: calc(var(--fence) * 0.22);
-  height: calc(var(--fence) * 0.56);
+  /* Between its own two posts (which stand inside the gate's own cell, so neighbouring gates never
+     join up). The art carries a 5px outline margin all round, hence the small overhangs. */
+  left: calc(var(--fence) * 0.36);
+  right: calc(var(--fence) * 0.42);
+  top: calc(var(--fence) * 0.16);
+  height: calc(var(--fence) * 0.68);
   transform-origin: 0 50%;
   transition: transform 260ms cubic-bezier(0.15, 0.9, 0.3, 1);
 }
 .gw .g-leaf img { position: relative; width: 100%; height: 100%; }
-/* A mesh panel in the gate's color inside the frame, so the color reads at a glance. */
+/* A panel in the gate's color behind the rails, so the color fills the opening and reads first. */
 .gw .g-leaf::before {
   content: '';
   position: absolute;
-  inset: 16% 3% 16% 3%;
+  inset: 22% 4% 22% 4%;
   border-radius: 3px;
-  background: color-mix(in srgb, var(--c) 70%, transparent);
+  background: color-mix(in srgb, var(--c) 78%, transparent);
 }
 .gate.open .gw .g-leaf { transform: rotate(-90deg); }
 /* Side gates have only a thin screen margin outside them: they swing in, where you can see it. */
@@ -2865,12 +2917,12 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
 .gw .g-latch {
   position: absolute;
   top: 50%;
-  height: calc(var(--fence) * 0.84);
+  height: calc(var(--fence) * 0.78);
   width: auto;
   transform: translateY(-50%);
 }
-.gw .g-hinge { left: calc(var(--fence) * -0.16); }
-.gw .g-latch { right: calc(var(--fence) * -0.15); }
+.gw .g-hinge { left: calc(var(--fence) * 0.1); }
+.gw .g-latch { right: calc(var(--fence) * 0.1); }
 
 /* The symbol badge rides on the leaf, upright when the gate is shut. */
 .gw .g-badge {
@@ -2879,20 +2931,21 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
   top: 50%;
   display: grid;
   place-items: center;
-  width: calc(var(--fence) * 1.1);
-  height: calc(var(--fence) * 1.1);
-  border: 2.5px solid var(--outline);
+  width: calc(var(--fence) * 0.96);
+  height: calc(var(--fence) * 0.96);
+  border: 2px solid var(--outline);
   border-radius: 50%;
   background: var(--c);
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45);
-  font-size: calc(var(--fence) * 0.62);
+  font-size: calc(var(--fence) * 0.56);
   line-height: 1;
   color: #fff;
   text-shadow: -1.5px -1.5px 0 var(--outline), 1.5px -1.5px 0 var(--outline), -1.5px 1.5px 0 var(--outline), 1.5px 1.5px 0 var(--outline);
   transform: translate(-50%, -50%) rotate(calc(var(--turn) * -1));
 }
 
-/* Convoy gates: the badge stays in the middle of the leaf; the chip with the number the gate is
+.board.gate-art .gate.convoy-gate .gw .g-badge { left: 40%; }
+/* Convoy gates: the badge sits a little toward the hinge; the chip with the number the gate is
    waiting for sits on the latch post, clear of it (upright). In the gate's color, white numeral. */
 .board.gate-art .gate.convoy-gate .wait {
   position: absolute;
@@ -2906,10 +2959,10 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
   font-size: calc(var(--fence) * 0.52);
   text-shadow: -1px -1px 0 var(--outline), 1px -1px 0 var(--outline), -1px 1px 0 var(--outline), 1px 1px 0 var(--outline);
 }
-.board.gate-art .gate.convoy-gate[data-side='top'] .wait { left: 97%; top: 50%; transform: translate(-50%, -50%); }
-.board.gate-art .gate.convoy-gate[data-side='bottom'] .wait { left: 3%; top: 50%; transform: translate(-50%, -50%); }
-.board.gate-art .gate.convoy-gate[data-side='left'] .wait { left: 50%; top: 3%; transform: translate(-50%, -50%); }
-.board.gate-art .gate.convoy-gate[data-side='right'] .wait { left: 50%; top: 97%; transform: translate(-50%, -50%); }
+.board.gate-art .gate.convoy-gate[data-side='top'] .wait { left: 90%; top: 50%; transform: translate(-50%, -50%); }
+.board.gate-art .gate.convoy-gate[data-side='bottom'] .wait { left: 10%; top: 50%; transform: translate(-50%, -50%); }
+.board.gate-art .gate.convoy-gate[data-side='left'] .wait { left: 50%; top: 10%; transform: translate(-50%, -50%); }
+.board.gate-art .gate.convoy-gate[data-side='right'] .wait { left: 50%; top: 90%; transform: translate(-50%, -50%); }
 
 @media (prefers-reduced-motion: reduce) {
   .gw .g-leaf { transition: none; }
@@ -3169,16 +3222,35 @@ img.hat { width: 100%; height: auto; }
 }
 .win .card > * { min-width: 0; }
 
-/* "Pad cleared!" rides on the banner's ribbon. */
+/* "Pad cleared!" sits in the middle of the banner's blue ribbon, top to bottom, and follows its
+   curve: the words are SVG text on an arc (game-view.ts). The ribbon's middle is 88 art px down the
+   frame's top slice; the lettering's visual middle (with its outline and lower lip) is 19.5px down
+   the SVG. --t scales the lettering on short screens. */
 .win .card h2 {
+  --t: 1;
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(-262 * var(--f) + 96 * var(--f) - 0.62em);
+  top: calc(-262 * var(--f) + 88 * var(--f) - 19.5px * var(--t));
   margin: 0;
-  font-size: 20px;
-  line-height: 1.2;
+  line-height: 0;
+  text-shadow: none;
 }
+.win .card h2 svg {
+  display: block;
+  width: calc(220px * var(--t));
+  height: calc(44px * var(--t));
+  margin: 0 auto;
+  overflow: visible;
+}
+.win .card h2 text {
+  font-family: inherit;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+.win .card h2 .lip { fill: var(--outline); stroke: var(--outline); stroke-width: 4.5px; stroke-linejoin: round; }
+.win .card h2 .ink { fill: var(--accent); stroke: var(--outline); stroke-width: 4.5px; stroke-linejoin: round; paint-order: stroke; }
 
 /* Score row: the roughneck and the three hard hats are one group, centered as a unit. His boots
    stand on the hats' bottom line (the still's feet are 94% of the way down its frame, and it has
@@ -3231,7 +3303,7 @@ img.hat { width: 100%; height: auto; }
 /* Short screens: the same card, a little smaller all round. */
 @media (max-height: 700px) {
   .win .card { --f: 0.26px; gap: 5px; }
-  .win .card h2 { font-size: 18px; }
+  .win .card h2 { --t: 0.88; }
   .win .card .mascot { width: 66px; height: 66px; margin: -22px -11px -3px -11px; }
   .hats.big span { width: 36px; }
   .company-man { width: 48px; height: 48px; }

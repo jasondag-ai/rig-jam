@@ -46,7 +46,11 @@ something, give exact clicks and one command at a time.
   par (`convoyRaisesPar`). Out-of-order bumps use only the `convoy` line pool; truck 1 speaks.
 - Clear all trucks to win. Score = moves vs par (par = optimal move count from the solver).
 - Rating is hard hats: at par = 3, up to par + 3 = 2, otherwise 1.
-- Hints: first tap highlights the truck to move, second tap shows where it goes. 3 free hints;
+- Hints: first tap marks the truck to move (`.hinted`: a bright rim in its own colour hugging the
+  sprite, a small lift with a stronger ground shadow, a slow pulse); second tap shows where it goes
+  (`.ghost`: the truck's own sprite at 35% with a dashed keyline in its colour, slow pulse; for a
+  move out through the gate, an OUT badge on that gate instead). Reduced motion: static, no pulse.
+  `npm run test:e2e:hints` checks gates and hints and saves screenshots. 3 free hints;
   +1 the first time each level is cleared at par. One tap-pair costs one hint.
 
 ## Regions
@@ -127,15 +131,17 @@ something, give exact clicks and one command at a time.
   tan stalks in winter. Repainted only when size, level or season changes.
   Picture only: the engine's walls block trucks. `--fence` is still the band's thickness in px.
 - Pipe swing gates (`.gate-art`, set by `gateArt` once the pieces from `gate_open_v2.png` load, cut
-  by `tools/fence-sprites.py`): each sits in its gap in the berm: hinge post, leaf (white frame
-  tinted per gate color + a translucent color panel) carrying the symbol badge, latch post. Drawn
-  lying along the top side and turned per side (`--turn`); the badge counter-rotates to stay upright.
-  Gates live on the board (not the clipping yard) so the leaf can swing past it. On exit (`.open`)
-  the leaf swings 90 degrees (260ms ease-out): outward on top/bottom, inward on the sides; none with
-  reduced motion. Wrong-color gates simply stay shut. Convoy gates keep the badge centred and put the
-  waiting-number chip (gate color, white numeral) on the latch post, clear of it. Fallback: the colored tabs (`.sym` + `.boom`).
-- Winter: the pad (`--pad` #edf2fa) is the brightest surface on screen (tested). `scenery.ts`
-  scatters a few dry tan grass stalks in the snow (`winterStalks`, seeded per level).
+  by `tools/fence-sprites.py`): each sits in its gap in the berm: hinge post, leaf, latch post. The
+  COLOUR reads first: the leaf's pipe rails are painted the gate colour with a panel of the same
+  colour behind them; the posts are one darker neutral steel; every piece has the dark toy outline.
+  Each gate's posts stand inside its own cell and the berm's gap stops `GAP_INSET` short of the
+  cell's ends, so two neighbouring gates keep a nub of berm between them and never join into one
+  run. The symbol badge (0.96 x band) rides on the leaf, secondary. Drawn lying along the top side
+  and turned per side (`--turn`); the badge counter-rotates to stay upright. Gates live on the board
+  (not the clipping yard) so the leaf can swing past it. On exit (`.open`) the leaf swings 90
+  degrees (260ms ease-out): outward on top/bottom, inward on the sides; none with reduced motion.
+  Wrong-color gates simply stay shut. Convoy gates shift the badge toward the hinge and put the
+  waiting-number chip (gate color, white numeral) on the latch post. Fallback: the colored tabs.
 - Light: ONE soft neutral vignette at the outer screen edges (`.vignette`, z 0: over the scenery,
   under the board, HUD and buttons) and nothing else: no hotspot or diagonal shade on the pad (it
   reads as a stain), no warm wash outside. Soft down-right drop shadows on gates, trees and HUD.
@@ -165,6 +171,8 @@ something, give exact clicks and one command at a time.
   then Next level, then Play again and All levels: all the same width, same centre, inside the
   cream with even margins. The Zero Incident medal overlaps the top-right shoulder on purpose,
   drawn on top, never clipped. Fits 375x553 with no scroll.
+- "Pad cleared!" is SVG text on a shallow arc (`BANNER_TEXT`), centred top to bottom in the
+  banner's ribbon (88 art px down the frame's top slice) and following its curve; `--t` scales it.
 - Confetti (`GameView.confetti`): on a perfect solve, 40 small hard hats and orange/yellow scraps
   fall for about 1.5 s in a layer UNDER the card (never over its buttons), then the layer is
   removed. Not made under reduced motion.
