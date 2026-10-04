@@ -58,6 +58,8 @@ function shake(el: HTMLElement): void {
   void el.offsetWidth;
   el.classList.add('nope');
 }
+/** The level list's tree line: how tall its tallest trees are, and so how far under the header the horizon sits. */
+const LIST_TREES = 30;
 const REGION_KEY = 'rush-hour-rigs:region';
 let game: GameView | null = null;
 
@@ -174,14 +176,16 @@ function showLevels(requested = savedRegion()): void {
 
   // A tree line along the horizon under the title.
   const rect = screen.getBoundingClientRect();
-  const horizon = screen.querySelector('.brand')!.getBoundingClientRect().bottom - rect.top + 8;
+  // The tree line stands below the title, never across it: the horizon is under the header and
+  // the trees are short enough that their tops clear the lettering.
+  const horizon = screen.querySelector('.brand')!.getBoundingClientRect().bottom - rect.top + LIST_TREES;
   screen.style.setProperty('--horizon', `${Math.round(horizon)}px`);
   screen.querySelector('.scenery')!.innerHTML = sceneryHtml(themeFor(regionIndex), rect.width, horizon + 40, {
     x: 0,
     y: horizon,
     width: rect.width,
     height: 0,
-  }, { below: false, maxTree: 64 });
+  }, { below: false, maxTree: LIST_TREES - 2, depth: 4 });
 
   // A region earned for real gets a one-time "NEW LEASE OPEN" banner.
   const fresh = newlyOpened(REGIONS, progress.best, progress.announced);

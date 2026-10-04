@@ -160,9 +160,9 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
   await browser.close();
 }
 
-// Equipment: toy-look drawings on their cells (no photo sprites, no slab), lower rows in front,
-// never over the berm or a gate, the part sticking up faded over a truck; pumpjacks pump by their
-// linkage and flares flicker; all still under reduced motion.
+// Equipment: toy-look drawings on their cells (no photo sprites, no slab), always fully visible
+// (above the trucks and the berm, never faded, shrunk or clipped); pumpjacks pump by their linkage
+// and flares flicker; all still under reduced motion.
 for (const reduced of ['no-preference', 'reduce']) {
   console.log(`\nequipment (Montney, ${reduced})`);
   const browser = await webkit.launch();
@@ -194,7 +194,11 @@ for (const reduced of ['no-preference', 'reduce']) {
             outline: stroke.replace(/\s/g, '') === 'rgb(42,26,12)',
             footOk: Math.abs(r.bottom - (cellTop + cell)) <= 1,
             sticksUp: cellTop - r.top,
-            faded: (cs.maskImage || cs.webkitMaskImage || 'none') !== 'none',
+            faded: (cs.maskImage || cs.webkitMaskImage || 'none') !== 'none' || Number(cs.opacity) < 1,
+            clipped: !!ob.closest('.yard') || !!ob.closest('.pad'),
+            layerZ: Number(getComputedStyle(ob.closest('.equip-layer')).zIndex),
+            half: cell / 2,
+            scaled: cs.transform !== 'none',
             above,
             crank: svg.querySelector('.pj-crank')?.getAttribute('transform') ?? '',
             rodX: svg.querySelector('.pj-polished') ? [svg.querySelector('.pj-polished').getAttribute('x1'), svg.querySelector('.pj-polished').getAttribute('x2'), svg.querySelector('.pj-bridle').getAttribute('x1'), svg.querySelector('.pj-bridle').getAttribute('x2')] : null,
@@ -210,9 +214,12 @@ for (const reduced of ['no-preference', 'reduce']) {
     const truckZ = await page.$eval('.truck', (t) => Number(getComputedStyle(t).zIndex));
     check(o.length > 0 && o.every((x) => x.drawn && x.outline), `Montney ${index + 1}: toy-look drawings with the trucks' outline, a ground patch and contact shadow, no slab (${o.map((x) => x.kind).join(', ')})`);
     check(o.every((x) => x.footOk), 'each stands on its own cell');
-    check(o.every((x) => x.z === 1 + x.row) && truckZ < Math.min(...o.map((x) => x.z)), 'lower rows in front of rows above');
-    check(o.every((x) => x.row !== 0 || x.sticksUp <= 1), 'top row: nothing over the berm or a gate');
-    check(o.every((x) => !x.above || x.sticksUp <= 1 || x.faded), `the part sticking up fades over a truck (${o.filter((x) => x.above && x.sticksUp > 1).map((x) => x.kind).join(', ') || 'none above'})`);
+    check(o.every((x) => x.z === 1 + x.row), 'lower rows in front of rows above');
+    // Jay's rule: equipment is always fully visible. Its layer is above the trucks (a dragged truck
+    // is z 10 inside the yard; the layer sits over the whole yard) and outside every clip.
+    check(o.every((x) => !x.clipped && x.layerZ >= 3 && truckZ < 20), 'equipment is drawn above the trucks and the berm, on its own layer outside the yard\'s clip');
+    check(o.every((x) => !x.faded && !x.scaled), `never faded or shrunk, even with a truck in the cell above (${o.filter((x) => x.above).map((x) => x.kind).join(', ') || 'none above'}) or in the top row`);
+    check(o.every((x) => x.sticksUp < x.half), `every overhang is under half a cell (${o.map((x) => `${x.kind} ${x.sticksUp.toFixed(0)}px`).join(', ')})`);
     const jacks = o.map((x, i) => [x, later[i]]).filter(([x]) => x.kind === 'pumpjack');
     const flares = o.filter((x) => x.kind === 'flare');
     if (reduced === 'reduce') {

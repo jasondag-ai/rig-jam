@@ -39,7 +39,7 @@ for (const [i, region] of REGIONS.entries()) {
     await page.evaluate(() => {
       const s = document.querySelector('.screen.levels');
       const cs = getComputedStyle(s);
-      return { theme: s.dataset.theme, sky: cs.getPropertyValue('--sky-top').trim(), ground: cs.getPropertyValue('--ground').trim(), trees: [...new Set([...s.querySelectorAll('.scenery .sc')].map((t) => t.className.replace('sc ', '')))].sort().join(','), mud: (cs.backgroundImage.match(/radial-gradient/g) ?? []).length, rows: [...s.querySelectorAll('.level-btn')].every((b) => getComputedStyle(b).backgroundColor !== 'rgba(0, 0, 0, 0)') };
+      return { photos: s.querySelectorAll('.scenery img').length, theme: s.dataset.theme, sky: cs.getPropertyValue('--sky-top').trim(), ground: cs.getPropertyValue('--ground').trim(), trees: [...new Set([...s.querySelectorAll('.scenery .sc')].map((t) => t.getAttribute('class').replace('sc ', '')))].sort().join(','), mud: (cs.backgroundImage.match(/radial-gradient/g) ?? []).length, rows: [...s.querySelectorAll('.level-btn')].every((b) => getComputedStyle(b).backgroundColor !== 'rgba(0, 0, 0, 0)') };
     }),
   );
 }
@@ -48,7 +48,7 @@ const [c, m, d] = seen;
 console.log(JSON.stringify(seen));
 check(new Set(seen.map((s) => s.sky)).size === 3 && new Set(seen.map((s) => s.ground)).size === 3, 'three different skies and grounds');
 check(m.mud >= 6 && c.mud === 0 && d.mud === 0, 'Montney only: muddy patches and puddles in the grass');
-check(m.trees.includes('tree_aspen_spring') && c.trees.includes('tree_aspen_summer') && d.trees.includes('tree_spruce_winter'), 'spring aspens in Montney, summer trees in Cardium, snowy spruce in Duvernay');
+check(m.trees.includes('tree_aspen_spring') && c.trees.includes('tree_aspen_summer') && d.trees.includes('tree_spruce_winter') && seen.every((s) => s.photos === 0), 'toy-look trees, no photo sprites: spring aspens in Montney, summer trees in Cardium, snowy spruce in Duvernay');
 check(seen.every((s) => s.rows), 'level rows keep their solid cream panels on every background');
 execFileSync('python3', ['-c', `
 from PIL import Image
