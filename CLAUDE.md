@@ -102,7 +102,12 @@ something, give exact clicks and one command at a time.
   9-12 large soft colour fields; one or two worn lanes running straight in from a gate; a stain
   beside each piece of equipment (two at most); then pebbles (gravel), 2-4 shallow puddles (mud:
   flat, low contrast, never touching a gate's cell or an obstacle, `keepDry`) or wind drifts lying
-  one way (snow). No photo grain, no hard value step. If puddles ever read as objects, tone them down.
+  one way (snow). Gravel and mud also get fine texture drawn at device resolution at paint time
+  (`paintGrain`, seeded by `Detail.seed`): hundreds of small specks per cell in several tones
+  (`GRAIN`), plus small stones or clods with a highlight and shadow (`LUMPS`), and on mud a few faint
+  wet streaks. Low contrast, so trucks and tracks stand out. Snow has none (approved as is). It is
+  painted once per level and size, never per frame. No stretched image, no hard value step. If
+  puddles ever read as objects, tone them down.
 - Outside ground: `public/sprites/ground/grass-<season>.webp` from `python3 tools/ground-tiles.py`:
   a 768px field that wraps, drawn at 384px, built by `field()` (shifted copies of the seamless source
   blended through soft random masks; spring grass is a stand-in tinted from summer). Winter's is a
@@ -181,7 +186,8 @@ something, give exact clicks and one command at a time.
   whole layer is under the board, gates and buttons.
 - Gag anchors (permanent, gags on or off; `anchors` option, `data-anchor`): a willow bush on the
   grass just below the berm toward the left, where the bear will stop (every region), and in
-  Cardium the gopher's dirt mound with a hole toward the right. Sized to the bottom strip, clear of
+  Cardium the gopher's dirt mound toward the right (an SVG drawn to sit with the illustrated trees:
+  shaded from the top left, soil clumps, a hole with depth, grass tufts, soft contact shadow). Sized to the bottom strip, clear of
   the board, gates and buttons; trees give them room. (The side margins are only 16px, so "beside
   the berm" is below it.) When the bear and gopher come back, play them at these anchors.
 

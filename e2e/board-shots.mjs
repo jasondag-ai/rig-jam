@@ -22,8 +22,11 @@ const SHOTS = [
   ['duvernay_10', 2, 9, ''],
   ...(process.env.CORDS ? [['duvernay_3_cords', 2, 2, '&gags=1&wild=0']] : []),
 ];
+// ONLY=cardium,montney keeps just those regions; MOUND=1 adds a close-up of the gopher mound.
+const only = process.env.ONLY?.split(',');
+const shots = SHOTS.filter(([name]) => !only || only.some((o) => name.startsWith(o)));
 const browser = await webkit.launch();
-for (const [name, region, index, query] of SHOTS) {
+for (const [name, region, index, query] of shots) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, hasTouch: true });
   const page = await context.newPage();
   page.on('pageerror', (e) => console.log('ERR', e.message));
@@ -39,6 +42,10 @@ for (const [name, region, index, query] of SHOTS) {
   await new Promise((r) => setTimeout(r, 900));
   await page.screenshot({ path: join(OUT, `${PREFIX}${name}.png`) });
   await page.locator('.board').screenshot({ path: join(OUT, `${PREFIX}${name}_lease.png`) });
+  if (process.env.MOUND && name.startsWith('cardium') && !name.endsWith('9')) {
+    const m = await page.locator('[data-anchor="mound"]').boundingBox();
+    await page.screenshot({ path: join(OUT, `${PREFIX}mound.png`), clip: { x: Math.max(0, m.x - 70), y: m.y - 50, width: m.width + 140, height: m.height + 90 } });
+  }
   console.log(name);
   await context.close();
 }
