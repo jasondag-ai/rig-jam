@@ -41,6 +41,8 @@ export class BoardView {
   readonly el: HTMLElement;
   private yard: HTMLElement;
   private pad: HTMLElement;
+  /** Equipment's own layer (over the trucks and the berm; takes no touches). */
+  private equip: HTMLElement;
   private level: Level | null = null;
   private trucks = new Map<string, HTMLElement>();
   private cell = 48;
@@ -85,6 +87,10 @@ export class BoardView {
     this.pad.className = 'pad';
     this.yard.append(this.pad);
     this.el.append(this.yard);
+    // Equipment stands on its own layer over the yard: above the trucks and the berm, never clipped.
+    this.equip = document.createElement('div');
+    this.equip.className = 'equip-layer';
+    this.el.append(this.equip);
     this.spray = new Spray(this.pad, () => this.pad.querySelector('.truck'));
     this.tracks = new TrackLayer((m) => {
       this.spray.emit(m, this.cell);
@@ -131,20 +137,17 @@ export class BoardView {
       ob.dataset.col = String(o.col);
       // Lower rows stand in front of the ones above.
       ob.style.zIndex = String(1 + o.row);
-      // Tall pieces stick up above their cell (faded over a truck there); in the top row they are
-      // shrunk to fit, so nothing covers the berm or a gate.
-      const fit = equipFit(kind, o.row);
+      // Tall pieces stick up above their cell (by less than half a cell), over whatever is there.
+      const fit = equipFit(kind);
       const seed = o.row * SIZE + o.col;
       ob.style.setProperty('--eq-h', `${fit.height}%`);
-      ob.style.setProperty('--eq-scale', String(fit.scale));
-      ob.style.setProperty('--eq-over', `${fit.over * 100}%`);
       ob.style.setProperty('--eq-delay', `${-(seed % 7) * 0.31}s`);
       if (kind === 'pumpjack') ob.dataset.phase = String(phaseFor(seed));
       ob.innerHTML = equipmentSvg(kind, seed);
-      this.pad.append(ob);
+      this.equip.append(ob);
     }
     this.stopPumpjacks();
-    this.stopPumpjacks = runPumpjacks(this.pad, reducedMotion());
+    this.stopPumpjacks = runPumpjacks(this.equip, reducedMotion());
     this.layout();
   }
 
@@ -163,6 +166,7 @@ export class BoardView {
     this.el.style.setProperty('--cell', `${cell}px`);
     this.el.style.setProperty('--fence', `${fence}px`);
     this.pad.style.left = this.pad.style.top = `${fence}px`;
+    this.equip.style.left = this.equip.style.top = `${fence}px`;
     this.pad.style.width = this.pad.style.height = `${cell * SIZE}px`;
     this.el.querySelectorAll<HTMLElement>('.gate').forEach((g) => {
       const side = g.dataset.side as Side;
@@ -221,13 +225,6 @@ export class BoardView {
       if (id === exitedId) this.driveOut(el);
       else el.remove();
     }
-    // Where a tall obstacle's top sticks up over a truck in the cell above, fade that part.
-    const taken = new Set<string>();
-    for (const t of state.trucks)
-      for (let i = 0; i < t.length; i++) taken.add(t.orient === 'h' ? `${t.row},${t.col + i}` : `${t.row + i},${t.col}`);
-    this.pad.querySelectorAll<HTMLElement>('.obstacle').forEach((ob) => {
-      ob.classList.toggle('under-truck', taken.has(`${Number(ob.dataset.row) - 1},${ob.dataset.col}`));
-    });
     for (const t of state.trucks) {
       let el = this.trucks.get(t.id);
       const fresh = !el;

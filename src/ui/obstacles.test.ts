@@ -20,9 +20,9 @@ describe('equipment drawings', () => {
 
   it('the wellhead is a production tree: valves with handwheels, a wing valve, a gauge, guard posts', () => {
     const svg = equipmentSvg('wellhead');
-    expect((svg.match(/class="eq-wheel"/g) ?? []).length).toBe(3);
+    expect((svg.match(/class="eq-redwheel"/g) ?? []).length).toBe(3);
     expect(svg).toContain('eq-gauge');
-    expect((svg.match(/eq-guardpost/g) ?? []).length).toBe(4);
+    expect((svg.match(/eq-guardpost/g) ?? []).length).toBe(3);
   });
 
   it('the flare stack has a ladder, guy wires, a knockout drum and a pilot flame', () => {
@@ -30,23 +30,27 @@ describe('equipment drawings', () => {
     for (const part of ['eq-rung', 'eq-guy', 'eq-drum', 'fl-flame']) expect(svg).toContain(part);
   });
 
-  it('tall pieces stick up above their cell, except in the top row where they shrink to fit', () => {
-    expect(OVER.flare).toBeGreaterThan(OVER.tank);
+  it('equipment is always fully visible: never shrunk, and every overhang is under half a cell', () => {
     for (const kind of OBSTACLE_KINDS) {
-      const low = equipFit(kind, 3);
-      expect(low.scale).toBe(1);
-      expect(low.over).toBeCloseTo(OVER[kind] / (100 + OVER[kind]), 9);
-      const top = equipFit(kind, 0);
-      expect(top.over).toBe(0);
-      expect((100 + OVER[kind]) * top.scale, kind).toBeCloseTo(100, 9);
+      expect(equipFit(kind).height, kind).toBe(100 + OVER[kind]);
+      expect(OVER[kind], kind).toBeLessThan(50);
     }
+    expect(OVER.flare).toBeGreaterThan(OVER.tank);
+  });
+
+  it('the wellhead is grey steel with red handwheels and a flowline running sideways', () => {
+    const svg = equipmentSvg('wellhead');
+    expect((svg.match(/class="eq-redrim"/g) ?? []).length).toBe(3);
+    expect(svg).toContain('eq-flowline');
+    expect(svg).not.toContain('eq-red"');
+    // The flowline's run is horizontal.
+    expect(svg).toMatch(/eq-flowline" d="M\d+ (\d+) L\d+ \1"/);
   });
 });
 
 describe('pumpjack linkage (GAME_BIBLE 7)', () => {
-  it('runs at 6 to 8 strokes per minute', () => {
-    expect(STROKES_PER_MIN).toBeGreaterThanOrEqual(6);
-    expect(STROKES_PER_MIN).toBeLessThanOrEqual(8);
+  it('runs at 12 strokes per minute', () => {
+    expect(STROKES_PER_MIN).toBe(12);
     expect(STROKE_MS).toBeCloseTo(60_000 / STROKES_PER_MIN, 6);
   });
 

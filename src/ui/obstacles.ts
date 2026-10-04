@@ -12,13 +12,12 @@ import type { ObstacleKind } from '../engine/index.ts';
 export const OVER: Record<ObstacleKind, number> = { pumpjack: 6, tank: 12, wellhead: 12, flare: 46 };
 
 /**
- * How a piece is laid out in its cell: `over` is the share of its height that sticks up above the
- * cell (faded when a truck is in the cell above), `scale` shrinks it in the top row so nothing
- * covers the berm or a gate.
+ * How a piece is laid out: its height as a share of its cell's. Equipment is ALWAYS fully visible
+ * (Jay's rule): drawn above the trucks and the berm, never faded, shrunk or clipped. So every
+ * overhang is kept under half a cell, and trucks beside it stay readable.
  */
-export function equipFit(kind: ObstacleKind, row: number): { over: number; scale: number; height: number } {
-  const height = 100 + OVER[kind];
-  return row === 0 ? { over: 0, scale: 100 / height, height } : { over: OVER[kind] / height, scale: 1, height };
+export function equipFit(kind: ObstacleKind): { height: number } {
+  return { height: 100 + OVER[kind] };
 }
 
 // ---------- Pumpjack linkage (conventional beam pumping unit, side on) ----------
@@ -40,8 +39,8 @@ export const PJ = {
   box: 74,
 } as const;
 
-/** Strokes per minute (GAME_BIBLE 7: 6 to 8), and so the time one crank turn takes. */
-export const STROKES_PER_MIN = 7;
+/** Strokes per minute (Jay, Oct 4: 12; a real unit runs 6 to 8, but that reads as too slow at this size). */
+export const STROKES_PER_MIN = 12;
 export const STROKE_MS = 60_000 / STROKES_PER_MIN;
 
 export interface PumpjackPose {
@@ -154,6 +153,9 @@ function pumpjack(phase: number): string {
 /** A handwheel seen from the front: rim and spokes. */
 const wheel = (cx: number, cy: number, r: number) => `<circle class="eq-wheel-back" cx="${cx}" cy="${cy}" r="${r}"/><circle class="eq-wheel" cx="${cx}" cy="${cy}" r="${r}"/><path class="eq-spoke" d="M${cx - r} ${cy} L${cx + r} ${cy} M${cx} ${cy - r} L${cx} ${cy + r}"/><circle class="eq-pin" cx="${cx}" cy="${cy}" r="1.8"/>`;
 
+/** A valve handwheel in safety red. */
+const redWheel = (cx: number, cy: number, r: number) => `<circle class="eq-redwheel" cx="${cx}" cy="${cy}" r="${r}"/><circle class="eq-redrim" cx="${cx}" cy="${cy}" r="${r}"/><path class="eq-redspoke" d="M${cx - r} ${cy} L${cx + r} ${cy} M${cx} ${cy - r} L${cx} ${cy + r}"/><circle class="eq-pin" cx="${cx}" cy="${cy}" r="1.8"/>`;
+
 // 400 bbl tank: a welded steel cylinder about as tall as it is wide, shallow cone roof with a thief
 // hatch and a vent, a ladder up to a small railed landing, a load line valve near the bottom.
 const TANK =
@@ -178,37 +180,37 @@ const TANK =
   wheel(36, 74.5, 6) +
   '</svg>';
 
-// Wellhead: a production tree (never a hydrant). Casing head flange at the ground, two master valves
-// with handwheels, a flow cross with a wing valve and a short flowline, a pressure gauge on top,
-// yellow guard posts round it.
+// Wellhead: a production tree (never a hydrant). Grey steel: casing head flange at the ground, two
+// master valves with RED handwheels, a flow cross with a wing valve, and the flowline running off
+// sideways on a pipe support; a pressure gauge on top; yellow guard posts round it.
 const post = (x: number, y: number, h: number) => `<rect class="eq-guardpost" x="${x - 4.5}" y="${y - h}" width="9" height="${h}" rx="4"/>`;
 const WELLHEAD =
   svgOpen('wellhead') +
   ground(48, 14) +
-  post(18, 78, 26) +
-  post(84, 78, 26) +
-  // Flowline: down from the wing valve to the ground.
-  '<path class="eq-pipe-edge" d="M82 36 L82 84"/><path class="eq-pipe" d="M82 36 L82 84"/>' +
-  '<rect class="eq-steel" x="28" y="78" width="44" height="9" rx="2"/>' +
-  '<rect class="eq-red" x="36" y="58" width="28" height="21" rx="2.5"/>' +
-  '<rect class="eq-flange" x="31" y="53" width="38" height="7" rx="2"/>' +
-  '<rect class="eq-red" x="36" y="34" width="28" height="20" rx="2.5"/>' +
-  '<rect class="eq-flange" x="31" y="29" width="38" height="7" rx="2"/>' +
+  post(16, 78, 24) +
+  // Flowline: sideways from the wing valve, on a support.
+  '<rect class="eq-steel" x="88" y="26" width="5" height="60" rx="1.5"/>' +
+  '<path class="eq-pipe-edge" d="M86 21 L99 21"/><path class="eq-flowline" d="M86 21 L99 21"/>' +
+  '<rect class="eq-tree-dark" x="28" y="78" width="44" height="9" rx="2"/>' +
+  '<rect class="eq-tree" x="36" y="58" width="28" height="21" rx="2.5"/>' +
+  '<rect class="eq-tree-dark" x="31" y="53" width="38" height="7" rx="2"/>' +
+  '<rect class="eq-tree" x="36" y="34" width="28" height="20" rx="2.5"/>' +
+  '<rect class="eq-tree-dark" x="31" y="29" width="38" height="7" rx="2"/>' +
   // Flow cross, with a blind cap on the left and the wing valve on the right.
-  '<rect class="eq-red" x="24" y="15" width="12" height="11" rx="1.5"/>' +
-  '<rect class="eq-flange" x="20" y="13" width="6" height="15" rx="1.5"/>' +
-  '<rect class="eq-red" x="62" y="15" width="12" height="11" rx="1.5"/>' +
-  '<rect class="eq-red" x="72" y="9" width="19" height="24" rx="2.5"/>' +
-  '<rect class="eq-red" x="34" y="10" width="32" height="20" rx="2.5"/>' +
-  wheel(81.5, 21, 7) +
-  wheel(50, 68.5, 8.5) +
-  wheel(50, 44, 8) +
+  '<rect class="eq-tree" x="24" y="15" width="12" height="11" rx="1.5"/>' +
+  '<rect class="eq-tree-dark" x="20" y="13" width="6" height="15" rx="1.5"/>' +
+  '<rect class="eq-tree" x="62" y="15" width="12" height="11" rx="1.5"/>' +
+  '<rect class="eq-tree" x="70" y="9" width="18" height="24" rx="2.5"/>' +
+  '<rect class="eq-tree" x="34" y="10" width="32" height="20" rx="2.5"/>' +
+  redWheel(79, 21, 7) +
+  redWheel(50, 68.5, 8.5) +
+  redWheel(50, 44, 8) +
   '<path class="eq-hi" d="M40.5 14 L40.5 26 M40.5 38 L40.5 50 M40.5 62 L40.5 75"/>' +
   // Tree cap and pressure gauge.
-  '<rect class="eq-steel" x="47.4" y="3" width="5.2" height="8"/>' +
+  '<rect class="eq-tree-dark" x="47.4" y="3" width="5.2" height="8"/>' +
   '<circle class="eq-gauge" cx="50" cy="-2" r="8.5"/><path class="eq-needle" d="M50 -2 L55 -6.5"/>' +
-  post(11, 92, 28) +
-  post(91, 92, 28) +
+  post(9, 92, 26) +
+  post(74, 93, 26) +
   '</svg>';
 
 // Flare stack: a tall steel stack on a small pad, ladder up the side, three guy wires, a knockout
