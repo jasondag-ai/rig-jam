@@ -46,6 +46,8 @@ export interface Detail {
   lanes: Patch[];
   /** Stains on the ground beside equipment (a soft dark patch, off to one side of its cell). */
   stains: Patch[];
+  /** Seeds the fine texture (gravel specks and stones, mud specks, clods and streaks), drawn at paint time. */
+  seed: number;
 }
 
 /** How far a puddle may reach from its centre, in cells (it stays inside its own cell block). */
@@ -74,7 +76,7 @@ export function puddleCells(x: number, y: number): string[] {
 export function planDetail(level: Pick<Level, 'gates' | 'obstacles'>, ground: Ground, seed: number): Detail {
   const rng = mulberry32(seed ^ 0x51ed270b);
   const between = (lo: number, hi: number) => lo + rng() * (hi - lo);
-  const detail: Detail = { ground, patches: [], pebbles: [], puddles: [], drifts: [], lanes: [], stains: [] };
+  const detail: Detail = { ground, patches: [], pebbles: [], puddles: [], drifts: [], lanes: [], stains: [], seed };
 
   // Large soft colour fields, lighter and darker, over the pad and out under the berm.
   const patches = 9 + Math.floor(rng() * 4);
@@ -163,6 +165,84 @@ const LANES: Record<Ground, [string, number]> = { gravel: ['214, 200, 178', 0.5]
 const STAINS: Record<Ground, [string, number]> = { gravel: ['74, 58, 44', 0.24], mud: ['30, 18, 10', 0.36], snow: ['150, 168, 196', 0.3] };
 const PEBBLES = ['#8f8375', '#a59a8b', '#c9bba6', '#6f665d', '#b4a48d', '#dccfb9'];
 
+/**
+ * Fine texture, drawn straight onto the canvas at device resolution (so it is crisp on any phone,
+ * unlike a stretched image) and scattered by the level's seed (so nothing repeats). Kept low in
+ * contrast and close to the pad's own colour: it reads as ground at arm's length, and trucks and
+ * tire tracks still stand out. Snow has none.
+ */
+export const GRAIN: Record<Ground, { perCell: number; tones: string[]; alpha: [number, number]; size: [number, number] } | null> = {
+  // Gravel: grey, tan, rust and near-white specks, mixed sizes.
+  gravel: { perCell: 520, tones: ['#8a8378', '#a8977c', '#cdbb9d', '#9a6a48', '#efe6d6', '#74695c', '#d9c8ab'], alpha: [0.28, 0.6], size: [0.012, 0.034] },
+  // Mud: dense small specks in three mud tones.
+  mud: { perCell: 420, tones: ['#3a2618', '#6f5038', '#8a684a', '#2c1b10'], alpha: [0.22, 0.5], size: [0.012, 0.03] },
+  snow: null,
+};
+/** Larger pieces per cell: stones on gravel, clods on mud, each with a tiny highlight and shadow. */
+export const LUMPS: Record<Ground, { perCell: number; tones: string[]; size: [number, number] } | null> = {
+  gravel: { perCell: 7, tones: ['#9a9186', '#b9a98f', '#7d7266', '#d8cab2', '#a5774f'], size: [0.03, 0.062] },
+  mud: { perCell: 9, tones: ['#4a3222', '#6a4c34', '#3a2516'], size: [0.026, 0.055] },
+  snow: null,
+};
+
+function paintGrain(ctx: CanvasRenderingContext2D, detail: Detail, cell: number, band: number): void {
+  const grain = GRAIN[detail.ground];
+  const lumps = LUMPS[detail.ground];
+  if (!grain || !lumps) return;
+  const rng = mulberry32(detail.seed ^ 0x7e57a11);
+  const lo = -band;
+  const span = cell * SIZE + band * 2;
+  const cells = (span / cell) ** 2;
+
+  // Mud: a few faint wet streaks first, under the specks.
+  if (detail.ground === 'mud') {
+    const lean = (rng() - 0.5) * 0.5;
+    for (let i = 0; i < 14; i++) softEllipse(ctx, lo + rng() * span, lo + rng() * span, cell * (0.5 + rng() * 0.9), cell * (0.035 + rng() * 0.03), lean + (rng() - 0.5) * 0.2, i % 3 ? '150, 120, 96' : '24, 14, 8', 0.1 + rng() * 0.08);
+  }
+
+  // Specks: small flat flecks, some round and some angular.
+  const count = Math.round(cells * grain.perCell);
+  for (let i = 0; i < count; i++) {
+    const x = lo + rng() * span;
+    const y = lo + rng() * span;
+    const r = cell * (grain.size[0] + rng() * rng() * (grain.size[1] - grain.size[0]));
+    ctx.globalAlpha = grain.alpha[0] + rng() * (grain.alpha[1] - grain.alpha[0]);
+    ctx.fillStyle = grain.tones[Math.floor(rng() * grain.tones.length)];
+    if (rng() < 0.5) ctx.fillRect(x - r, y - r * 0.8, r * 2, r * 1.6);
+    else {
+      ctx.beginPath();
+      ctx.ellipse(x, y, r, r * (0.6 + rng() * 0.4), rng() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Lumps: a soft shadow down-right, the piece, a small highlight up-left.
+  const big = Math.round(cells * lumps.perCell);
+  for (let i = 0; i < big; i++) {
+    const x = lo + rng() * span;
+    const y = lo + rng() * span;
+    const rx = cell * (lumps.size[0] + rng() * rng() * (lumps.size[1] - lumps.size[0]));
+    const ry = rx * (0.62 + rng() * 0.3);
+    const rot = rng() * Math.PI;
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#1e140a';
+    ctx.beginPath();
+    ctx.ellipse(x + rx * 0.3, y + ry * 0.4, rx, ry, rot, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = lumps.tones[Math.floor(rng() * lumps.tones.length)];
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = detail.ground === 'mud' ? 0.3 : 0.45;
+    ctx.fillStyle = '#fff6e6';
+    ctx.beginPath();
+    ctx.ellipse(x - rx * 0.28, y - ry * 0.3, rx * 0.45, ry * 0.36, rot, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
 /** A soft-edged ellipse: full strength in the middle, fading to nothing at the rim. */
 function softEllipse(ctx: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number, rot: number, rgb: string, alpha: number, core = 0): void {
   ctx.save();
@@ -195,6 +275,8 @@ export function paintDetail(canvas: HTMLCanvasElement, detail: Detail, cell: num
   const tint = TINTS[detail.ground];
 
   for (const p of detail.patches) softEllipse(ctx, p.x * cell, p.y * cell, p.rx * cell, p.ry * cell, p.rot, p.tone > 0 ? tint.light : tint.dark, Math.abs(p.tone) * tint.amount);
+
+  paintGrain(ctx, detail, cell, band);
 
   const [laneRgb, laneAmount] = LANES[detail.ground];
   for (const l of detail.lanes) softEllipse(ctx, l.x * cell, l.y * cell, l.rx * cell, l.ry * cell, l.rot, laneRgb, l.tone * laneAmount, 0.35);

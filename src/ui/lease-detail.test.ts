@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { seedFrom } from '../engine/rng.ts';
 import { REGIONS } from '../levels/regions.ts';
-import { PUDDLE_REACH, keepDry, planDetail, puddleCells } from './lease-detail.ts';
+import { GRAIN, LUMPS, PUDDLE_REACH, keepDry, planDetail, puddleCells } from './lease-detail.ts';
 
 const LEVELS = REGIONS.flatMap((r) => r.levels.map((l) => [`${r.id} ${l.id}`, l] as const));
 
@@ -57,6 +57,22 @@ describe('lease ground detail', () => {
     }
     expect(d.stains.length).toBe(Math.min(2, level.obstacles.length));
     d.stains.forEach((t, i) => expect(Math.hypot(t.x - level.obstacles[i].col - 0.5, t.y - level.obstacles[i].row - 0.5)).toBeLessThan(0.5));
+  });
+
+  it('fine texture: gravel and mud have specks and lumps in several tones, seeded per level; snow has none', () => {
+    expect(GRAIN.snow).toBeNull();
+    expect(LUMPS.snow).toBeNull();
+    expect(GRAIN.gravel!.tones.length).toBeGreaterThanOrEqual(4);
+    expect(GRAIN.mud!.tones.length).toBeGreaterThanOrEqual(3);
+    for (const g of ['gravel', 'mud'] as const) {
+      expect(GRAIN[g]!.perCell).toBeGreaterThan(300);
+      // Subtle: no speck is fully opaque, and lumps stay small next to a truck (under a tenth of a cell).
+      expect(GRAIN[g]!.alpha[1]).toBeLessThanOrEqual(0.6);
+      expect(LUMPS[g]!.size[1]).toBeLessThan(0.1);
+    }
+    const [, a] = LEVELS[0];
+    const [, b] = LEVELS[1];
+    expect(planDetail(a, 'gravel', seedFrom(a.id)).seed).not.toBe(planDetail(b, 'gravel', seedFrom(b.id)).seed);
   });
 
   it('keeps dry the cell in front of every gate and under every obstacle', () => {
