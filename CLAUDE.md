@@ -1,5 +1,9 @@
 # Rush Hour Rigs
 
+STANDING RULE, BEFORE EVERY JOB: read `GAME_BIBLE.md` and `ART_BIBLE.md` from
+`~/Desktop/RHR Art Inbox/` (those are the latest versions). If either differs from the copy in the
+repo root, copy it over the repo copy and commit that change before starting the job.
+
 Mobile-first web puzzle game (hackathon, due Nov 1). Owner is a beginner: when they need to do
 something, give exact clicks and one command at a time.
 
@@ -175,8 +179,9 @@ something, give exact clicks and one command at a time.
   every browser whatever the font's line box. Its visible letters (cap top to baseline) are centred
   on the ribbon's visible blue (80 art px down the frame): `setBannerCap` measures the capitals'
   height from the font at run time (`--cap`); `--t` scales the lettering on short screens.
-- The frame's bottom is as thick as its sides (`tools/win-frame.py` stretches the art's thinner
-  bottom band; bottom slice 115).
+- The frame is symmetrical: `tools/win-frame.py` rebuilds its bottom from the side walls' own
+  cross-section (same blue wall, gold trim and fillet as the sides; bottom slice 112). The banner
+  lettering is centred as the block the eye sees (outline and lower lip included).
 - VISUAL CHECKS ARE JUDGED IN WEBKIT (Safari's engine), by the pixels of a screenshot, not by
   element boxes: `tools/card-check.py` (called from `e2e/card.e2e.mjs`) measures the blue showing
   above and below the banner's letters and the frame's thickness at the sides and bottom. A fix
