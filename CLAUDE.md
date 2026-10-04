@@ -171,8 +171,16 @@ something, give exact clicks and one command at a time.
   then Next level, then Play again and All levels: all the same width, same centre, inside the
   cream with even margins. The Zero Incident medal overlaps the top-right shoulder on purpose,
   drawn on top, never clipped. Fits 375x553 with no scroll.
-- "Pad cleared!" is SVG text on a shallow arc (`BANNER_TEXT`), centred top to bottom in the
-  banner's ribbon (88 art px down the frame's top slice) and following its curve; `--t` scales it.
+- "Pad cleared!" is SVG text on a shallow arc (`BANNER_TEXT`), so its baseline sits on the arc in
+  every browser whatever the font's line box. Its visible letters (cap top to baseline) are centred
+  on the ribbon's visible blue (80 art px down the frame): `setBannerCap` measures the capitals'
+  height from the font at run time (`--cap`); `--t` scales the lettering on short screens.
+- The frame's bottom is as thick as its sides (`tools/win-frame.py` stretches the art's thinner
+  bottom band; bottom slice 115).
+- VISUAL CHECKS ARE JUDGED IN WEBKIT (Safari's engine), by the pixels of a screenshot, not by
+  element boxes: `tools/card-check.py` (called from `e2e/card.e2e.mjs`) measures the blue showing
+  above and below the banner's letters and the frame's thickness at the sides and bottom. A fix
+  that only measures right in Chromium does not count.
 - Confetti (`GameView.confetti`): on a perfect solve, 40 small hard hats and orange/yellow scraps
   fall for about 1.5 s in a layer UNDER the card (never over its buttons), then the layer is
   removed. Not made under reduced motion.

@@ -11,6 +11,7 @@
 import { UNLOCKED } from './progress.mjs';
 import { chromium, webkit } from 'playwright';
 import { mkdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { DAILY_LEVELS, REGIONS } from '../src/levels/regions.ts';
@@ -150,20 +151,23 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
           check(!!early.confetti && early.confetti.pieces >= 30 && early.confetti.hats >= 6 && early.confetti.under && !!early.confetti.before && early.confetti.noTouch, `perfect solve: confetti (${early.confetti?.pieces} pieces, ${early.confetti?.hats} hard hats) falls behind the card`);
           check(m.confetti === null, 'and is gone within about 1.5 s');
         } else check(early.confetti === null, 'over par: no confetti');
-        // "Pad cleared!" is centred in the banner's ribbon, top to bottom (the ribbon's middle is 88
-        // art px down the frame's 262px top slice), and curved with it.
-        const banner = await page.evaluate(() => {
+        // Judged by the pixels of a screenshot (tools/card-check.py), with WebKit (Safari's engine)
+        // as the judge: the banner's letters are centred on the visible blue ribbon (equal gap above
+        // their tops and below their baseline), and the frame is as thick at the bottom as at the sides.
+        const shot = join(OUT, `card_${game}_${kind}_${size}.png`);
+        await page.screenshot({ path: shot });
+        const box = await page.evaluate(() => {
           const c = document.querySelector('.win .card');
-          const f = parseFloat(getComputedStyle(c).borderTopWidth) / 262;
-          const card = c.getBoundingClientRect();
-          const ink = c.querySelector('h2 .ink').getBoundingClientRect();
-          const lip = c.querySelector('h2 .lip').getBoundingClientRect();
-          const mid = (Math.min(ink.top, lip.top) + Math.max(ink.bottom, lip.bottom)) / 2;
-          return { off: mid - (card.top + 88 * f), side: (ink.left + ink.width / 2) - (card.left + card.width / 2), curved: !!c.querySelector('h2 textPath'), inRibbon: ink.top >= card.top + 30 * f && lip.bottom <= card.top + 150 * f, clip: { x: card.left - 6, y: card.top - 8, width: card.width + 12, height: 262 * f + 30 } };
+          const r = c.getBoundingClientRect();
+          return { l: r.left, t: r.top, w: r.width, h: r.height, f: parseFloat(getComputedStyle(c).borderTopWidth) / 262, curved: !!c.querySelector('h2 textPath'), cap: getComputedStyle(c.querySelector('h2')).getPropertyValue('--cap') };
         });
-        check(Math.abs(banner.off) <= 2 && Math.abs(banner.side) <= 1.5 && banner.curved && banner.inRibbon, `"Pad cleared!" is centred in the banner and follows its curve (${banner.off.toFixed(1)}px off vertically)`);
-        if (engine === 'webkit' && kind === 'perfect') await page.screenshot({ path: join(OUT, `banner_${game}_${size}.png`), clip: banner.clip });
-        if (engine === 'webkit') await page.screenshot({ path: join(OUT, `card_${game}_${kind}_${size}.png`) });
+        const px = JSON.parse(execFileSync('python3', ['tools/card-check.py', shot, '3', box.l, box.t, box.w, box.h, box.f].map(String), { encoding: 'utf8' }));
+        check(Math.abs(px.gapTop - px.gapBottom) <= 2 && box.curved, `"Pad cleared!" is centred in the ribbon: ${px.gapTop.toFixed(1)}px of blue above the letters, ${px.gapBottom.toFixed(1)}px below (capitals ${box.cap.trim()})`);
+        check(Math.abs(px.bottom - px.side) <= 2 && Math.abs(px.side - px.sideRight) <= 2, `the frame's bottom matches its sides: ${px.side.toFixed(1)}px left, ${px.sideRight.toFixed(1)}px right, ${px.bottom.toFixed(1)}px bottom`);
+        if (engine === 'webkit' && size !== '375x553') {
+          await page.screenshot({ path: join(OUT, `safari_${game}_${kind}_${size}.png`) });
+          await page.screenshot({ path: join(OUT, `safari_banner_${game}_${kind}_${size}.png`), clip: { x: box.l - 6, y: box.t - 8, width: box.w + 12, height: 262 * box.f + 30 } });
+        }
         await context.close();
       }
     }
