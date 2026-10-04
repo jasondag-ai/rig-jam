@@ -3045,29 +3045,6 @@ img.hat { width: 100%; height: auto; }
   text-align: center;
 }
 
-/* The win card: the blue-and-gold panel (frame drawn as a border image, title on its banner). */
-.win .card {
-  border-style: solid;
-  border-color: transparent;
-  border-width: 74px 30px 14px;
-  border-image: var(--ui-panel-win) 230 96 30 / 74px 30px 14px stretch;
-  border-radius: 0;
-  background: #fdf6e9;
-  background-clip: padding-box;
-  box-shadow: none;
-  padding: 10px 10px 12px;
-  filter: drop-shadow(0 8px 8px rgba(30, 18, 6, 0.35));
-}
-.win .card h2 {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -60px;
-  margin: 0;
-  font-size: 26px;
-}
-.win .card { position: relative; }
-
 /* Level list: compact rows, about 56px tall. Number, name, three small hard hats (or a padlock and
    what opens it). The whole row is the button. */
 .level-list {
@@ -3108,24 +3085,7 @@ img.hat { width: 100%; height: auto; }
 .level-btn .lock img.padlock { width: 22px; height: auto; }
 .level-btn.locked .n { color: #8a8276; }
 
-/* Short screens: a slimmer panel banner and medal so the win card never scrolls. */
-@media (max-height: 700px) {
-  .win .card { border-width: 60px 26px 12px; border-image-width: 60px 26px 12px; }
-  .win .card h2 { top: -49px; font-size: 22px; }
-  .zero-incident { width: 72px; }
-  .zero-incident span { font-size: 7.5px; }
-  .hats.big span { width: 46px; }
-}
-
-/* The medal is pinned to the panel's top-right corner (no row of its own). */
-.win .card .zero-incident { position: absolute; right: -22px; top: -30px; z-index: 1; }
-@media (max-height: 700px) { .win .card .zero-incident { right: -18px; top: -24px; } }
-
-/* Panel bottom: slice the whole rim (the art has soft shadow under it), and keep the compact sign clean. */
-.win .card { border-bottom-width: 22px; border-image-slice: 230 96 66; border-image-width: 74px 30px 22px; }
-@media (max-height: 700px) { .win .card { border-bottom-width: 20px; border-image-width: 60px 26px 20px; } }
 .safety-sign.compact { padding: 0; box-shadow: none; }
-.win .card { border-radius: 0 0 54px 54px; }
 
 /* The Daily Pad button wears the orange button art. */
 .daily-btn {
@@ -3153,13 +3113,6 @@ img.hat { width: 100%; height: auto; }
 .pumper-stage .uses-sprite.drawn > svg { visibility: visible; }
 .pumper-stage .uses-sprite.drawn > .sprite-anim { visibility: hidden; }
 
-/* Win card characters (Batch C): the Company Man's portrait, and the roughneck mascot standing on
-   the panel's top-left corner (no row of his own, so the card never grows). */
-.company-man { position: relative; width: 66px; height: 66px; overflow: hidden; border-radius: 10px; }
-.win .card .mascot { position: absolute; left: -30px; top: -62px; width: 104px; height: 104px; z-index: 1; pointer-events: none; }
-@media (max-height: 700px) {
-  .win .card .mascot { transform: scale(0.8); transform-origin: 50% 100%; top: -52px; left: -28px; }
-}
 .log-card .art .flock { display: flex; align-items: center; gap: 2px; height: 84px; }
 .log-card .art .pair .anim-still { flex: none; }
 
@@ -3203,55 +3156,136 @@ img.hat { width: 100%; height: auto; }
 .levels { overflow-x: hidden; }
 .scenery { overflow: hidden; }
 
-/* Win card: a slimmer frame, a smaller banner, less padding. */
+/* ---------- Win card (level and Daily Pad): one clean, centered panel ----------
+   The frame is a 9-slice border image (frame_win, made by tools/win-frame.py from the panel art
+   with its two drawn button slots removed), so it grows with whatever the card holds and its gold
+   trim shows all the way round. The cream inside is the frame's own (`fill`): no box is drawn over
+   it. --f is CSS px per pixel of the @2x frame art; every frame size hangs off it.
+   The corner slices are wider (200) than the side walls (118) so the banner's laurels and curls
+   are never stretched; only the plain middle of the banner and the straight walls stretch. */
 .win .card {
-  width: min(330px, 100%);
-  gap: 6px;
-  padding: 6px 6px 8px;
-  border-width: 52px 18px 16px;
-  border-image-width: 52px 21px 16px;
-  border-radius: 0 0 38px 38px;
+  --f: 0.3px;
+  position: relative;
+  z-index: 1;
+  width: min(336px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: stretch;
+  gap: 7px;
+  /* Even cream margins: the frame's own cream lip is a little deeper at the top. */
+  padding: 1px 6px 5px;
+  border-style: solid;
+  border-color: transparent;
+  border-width: calc(262 * var(--f)) calc(118 * var(--f)) calc(101 * var(--f));
+  border-image: var(--ui-frame-win) 262 200 101 fill / calc(262 * var(--f)) calc(200 * var(--f)) calc(101 * var(--f)) stretch;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  text-align: center;
+  filter: drop-shadow(0 8px 8px rgba(30, 18, 6, 0.35));
 }
-.win .card h2 { top: -43px; font-size: 21px; }
-.win .card .result { font-size: 17px; }
-.win .card .earned { font-size: 15px; }
-.hats.big span { width: 44px; }
-.win .card .btn { min-height: 52px; font-size: 18px; }
-.win .card .btn-row .btn { min-height: 48px; }
-.win .card .zero-incident { width: 70px; right: -16px; top: -24px; }
-.win .card .zero-incident span { font-size: 7.5px; }
-/* The roughneck stands beside the hard hats, his boots on the score row's bottom line (the still's
-   feet are 94% of the way down its frame). */
-.win .card .score-row { position: relative; padding-left: 58px; }
-.win .card .mascot { left: -14px; top: auto; bottom: -5px; width: 80px; height: 80px; }
-.win .card .mascot .anim-still { will-change: transform; }
-.company-man { width: 58px; height: 58px; }
-.company-man .anim-still { will-change: transform; }
-.company-says { padding: 6px 10px; font-size: 14px; }
-@media (max-height: 700px) {
-  .win .card { border-width: 46px 16px 14px; border-image-width: 46px 19px 14px; gap: 5px; }
-  .win .card h2 { top: -38px; font-size: 19px; }
-  .hats.big span { width: 38px; }
-  .win .card .mascot { transform: none; left: -12px; top: auto; bottom: -4px; width: 70px; height: 70px; }
-  .win .card .score-row { padding-left: 50px; }
-  .win .card .zero-incident { width: 60px; right: -14px; top: -20px; }
-  .company-man { width: 50px; height: 50px; }
+.win .card > * { min-width: 0; }
+
+/* "Pad cleared!" rides on the banner's ribbon. */
+.win .card h2 {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(-262 * var(--f) + 96 * var(--f) - 0.62em);
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
 }
 
-/* Daily Pad win card: the streak sign and Share button stay inside the panel. The card is one
-   column that can never grow wider than the panel (the sign's aspect-ratio box used to stretch it
-   and push everything off the right edge); the sign here is the compact one, with no stand-down
-   note (that lives on the main page), so nothing hangs over the Share button. */
-.win .card { grid-template-columns: minmax(0, 1fr); }
-.win .card > * { min-width: 0; }
-.win .card .safety-sign {
-  width: 100%;
-  max-width: 250px;
-  height: auto;
-  margin: 0 auto;
-  justify-self: center;
+/* Score row: the roughneck and the three hard hats are one group, centered as a unit. His boots
+   stand on the hats' bottom line (the still's feet are 94% of the way down its frame, and it has
+   empty margins at the sides, taken back here so the group centers on what you see). */
+.win .card .score-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 6px;
 }
+.win .card .mascot {
+  position: relative;
+  flex: none;
+  width: 76px;
+  height: 76px;
+  margin: -24px -13px -4px -13px;
+  pointer-events: none;
+}
+.win .card .mascot .anim-still,
+.company-man .anim-still { will-change: transform; }
+.hats.big { gap: 2px; }
+.hats.big span { width: 42px; }
+.hats.big .hat { width: 100%; height: auto; }
+
+.win .card .result { font-size: 17px; }
+.win .card .earned { font-size: 15px; }
+.company-man { position: relative; flex: none; width: 56px; height: 56px; overflow: hidden; border-radius: 10px; }
+.company-says { padding: 6px 10px; font-size: 14px; }
+.win .card .btn { min-height: 52px; font-size: 18px; }
+.win .card .btn-row .btn { min-height: 48px; }
+
+/* The streak sign (Daily Pad): the compact one, as wide as every other row, no stand-down note. */
+.win .card .safety-sign { width: 100%; height: auto; margin: 0; }
 .win .card .safety-sign .sign-foot { display: none; }
-.win .card .safety-sign .sign-main { right: 11%; gap: 4px; }
-.win .card .safety-sign .sign-label { font-size: 10px; letter-spacing: 0; }
-.win .card .safety-sign .sign-count { min-width: 1.7em; padding: 0 4px; font-size: 18px; border-width: 2px; }
+.win .card .safety-sign .sign-main { right: 10.5%; gap: 4px; }
+.win .card .safety-sign .sign-label { font-size: 11px; letter-spacing: 0; }
+.win .card .safety-sign .sign-count { min-width: 1.7em; padding: 0 5px; font-size: 20px; border-width: 2px; }
+
+/* The Zero Incident medal overlaps the frame's top-right shoulder on purpose, drawn on top of the
+   frame and whole: nothing clips it. */
+.win .card .zero-incident {
+  position: absolute;
+  z-index: 2;
+  width: 62px;
+  right: calc(-118 * var(--f) - 6px);
+  top: calc(-262 * var(--f) + 150 * var(--f));
+}
+.win .card .zero-incident span { font-size: 6.5px; }
+
+/* Short screens: the same card, a little smaller all round. */
+@media (max-height: 700px) {
+  .win .card { --f: 0.26px; gap: 5px; }
+  .win .card h2 { font-size: 18px; }
+  .win .card .mascot { width: 66px; height: 66px; margin: -22px -11px -3px -11px; }
+  .hats.big span { width: 36px; }
+  .company-man { width: 48px; height: 48px; }
+  .win .card .zero-incident { width: 54px; }
+  .win .card .zero-incident span { font-size: 5.6px; }
+}
+
+/* Confetti on a perfect solve: small hard hats and orange and yellow scraps fall for about a
+   second and a half BEHIND the card (so never over its buttons). Not made under reduced motion. */
+.win .confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.win .confetti i {
+  position: absolute;
+  top: -24px;
+  left: var(--x);
+  width: var(--w);
+  height: var(--h);
+  border-radius: 2px;
+  background: var(--bg);
+  opacity: 0;
+  animation: confetti-fall var(--t) cubic-bezier(0.3, 0.1, 0.7, 1) var(--d) 1 both;
+}
+.win .confetti i.hat { background: var(--ui-hat) center / contain no-repeat; border-radius: 0; }
+@keyframes confetti-fall {
+  0% { opacity: 1; transform: translate3d(0, 0, 0) rotate(0deg); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(var(--dx), var(--fall), 0) rotate(var(--spin)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .win .confetti { display: none; }
+}
+
+/* The Daily Pad button once today's pad is cleared: green, with no box behind it (the old flat
+   green fill showed as a blue rectangle round the button once it was hue-shifted). */
+.daily-btn.done { background: none; }

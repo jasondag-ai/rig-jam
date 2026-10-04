@@ -27,6 +27,9 @@ const TAPPED = '.win [data-act], .hud [data-act="levels"]';
 
 const WIN_DELAY_MS = 900;
 const NOTE_MS = 2600;
+/** The perfect-solve confetti: how long the whole burst lasts, and how many pieces. */
+const CONFETTI_MS = 1600;
+const CONFETTI_PIECES = 40;
 
 export interface GameViewHandlers {
   onLevels: () => void;
@@ -386,11 +389,11 @@ export class GameView {
     this.winEl.innerHTML = `
       <div class="card">
         <h2>Pad cleared!</h2>
+        ${clean ? `<div class="zero-incident" role="img" aria-label="Zero incident"><span>ZERO INCIDENT</span></div>` : ''}
         <div class="score-row">
           <div class="mascot" aria-hidden="true"></div>
           <div class="hats big" aria-label="${hats} of 3 hard hats">${hatsHtml(hats)}</div>
         </div>
-        ${clean ? `<div class="zero-incident" role="img" aria-label="Zero incident"><span>ZERO INCIDENT</span></div>` : ''}
         <p class="result">${moves} moves · par ${par} · ${misses}</p>
         <div class="company" aria-label="${verdict}">
           <div class="company-man"></div>
@@ -418,6 +421,7 @@ export class GameView {
     const mascotBox = this.winEl.querySelector<HTMLElement>('.mascot')!;
     const mascot = animStill(perfect ? 'roughneck_mascot_celebrate' : 'roughneck_mascot_idle', mascotBox.clientHeight || 80, perfect ? 9 : 0);
     mascotBox.append(mascot);
+    if (perfect && !reducedMotion()) this.confetti();
     if (!reducedMotion()) {
       // Roughneck: one bounce with squash and stretch (and a small lift of the wrench arm), then he
       // breathes. Everything turns about his boots, so he never shifts on the card.
@@ -438,6 +442,39 @@ export class GameView {
       this.winMotion = [m, b];
     }
     sound.win(hats, moves, par);
+  }
+
+  /**
+   * A perfect solve: a short burst of small hard hats and orange and yellow scraps falling behind
+   * the card (the layer sits under it, so nothing ever covers a button). Gone after CONFETTI_MS.
+   */
+  private confetti(): void {
+    const layer = document.createElement('div');
+    layer.className = 'confetti';
+    layer.setAttribute('aria-hidden', 'true');
+    layer.style.setProperty('--ui-hat', `url("${new URL('./sprites/ui/icon_hardhat_full.webp', location.href).href}")`);
+    const colors = ['#ff8a00', '#ffb347', '#ffd21f', '#ff6a2b'];
+    const h = this.winEl.clientHeight;
+    let html = '';
+    for (let i = 0; i < CONFETTI_PIECES; i++) {
+      const hat = i % 4 === 0;
+      const size = hat ? 16 + Math.random() * 6 : 6 + Math.random() * 5;
+      const style = [
+        `--x:${(Math.random() * 100).toFixed(1)}%`,
+        `--w:${size.toFixed(0)}px`,
+        `--h:${(hat ? size : size * (0.5 + Math.random() * 0.7)).toFixed(0)}px`,
+        `--bg:${colors[i % colors.length]}`,
+        `--d:${(Math.random() * 0.45).toFixed(2)}s`,
+        `--t:${(0.85 + Math.random() * 0.25).toFixed(2)}s`,
+        `--dx:${((Math.random() - 0.5) * 90).toFixed(0)}px`,
+        `--fall:${(h * (0.55 + Math.random() * 0.5)).toFixed(0)}px`,
+        `--spin:${((Math.random() - 0.5) * 900).toFixed(0)}deg`,
+      ].join(';');
+      html += `<i class="${hat ? 'hat' : 'scrap'}" style="${style}"></i>`;
+    }
+    layer.innerHTML = html;
+    this.winEl.prepend(layer);
+    setTimeout(() => layer.remove(), CONFETTI_MS);
   }
 
   /** One tap: copy the spoiler-free result, ready to paste into Messages. */
