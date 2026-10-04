@@ -137,8 +137,21 @@ something, give exact clicks and one command at a time.
   the win card's Play again and the Daily Pad button (border-image, stretched through the middle so
   the round ends keep their shape), the win panel (border-image frame, title on its banner, medal
   pinned to the corner), the days-without-incident sign (label and count live in its white field),
-  the Zero Incident medal (words live on its ribbon) and the level cards (2-column grid, number in
-  the card's circle, name and hats under it in outlined white). All text and numbers stay live.
+  and the Zero Incident medal (words live on its ribbon). All text and numbers stay live.
+- Main page (the level list screen): everything stays inside the screen width with 16px side
+  margins at 375 to 430px (`.daily-block` is one `minmax(0, 1fr)` column; the sign is `width: 100%`,
+  never sized from its height). The intro paragraph shows only until the first level is cleared.
+  `.levels` scrolls up and down only (`overflow-x: hidden`; `.scenery` clips its trees).
+- Level list: compact rows 54px tall (`.level-btn`, the whole row is the button): number chip,
+  name, three small hard hats (empty until earned), or for a locked level a padlock and "Clear level
+  N to unlock". All 10 need under 200px of scroll at 390x844. The big level-card art is not used.
+- Win card: slim panel (52px banner, 18px sides; 46/16 on short screens), fits 375x553 with no
+  scroll. Its two characters are ONE still image each (`animStill`), never sprite-frame cycles (the
+  frames don't line up and jitter), moved only by GSAP about a fixed origin: the roughneck (wrench-up
+  still on a perfect solve, else standing) does one squash-and-stretch bounce on a perfect solve and
+  then breathes; the Company Man (scowl still when well over, else his usual look) gives one slow
+  small nod, then holds still. Reduced motion: no movement. `npm run test:e2e:menus` checks all of
+  this and saves screenshots.
 - Scenery (`src/ui/scenery.ts`, Batch A art in `public/sprites/world/`): spruce, aspen and willow
   in natural scattered groves (`groveRow`: loose clusters of mostly one species, random spacing,
   clearings, slight overlaps, varied sizes). Above the lease: three staggered rows in depth, small
@@ -205,8 +218,7 @@ something, give exact clicks and one command at a time.
   sleep/wake, pumper truck/get-in/out/write, hot shot (old). New art: gopher (all), moose rise/
   stare/duck, magpie fly/land/take-off, spotter jog/sit, biffy door, landowner (now on foot: walk,
   finger wag, head shake), bear walk/sit/walk-off, geese, pumper walk/check-gauge, gauge post.
-  Win card: Company Man portrait (nod at par, scowl when well over, idle otherwise) and the
-  roughneck mascot (celebrate on a perfect solve, idle otherwise). Log cards use stills (`animStill`).
+  Win card and log cards use stills (`animStill`); see "Win card" under Look.
   When redone art arrives, add it to `inbox-sprites.py` (drop it from REJECTED) and swap the beat.
 - Wildlife and traffic. Touches never cancel them; each waits while another gag is on stage (and the
   landowner or biffy wait for them; a sleeping spotter holds them up until he's woken). Reduced
@@ -397,6 +409,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
 - `npm run test:e2e:gags` – gags test (Playwright; start the dev server first)
 - `npm run test:e2e:fit` – every iPhone size, Safari and home-screen app, with screenshots (start the dev server first)
+- `npm run test:e2e:menus` – main page, level rows, win card fit and character motion, with screenshots (start the dev server first)
 - `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)
