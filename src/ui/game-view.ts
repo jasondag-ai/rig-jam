@@ -419,6 +419,7 @@ export class GameView {
         </div>
       </div>`;
     this.winEl.querySelector('.company-says')!.textContent = companyLine(moves, par);
+    setBannerCap(this.winEl.querySelector<HTMLElement>('.card h2')!);
     // The characters are ONE still image each, moved only in code (cycling their sprite frames
     // jittered: the frames don't line up). Company Man: his usual look, or the scowl when it's well
     // over. Roughneck: wrench up on a perfect solve, otherwise standing.
@@ -501,3 +502,23 @@ function idleScale(): number {
   const v = Number(new URLSearchParams(location.search).get('idle'));
   return v > 0 && v <= 1 ? v : 1;
 }
+
+/**
+ * Tells the win banner how tall its capitals really are (`--cap`, in the banner SVG's px), measured
+ * from the font itself, so the letters can be centred on the ribbon by their own metrics in any
+ * browser. Measured again once the font has loaded; the CSS fallback stands in until then.
+ */
+function setBannerCap(h2: HTMLElement): void {
+  const font = `700 ${BANNER_FONT_PX}px ${getComputedStyle(h2).fontFamily}`;
+  const measure = () => {
+    const ctx = document.createElement('canvas').getContext('2d');
+    if (!ctx) return;
+    ctx.font = font;
+    const cap = ctx.measureText('P').actualBoundingBoxAscent;
+    if (cap > BANNER_FONT_PX * 0.5 && cap < BANNER_FONT_PX) h2.style.setProperty('--cap', `${cap.toFixed(2)}px`);
+  };
+  measure();
+  void document.fonts?.load(font).then(measure, () => {});
+}
+/** The banner lettering's font size in its SVG's px (style.css `.win .card h2 text`). */
+const BANNER_FONT_PX = 21;

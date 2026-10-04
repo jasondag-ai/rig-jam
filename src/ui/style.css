@@ -3213,8 +3213,8 @@ img.hat { width: 100%; height: auto; }
   padding: 1px 6px 5px;
   border-style: solid;
   border-color: transparent;
-  border-width: calc(262 * var(--f)) calc(118 * var(--f)) calc(101 * var(--f));
-  border-image: var(--ui-frame-win) 262 200 101 fill / calc(262 * var(--f)) calc(200 * var(--f)) calc(101 * var(--f)) stretch;
+  border-width: calc(262 * var(--f)) calc(118 * var(--f)) calc(115 * var(--f));
+  border-image: var(--ui-frame-win) 262 200 115 fill / calc(262 * var(--f)) calc(200 * var(--f)) calc(115 * var(--f)) stretch;
   border-radius: 0;
   background: none;
   box-shadow: none;
@@ -3223,16 +3223,19 @@ img.hat { width: 100%; height: auto; }
 }
 .win .card > * { min-width: 0; }
 
-/* "Pad cleared!" sits in the middle of the banner's blue ribbon, top to bottom, and follows its
-   curve: the words are SVG text on an arc (game-view.ts). The ribbon's middle is 88 art px down the
-   frame's top slice; the lettering's visual middle (with its outline and lower lip) is 19.5px down
-   the SVG. --t scales the lettering on short screens. */
+/* "Pad cleared!" sits in the middle of the banner's blue ribbon and follows its curve: SVG text on
+   an arc (game-view.ts), so its baseline is on the arc in every browser, whatever the font's line
+   box. The visible letters (top of the capitals to the baseline) are centred on the ribbon's visible
+   blue at the text's horizontal centre: 80 art px down the frame (the blue runs from 32 to 128).
+   The baseline is 26.5 SVG px down at the centre; --cap is the capitals' height in SVG px, measured
+   from the font itself at run time (0.7em is the fallback). --t scales the lettering on short screens. */
 .win .card h2 {
   --t: 1;
+  --cap: 14.7px;
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(-262 * var(--f) + 88 * var(--f) - 19.5px * var(--t));
+  top: calc(-262 * var(--f) + 80 * var(--f) - (26.5px - var(--cap) / 2) * var(--t));
   margin: 0;
   line-height: 0;
   text-shadow: none;
