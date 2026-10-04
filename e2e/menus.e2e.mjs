@@ -179,6 +179,22 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
         const cs = getComputedStyle(c);
         return { scrolls: o.scrollHeight > o.clientHeight + 1, h: r.height, w: r.width, bottom: r.bottom, vh: innerHeight, side: parseFloat(cs.borderLeftWidth), top: parseFloat(cs.borderTopWidth), sheets: document.querySelectorAll('.win .sprite-anim').length, stills: document.querySelectorAll('.win .anim-still').length };
       });
+      // The roughneck: boots level with the hard hat row, and clear of the hats, the moves line and
+      // the buttons. Measured at rest (transform cleared), on the part of the frame he fills.
+      const stand = await page.evaluate(() => {
+        const m = document.querySelector('.win .mascot');
+        const still = m.querySelector('.anim-still');
+        const keep = still.style.transform;
+        still.style.transform = 'none';
+        const r = m.getBoundingClientRect();
+        still.style.transform = keep;
+        const body = { left: r.left + r.width * 0.17, right: r.left + r.width * 0.83, top: r.top + r.height * 0.06, bottom: r.top + r.height * 0.94 };
+        const hits = (sel) => [...document.querySelectorAll(sel)].some((e) => { const b = e.getBoundingClientRect(); return b.left < body.right && b.right > body.left && b.top < body.bottom && b.bottom > body.top; });
+        const hats = [...document.querySelectorAll('.win .hats.big img')].map((e) => e.getBoundingClientRect());
+        return { feet: body.bottom, row: Math.max(...hats.map((h) => h.bottom)), size: r.height, covers: ['.win .hats.big img', '.win .result', '.win .btn', '.win .company'].filter(hits), onScreen: body.left >= 0 };
+      });
+      check(Math.abs(stand.feet - stand.row) <= 4, `the roughneck's boots are level with the hard hat row (${(stand.feet - stand.row).toFixed(1)}px off), ${stand.size}px tall`);
+      check(stand.covers.length === 0 && stand.onScreen, `he covers nothing: hats, moves line, buttons (${stand.covers.join(', ') || 'clear'})`);
       check(!card.scrolls && card.bottom <= card.vh, `fits without scrolling (card ${Math.round(card.h)}px of ${card.vh}px)`);
       check(card.side <= 20 && card.top <= 54, `slim frame: ${card.side}px sides, ${card.top}px banner`);
       check(card.sheets === 0 && card.stills === 2 && new Set(seen.map((f) => f.pos)).size === 1, 'roughneck and Company Man are one still image each: no sprite frames cycling');

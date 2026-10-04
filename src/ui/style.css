@@ -2660,11 +2660,13 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
   to { transform: scale(1.09); }
 }
 
+/* Two soft clouds that drift in the image's own sky. Tuned to it: same white with a pale blue
+   underside, blurred edges, and faint enough to read as more of the same sky during the push-in. */
 .cover-cloud {
   position: absolute;
-  width: 34vw;
-  max-width: 190px;
-  opacity: 0.88;
+  width: 38vw;
+  max-width: 210px;
+  opacity: 0.55;
   pointer-events: none;
 }
 
@@ -2672,19 +2674,27 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
   display: block;
   width: 100%;
   height: auto;
+  overflow: visible;
 }
 
 .cover-cloud.c1 {
-  top: calc(var(--safe-top) + 16%);
-  left: -6%;
-  width: 28vw;
+  top: calc(var(--safe-top) + 15%);
+  left: -5%;
+  width: 30vw;
   animation: cloud-drift 22s ease-in-out infinite alternate;
 }
 
 .cover-cloud.c2 {
-  top: calc(var(--safe-top) + 4%);
-  right: -8%;
+  top: calc(var(--safe-top) + 3%);
+  right: -7%;
   animation: cloud-drift 28s ease-in-out -9s infinite alternate-reverse;
+}
+
+/* On a wide screen the image is cropped to a thin strip of sky: keep the clouds up in it. */
+@media (min-aspect-ratio: 1 / 1) {
+  .cover-cloud { opacity: 0.45; }
+  .cover-cloud.c1 { top: 0.5%; left: 14%; width: 150px; }
+  .cover-cloud.c2 { top: -1.5%; right: 30%; width: 190px; }
 }
 
 @keyframes cloud-drift {
@@ -3243,7 +3253,10 @@ img.hat { width: 100%; height: auto; }
 .win .card .btn-row .btn { min-height: 48px; }
 .win .card .zero-incident { width: 70px; right: -16px; top: -24px; }
 .win .card .zero-incident span { font-size: 7.5px; }
-.win .card .mascot { left: -22px; top: -50px; width: 80px; height: 80px; }
+/* The roughneck stands beside the hard hats, his boots on the score row's bottom line (the still's
+   feet are 94% of the way down its frame). */
+.win .card .score-row { position: relative; padding-left: 58px; }
+.win .card .mascot { left: -14px; top: auto; bottom: -5px; width: 80px; height: 80px; }
 .win .card .mascot .anim-still { will-change: transform; }
 .company-man { width: 58px; height: 58px; }
 .company-man .anim-still { will-change: transform; }
@@ -3252,7 +3265,8 @@ img.hat { width: 100%; height: auto; }
   .win .card { border-width: 46px 16px 14px; border-image-width: 46px 19px 14px; gap: 5px; }
   .win .card h2 { top: -38px; font-size: 19px; }
   .hats.big span { width: 38px; }
-  .win .card .mascot { transform: none; left: -20px; top: -44px; width: 70px; height: 70px; }
+  .win .card .mascot { transform: none; left: -12px; top: auto; bottom: -4px; width: 70px; height: 70px; }
+  .win .card .score-row { padding-left: 50px; }
   .win .card .zero-incident { width: 60px; right: -14px; top: -20px; }
   .company-man { width: 50px; height: 50px; }
 }

@@ -148,7 +148,8 @@ something, give exact clicks and one command at a time.
 - Win card: slim panel (52px banner, 18px sides; 46/16 on short screens), fits 375x553 with no
   scroll. Its two characters are ONE still image each (`animStill`), never sprite-frame cycles (the
   frames don't line up and jitter), moved only by GSAP about a fixed origin: the roughneck (wrench-up
-  still on a perfect solve, else standing) does one squash-and-stretch bounce on a perfect solve and
+  still on a perfect solve, else standing) stands in `.score-row` beside the hard hats, boots on the
+  row's bottom line, covering nothing; he does one squash-and-stretch bounce on a perfect solve and
   then breathes; the Company Man (scowl still when well over, else his usual look) gives one slow
   small nod, then holds still. Reduced motion: no movement. `npm run test:e2e:menus` checks all of
   this and saves screenshots.
@@ -164,8 +165,9 @@ something, give exact clicks and one command at a time.
 ## Cover (title screen)
 - `src/ui/cover.ts`: shown on every app open (never between levels). Hero image `public/cover.webp`
   (1080x1920, under 300 KB, preloaded in index.html) fills the screen (`object-fit: cover`);
-  "RUSH HOUR RIGS" slams down into the sky with a bounce and a dust puff; 8s push-in; two clouds
-  drift; TAP TO START pulses. One tap anywhere (`onTap`, no ghost click) opens the level list. If the
+  "RUSH HOUR RIGS" slams down into the sky with a bounce and a dust puff; 8s push-in; two soft
+  clouds drift (blurred white puffs with a pale blue underside at about half opacity, matched to the
+  image's own clouds; on wide screens they sit up in the thin strip of sky); TAP TO START pulses. One tap anywhere (`onTap`, no ghost click) opens the level list. If the
   image isn't loaded within 1s (`IMAGE_WAIT_MS`) the title shows over a sky gradient. Reduced motion:
   all still. Skipped for `?gag=` links and automated browsers (`navigator.webdriver`) unless
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.

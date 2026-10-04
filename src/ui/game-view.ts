@@ -386,8 +386,10 @@ export class GameView {
     this.winEl.innerHTML = `
       <div class="card">
         <h2>Pad cleared!</h2>
-        <div class="mascot" aria-hidden="true"></div>
-        <div class="hats big" aria-label="${hats} of 3 hard hats">${hatsHtml(hats)}</div>
+        <div class="score-row">
+          <div class="mascot" aria-hidden="true"></div>
+          <div class="hats big" aria-label="${hats} of 3 hard hats">${hatsHtml(hats)}</div>
+        </div>
         ${clean ? `<div class="zero-incident" role="img" aria-label="Zero incident"><span>ZERO INCIDENT</span></div>` : ''}
         <p class="result">${moves} moves · par ${par} · ${misses}</p>
         <div class="company" aria-label="${verdict}">
