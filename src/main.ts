@@ -10,7 +10,7 @@ import { onTap } from './ui/tap.ts';
 import { shouldShowCover, showCover } from './ui/cover.ts';
 import { animStill } from './ui/anim.ts';
 import { applyUiArt, uiImg } from './ui/ui-art.ts';
-import { preloadObstacles, preloadSprites } from './ui/sprites.ts';
+import { preloadSprites } from './ui/sprites.ts';
 import { biffySpot } from './ui/gags.ts';
 import { HOTSHOT } from './ui/cast.ts';
 import { WORKER_RIG } from './ui/rigs.ts';
@@ -392,5 +392,4 @@ if (!forcedGag()) {
 }
 // Every truck sprite, quietly, once the first screen is up (each level also warms its own first).
 const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 1500));
-idle(() => preloadObstacles(['pumpjack', 'tank', 'wellhead']));
 idle(() => preloadSprites((['pickup', 'picker', 'vac', 'frac', 'water'] as const).flatMap((kind) => (['red', 'blue', 'yellow', 'green', 'orange', 'purple'] as const).map((color) => ({ kind, color })))));

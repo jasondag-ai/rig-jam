@@ -1,10 +1,10 @@
 import { SIZE, cabSide, convoyWaitingFor, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
 import { bumpTarget, pickSpeaker } from './bump.ts';
 import { pickLine, type BumpHit } from './lines.ts';
-import { OBSTACLE_SVG } from './obstacles.ts';
+import { equipFit, equipmentSvg, phaseFor, runPumpjacks } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
 import { Spray } from './spray.ts';
-import { coatSrc, gateArt, obstacleFit, obstacleImgs, spriteImg, wireSprite } from './sprites.ts';
+import { coatSrc, gateArt, spriteImg, wireSprite } from './sprites.ts';
 import { BERM_OVER, paintBerm } from './berm.ts';
 import { paintDetail, planDetail } from './lease-detail.ts';
 import { seedFrom } from '../engine/rng.ts';
@@ -52,6 +52,8 @@ export class BoardView {
   private detail: HTMLCanvasElement;
   private ground: Ground = 'gravel';
   private bermKey = '';
+  /** Stops the pumpjacks' ambient motion (obstacles.ts) when the level is rebuilt. */
+  private stopPumpjacks: () => void = () => {};
   private lastLine: string | null = null;
   /** Tire tracks laid by drags, under obstacles and trucks; wheel spray while trucks move. */
   private tracks: TrackLayer;
@@ -129,13 +131,20 @@ export class BoardView {
       ob.dataset.col = String(o.col);
       // Lower rows stand in front of the ones above.
       ob.style.zIndex = String(1 + o.row);
-      const fit = obstacleFit(kind, o.row);
-      ob.style.setProperty('--ob-w', String(fit.w));
-      ob.style.setProperty('--ob-over', `${fit.over * 100}%`);
-      ob.innerHTML = `<div class="ground-shadow"></div>${obstacleImgs(kind)}${OBSTACLE_SVG[kind]}`;
-      wireSprite(ob);
+      // Tall pieces stick up above their cell (faded over a truck there); in the top row they are
+      // shrunk to fit, so nothing covers the berm or a gate.
+      const fit = equipFit(kind, o.row);
+      const seed = o.row * SIZE + o.col;
+      ob.style.setProperty('--eq-h', `${fit.height}%`);
+      ob.style.setProperty('--eq-scale', String(fit.scale));
+      ob.style.setProperty('--eq-over', `${fit.over * 100}%`);
+      ob.style.setProperty('--eq-delay', `${-(seed % 7) * 0.31}s`);
+      if (kind === 'pumpjack') ob.dataset.phase = String(phaseFor(seed));
+      ob.innerHTML = equipmentSvg(kind, seed);
       this.pad.append(ob);
     }
+    this.stopPumpjacks();
+    this.stopPumpjacks = runPumpjacks(this.pad, reducedMotion());
     this.layout();
   }
 

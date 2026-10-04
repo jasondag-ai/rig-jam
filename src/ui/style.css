@@ -777,109 +777,94 @@ canvas.lease-detail {
 .truck.dragging { z-index: 10; }
 .truck.exiting { z-index: 9; }
 
-/* Illustrated obstacle sprites (sprites.ts): 3/4 view, the slab on the cell, taller ones sticking up.
-   Two layers of the same image: the base (on the cell) and the top that sticks up above it, which
-   fades when a truck is in the cell above so it never hides the truck's color or badge. */
-.obstacle .ob-base,
-.obstacle .ob-top {
-  position: absolute;
-  left: 50%;
-  bottom: 1%;
-  display: none;
-  width: calc(var(--ob-w, 0.98) * 100%);
-  height: auto;
-  transform: translateX(-50%);
-  pointer-events: none;
-  user-select: none;
-  -webkit-user-drag: none;
-}
-.obstacle.sprite-on .ob-base,
-.obstacle.sprite-on .ob-top { display: block; }
-.obstacle.sprite-on svg { display: none; }
-.obstacle .ob-base { clip-path: inset(var(--ob-over, 0%) 0 0 0); }
-.obstacle .ob-top { clip-path: inset(0 0 calc(100% - var(--ob-over, 0%)) 0); transition: opacity 0.2s; }
-.obstacle.under-truck .ob-top { opacity: 0.45; }
-.obstacle .ground-shadow {
-  position: absolute;
-  inset: 34% 0 -6% 4%;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(30, 20, 10, 0.38), rgba(30, 20, 10, 0.18) 60%, transparent);
-  pointer-events: none;
-  display: none;
-}
-.obstacle.sprite-on .ground-shadow { display: block; }
-
+/* Equipment (obstacles.ts): toy-look drawings in 3/4 view, each standing on its own cell with the
+   tall ones sticking up above it. The part that sticks up fades when a truck is in the cell above,
+   so it never hides the truck's colour or badge. No slab: a patch of worked ground in the pad's own
+   colours and a soft contact shadow. */
 .obstacle {
   position: absolute;
   left: 0;
   top: 0;
-  padding: 2px;
+  pointer-events: none;
 }
-
-.obstacle svg {
+.obstacle svg.equip {
+  position: absolute;
+  left: 0;
+  bottom: 0;
   display: block;
   width: 100%;
-  height: 100%;
+  height: var(--eq-h, 100%);
   overflow: visible;
-  filter: drop-shadow(0 3px 1.5px rgba(0, 0, 0, 0.32));
+  transform: scale(var(--eq-scale, 1));
+  transform-origin: 50% 100%;
+}
+.obstacle.under-truck svg.equip {
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.4) var(--eq-over, 0%), #000 var(--eq-over, 0%));
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.4) var(--eq-over, 0%), #000 var(--eq-over, 0%));
 }
 
-.ob-ground { fill: var(--ob-ground); }
-.ob-concrete { fill: #c9c4b8; stroke: var(--outline); stroke-width: 2.5; }
-.ob-steel { fill: #55524d; stroke: var(--outline); stroke-width: 2; }
-.ob-dark { fill: #2a2725; }
+/* One outline for everything, the trucks' weight (about 1.5px at phone size). */
+.equip rect, .equip path, .equip circle, .equip ellipse, .equip line { stroke: var(--outline); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
+.equip .eq-patch { fill: color-mix(in srgb, var(--pad-light) 60%, var(--pad)); stroke: none; opacity: 0.8; }
+.equip .eq-shadow { fill: rgba(24, 14, 6, 0.42); stroke: none; }
+[data-theme='winter'] .equip .eq-patch { fill: #c4d2e8; }
+[data-theme='winter'] .equip .eq-shadow { fill: rgba(60, 90, 140, 0.3); }
+/* Flat fills: steel in two tones, safety colours, the tank's tan. */
+.eq-steel { fill: #7e8791; }
+.eq-dark { fill: #4a5058; }
+.eq-post { fill: #8d96a0; }
+.eq-pin { fill: #2f3338; stroke-width: 1.6 !important; }
+.eq-motor { fill: #3fae6a; }
+.eq-guard { fill: #f2c230; }
+.eq-weight { fill: #5b626b; }
+.eq-beam { fill: #9aa3ad; }
+.eq-horse { fill: #f2762e; }
+.eq-red { fill: #e2483d; }
+.eq-flange { fill: #b8382f; }
+.eq-guardpost { fill: #f6cc2e; }
+.eq-tank { fill: #d9bf8a; }
+.eq-roof { fill: #ecd9ac; }
+.eq-drum { fill: #9aa3ad; }
+.eq-stack { fill: #a9b1ba; }
+.eq-pad { fill: #a59a8a; }
+.eq-gauge { fill: #fdfbf4; }
+.eq-wheel-back { fill: rgba(253, 251, 244, 0.25); stroke-width: 5 !important; }
+.eq-wheel { fill: none; stroke-width: 2.6 !important; stroke: #c9d0d6 !important; }
+/* Lines: no fill. */
+.equip .eq-spoke, .equip .eq-needle, .equip .eq-rung, .equip .eq-rail, .equip .eq-guy, .equip .eq-seam, .equip .eq-hi, .equip .eq-beam-hi, .equip .eq-pipe, .equip .pj-pitman, .equip .pj-bridle, .equip .pj-polished { fill: none; }
+.equip .eq-spoke { stroke: #c9d0d6; stroke-width: 2; }
+.equip .eq-needle { stroke: #d6362b; stroke-width: 1.6; }
+.equip .eq-rail { stroke: #3a3f45; stroke-width: 2.6; }
+.equip .eq-rung { stroke: #3a3f45; stroke-width: 2; }
+.equip .eq-guy { stroke: #3a3f45; stroke-width: 1.6; }
+.equip .eq-seam { stroke: rgba(42, 26, 12, 0.22); stroke-width: 1.4; }
+.equip .eq-hi, .equip .eq-beam-hi { stroke: rgba(255, 255, 255, 0.5); stroke-width: 2.4; }
+.equip .eq-shade { fill: rgba(42, 26, 12, 0.16); stroke: none; }
+.equip .eq-pipe-edge, .equip .pj-pitman-edge { fill: none; stroke-width: 9.4; }
+.equip .eq-pipe { stroke: #e2483d; stroke-width: 4.6; }
+.equip .pj-pitman { stroke: #9aa3ad; stroke-width: 4.2; }
+.equip .pj-bridle { stroke: #2a1a0c; stroke-width: 2.2; }
+.equip .pj-polished { stroke: #2a1a0c; stroke-width: 3.4; }
+.equip .pj-carrier { fill: #c9d0d6; stroke-width: 1.8; }
+.equip .eq-shade-line { fill: none; stroke: rgba(42, 26, 12, 0.18); stroke-width: 2.6; }
 
-/* Flare stack */
-.fl-flame { fill: #ff8a00; stroke: var(--outline); stroke-width: 2.5; stroke-linejoin: round; }
-.fl-core { fill: #ffe14a; }
-
-/* Pumpjack */
-.pj-paint { fill: #ffbf1f; stroke: var(--outline); stroke-width: 3; }
-.pj-weight { fill: #7d7870; stroke: var(--outline); stroke-width: 2.5; }
-.pj-motor { fill: #36b864; stroke: var(--outline); stroke-width: 2.5; }
-.pj-pitman { stroke: var(--outline); stroke-width: 4; stroke-linecap: round; }
-.pj-rod { stroke: var(--outline); stroke-width: 2.5; }
-
-.pj-beam {
-  transform-box: view-box;
-  transform-origin: 50.5px 33px;
-  animation: nod 4.2s ease-in-out infinite;
+/* The flare's pilot flame: a small flicker, each stack out of step with the next. */
+.fl-outer { fill: #ff8a1f; stroke-width: 1.6 !important; }
+.fl-core { fill: #ffe35a; stroke: none !important; }
+.fl-flame {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: flare-flicker 0.9s steps(1, end) var(--eq-delay, 0s) infinite;
 }
-
-.pj-crank {
-  transform-box: view-box;
-  transform-origin: 72.5px 68.5px;
-  animation: crank 4.2s linear infinite;
+@keyframes flare-flicker {
+  0% { transform: scale(1, 1) skewX(0deg); }
+  14% { transform: scale(0.9, 1.14) skewX(-6deg); }
+  29% { transform: scale(1.06, 0.92) skewX(4deg); }
+  43% { transform: scale(0.94, 1.2) skewX(7deg); }
+  57% { transform: scale(1.08, 1) skewX(-3deg); }
+  71% { transform: scale(0.88, 1.1) skewX(-8deg); }
+  86% { transform: scale(1.02, 0.9) skewX(5deg); }
 }
-
-@keyframes nod {
-  0%, 100% { transform: rotate(-7deg); }
-  50% { transform: rotate(7deg); }
-}
-
-@keyframes crank {
-  to { transform: rotate(360deg); }
-}
-
-/* 400 bbl tank, top-down */
-.tk-shadow { fill: rgba(0, 0, 0, 0.28); }
-.tk-shell { fill: #e9e2c8; stroke: var(--outline); stroke-width: 3.5; }
-.tk-ring { fill: none; stroke: rgba(0, 0, 0, 0.18); stroke-width: 2.5; }
-.tk-seam { stroke: rgba(0, 0, 0, 0.14); stroke-width: 1.5; }
-.tk-shine { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; opacity: 0.85; }
-.tk-platform { fill: #9c978a; stroke: var(--outline); stroke-width: 2.5; }
-.tk-hatch { fill: #3a3833; stroke: var(--outline); stroke-width: 2.5; }
-.tk-ladder { fill: none; stroke: var(--outline); stroke-width: 2.5; }
-.tk-rung { stroke: var(--outline); stroke-width: 2; }
-
-/* Wellhead valve tree */
-.wh-body { fill: #ff4f3f; stroke: var(--outline); stroke-width: 2.5; }
-.wh-flange { fill: #b8301f; stroke: var(--outline); stroke-width: 1.5; }
-.wh-wheel { fill: none; stroke: var(--outline); stroke-width: 3.2; }
-.wh-spoke { stroke: var(--outline); stroke-width: 2.2; }
-.wh-gauge { fill: #fff; stroke: var(--outline); stroke-width: 3; }
-.wh-needle { stroke: #e8382b; stroke-width: 2.4; stroke-linecap: round; }
-.wh-post { fill: #ffd21f; stroke: var(--outline); stroke-width: 2.5; }
 
 /* ---------- Win overlay ---------- */
 

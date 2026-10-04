@@ -11,7 +11,7 @@ import { streakSignHtml } from './sign.ts';
 import { sound } from '../audio/engine.ts';
 import { toast } from './toast.ts';
 import { uiImg } from './ui-art.ts';
-import { preloadObstacles, preloadSprites } from './sprites.ts';
+import { preloadSprites } from './sprites.ts';
 import { defaultKind } from './vehicles.ts';
 import { applyCamo, loadLog, record, saveLog, sightingToast } from './wildlife-log.ts';
 import { GagLayer, type GagOptions } from './gag-layer.ts';
@@ -99,7 +99,6 @@ export class GameView {
     this.daily = daily;
     this.handlers = handlers;
     this.state = newGame(level);
-    preloadObstacles(level.obstacles.map((o) => o.kind ?? 'pumpjack'));
     preloadSprites(level.trucks.map((t) => ({ kind: t.kind ?? defaultKind(t.length), color: t.color })));
     this.board = new BoardView(
       () => this.state,

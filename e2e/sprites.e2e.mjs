@@ -160,45 +160,71 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
   await browser.close();
 }
 
-// Obstacles: illustrated, standing on their cells, lower rows in front, never over a truck or gate.
-{
-  console.log('\nobstacles (Montney)');
-  const { browser, page } = await open(chromium);
-  for (const index of [5, 8, 9]) {
+// Equipment: toy-look drawings on their cells (no photo sprites, no slab), lower rows in front,
+// never over the berm or a gate, the part sticking up faded over a truck; pumpjacks pump by their
+// linkage and flares flicker; all still under reduced motion.
+for (const reduced of ['no-preference', 'reduce']) {
+  console.log(`\nequipment (Montney, ${reduced})`);
+  const browser = await webkit.launch();
+  const context = await browser.newContext({ ...devices['iPhone 13'], reducedMotion: reduced });
+  const page = await context.newPage();
+  await page.goto(ROOT + '?wild=0', { waitUntil: 'networkidle' });
+  await page.evaluate((p) => { localStorage.clear(); localStorage.setItem('rush-hour-rigs:v2', p); }, UNLOCKED);
+  await page.reload({ waitUntil: 'networkidle' });
+  const seen = new Set();
+  for (const index of [6, 7, 9]) {
     await enter(page, 2, index);
-    const o = await page.evaluate(() => {
-      const pad = document.querySelector('.pad').getBoundingClientRect();
-      const cell = pad.width / 6;
-      const trucks = [...document.querySelectorAll('.truck')].map((t) => t.getBoundingClientRect());
-      return [...document.querySelectorAll('.obstacle')].map((ob) => {
-        const row = Number(ob.dataset.row);
-        const col = Number(ob.dataset.col);
-        const base = ob.querySelector('.ob-base').getBoundingClientRect();
-        const top = ob.querySelector('.ob-top');
-        const cellTop = pad.top + row * cell;
-        // Is a truck in the cell above, and is the part sticking up faded over it?
-        const above = trucks.some((t) => t.left < pad.left + (col + 0.5) * cell && t.right > pad.left + (col + 0.5) * cell && t.top < cellTop - cell * 0.5 && t.bottom > cellTop - cell * 0.5);
-        return {
-          kind: ob.className.split(' ')[1],
-          row,
-          on: ob.classList.contains('sprite-on'),
-          z: Number(getComputedStyle(ob).zIndex),
-          footOk: base.bottom <= cellTop + cell + 1 && base.bottom >= cellTop + cell * 0.9,
-          sticksUp: cellTop - base.top,
-          topFade: Number(getComputedStyle(top).opacity),
-          above,
-          inPadTop: base.top >= pad.top - 1,
-          shadow: getComputedStyle(ob.querySelector('.ground-shadow')).display !== 'none',
-        };
+    const read = () =>
+      page.evaluate(() => {
+        const pad = document.querySelector('.pad').getBoundingClientRect();
+        const cell = pad.width / 6;
+        const trucks = [...document.querySelectorAll('.truck')].map((t) => t.getBoundingClientRect());
+        return [...document.querySelectorAll('.obstacle')].map((ob) => {
+          const row = Number(ob.dataset.row);
+          const col = Number(ob.dataset.col);
+          const svg = ob.querySelector('svg.equip');
+          const r = svg.getBoundingClientRect();
+          const cellTop = pad.top + row * cell;
+          const above = trucks.some((t) => t.left < pad.left + (col + 0.5) * cell && t.right > pad.left + (col + 0.5) * cell && t.top < cellTop - cell * 0.5 && t.bottom > cellTop - cell * 0.5);
+          const cs = getComputedStyle(svg);
+          const stroke = getComputedStyle(svg.querySelector('rect:not(.eq-patch)')).stroke;
+          return {
+            kind: ob.className.split(' ')[1], row, z: Number(getComputedStyle(ob).zIndex),
+            drawn: !!svg && !ob.querySelector('img') && !!svg.querySelector('.eq-patch') && !!svg.querySelector('.eq-shadow') && !svg.querySelector('.ob-concrete'),
+            outline: stroke.replace(/\s/g, '') === 'rgb(42,26,12)',
+            footOk: Math.abs(r.bottom - (cellTop + cell)) <= 1,
+            sticksUp: cellTop - r.top,
+            faded: (cs.maskImage || cs.webkitMaskImage || 'none') !== 'none',
+            above,
+            crank: svg.querySelector('.pj-crank')?.getAttribute('transform') ?? '',
+            rodX: svg.querySelector('.pj-polished') ? [svg.querySelector('.pj-polished').getAttribute('x1'), svg.querySelector('.pj-polished').getAttribute('x2'), svg.querySelector('.pj-bridle').getAttribute('x1'), svg.querySelector('.pj-bridle').getAttribute('x2')] : null,
+            carrier: svg.querySelector('.pj-carrier')?.getAttribute('y') ?? '',
+            flame: svg.querySelector('.fl-flame') ? getComputedStyle(svg.querySelector('.fl-flame')).animationName : '',
+          };
+        });
       });
-    });
+    const o = await read();
+    await wait(700);
+    const later = await read();
+    o.forEach((x) => seen.add(x.kind));
     const truckZ = await page.$eval('.truck', (t) => Number(getComputedStyle(t).zIndex));
-    check(o.length > 0 && o.every((x) => x.on && x.shadow), `Montney ${index + 1}: obstacles illustrated, with ground shadows (${o.map((x) => x.kind).join(', ')})`);
+    check(o.length > 0 && o.every((x) => x.drawn && x.outline), `Montney ${index + 1}: toy-look drawings with the trucks' outline, a ground patch and contact shadow, no slab (${o.map((x) => x.kind).join(', ')})`);
     check(o.every((x) => x.footOk), 'each stands on its own cell');
     check(o.every((x) => x.z === 1 + x.row) && truckZ < Math.min(...o.map((x) => x.z)), 'lower rows in front of rows above');
-    check(o.every((x) => x.row !== 0 || (x.inPadTop && x.sticksUp <= 1)), 'top row: nothing over the fence or a gate');
-    check(o.every((x) => !x.above || x.sticksUp <= 1 || x.topFade < 0.6), `the part sticking up fades over a truck (${o.filter((x) => x.above && x.sticksUp > 1).map((x) => `${x.kind} ${x.topFade}`).join(', ') || 'none above'})`);
+    check(o.every((x) => x.row !== 0 || x.sticksUp <= 1), 'top row: nothing over the berm or a gate');
+    check(o.every((x) => !x.above || x.sticksUp <= 1 || x.faded), `the part sticking up fades over a truck (${o.filter((x) => x.above && x.sticksUp > 1).map((x) => x.kind).join(', ') || 'none above'})`);
+    const jacks = o.map((x, i) => [x, later[i]]).filter(([x]) => x.kind === 'pumpjack');
+    const flares = o.filter((x) => x.kind === 'flare');
+    if (reduced === 'reduce') {
+      check(jacks.every(([a, b]) => a.crank === b.crank && a.carrier === b.carrier), `reduced motion: pumpjacks hold still (${jacks.length})`);
+      check(flares.every((x) => x.flame === 'none'), `reduced motion: flames hold still (${flares.length})`);
+    } else {
+      check(jacks.every(([a, b]) => a.crank !== b.crank && a.carrier !== b.carrier), `pumpjacks pump: crank turning, rod travelling (${jacks.length})`);
+      check(jacks.every(([a, b]) => new Set([...a.rodX, ...b.rodX]).size === 1), 'the polished rod and bridle stay on one vertical line');
+      check(flares.every((x) => x.flame === 'flare-flicker'), `flares flicker (${flares.length})`);
+    }
   }
+  check(['pumpjack', 'tank', 'wellhead', 'flare'].every((k) => seen.has(k)), `all four kinds seen (${[...seen].join(', ')})`);
   await browser.close();
 }
 
@@ -260,12 +286,12 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
   check(!(await page.$eval('.board', (e) => e.classList.contains('gate-art'))), 'the berm is still drawn (it needs no images)');
   check(await page.$$eval('.gate', (gs) => gs.every((g) => getComputedStyle(g.querySelector('.sym')).display !== 'none' && getComputedStyle(g.querySelector('.gw')).display === 'none')), 'the gates fall back to the colored tabs');
   await enter(page, 2, 9);
-  const obs = await page.$$eval('.obstacle', (os) => os.map((o) => !o.classList.contains('sprite-on') && getComputedStyle(o.querySelector('svg')).display !== 'none' && !o.querySelector('img')));
-  check(obs.length > 0 && obs.every(Boolean), `every obstacle falls back to the drawing (${obs.length})`);
+  const obs = await page.$$eval('.obstacle', (os) => os.map((o) => !!o.querySelector('svg.equip') && !o.querySelector('img')));
+  check(obs.length > 0 && obs.every(Boolean), `equipment is drawn in code and needs no images (${obs.length})`);
   await browser.close();
 }
 
-// Dragging a truck back and forth stays smooth with the CPU slowed 4x.
+// Dragging a truck back and forth stays smooth with the CPU slowed 4x, with the equipment's ambient motion running.
 {
   console.log('\nframe rate while dragging (4x slower CPU)');
   const browser = await chromium.launch();
@@ -273,7 +299,10 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
   const page = await context.newPage();
   await page.goto(ROOT + '?wild=0', { waitUntil: 'networkidle' });
   await page.evaluate((p) => localStorage.setItem('rush-hour-rigs:v2', p), UNLOCKED);
-  await enter(page, 2, 5);
+  // Montney 8: a pumpjack pumping and a flare flickering while the truck is dragged.
+  await enter(page, 2, 7);
+  const moving = await page.evaluate(() => [!!document.querySelector('.obstacle.pumpjack'), !!document.querySelector('.obstacle.flare')]);
+  check(moving.every(Boolean), 'a pumpjack and a flare are both on screen');
   const cdp = await context.newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
   const box = await (await page.$('.truck.horiz')).boundingBox();

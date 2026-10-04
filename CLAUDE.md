@@ -39,8 +39,8 @@ something, give exact clicks and one command at a time.
 - Trucks have a cosmetic `kind` that must suit their length: 2-cell `pickup`/`picker`, 3-cell
   `vac`/`frac`/`water` (missing = pickup or vac). The engine and solver never read it.
 - Obstacles are fixed 1-cell lease equipment. Nothing moves through them. Each has a cosmetic
-  `kind` (pumpjack, tank, wellhead, flare; missing = pumpjack). `flare` is drawn and blocks like
-  the rest but isn't placed in levels yet (`LEVEL_OBSTACLE_KINDS` is what the generator uses). The engine and solver never read it.
+  `kind` (pumpjack, tank, wellhead, flare; missing = pumpjack). The generator deals out the first
+  three (`LEVEL_OBSTACLE_KINDS`); some tanks are then shown as flare stacks. The engine and solver never read it.
 - Convoys (Duvernay): a convoy is the two trucks of one color, numbered 1 and 2, each with its own
   gate of that color. Every gate of that color only accepts the lowest number still on the pad; for
   the other truck it's a wall. A truck parked against its gate while it was closed drives out with
@@ -418,16 +418,29 @@ something, give exact clicks and one command at a time.
   thin white keyline inside a hairline dark edge, centred on the body clear of the cab. A convoy
   truck's number is a small tag on the cab roof (`.convoy-no`, in `.cab`): the truck's color a shade
   deeper, white numeral, fine dark keyline. `node e2e/board-shots.mjs` saves judging screenshots.
-- Obstacle sprites: `public/sprites/obstacles/<kind>(@2x).webp` from `tools/obstacle-art/` (3/4
-  high-angle on a concrete slab, intentionally unlike the top-down trucks), made by `python3
-  tools/obstacle-sprites.py` (trim, outline, writes `src/ui/obstacle-sprites.json` aspect ratios).
-  The slab stands on its cell (bottom edge on the cell's bottom); tank and wellhead stick up above
-  it, except in the top row where they're shrunk to fit (`obstacleFit`) so nothing covers the fence
-  or a gate. Obstacles stack by row (`z-index: 1 + row`; trucks 0, dragging 10). The part sticking
-  up is a second clipped layer (`.ob-top`) that fades to 45% when a truck is in the cell above
-  (`.under-truck`, set in `sync`). Same ground shadow as trucks. SVG fallback. The pumpjack stays
-  still: the source art can't be cleanly split into beam and frame.
-- `src/ui/obstacles.ts` – SVG art for each obstacle kind (colors and nod/crank motion in style.css).
+- Equipment (`src/ui/obstacles.ts`, tested; styles under "Equipment" in style.css): the 1-cell
+  obstacles are drawn in CODE in the board's toy look: 3/4 view, flat shading, one light from the
+  top left, the trucks' dark outline, no photo materials, no sprites. No slab: each stands on a patch
+  of worked ground in the pad's colours (`.eq-patch`) with a soft contact shadow. Kinds: 400 bbl tank
+  (cone roof, hatch, vent, ladder and landing, load line valve), pumpjack, wellhead (a production
+  tree: two master valves with handwheels, flow cross, wing valve and flowline, gauge, guard posts;
+  never a hydrant), flare stack (ladder, guy wires, knockout drum, pilot flame). Each stands on its
+  cell; tall ones stick up above it by `OVER`; `equipFit` shrinks them in the top row so nothing
+  covers the berm or a gate. Obstacles stack by row (`z-index: 1 + row`; trucks 0, dragging 10); the
+  part sticking up is masked to 40% when a truck is in the cell above (`.under-truck`).
+- AMBIENT MOTION (always on, not a gag): pumpjacks pump by real linkage math (GAME_BIBLE 7).
+  `pumpjackPose(phase)`: the crank turns at a constant `STROKES_PER_MIN` (7); the pitman (fixed
+  length) links the crank pin to the equalizer at the beam's tail; the beam rocks on the saddle;
+  the bridle leaves the horsehead's arc straight down, so the carrier bar and polished rod move
+  straight up and down only. Layers: `.pj-crank`, `.pj-pitman`, `.pj-beam`, `.pj-bridle`,
+  `.pj-carrier`, `.pj-polished`; `runPumpjacks` drives every pumpjack on the board from one
+  animation frame loop, each starting at its own phase (`phaseFor`, from its cell). Flare flames
+  flicker in CSS (`flare-flicker`, staggered by `--eq-delay`). Reduced motion: both hold still.
+  The frame-rate e2e check (4x CPU throttle) runs on a level with a pumpjack and a flare.
+- Flare stacks in levels: an alternate look for some tanks. `tools/gen-levels.ts` `withFlares` turns
+  the first tank of every second Montney and Duvernay level into `kind: 'flare'` at write time.
+  Cosmetic only: layouts, par and the solver are untouched. `node e2e/equip-shots.mjs` saves
+  screenshots, close-ups and a clip.
 - `src/ui/vehicles.ts` – top-down SVG art per truck kind, drawn cab-right and rotated by CSS to face
   the gate. Body panels use the truck color; the gate symbol sits on an upright color badge.
 - `src/ui/lines.ts` – driver bump lines. Owner edits these freely. A bump shows only the speech
