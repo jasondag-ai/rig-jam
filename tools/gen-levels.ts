@@ -45,6 +45,17 @@ const DAILY_SLOTS: SlotConfig[] = Array.from({ length: 60 }, (_, i) => ({
   search: DAILY,
 }));
 
+/**
+ * The flare stack is an alternate look for some fixed obstacles: in Montney and Duvernay, every
+ * second level that has a tank shows its first tank as a flare stack. Cosmetic only: the cell, the
+ * layout, par and the solver are untouched (the engine never reads `kind`).
+ */
+function withFlares<T extends { kind?: string }>(obstacles: T[], regionId: string, index: number): T[] {
+  if ((regionId !== 'montney' && regionId !== 'duvernay') || index % 2 === 0) return obstacles;
+  const tank = obstacles.findIndex((o) => o.kind === 'tank');
+  return tank < 0 ? obstacles : obstacles.map((o, k) => (k === tank ? { ...o, kind: 'flare' } : o));
+}
+
 const REGIONS: RegionConfig[] = [
   {
     id: 'cardium',
@@ -230,7 +241,7 @@ async function main() {
         level && {
           ...level,
           trucks: assignTruckKinds(level.trucks, region.truckKindSeed + i),
-          obstacles: assignKinds(level.obstacles, region.kindSeed + i),
+          obstacles: withFlares(assignKinds(level.obstacles, region.kindSeed + i), region.id, i),
         }
       );
     });

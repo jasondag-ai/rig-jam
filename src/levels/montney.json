@@ -32,7 +32,7 @@
       {"color":"blue","side":"right","index":1}
     ],
     "obstacles": [
-      {"row":3,"col":0,"kind":"tank"}
+      {"row":3,"col":0,"kind":"flare"}
     ]
   },
   {
@@ -179,7 +179,7 @@
     ],
     "obstacles": [
       {"row":0,"col":2,"kind":"wellhead"},
-      {"row":2,"col":5,"kind":"tank"},
+      {"row":2,"col":5,"kind":"flare"},
       {"row":5,"col":4,"kind":"pumpjack"}
     ]
   },
@@ -238,7 +238,7 @@
       {"color":"blue","side":"left","index":0}
     ],
     "obstacles": [
-      {"row":2,"col":0,"kind":"tank"},
+      {"row":2,"col":0,"kind":"flare"},
       {"row":5,"col":1,"kind":"wellhead"},
       {"row":5,"col":3,"kind":"pumpjack"}
     ]

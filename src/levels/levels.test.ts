@@ -54,9 +54,9 @@ describe('obstacle looks', () => {
     for (const obstacles of variants) expect(solve({ ...level, obstacles })).toEqual(expected);
   });
 
-  it('gives Montney a mix of pumpjacks, tanks and wellheads', () => {
+  it('gives Montney a mix of pumpjacks, tanks and wellheads, with some tanks shown as flare stacks', () => {
     const kinds = montney.flatMap((l) => l.obstacles.map((o) => o.kind));
-    expect(new Set(kinds)).toEqual(new Set(LEVEL_OBSTACLE_KINDS));
+    expect(new Set(kinds)).toEqual(new Set([...LEVEL_OBSTACLE_KINDS, 'flare']));
     for (const l of montney) {
       const own = l.obstacles.map((o) => o.kind);
       expect(new Set(own).size).toBe(Math.min(own.length, LEVEL_OBSTACLE_KINDS.length));

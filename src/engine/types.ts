@@ -39,7 +39,7 @@ export interface Gate {
 }
 
 export const OBSTACLE_KINDS = ['pumpjack', 'tank', 'wellhead', 'flare'] as const;
-/** The kinds shipped levels use. `flare` is ready (blocks like the rest) but not placed in levels yet. */
+/** The kinds the generator deals out. `flare` is an alternate look given to some tanks afterwards (gen-levels `withFlares`). */
 export const LEVEL_OBSTACLE_KINDS = ['pumpjack', 'tank', 'wellhead'] as const satisfies readonly (typeof OBSTACLE_KINDS)[number][];
 /** What an obstacle looks like. Purely cosmetic: the rules treat every kind the same. */
 export type ObstacleKind = (typeof OBSTACLE_KINDS)[number];
