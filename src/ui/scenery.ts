@@ -87,6 +87,28 @@ function groveRow(rng: Rng, from: number, to: number, baseY: number, h: number, 
   return row;
 }
 
+/** Dry grass stalks in the snow: small clumps of thin tan stems with seed heads, in loose scatters. */
+function winterStalks(rng: Rng, width: number, from: number, to: number): string {
+  const tan = ['#b99a5c', '#9c7f48', '#c8ad6c', '#8a6f3e'];
+  let out = '';
+  const count = Math.round(((to - from) * width) / 9000);
+  for (let i = 0; i < count; i++) {
+    const x = rng() * width;
+    const y = from + rng() * Math.max(1, to - from);
+    const h = 9 + rng() * 9;
+    const stems = 2 + Math.floor(rng() * 3);
+    let paths = '';
+    for (let k = 0; k < stems; k++) {
+      const lean = (k / Math.max(1, stems - 1) - 0.5) * 9 + (rng() - 0.5) * 5;
+      const len = 14 + rng() * 9;
+      const c = tan[Math.floor(rng() * tan.length)];
+      paths += `<path d="M10 24 Q${r1(10 + lean * 0.3)} ${r1(24 - len * 0.6)} ${r1(10 + lean)} ${r1(24 - len)}" stroke="${c}" stroke-width="1.1"/>` + `<ellipse cx="${r1(10 + lean)}" cy="${r1(24 - len)}" rx="1.1" ry="1.9" fill="${c}"/>`;
+    }
+    out += `<svg class="stalk" viewBox="0 0 20 24" style="left:${r1(x - h * 0.42)}px;top:${r1(y - h)}px;width:${r1(h * 0.84)}px;height:${r1(h)}px"><ellipse cx="10" cy="23.4" rx="5" ry="1.4" fill="rgba(90,120,170,0.25)"/>${paths}</svg>`;
+  }
+  return out;
+}
+
 /**
  * Trees around a box (the board, or the level list), in a layer `width` x `height` px, as natural
  * scattered groves: staggered rows in depth (smaller toward the back), loose clusters with random
@@ -139,5 +161,7 @@ export function sceneryHtml(theme: Theme, width: number, height: number, box: Bo
   }
 
   items.sort((a, b) => a.y - b.y); // nearer (lower on screen) in front
-  return `<div class="trees" style="width:${r1(width)}px;height:${r1(height)}px" aria-hidden="true">${items.map(img).join('')}</div>`;
+  // Winter: a few dry tan grass stalks poke through the snow, here and there, never in a row.
+  const stalks = theme.id === 'winter' ? winterStalks(rng, width, top - depth + 4, height) : '';
+  return `<div class="trees" style="width:${r1(width)}px;height:${r1(height)}px" aria-hidden="true">${stalks}${items.map(img).join('')}</div>`;
 }

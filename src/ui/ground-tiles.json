@@ -25,8 +25,8 @@
     "light": "#6e9321"
   },
   "grass-winter": {
-    "mean": "#b7aca4",
-    "dark": "#94867b",
-    "light": "#d7d3d3"
+    "mean": "#c5d2e8",
+    "dark": "#bac7de",
+    "light": "#d0dcef"
   }
 }

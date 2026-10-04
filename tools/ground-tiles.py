@@ -3,8 +3,9 @@
 
 The lease (lease-summer gravel, lease-spring mud, lease-winter snow) is ONE continuous 1024px
 surface that covers the whole pad and the berm band, never tiled. Outside the berm, each season has
-a grass field (grass-summer, grass-spring, grass-winter): a 768px square that wraps, shown at 384px
-on screen, with the blades at a fine, matching scale in every season.
+a field (grass-summer, grass-spring, and for winter a snow field with gentle drifts, still named
+grass-winter): a 768px square that wraps, shown at 384px on screen, with the grass blades at a
+fine, matching scale. The winter field is cooler and a step darker than the pad's packed snow.
 
 Both are built the same way (`field`): several differently shifted copies of the source are blended
 through soft random masks, so no patch repeats and there are no tile edges, then given a slow drift
@@ -38,7 +39,7 @@ LEASE_TILE = 450
 # the field wraps). On screen the field is drawn at half its size (GRASS_CSS in themes.ts), so the
 # sources repeat every 96px (they were 180px: blades about half the size), the same in every season.
 GRASS = 768
-GRASS_TILE = {'grass-summer': 192, 'grass-spring': 192, 'grass-winter': 192}
+GRASS_TILE = {'grass-summer': 192, 'grass-spring': 192, 'grass-winter': 384}
 
 
 def fill_puddles(im: Image.Image) -> Image.Image:
@@ -69,6 +70,25 @@ def smooth_snow(im: Image.Image) -> Image.Image:
     grain = Image.effect_noise(im.size, 40).filter(ImageFilter.GaussianBlur(1.1))
     grain = grain.point(lambda v: max(96, min(140, 118 + (v - 128) * 3 // 4)))
     return ImageChops.multiply(soft, Image.merge('RGB', [grain] * 3)).point(lambda v: min(255, v * 255 // 118))
+
+
+def snow_field(pad_snow: Image.Image) -> Image.Image:
+    """Winter outside the berm: open snow, cooler and a step darker than the packed snow of the pad
+    (the pad stays the brightest thing on screen), from the pad's own cleaned snow."""
+    return ImageChops.multiply(pad_snow, Image.new('RGB', pad_snow.size, (232, 238, 250)))
+
+
+def drifts(im: Image.Image, seed: int) -> Image.Image:
+    """Gentle wind drifts: long soft bands of lighter and bluer snow lying one way. Wraps."""
+    rng = random.Random(seed)
+    size = im.width
+    band = blobs(rng, size, 7, 1.0)
+    # Squash the blobs flat so they become long streaks lying across the wind.
+    band = band.filter(ImageFilter.BoxBlur(1)).resize((size, size // 5)).resize((size, size), Image.Resampling.BICUBIC).filter(ImageFilter.GaussianBlur(14))
+    light = band.point(lambda v: max(0, min(255, (v - 132) * 4)))
+    out = Image.composite(Image.new('RGB', im.size, (236, 243, 252)), im, light.point(lambda v: v * 70 // 255))
+    shade = band.point(lambda v: max(0, min(255, (118 - v) * 4)))
+    return Image.composite(Image.new('RGB', im.size, (158, 178, 212)), out, shade.point(lambda v: v * 45 // 255))
 
 
 def spring_grass(summer: Image.Image) -> Image.Image:
@@ -130,7 +150,11 @@ def main() -> None:
     manifest = {}
     for name, src in TILES.items():
         path = os.path.join(SRC, f'{src}.png')
-        if os.path.exists(path):
+        if name == 'grass-winter':
+            # No grass in winter: a snow field made from the pad's snow source (dry stalks are drawn
+            # by the game, scenery.ts, so they never repeat).
+            im = snow_field(smooth_snow(Image.open(os.path.join(SRC, f'{TILES["pad-winter"]}.png')).convert('RGB')))
+        elif os.path.exists(path):
             im = Image.open(path).convert('RGB')
         elif name == 'grass-spring':
             im = spring_grass(Image.open(os.path.join(SRC, f'{TILES["grass-summer"]}.png')).convert('RGB'))
@@ -145,7 +169,9 @@ def main() -> None:
             # Gravel is all fine grain: it compresses poorly and hides compression well.
             big.save(os.path.join(OUT, f'lease-{name[4:]}.webp'), 'WEBP', quality=50 if name == 'pad-summer' else 70, method=6)
         else:
-            big = field(im, GRASS, GRASS_TILE[name], len(manifest) + 31, quarter_turns=name == 'grass-winter')
+            big = field(im, GRASS, GRASS_TILE[name], len(manifest) + 31)
+            if name == 'grass-winter':
+                big = drifts(big, 5)
             big.save(os.path.join(OUT, f'{name}.webp'), 'WEBP', quality=62, method=6)
         manifest[name] = tones(big)
     with open(MANIFEST, 'w') as f:
