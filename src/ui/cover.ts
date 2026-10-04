@@ -19,7 +19,13 @@ export function shouldShowCover(search: string, webdriver: boolean): boolean {
   return !webdriver;
 }
 
-const CLOUD = `<svg viewBox="0 0 120 50" aria-hidden="true"><path d="M14 44 Q2 44 4 34 Q6 24 18 26 Q20 12 36 13 Q44 2 60 6 Q74 0 82 14 Q98 10 102 24 Q118 24 116 36 Q114 46 100 44 Z" fill="#fff"/><path d="M14 44 Q40 38 60 42 Q84 46 100 44" fill="none" stroke="#dbe9f7" stroke-width="5" stroke-linecap="round"/></svg>`;
+// A soft painted cloud, to sit with the ones in the hero image's own sky: rounded puffs with no
+// outline, a pale blue underside like the image's clouds, and blurred edges.
+const CLOUD = (id: string) =>
+  `<svg viewBox="-10 -10 140 70" aria-hidden="true"><defs>` +
+  `<filter id="cs-${id}" x="-20%" y="-30%" width="140%" height="160%"><feGaussianBlur stdDeviation="2.6"/></filter>` +
+  `<linearGradient id="cg-${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0.45" stop-color="#fff"/><stop offset="1" stop-color="#c9dcf3"/></linearGradient></defs>` +
+  `<g filter="url(#cs-${id})" fill="url(#cg-${id})"><ellipse cx="60" cy="36" rx="50" ry="10"/><circle cx="34" cy="30" r="13"/><circle cx="54" cy="21" r="17"/><circle cx="76" cy="25" r="14"/><circle cx="93" cy="32" r="10"/><circle cx="20" cy="35" r="8"/></g></svg>`;
 
 /** Puts the cover on screen; `onStart` runs on the first tap (once). Returns the screen element. */
 export function showCover(app: HTMLElement, onStart: () => void): HTMLElement {
@@ -28,8 +34,8 @@ export function showCover(app: HTMLElement, onStart: () => void): HTMLElement {
   screen.innerHTML = `
     <div class="cover-sky" aria-hidden="true"></div>
     <img class="cover-img" alt="" src="${COVER_IMAGE}" decoding="async" fetchpriority="high" />
-    <div class="cover-cloud c1" aria-hidden="true">${CLOUD}</div>
-    <div class="cover-cloud c2" aria-hidden="true">${CLOUD}</div>
+    <div class="cover-cloud c1" aria-hidden="true">${CLOUD('a')}</div>
+    <div class="cover-cloud c2" aria-hidden="true">${CLOUD('b')}</div>
     <h1 class="cover-title"><span>RUSH HOUR</span><span>RIGS</span></h1>
     <div class="cover-dust" aria-hidden="true">${'<i></i>'.repeat(7)}</div>
     <button class="cover-tap" aria-label="Tap to start"><span class="cover-start">TAP TO START</span></button>`;
