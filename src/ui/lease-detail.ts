@@ -1,8 +1,10 @@
-// Variety on the lease's ground, generated in code and seeded by level id: every level looks a
-// little different, and a level always looks the same. Over the season's one continuous base image
-// (themes.ts) go large soft light and dark patches, plus the season's own detail: scattered pebbles
-// on gravel, a few shallow puddles on mud, gentle wind drifts on snow. All of it is flat, soft and
-// low in contrast: ground, never something sitting in a cell. Tire tracks draw on top (tracks.ts).
+// The lease's ground, drawn in code in the board's toy look and seeded by level id: every level
+// looks different, and a level always looks the same. Over the season's flat pad colour (themes.ts)
+// go large soft colour fields, then a few deliberate marks: a worn lane leading in from a gate, a
+// stain beside equipment, and the season's own detail (scattered pebbles on gravel, a few shallow
+// puddles on mud, gentle wind drifts on snow). No photo texture, no grain, no hard value step: all
+// of it is flat, soft and low in contrast, ground and never something sitting in a cell. Tire
+// tracks draw on top (tracks.ts).
 import { SIZE, type Level } from '../engine/index.ts';
 import { mulberry32 } from '../engine/rng.ts';
 import type { Ground } from './themes.ts';
@@ -40,6 +42,10 @@ export interface Detail {
   puddles: Puddle[];
   /** Snow drifts: long soft streaks, all lying with the wind. */
   drifts: Patch[];
+  /** Worn lanes: long soft bands where trucks have driven in from a gate, straight along a row or column. */
+  lanes: Patch[];
+  /** Stains on the ground beside equipment (a soft dark patch, off to one side of its cell). */
+  stains: Patch[];
 }
 
 /** How far a puddle may reach from its centre, in cells (it stays inside its own cell block). */
@@ -68,13 +74,33 @@ export function puddleCells(x: number, y: number): string[] {
 export function planDetail(level: Pick<Level, 'gates' | 'obstacles'>, ground: Ground, seed: number): Detail {
   const rng = mulberry32(seed ^ 0x51ed270b);
   const between = (lo: number, hi: number) => lo + rng() * (hi - lo);
-  const detail: Detail = { ground, patches: [], pebbles: [], puddles: [], drifts: [] };
+  const detail: Detail = { ground, patches: [], pebbles: [], puddles: [], drifts: [], lanes: [], stains: [] };
 
-  // Large soft patches, lighter and darker, over the pad and out under the berm.
+  // Large soft colour fields, lighter and darker, over the pad and out under the berm.
   const patches = 9 + Math.floor(rng() * 4);
   for (let i = 0; i < patches; i++) {
-    const rx = between(0.9, 2.3);
+    const rx = between(1.2, 2.8);
     detail.patches.push({ x: between(-0.5, SIZE + 0.5), y: between(-0.5, SIZE + 0.5), rx, ry: rx * between(0.45, 0.9), rot: between(0, Math.PI), tone: (i % 2 ? 1 : -1) * between(0.45, 1) });
+  }
+
+  // Worn lanes: one or two gates (picked by the seed) have a packed-down band running in from them.
+  const gates = [...level.gates];
+  const lanes = Math.min(gates.length, 1 + Math.floor(rng() * 2));
+  for (let i = 0; i < lanes; i++) {
+    const g = gates.splice(Math.floor(rng() * gates.length), 1)[0];
+    const across = g.index + 0.5 + between(-0.06, 0.06);
+    const len = between(2.2, 4.2);
+    const upright = g.side === 'top' || g.side === 'bottom';
+    const from = g.side === 'top' || g.side === 'left' ? -0.4 : SIZE + 0.4;
+    const mid = from + (g.side === 'top' || g.side === 'left' ? len / 2 : -len / 2);
+    detail.lanes.push({ x: upright ? across : mid, y: upright ? mid : across, rx: len / 2, ry: between(0.26, 0.36), rot: upright ? Math.PI / 2 : 0, tone: between(0.6, 1) });
+  }
+
+  // A stain beside each piece of equipment (two at most): leaked or tracked off to one side.
+  for (const o of level.obstacles.slice(0, 2)) {
+    const at = between(0, Math.PI * 2);
+    const rx = between(0.45, 0.7);
+    detail.stains.push({ x: o.col + 0.5 + Math.cos(at) * 0.35, y: o.row + 0.5 + Math.sin(at) * 0.35, rx, ry: rx * between(0.6, 0.85), rot: between(0, Math.PI), tone: between(0.6, 1) });
   }
 
   if (ground === 'gravel') {
@@ -128,10 +154,13 @@ interface Tint {
   amount: number;
 }
 const TINTS: Record<Ground, Tint> = {
-  gravel: { light: '255, 240, 214', dark: '84, 60, 36', amount: 0.17 },
-  mud: { light: '150, 112, 80', dark: '22, 12, 5', amount: 0.24 },
-  snow: { light: '255, 255, 255', dark: '120, 150, 200', amount: 0.2 },
+  gravel: { light: '236, 218, 190', dark: '132, 108, 82', amount: 0.42 },
+  mud: { light: '128, 96, 70', dark: '48, 31, 20', amount: 0.5 },
+  snow: { light: '255, 255, 255', dark: '176, 198, 232', amount: 0.42 },
 };
+/** Worn lanes (packed ground) and equipment stains, per ground: colour and strongest opacity. */
+const LANES: Record<Ground, [string, number]> = { gravel: ['214, 200, 178', 0.5], mud: ['58, 38, 24', 0.5], snow: ['192, 208, 234', 0.42] };
+const STAINS: Record<Ground, [string, number]> = { gravel: ['74, 58, 44', 0.24], mud: ['30, 18, 10', 0.36], snow: ['150, 168, 196', 0.3] };
 const PEBBLES = ['#8f8375', '#a59a8b', '#c9bba6', '#6f665d', '#b4a48d', '#dccfb9'];
 
 /** A soft-edged ellipse: full strength in the middle, fading to nothing at the rim. */
@@ -166,6 +195,11 @@ export function paintDetail(canvas: HTMLCanvasElement, detail: Detail, cell: num
   const tint = TINTS[detail.ground];
 
   for (const p of detail.patches) softEllipse(ctx, p.x * cell, p.y * cell, p.rx * cell, p.ry * cell, p.rot, p.tone > 0 ? tint.light : tint.dark, Math.abs(p.tone) * tint.amount);
+
+  const [laneRgb, laneAmount] = LANES[detail.ground];
+  for (const l of detail.lanes) softEllipse(ctx, l.x * cell, l.y * cell, l.rx * cell, l.ry * cell, l.rot, laneRgb, l.tone * laneAmount, 0.35);
+  const [stainRgb, stainAmount] = STAINS[detail.ground];
+  for (const t of detail.stains) softEllipse(ctx, t.x * cell, t.y * cell, t.rx * cell, t.ry * cell, t.rot, stainRgb, t.tone * stainAmount);
 
   for (const d of detail.drifts) {
     // A drift: a soft white ridge with its blue shade lying on the lee side.

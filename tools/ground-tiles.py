@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-"""Ground: tools/ground-art/*.png (seamless 1024px squares) -> public/sprites/ground/*.webp.
+"""Outside ground: tools/ground-art/*.png (seamless 1024px squares) -> public/sprites/ground/*.webp.
 
-The lease (lease-summer gravel, lease-spring mud, lease-winter snow) is ONE continuous 1024px
-surface that covers the whole pad and the berm band, never tiled. Outside the berm, each season has
-a field (grass-summer, grass-spring, and for winter a snow field with gentle drifts, still named
-grass-winter): a 768px square that wraps, shown at 384px on screen, with the grass blades at a
-fine, matching scale. The winter field is cooler and a step darker than the pad's packed snow.
+Each season has a field for outside the berm (grass-summer, grass-spring, and for winter a snow
+field with gentle drifts, still named grass-winter): a 768px square that wraps, shown at 384px on
+screen, with the grass blades at a fine, matching scale. Built by `field`: several differently
+shifted copies of the source blended through soft random masks, so no patch repeats and there are
+no tile edges, then given a slow drift in tone. The winter field is made from the snow source with
+its tire ruts smoothed away, cooler and a step darker than the pad.
 
-Both are built the same way (`field`): several differently shifted copies of the source are blended
-through soft random masks, so no patch repeats and there are no tile edges, then given a slow drift
-in tone. Before that the sources are cleaned: the mud's puddles are filled in with mud from elsewhere
-in the image and the snow's tire ruts are smoothed away (the game draws its own puddles, drifts and
-tire tracks: src/ui/lease-detail.ts, tracks.ts).
+The PAD has no image any more: it is a flat colour plus code-drawn fields and marks, in the
+board's toy look (src/ui/lease-detail.ts, themes.ts). The pad sources in ground-art/ are kept only
+for the winter field.
 
 Spring grass has no source yet: it's the summer grass shifted toward Montney's dry spring green;
 drop a grass_border_spring_v1.png in tools/ground-art/ and rerun to use a real one.
@@ -25,38 +24,16 @@ SRC = os.path.join(HERE, 'ground-art')
 OUT = os.path.join(HERE, '..', 'public', 'sprites', 'ground')
 MANIFEST = os.path.join(HERE, '..', 'src', 'ui', 'ground-tiles.json')
 TILES = {
-    'pad-summer': 'ground_summer_gravel_v1',
-    'pad-spring': 'ground_spring_mud_v1',
-    'pad-winter': 'ground_winter_snow_v1',
     'grass-summer': 'grass_border_summer_v1',
     'grass-spring': 'grass_border_spring_v1',
     'grass-winter': 'grass_border_winter_v1',
 }
-LEASE = 1024
-# The source square spans this many pixels of the lease image (about three cells of the 6.84-cell board).
-LEASE_TILE = 450
+SNOW_SRC = 'ground_winter_snow_v1'
 # Grass field: image size, and how many pixels of it one source square spans (must divide the size so
 # the field wraps). On screen the field is drawn at half its size (GRASS_CSS in themes.ts), so the
 # sources repeat every 96px (they were 180px: blades about half the size), the same in every season.
 GRASS = 768
 GRASS_TILE = {'grass-summer': 192, 'grass-spring': 192, 'grass-winter': 384}
-
-
-def fill_puddles(im: Image.Image) -> Image.Image:
-    """Mud: anything much lighter than the mud (standing water) is replaced with mud from elsewhere
-    in the image, so the base is plain mud. Whatever is still pale after that is pulled to the mud's tone."""
-    def pale(img: Image.Image) -> Image.Image:
-        # Standing water is a broad pale patch; a pale speck is just a clod catching the light.
-        lum = img.convert('L').filter(ImageFilter.GaussianBlur(10))
-        mean = ImageStat.Stat(lum).mean[0]
-        mask = lum.point(lambda v: 255 if v > mean + 9 else 0)
-        return mask.filter(ImageFilter.MaxFilter(21)).filter(ImageFilter.GaussianBlur(7))
-
-    out = im
-    for dx, dy in ((im.width // 2, im.height // 3), (im.width // 3, im.height * 2 // 3), (im.width * 3 // 4, im.height // 5)):
-        out = Image.composite(ImageChops.offset(out, dx, dy), out, pale(out))
-    flat = Image.new('RGB', im.size, tuple(int(c) for c in ImageStat.Stat(out).mean))
-    return Image.composite(Image.blend(out, flat, 0.6), out, pale(out))
 
 
 def smooth_snow(im: Image.Image) -> Image.Image:
@@ -153,26 +130,17 @@ def main() -> None:
         if name == 'grass-winter':
             # No grass in winter: a snow field made from the pad's snow source (dry stalks are drawn
             # by the game, scenery.ts, so they never repeat).
-            im = snow_field(smooth_snow(Image.open(os.path.join(SRC, f'{TILES["pad-winter"]}.png')).convert('RGB')))
+            im = snow_field(smooth_snow(Image.open(os.path.join(SRC, f'{SNOW_SRC}.png')).convert('RGB')))
         elif os.path.exists(path):
             im = Image.open(path).convert('RGB')
         elif name == 'grass-spring':
             im = spring_grass(Image.open(os.path.join(SRC, f'{TILES["grass-summer"]}.png')).convert('RGB'))
         else:
             raise SystemExit(f'missing {path}')
-        if name == 'pad-spring':
-            im = fill_puddles(im)
-        if name == 'pad-winter':
-            im = smooth_snow(im)
-        if name.startswith('pad-'):
-            big = field(im, LEASE, LEASE_TILE, len(manifest) + 7)
-            # Gravel is all fine grain: it compresses poorly and hides compression well.
-            big.save(os.path.join(OUT, f'lease-{name[4:]}.webp'), 'WEBP', quality=50 if name == 'pad-summer' else 70, method=6)
-        else:
-            big = field(im, GRASS, GRASS_TILE[name], len(manifest) + 31)
-            if name == 'grass-winter':
-                big = drifts(big, 5)
-            big.save(os.path.join(OUT, f'{name}.webp'), 'WEBP', quality=62, method=6)
+        big = field(im, GRASS, GRASS_TILE[name], len(manifest) + 34)
+        if name == 'grass-winter':
+            big = drifts(big, 5)
+        big.save(os.path.join(OUT, f'{name}.webp'), 'WEBP', quality=62, method=6)
         manifest[name] = tones(big)
     with open(MANIFEST, 'w') as f:
         json.dump(manifest, f, indent=2)

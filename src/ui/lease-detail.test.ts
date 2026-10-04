@@ -44,6 +44,21 @@ describe('lease ground detail', () => {
     }
   });
 
+  it.each(LEVELS)('%s: a worn lane runs straight in from a gate; a stain sits beside equipment', (_name, level) => {
+    const d = planDetail(level, 'gravel', seedFrom(level.id));
+    expect(d.lanes.length).toBeGreaterThanOrEqual(1);
+    expect(d.lanes.length).toBeLessThanOrEqual(2);
+    for (const l of d.lanes) {
+      const upright = Math.abs(l.rot - Math.PI / 2) < 1e-9;
+      // Lined up with a gate's row or column, and long and thin.
+      const lined = level.gates.some((g) => ((g.side === 'top' || g.side === 'bottom') === upright ? Math.abs((upright ? l.x : l.y) - (g.index + 0.5)) < 0.07 : false));
+      expect(lined, 'lane lines up with a gate').toBe(true);
+      expect(l.rx).toBeGreaterThan(l.ry * 3);
+    }
+    expect(d.stains.length).toBe(Math.min(2, level.obstacles.length));
+    d.stains.forEach((t, i) => expect(Math.hypot(t.x - level.obstacles[i].col - 0.5, t.y - level.obstacles[i].row - 0.5)).toBeLessThan(0.5));
+  });
+
   it('keeps dry the cell in front of every gate and under every obstacle', () => {
     const dry = keepDry({ gates: [{ color: 'red', side: 'top', index: 2 }, { color: 'blue', side: 'right', index: 4 }, { color: 'green', side: 'bottom', index: 0 }, { color: 'red', side: 'left', index: 5 }], obstacles: [{ row: 3, col: 3 }] });
     expect([...dry].sort()).toEqual(['0,2', '3,3', '4,5', '5,0'].sort());

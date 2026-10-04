@@ -93,17 +93,22 @@ describe('obstacle sprites', () => {
 });
 
 describe('ground tiles', () => {
-  it('one lease surface and a grass field for every season, as WebP', () => {
-    for (const id of ['summer', 'spring', 'winter'])
-      for (const [kind, max] of [['lease', 300_000], ['grass', 200_000]] as const) {
-        const file = `public/sprites/ground/${kind}-${id}.webp`;
-        expect(existsSync(file), file).toBe(true);
-        expect(statSync(file).size, file).toBeLessThan(max);
-      }
+  it('a field for outside the berm in every season, as WebP; the pad has no image', () => {
+    for (const id of ['summer', 'spring', 'winter']) {
+      const file = `public/sprites/ground/grass-${id}.webp`;
+      expect(existsSync(file), file).toBe(true);
+      expect(statSync(file).size, file).toBeLessThan(200_000);
+      expect(existsSync(`public/sprites/ground/lease-${id}.webp`), 'no stretched photo pad').toBe(false);
+    }
   });
 
-  it("each theme's pad color is its texture's average tone (tracks and contrast tests use it)", () => {
-    for (const t of Object.values(THEMES)) expect(dE(t.vars['--pad'], (GROUND as Record<string, { mean: string }>)[`pad-${t.id}`].mean), t.id).toBeLessThan(6);
+  it("each theme's outside color is its field's average tone", () => {
+    for (const t of Object.values(THEMES)) expect(dE(t.vars['--ground'], (GROUND as Record<string, { mean: string }>)[`grass-${t.id}`].mean), t.id).toBeLessThan(6);
+  });
+
+  it('winter: the pad is the brightest surface, lighter than the snow outside it', () => {
+    expect(lab(THEMES.winter.vars['--pad'])[0]).toBeGreaterThan(lab(THEMES.winter.vars['--ground'])[0] + 8);
+    expect(lab(THEMES.winter.vars['--pad'])[0]).toBeGreaterThan(93);
   });
 });
 

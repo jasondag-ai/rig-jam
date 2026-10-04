@@ -95,7 +95,7 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--sky-bottom': '#e8f2fa',
       '--ground': '#c5d2e8',
       '--ground-dark': '#9fb1d0',
-      '--pad': '#e0e8f5',
+      '--pad': '#edf2fa',
       '--pad-light': '#f9fbfd',
       '--pad-dark': '#a9c0de',
       '--accent': '#ffc21a',
@@ -124,10 +124,11 @@ export function applyTheme(el: HTMLElement, theme: Theme): void {
 }
 
 /**
- * The season's ground (public/sprites/ground, from tools/ground-tiles.py): the lease, one continuous
- * surface stretched over the whole board and never tiled, and the grass tile outside the berm.
+ * The season's ground outside the berm (public/sprites/ground, from tools/ground-tiles.py): a grass
+ * field, or snow in winter. The pad itself has no image: it is the theme's flat `--pad` colour plus
+ * the level's code-drawn fields and marks (lease-detail.ts).
  */
-export const groundTiles = (id: string) => [`./sprites/ground/lease-${id}.webp`, `./sprites/ground/grass-${id}.webp`];
+export const groundTiles = (id: string) => [`./sprites/ground/grass-${id}.webp`];
 const loaded = new Map<string, Promise<boolean>>();
 const loadTile = (src: string) => {
   let p = loaded.get(src);
@@ -145,13 +146,12 @@ const loadTile = (src: string) => {
 const ready = new Set<string>();
 
 /**
- * Puts the season's textures on a screen (`.ground-tex`) once both have loaded; until then, or if
- * they fail, the flat theme colors and drawn pad detail stand in. Instant once cached.
+ * Puts the season's outside ground on a screen (`.ground-tex`) once it has loaded; until then, or
+ * if it fails, the flat theme color stands in. Instant once cached.
  */
 function groundTextures(el: HTMLElement, id: string): void {
   if (typeof Image === 'undefined') return;
-  const [pad, grass] = groundTiles(id).map((src) => `url("${new URL(src, location.href).href}")`);
-  el.style.setProperty('--lease-img', pad);
+  const [grass] = groundTiles(id).map((src) => `url("${new URL(src, location.href).href}")`);
   el.style.setProperty('--grass-tile', grass);
   if (ready.has(id)) return void el.classList.add('ground-tex');
   void Promise.all(groundTiles(id).map(loadTile)).then((ok) => {
