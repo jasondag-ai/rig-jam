@@ -10,14 +10,14 @@ canvas is gate color. Any soft shadow in the source is dropped (the game's CSS c
 and each sprite gets the game's dark toy outline.
 
 Season coats are baked here too, one layer per kind (not per color): snow-<kind>.webp (winter:
-settled snow on the top surfaces) and mud-<kind>.webp (spring: spatter along the sides and back),
+a crisp flat snow cap on the cab roof and the tank's crest, blue-grey at its rim) and mud-<kind>.webp (spring: spatter along the sides and back),
 both clipped inside the truck's own shape with soft edges. The game lays one over the sprite.
 
 Also writes src/ui/truck-sprites.json: the measured paint color and painted share of every sprite
 (tests check each reads as its gate color on every season).
 Run: python3 tools/truck-sprites.py  (needs Pillow)."""
 import json, os, random
-from PIL import Image, ImageChops, ImageFilter
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 KINDS = {'pickup': 2, 'picker': 2, 'vac': 3, 'frac': 3, 'water': 3}
 # What carries the gate color on each kind, in source pixels (cab at the top). Each region is
@@ -55,6 +55,11 @@ COLORS = {  # kept in sync with :root in style.css
 OUTLINE = (0x2A, 0x1A, 0x0C)
 # Box per scale: along x across (CSS px at 1x), the same shape as the truck element.
 ACROSS = 52
+# Room round the truck inside its box (CSS px), the outline's width (CSS px), and how much larger
+# than the final sprite it is drawn before scaling down.
+MARGIN = 2
+OUTLINE_PX = 1.5
+SUPER = 4
 ALONG = {2: 112, 3: 168}
 SCALES = {'': 1, '@2x': 2}
 
@@ -65,14 +70,11 @@ MANIFEST = os.path.join(HERE, '..', 'src', 'ui', 'truck-sprites.json')
 
 
 def clean(img: Image.Image) -> Image.Image:
-    """Drops any soft shadow drawn into the source (faint, dark pixels round the truck): the game
+    """A clean silhouette: the source's faint outer pixels (soft shadow, glow) are dropped by
+    steepening its alpha, which keeps a smooth anti-aliased edge and nothing beyond it. The game
     casts the only shadow, in CSS."""
-    r, g, b, a = img.split()
-    hi = ImageChops.lighter(ImageChops.lighter(r, g), b)
-    faint = a.point(lambda v: 255 if v < 170 else 0)
-    dark = hi.point(lambda v: 255 if v < 90 else 0)
     img = img.copy()
-    img.putalpha(ImageChops.multiply(a, ImageChops.invert(ImageChops.multiply(faint, dark))))
+    img.putalpha(img.getchannel('A').point(lambda v: max(0, min(255, (v - 120) * 255 // 90))))
     return img
 
 
@@ -123,22 +125,24 @@ def fit(img: Image.Image, bbox, cells: int, scale: int) -> Image.Image:
     """Crops to the truck, turns it cab-right and fits the truck box (inside the outline's margin)."""
     img = img.crop(bbox).transpose(Image.Transpose.ROTATE_270)  # cab (top) -> right
     w, h = ALONG[cells] * scale, ACROSS * scale
-    ol = 2 * scale
+    ol = MARGIN * scale
     canvas = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     canvas.paste(img.resize((w - ol * 2, h - ol * 2), Image.Resampling.LANCZOS), (ol, ol))
     return canvas
 
 
 def sprite(img: Image.Image, bbox, cells: int, scale: int) -> Image.Image:
-    """The truck in its box with the game's dark toy outline."""
-    canvas = fit(img, bbox, cells, scale)
-    ol = 2 * scale
-    alpha = canvas.getchannel('A').point(lambda v: 255 if v > 40 else 0)
-    ring = alpha.filter(ImageFilter.MaxFilter(ol * 2 + 1)).filter(ImageFilter.GaussianBlur(0.6 * scale))
-    out = Image.new('RGBA', canvas.size, OUTLINE + (0,))
+    """The truck in its box with ONE crisp dark toy outline. Drawn at SUPER times the size and
+    scaled down, so both the truck's edge and the outline come out smooth: no fringe, no halo."""
+    big = fit(img, bbox, cells, scale * SUPER)
+    solid = big.getchannel('A').point(lambda v: 255 if v > 128 else 0)
+    r = round(OUTLINE_PX * scale * SUPER)
+    ring = solid.filter(ImageFilter.MaxFilter(r * 2 + 1)).filter(ImageFilter.GaussianBlur(SUPER * 0.35)).point(lambda v: max(0, min(255, (v - 96) * 4)))
+    out = Image.new('RGBA', big.size, OUTLINE + (0,))
     out.putalpha(ring)
-    out.alpha_composite(canvas)
-    return out
+    # The truck over its outline; its own soft edge pixels sit on the dark ring, never on nothing.
+    out.alpha_composite(big)
+    return out.resize((ALONG[cells] * scale, ACROSS * scale), Image.Resampling.LANCZOS)
 
 
 def blobs(rng: random.Random, size, cells: int) -> Image.Image:
@@ -156,22 +160,35 @@ def inside(src: Image.Image, shrink: int, soft: float) -> Image.Image:
     return solid.filter(ImageFilter.MinFilter(shrink * 2 + 1)).filter(ImageFilter.GaussianBlur(soft))
 
 
+# Where snow sits on each kind (source pixels, cab at the top): the cab roof, and the crest of the
+# tank (or, on the frac unit, the top of the pump). Each cap is a rounded patch with a wavy edge.
+SNOW = {
+    'pickup': [(128, 300, 384, 560)],
+    'picker': [(130, 250, 382, 392)],
+    'vac': [(118, 292, 372, 448), (182, 520, 312, 1190)],
+    'frac': [(112, 300, 400, 470), (140, 1118, 318, 1246)],
+    'water': [(118, 296, 392, 452), (176, 498, 320, 1296)],
+}
+
+
 def snow_coat(src: Image.Image, kind: str) -> Image.Image:
-    """Winter: settled snow on the truck's top surfaces, as its own layer. Soft drifts down the
-    middle (roof, hood, bed, tank top), thinning toward the sides so the paint still shows, clipped
-    inside the truck's own shape with soft edges, with a faint blue shade at the drifts' rims."""
+    """Winter: a crisp cap of snow on the cab roof and along the top of the tank, as its own layer.
+    Flat white with a clean wavy edge, and a soft blue-grey rim all round that reads as the cap's
+    underside (the same from any side, since trucks turn). Clipped inside the truck's own shape."""
     rng = random.Random(f'snow-{kind}')
     w, h = src.size
-    # Drifts: where a broad random field is high. Favor the centre line; none at the very sides.
-    field = ImageChops.add(blobs(rng, (w, h), 4), blobs(rng, (w, h), 9), scale=2)
-    across = Image.new('L', (w, 1))
-    across.putdata([max(0, 255 - int(abs(x / w - 0.5) * 2 * 420)) for x in range(w)])
-    field = ImageChops.multiply(field, across.resize((w, h)).point(lambda v: min(255, v * 2)))
-    drift = field.point(lambda v: max(0, min(255, (v - 138) * 5))).filter(ImageFilter.GaussianBlur(7))
-    mask = ImageChops.multiply(drift, inside(src, 16, 7))
-    # White in the thick of a drift, a cool shade where it thins out.
-    coat = Image.composite(Image.new('RGB', (w, h), (255, 255, 255)), Image.new('RGB', (w, h), (196, 214, 240)), mask.point(lambda v: max(0, min(255, (v - 110) * 3)))).convert('RGBA')
-    coat.putalpha(mask.point(lambda v: v * 215 // 255))
+    shape = Image.new('L', (w, h), 0)
+    draw = ImageDraw.Draw(shape)
+    for x0, y0, x1, y1 in SNOW[kind]:
+        draw.rounded_rectangle((x0, y0, x1, y1), radius=min(x1 - x0, y1 - y0) * 0.3, fill=255)
+    # Wavy edge: blur the patch, wobble the level it is cut at, then cut it crisp.
+    soft = shape.filter(ImageFilter.GaussianBlur(14))
+    wobble = blobs(rng, (w, h), 16).point(lambda v: 96 + v * 64 // 255)
+    cap = ImageChops.subtract(soft, wobble).point(lambda v: min(255, v * 24)).filter(ImageFilter.GaussianBlur(1.6))
+    cap = ImageChops.multiply(cap, inside(src, 5, 1.5))
+    core = cap.filter(ImageFilter.MinFilter(23)).filter(ImageFilter.GaussianBlur(5))
+    coat = Image.composite(Image.new('RGB', (w, h), (251, 253, 255)), Image.new("RGB", (w, h), (158, 180, 214)), core).convert('RGBA')
+    coat.putalpha(cap)
     return coat
 
 

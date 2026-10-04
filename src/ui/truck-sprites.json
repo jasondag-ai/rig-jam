@@ -7,131 +7,131 @@
   "paint": {
     "pickup": {
       "red": {
-        "mean": "#f24646",
-        "share": 0.589
+        "mean": "#f24545",
+        "share": 0.59
       },
       "blue": {
-        "mean": "#3086f2",
-        "share": 0.589
+        "mean": "#2e85f2",
+        "share": 0.59
       },
       "yellow": {
-        "mean": "#f2c821",
-        "share": 0.589
+        "mean": "#f2c71f",
+        "share": 0.59
       },
       "green": {
-        "mean": "#24bc5c",
-        "share": 0.589
+        "mean": "#22bb5a",
+        "share": 0.59
       },
       "orange": {
-        "mean": "#f28504",
-        "share": 0.589
+        "mean": "#f28402",
+        "share": 0.59
       },
       "purple": {
-        "mean": "#9e5af2",
-        "share": 0.589
+        "mean": "#9d58f2",
+        "share": 0.59
       }
     },
     "picker": {
       "red": {
-        "mean": "#f24747",
-        "share": 0.421
+        "mean": "#f24646",
+        "share": 0.423
       },
       "blue": {
-        "mean": "#3186f2",
-        "share": 0.421
+        "mean": "#2f85f2",
+        "share": 0.423
       },
       "yellow": {
-        "mean": "#f2c823",
-        "share": 0.421
+        "mean": "#f2c821",
+        "share": 0.423
       },
       "green": {
-        "mean": "#25bc5d",
-        "share": 0.421
+        "mean": "#23bc5b",
+        "share": 0.423
       },
       "orange": {
-        "mean": "#f28506",
-        "share": 0.421
+        "mean": "#f28504",
+        "share": 0.423
       },
       "purple": {
-        "mean": "#9f5bf2",
-        "share": 0.421
+        "mean": "#9e5af2",
+        "share": 0.423
       }
     },
     "vac": {
       "red": {
-        "mean": "#e74949",
-        "share": 0.404
+        "mean": "#e74747",
+        "share": 0.406
       },
       "blue": {
-        "mean": "#3483e7",
-        "share": 0.404
+        "mean": "#3382e7",
+        "share": 0.406
       },
       "yellow": {
-        "mean": "#e7c026",
-        "share": 0.404
+        "mean": "#e7c025",
+        "share": 0.406
       },
       "green": {
-        "mean": "#29b55c",
-        "share": 0.404
+        "mean": "#27b55b",
+        "share": 0.406
       },
       "orange": {
-        "mean": "#e7820c",
-        "share": 0.404
+        "mean": "#e7820a",
+        "share": 0.406
       },
       "purple": {
-        "mean": "#995be7",
-        "share": 0.404
+        "mean": "#995ae7",
+        "share": 0.406
       }
     },
     "frac": {
       "red": {
-        "mean": "#e74949",
-        "share": 0.407
+        "mean": "#e74848",
+        "share": 0.409
       },
       "blue": {
-        "mean": "#3483e7",
-        "share": 0.407
+        "mean": "#3383e7",
+        "share": 0.409
       },
       "yellow": {
-        "mean": "#e7c027",
-        "share": 0.407
+        "mean": "#e7c026",
+        "share": 0.409
       },
       "green": {
-        "mean": "#29b55d",
-        "share": 0.407
+        "mean": "#28b55c",
+        "share": 0.409
       },
       "orange": {
-        "mean": "#e7820d",
-        "share": 0.407
+        "mean": "#e7820b",
+        "share": 0.409
       },
       "purple": {
-        "mean": "#995be7",
-        "share": 0.407
+        "mean": "#995ae7",
+        "share": 0.409
       }
     },
     "water": {
       "red": {
-        "mean": "#ee4e4f",
+        "mean": "#ee4d4d",
         "share": 0.47
       },
       "blue": {
-        "mean": "#3a89ef",
+        "mean": "#3889ef",
         "share": 0.47
       },
       "yellow": {
-        "mean": "#eec72c",
+        "mean": "#eec72a",
         "share": 0.47
       },
       "green": {
-        "mean": "#2ebc62",
+        "mean": "#2dbb61",
         "share": 0.47
       },
       "orange": {
-        "mean": "#ee8811",
+        "mean": "#ee880f",
         "share": 0.47
       },
       "purple": {
-        "mean": "#a061ef",
+        "mean": "#9f60ef",
         "share": 0.47
       }
     }
