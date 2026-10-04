@@ -94,24 +94,21 @@ something, give exact clicks and one command at a time.
   `GameView` refits on window resize and whenever the stage changes size (ResizeObserver).
   `npm run test:e2e:fit` checks 375x667, 390x844, 393x852 and 430x932, each with Safari's toolbars
   (100px less) and as a home-screen app (insets faked through the variables), and saves screenshots.
-- Lease ground: ONE continuous base surface per season, `public/sprites/ground/lease-<season>.webp`
-  (1024px), stretched over the whole board (`.lease-ground`: pad and berm band alike, so it also shows
-  through each gate's gap) and never tiled. NO GRID: there are no cell lines; trucks still snap to cells.
-  `python3 tools/ground-tiles.py` builds every ground image with `field()`: shifted copies of the
-  seamless source in `tools/ground-art/` blended through soft random masks, plus a slow tone drift.
-  Sources are cleaned first: the mud's puddles are filled in with mud (`fill_puddles`), the snow's
-  baked tire ruts are smoothed away (`smooth_snow`). Outside the berm: `grass-<season>.webp`, a 768px
-  field that wraps, drawn at 384px, the source repeating every 96px inside it (fine blades; spring
-  grass is a stand-in tinted from summer). Winter's is a SNOW field (`snow_field` + `drifts`, made
-  from the pad's cleaned snow): cool and a step darker than the pad, with gentle drifts. Writes `src/ui/ground-tiles.json` (tones; each theme's
-  `--pad`/`--ground` match them). `applyTheme` adds `.ground-tex` once both images are in (flat
-  colors until then).
-- Ground variety (`src/ui/lease-detail.ts`, tested): `planDetail(level, ground, seed)` is pure and
-  seeded by level id, so every level differs and a level always looks the same: 9-12 large soft
-  light and dark patches, plus pebbles (gravel), 2-4 shallow puddles (mud: flat, low contrast, no
-  rim or glint, never touching a gate's cell or an obstacle, `keepDry`) or wind drifts lying one
-  way (snow). `paintDetail` draws it on `canvas.lease-detail` inside `.lease-ground`, under the berm
-  and the tire tracks. If puddles ever read as objects, tone them down.
+- Lease ground (board toy look, ART_BIBLE 1): the pad has NO image and NO gradient. `.lease-ground`
+  (pad and berm band alike, so it also shows through each gate's gap) is the theme's flat `--pad`
+  colour; everything else is drawn in code on `canvas.lease-detail` by `src/ui/lease-detail.ts`
+  (tested). NO GRID: there are no cell lines; trucks still snap to cells. `planDetail(level, ground,
+  seed)` is pure and seeded by level id, so every level differs and a level always looks the same:
+  9-12 large soft colour fields; one or two worn lanes running straight in from a gate; a stain
+  beside each piece of equipment (two at most); then pebbles (gravel), 2-4 shallow puddles (mud:
+  flat, low contrast, never touching a gate's cell or an obstacle, `keepDry`) or wind drifts lying
+  one way (snow). No photo grain, no hard value step. If puddles ever read as objects, tone them down.
+- Outside ground: `public/sprites/ground/grass-<season>.webp` from `python3 tools/ground-tiles.py`:
+  a 768px field that wraps, drawn at 384px, built by `field()` (shifted copies of the seamless source
+  blended through soft random masks; spring grass is a stand-in tinted from summer). Winter's is a
+  SNOW field (`snow_field` + `drifts`, from the snow source with its ruts smoothed away): cool and a
+  step darker than the pad. Writes `src/ui/ground-tiles.json`; each theme's `--ground` matches it.
+  `applyTheme` adds `.ground-tex` once the image is in (flat colour until then).
 - Dirt berm (`src/ui/berm.ts`, tested): no fence. `bermHeight` is a rounded mound across the band
   (crest toward the pad, outer slope running `BERM_OVER` past the board) that slopes to nothing at
   each gate's gap; `paintBerm` shades it on a canvas (`canvas.berm`, under the yard) from a height
@@ -119,7 +116,8 @@ something, give exact clicks and one command at a time.
   up the outer slope and tufts. Looks per ground (`BERM_LOOKS`): brown dirt (gravel), wet dark mud
   with shine (mud), snow (its shaded side and its shadow on the pad are a soft blue-grey, never
   charcoal: `ambient`/`sun`). The outer foot is ragged (slow noise along the berm), not a smooth
-  tube, and the crest takes a brighter highlight. Tufts are never stamped at even steps: loose
+  tube; the crest takes a bright highlight; two soft shadows sit under it (a wide faint one all
+  round that bleeds onto the pad, and the cast one down-right). Tufts are never stamped at even steps: loose
   clumps with gaps, three shapes (fan, stalks with seed heads, rosette), varied size and lean; dry
   tan stalks in winter. Repainted only when size, level or season changes.
   Picture only: the engine's walls block trucks. `--fence` is still the band's thickness in px.
@@ -131,14 +129,12 @@ something, give exact clicks and one command at a time.
   the leaf swings 90 degrees (260ms ease-out): outward on top/bottom, inward on the sides; none with
   reduced motion. Wrong-color gates simply stay shut. Convoy gates keep the badge centred and put the
   waiting-number chip (gate color, white numeral) on the latch post, clear of it. Fallback: the colored tabs (`.sym` + `.boom`).
-- Winter light: the warm sun wash, warm corner shade and warm vignette are swapped for clean
-  white light on the pad and a cool blue falloff outside (`[data-theme='winter']` rules), so the pad
-  is the brightest surface on screen. `scenery.ts` scatters a few dry tan grass stalks in the snow
-  (`winterStalks`, seeded per level).
-- Lighting pass (end of style.css): warm top-left light graded into the pad and outside-ground
-  backgrounds, a slight sepia on the trees, soft down-right drop shadows on the berm, gates, trees
-  and HUD, and a warm vignette (`.vignette`, z 0: over the scenery, under the board, HUD and
-  buttons). Nothing that changes color may sit on a truck or gate (tested in sprites e2e).
+- Winter: the pad (`--pad` #edf2fa) is the brightest surface on screen (tested). `scenery.ts`
+  scatters a few dry tan grass stalks in the snow (`winterStalks`, seeded per level).
+- Light: ONE soft neutral vignette at the outer screen edges (`.vignette`, z 0: over the scenery,
+  under the board, HUD and buttons) and nothing else: no hotspot or diagonal shade on the pad (it
+  reads as a stain), no warm wash outside. Soft down-right drop shadows on gates, trees and HUD.
+  Nothing that changes color may sit on a truck or gate (tested in sprites e2e).
 - Illustrated UI (`src/ui/ui-art.ts`, Batch B art in `public/sprites/ui/`): `uiImg()` for icons
   (gear, binoculars, back arrow, padlock, full/empty hard hats, speaker on/off on the Sound effects
   switch); `applyUiArt()` sets `--ui-*` CSS variables for art used as backgrounds: Undo/Hint/Restart,
@@ -174,14 +170,20 @@ something, give exact clicks and one command at a time.
   small nod, then holds still. Reduced motion: no movement. `npm run test:e2e:menus` checks this.
 - The Daily Pad button turns green once today's pad is cleared (a hue shift of the orange art); it
   must have no background fill of its own (a fill shows as a colored box round the button).
-- Scenery (`src/ui/scenery.ts`, Batch A art in `public/sprites/world/`): spruce, aspen and willow
-  in natural scattered groves (`groveRow`: loose clusters of mostly one species, random spacing,
-  clearings, slight overlaps, varied sizes). Above the lease: three staggered rows in depth, small
-  on the horizon to large at the berm, standing on a strip of ground (`depth`; `--horizon` sits that
-  far above the board). Below: one to three rows down the bottom strip, sized to it. Seeded per level
-  in the game (`seed`), season-matched (`seasonArt`: winter is all snowy spruce; spring uses the young
-  aspen), with cattails and the blank lease sign as accents. The whole layer is under the board,
-  gates and buttons.
+- Scenery (`src/ui/scenery.ts`, tested; Batch A art in `public/sprites/world/`): spruce, aspen and
+  willow in natural scattered groves (`groveRow`: loose clusters of mostly one species, random
+  spacing, clearings, slight overlaps, varied sizes). Above the lease: three staggered rows in
+  depth, small on the horizon to large at the berm, standing on a strip of ground (`depth`;
+  `--horizon` sits that far above the board). Below: one to three rows down the bottom strip, sized
+  to it. NONE beside the board: any tree that would come within `BERM_CLEAR` (10px) of the berm's
+  sides or bottom is left out, so the berm always has clear grass round it. Seeded per level
+  (`seed`), season-matched (`seasonArt`), with cattails and the blank lease sign as accents. The
+  whole layer is under the board, gates and buttons.
+- Gag anchors (permanent, gags on or off; `anchors` option, `data-anchor`): a willow bush on the
+  grass just below the berm toward the left, where the bear will stop (every region), and in
+  Cardium the gopher's dirt mound with a hole toward the right. Sized to the bottom strip, clear of
+  the board, gates and buttons; trees give them room. (The side margins are only 16px, so "beside
+  the berm" is below it.) When the bear and gopher come back, play them at these anchors.
 
 ## Cover (title screen)
 - `src/ui/cover.ts`: shown on every app open (never between levels). Hero image `public/cover.webp`

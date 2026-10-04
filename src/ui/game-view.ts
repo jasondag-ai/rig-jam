@@ -71,6 +71,8 @@ export class GameView {
   private bumps = 0;
   private shareMessage = '';
   private scenery: HTMLElement;
+  /** Which region this level is in ('daily' for the Daily Pad): the gopher's mound is Cardium's. */
+  private regionId: string;
 
   /** Null while gags are switched off (flags.ts). */
   private gags: GagLayer | null;
@@ -84,6 +86,7 @@ export class GameView {
     gagOptions: Omit<GagOptions, 'idleScale' | 'ground' | 'wildlife' | 'demo' | 'found'> = { cords: false, landowner: false, regionId: 'daily', levelIndex: 0 },
   ) {
     this.level = level;
+    this.regionId = gagOptions.regionId;
     this.theme = theme;
     this.daily = daily;
     this.handlers = handlers;
@@ -224,7 +227,7 @@ export class GameView {
     const hudBottom = this.el.querySelector('.hud')!.getBoundingClientRect().bottom - screen.top;
     const depth = Math.round(Math.max(8, Math.min(40, (box.y - hudBottom) * 0.3)));
     this.el.style.setProperty('--horizon', `${Math.round(box.y - 4 - depth)}px`);
-    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth });
+    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, anchors: { bush: true, mound: this.regionId === 'cardium' } });
     // Room outside the fence for the characters: between the HUD and the board, and below it.
     const buttonsTop = this.el.querySelector('.controls')!.getBoundingClientRect().top - screen.top;
     this.gags?.layout({
