@@ -196,7 +196,7 @@ export function paintBerm(canvas: HTMLCanvasElement, g: BermGeometry, ground: Gr
       }
       // Light: bright on the slope facing the sun, tinted shade on the far side, darker at the foot.
       // A brighter, harder highlight along the crest where it catches the sun.
-      const crest = smooth(0.82, 0.97, h) * smooth(0.55, 0.8, diffuse) * 0.12;
+      const crest = smooth(0.86, 0.97, h) * smooth(0.5, 0.75, diffuse) * 0.3;
       const bright = look.ambient + look.sun * diffuse + crest;
       const inShade = 1 - smooth(0.25, 0.75, diffuse);
       const foot = 0.82 + 0.18 * smooth(0, 0.35, h);
@@ -225,10 +225,16 @@ export function paintBerm(canvas: HTMLCanvasElement, g: BermGeometry, ground: Gr
   lctx.putImageData(img, 0, 0);
   tufts(lctx, g, look, seed, scale);
   ctx.clearRect(0, 0, n, n);
+  // Two soft shadows under the berm: a wide faint one all round that bleeds onto the pad (the berm
+  // sits IN the ground, no hard line where they meet), and the cast shadow falling down-right.
   ctx.shadowColor = look.shadow;
-  ctx.shadowOffsetX = g.band * 0.1 * scale;
-  ctx.shadowOffsetY = g.band * 0.14 * scale;
-  ctx.shadowBlur = g.band * 0.22 * scale;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.shadowBlur = g.band * 0.5 * scale;
+  ctx.drawImage(layer, 0, 0);
+  ctx.shadowOffsetX = g.band * 0.12 * scale;
+  ctx.shadowOffsetY = g.band * 0.16 * scale;
+  ctx.shadowBlur = g.band * 0.3 * scale;
   ctx.drawImage(layer, 0, 0);
 }
 
