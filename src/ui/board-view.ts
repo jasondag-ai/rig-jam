@@ -458,22 +458,43 @@ export class BoardView {
     this.trucks.get(id)?.classList.add('hinted');
   }
 
-  /** Step 2: show a ghost where that truck should end up (or an arrow out of its gate). */
+  /**
+   * Step 2: a ghost of the truck itself where it should end up. A move out through its gate puts an
+   * OUT badge on that gate instead.
+   */
   showHintTarget(move: Move, state: GameState, exits: boolean): void {
     const t = state.trucks.find((x) => x.id === move.id);
     if (!t) return;
-    this.pad.querySelector('.ghost')?.remove();
+    this.clearTarget();
+    const cab = cabSide(this.level!, t);
+    if (exits) {
+      const gate = this.el.querySelector<HTMLElement>(`.gate[data-side="${cab}"][data-index="${t.orient === 'h' ? t.row : t.col}"]`);
+      if (gate) {
+        gate.classList.add('hint-out');
+        gate.insertAdjacentHTML('beforeend', '<span class="out-badge">OUT</span>');
+        return;
+      }
+    }
     const target = t.orient === 'h' ? { ...t, col: t.col + move.delta } : { ...t, row: t.row + move.delta };
     const g = document.createElement('div');
-    g.className = `ghost c-${t.color}${exits ? ' exit' : ''}`;
-    g.dataset.cab = cabSide(this.level!, t);
-    g.textContent = exits ? 'OUT' : '';
+    g.className = `ghost c-${t.color}`;
+    g.dataset.cab = cab;
+    g.innerHTML = `<div class="art">${spriteImg(t.kind ?? defaultKind(t.length), t.color)}</div>`;
+    g.querySelector('img')!.addEventListener('error', () => g.classList.add('plain'));
     this.pad.append(g);
     this.place(g, target);
   }
 
-  clearHint(): void {
+  private clearTarget(): void {
     this.pad.querySelector('.ghost')?.remove();
+    this.el.querySelectorAll('.gate.hint-out').forEach((gate) => {
+      gate.classList.remove('hint-out');
+      gate.querySelector('.out-badge')?.remove();
+    });
+  }
+
+  clearHint(): void {
+    this.clearTarget();
     this.trucks.forEach((el) => el.classList.remove('hinted'));
   }
 
