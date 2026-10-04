@@ -21,7 +21,10 @@ export const BERM_OVER = 0.3;
 /** Where across the berm its crest sits (0 = pad edge, 1 = outer foot). */
 const CREST = 0.44;
 /** The berm's ends slope down to the gate posts over this share of the band. */
-const TAPER = 0.55;
+const TAPER = 0.34;
+/** Each gate's gap stops this far (share of the band) inside its cell, so two neighbouring gates
+ * keep a small nub of berm between them and never read as one opening. */
+export const GAP_INSET = 0.17;
 
 const smooth = (a: number, b: number, x: number) => {
   const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
@@ -48,8 +51,9 @@ export function bermHeight(g: BermGeometry, x: number, y: number): number {
     const on: Record<Side, boolean> = { top: y < 0, bottom: y > pad, left: x < 0, right: x > pad };
     if (!on[gate.side]) continue;
     const along = gate.side === 'top' || gate.side === 'bottom' ? x : y;
-    const a = gate.index * g.cell;
-    const out = along < a ? a - along : along > a + g.cell ? along - a - g.cell : 0;
+    const a = gate.index * g.cell + g.band * GAP_INSET;
+    const b = (gate.index + 1) * g.cell - g.band * GAP_INSET;
+    const out = along < a ? a - along : along > b ? along - b : 0;
     h *= smooth(0, taper, out);
     if (h === 0) return 0;
   }

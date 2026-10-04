@@ -39,6 +39,13 @@ describe('berm', () => {
       }
   });
 
+  it('two neighbouring gates keep a nub of berm between them', () => {
+    const g = geo([{ side: 'top', index: 2 }, { side: 'top', index: 3 }]);
+    expect(bermHeight(g, 2.5 * cell, -band / 2)).toBe(0);
+    expect(bermHeight(g, 3.5 * cell, -band / 2)).toBe(0);
+    expect(bermHeight(g, 3 * cell, -band / 2)).toBeGreaterThan(0.15);
+  });
+
   it('has a look for every ground: dirt and mud with grass, snow without', () => {
     expect(Object.keys(BERM_LOOKS).sort()).toEqual(['gravel', 'mud', 'snow']);
     expect(BERM_LOOKS.gravel.turf && BERM_LOOKS.mud.turf).toBeTruthy();
