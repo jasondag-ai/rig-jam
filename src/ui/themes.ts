@@ -23,8 +23,6 @@ export const THEME_VARS = [
   '--tree-bark',
   '--tree-frost', // snow on tree tiers (transparent if none)
   '--ob-ground', // footprint under obstacles
-  '--truck-grime', // mud splatter on trucks' lower edge (transparent if none)
-  '--truck-roof', // snow on truck roofs (transparent if none)
 ] as const;
 
 export type ThemeVar = (typeof THEME_VARS)[number];
@@ -62,8 +60,6 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--tree-bark': '#f4f1e6',
       '--tree-frost': NONE,
       '--ob-ground': 'rgba(120, 80, 30, 0.22)',
-      '--truck-grime': NONE,
-      '--truck-roof': NONE,
     },
   },
   spring: {
@@ -87,8 +83,6 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--tree-bark': '#efece2',
       '--tree-frost': NONE,
       '--ob-ground': 'rgba(20, 10, 4, 0.35)',
-      '--truck-grime': '#4b2a15',
-      '--truck-roof': NONE,
     },
   },
   winter: {
@@ -112,8 +106,6 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--tree-bark': '#ece8dd',
       '--tree-frost': '#ffffff',
       '--ob-ground': 'rgba(60, 100, 150, 0.18)',
-      '--truck-grime': NONE,
-      '--truck-roof': '#ffffff',
     },
   },
 };

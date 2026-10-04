@@ -12,6 +12,9 @@ export const spriteSrcset = (kind: TruckKind, color: Color) => `${spriteSrc(kind
 export const spriteImg = (kind: TruckKind, color: Color) =>
   `<img class="sprite" alt="" draggable="false" decoding="async" src="${spriteSrc(kind, color)}" srcset="${spriteSrcset(kind, color)}" />`;
 
+/** A season coat for a kind of truck: 'snow' (winter) or 'mud' (spring), one layer for every color. */
+export const coatSrc = (coat: string, kind: TruckKind) => `${BASE}${coat}-${kind}${(globalThis.devicePixelRatio ?? 1) > 1.25 ? '@2x' : ''}.webp`;
+
 const warm = new Set<string>();
 /** Starts loading sprites ahead of time (each once), at the scale this screen will use. */
 export function preloadSprites(list: { kind: TruckKind; color: Color }[]): void {

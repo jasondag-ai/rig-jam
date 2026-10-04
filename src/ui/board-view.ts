@@ -4,7 +4,7 @@ import { pickLine, type BumpHit } from './lines.ts';
 import { OBSTACLE_SVG } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
 import { Spray } from './spray.ts';
-import { gateArt, obstacleFit, obstacleImgs, spriteImg, wireSprite } from './sprites.ts';
+import { coatSrc, gateArt, obstacleFit, obstacleImgs, spriteImg, wireSprite } from './sprites.ts';
 import { BERM_OVER, paintBerm } from './berm.ts';
 import { paintDetail, planDetail } from './lease-detail.ts';
 import { seedFrom } from '../engine/rng.ts';
@@ -242,11 +242,16 @@ export class BoardView {
     const kind = t.kind ?? defaultKind(t.length);
     el.dataset.kind = kind;
     // The art is drawn cab-right and rotated by CSS; the symbol badge and cab overlay stay upright.
+    // Over the sprite lies the season's coat (snow or mud, baked per kind by truck-sprites.py).
+    // A convoy truck carries its number on a small tag on the cab, in its own color.
+    const coat = (name: string) => `url("${new URL(coatSrc(name, kind), location.href).href}")`;
+    el.style.setProperty('--coat-snow', coat('snow'));
+    el.style.setProperty('--coat-mud', coat('mud'));
     el.innerHTML =
       `<div class="ground-shadow"></div>` +
-      `<div class="body"><div class="art">${spriteImg(kind, t.color)}${VEHICLE_SVG[kind]}<i class="roof"></i></div>` +
-      `<div class="bed"><span class="sym">${SYMBOL[t.color]}</span>${t.convoy ? `<span class="convoy-no" aria-label="convoy ${t.convoy}">${t.convoy}</span>` : ''}</div>` +
-      `<div class="cab"><span class="driver-arm"></span></div></div>`;
+      `<div class="body"><div class="art">${spriteImg(kind, t.color)}${VEHICLE_SVG[kind]}<i class="coat"></i></div>` +
+      `<div class="bed"><span class="sym">${SYMBOL[t.color]}</span></div>` +
+      `<div class="cab"><span class="driver-arm"></span>${t.convoy ? `<span class="convoy-no" aria-label="convoy ${t.convoy}">${t.convoy}</span>` : ''}</div></div>`;
     wireSprite(el);
     el.addEventListener('pointerdown', (e) => this.onPointerDown(e, t.id, el));
     el.addEventListener('pointermove', (e) => this.onPointerMove(e));

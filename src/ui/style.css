@@ -597,14 +597,12 @@ canvas.lease-detail {
     opacity 170ms;
   will-change: transform;
   cursor: grab;
-  filter: drop-shadow(0 4px 2px rgba(0, 0, 0, 0.32));
 }
 
 .truck.dragging {
   transition: none;
   z-index: 5;
   cursor: grabbing;
-  filter: drop-shadow(0 9px 5px rgba(0, 0, 0, 0.35));
 }
 
 .truck.no-anim {
@@ -706,40 +704,31 @@ canvas.lease-detail {
 .truck.sprite-on .art img.sprite { display: block; }
 .truck.sprite-on .art svg { display: none; }
 
-/* A soft ground shadow under every truck (cheaper than a filter, and it reads as standing on the pad). */
+/* ONE shadow per truck: this soft ground shadow (no filter shadows, none in the sprites). It
+   spreads a little when the truck is picked up. */
 .truck .ground-shadow {
   position: absolute;
   inset: 6% -3% -9% 3%;
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(30, 20, 10, 0.38), rgba(30, 20, 10, 0.18) 60%, transparent);
+  background: radial-gradient(closest-side, rgba(30, 20, 10, 0.42), rgba(30, 20, 10, 0.2) 60%, transparent);
   pointer-events: none;
 }
-
-.truck.sprite-on { filter: drop-shadow(0 1.5px 0.5px rgba(0, 0, 0, 0.22)); }
-.truck.sprite-on.dragging { filter: drop-shadow(0 6px 4px rgba(0, 0, 0, 0.3)); }
 .truck.dragging .ground-shadow { inset: 14% -6% -16% 8%; opacity: 0.8; }
 
-/* Snow on the sprite's cab roof (winter), placed per kind in cab-right drawing space. */
-.truck .art .roof { display: none; }
-.truck.sprite-on .art .roof {
-  display: block;
+/* Season coat over the sprite, in the sprite's own (cab-right) space so it turns with it: settled
+   snow in winter, mud spatter in spring. Baked per kind by tools/truck-sprites.py, clipped to the
+   truck's shape with soft edges. */
+.truck .art .coat { display: none; }
+.truck.sprite-on .art .coat {
   position: absolute;
-  top: 30%;
-  bottom: 30%;
-  right: calc(var(--roof-at, 25%) + var(--roof-len, 30%) * 0.15);
-  width: calc(var(--roof-len, 30%) * 0.7);
-  /* A soft drift in the middle of the roof: the paint still shows round it. */
-  background: radial-gradient(closest-side, var(--truck-roof) 55%, transparent);
+  inset: 0;
+  background: center / 100% 100% no-repeat;
   pointer-events: none;
 }
-.truck.sprite-on .cab::before { display: none; }
-.truck[data-kind='pickup'] { --roof-at: 26%; --roof-len: 31%; }
-.truck[data-kind='picker'] { --roof-at: 17%; --roof-len: 22%; }
-.truck[data-kind='vac'] { --roof-at: 17.5%; --roof-len: 11%; }
-.truck[data-kind='frac'] { --roof-at: 15.5%; --roof-len: 13%; }
-.truck[data-kind='water'] { --roof-at: 15%; --roof-len: 11.5%; }
+[data-theme='winter'] .truck.sprite-on .art .coat { display: block; background-image: var(--coat-snow); }
+[data-theme='spring'] .truck.sprite-on .art .coat { display: block; background-image: var(--coat-mud); }
 
-/* Upright overlays: the color badge with the gate symbol, and the cab area (driver's arm, roof snow). */
+/* Upright overlays: the color badge with the gate symbol, and the cab area (driver's arm, convoy tag). */
 .truck .bed,
 .truck .cab {
   position: absolute;
@@ -751,21 +740,23 @@ canvas.lease-detail {
   place-items: center;
 }
 
+/* The symbol badge: a small disc in the truck's color, seated on the body. A thin white keyline
+   just inside a hairline dark edge sets it off; the symbol is white with a fine dark outline. */
 .truck .sym {
   display: grid;
   place-items: center;
-  width: calc(var(--cell) * 0.46);
-  height: calc(var(--cell) * 0.46);
-  border: 3px solid var(--outline);
+  width: calc(var(--cell) * 0.37);
+  height: calc(var(--cell) * 0.37);
+  border: 1.5px solid rgba(255, 255, 255, 0.92);
   border-radius: 50%;
   background: var(--c);
-  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.45), 0 2px 0 rgba(0, 0, 0, 0.3);
-  font-size: calc(var(--cell) * 0.26);
+  box-shadow: 0 0 0 1px rgba(42, 26, 12, 0.85), 0 1.5px 2px rgba(0, 0, 0, 0.3);
+  font-size: calc(var(--cell) * 0.23);
   line-height: 1;
   color: #fff;
   text-shadow:
-    -1.5px -1.5px 0 var(--outline), 1.5px -1.5px 0 var(--outline), -1.5px 1.5px 0 var(--outline),
-    1.5px 1.5px 0 var(--outline);
+    -1px -1px 0 var(--outline), 1px -1px 0 var(--outline), -1px 1px 0 var(--outline),
+    1px 1px 0 var(--outline);
 }
 
 .truck[data-cab='right'] .cab { top: 0; bottom: 0; right: 0; width: calc(var(--cell) * 0.64); }
@@ -778,39 +769,6 @@ canvas.lease-detail {
 .truck[data-cab='left'] .bed { padding-left: calc(var(--cell) * 0.62); }
 .truck[data-cab='top'] .bed { padding-top: calc(var(--cell) * 0.62); }
 .truck[data-cab='bottom'] .bed { padding-bottom: calc(var(--cell) * 0.62); }
-
-/* Season: mud splatter along the lower edge (spring), snow on the cab roof (winter). */
-.truck .body::after {
-  content: '';
-  position: absolute;
-  z-index: 2;
-  left: 4px;
-  right: 4px;
-  bottom: 4px;
-  height: 40%;
-  max-height: calc(var(--cell) * 0.4);
-  border-radius: 0 0 7px 7px;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 8% 92%, var(--truck-grime) 0 4px, transparent 4.5px),
-    radial-gradient(circle at 22% 70%, var(--truck-grime) 0 2.5px, transparent 3px),
-    radial-gradient(circle at 37% 95%, var(--truck-grime) 0 5px, transparent 5.5px),
-    radial-gradient(circle at 51% 78%, var(--truck-grime) 0 2px, transparent 2.5px),
-    radial-gradient(circle at 64% 92%, var(--truck-grime) 0 4px, transparent 4.5px),
-    radial-gradient(circle at 78% 66%, var(--truck-grime) 0 2.5px, transparent 3px),
-    radial-gradient(circle at 92% 90%, var(--truck-grime) 0 4.5px, transparent 5px),
-    linear-gradient(to top, var(--truck-grime) 0 3px, transparent 3px);
-  opacity: 0.9;
-}
-
-.truck .cab::before {
-  content: '';
-  position: absolute;
-  inset: 16%;
-  border-radius: 8px;
-  background: var(--truck-roof);
-  box-shadow: 0 2px 0 color-mix(in srgb, var(--truck-roof) 70%, #6f9fd0);
-}
 
 /* ---------- Obstacles: chunky lease equipment (art in obstacles.ts) ---------- */
 
@@ -1493,20 +1451,23 @@ canvas.lease-detail {
 .truck.horiz .bed { grid-auto-flow: column; }
 .truck.vert .bed { grid-auto-flow: row; }
 
-/* A big yellow fleet-number plate. */
+/* The convoy number: a small tag set into the cab roof, in the truck's own color (a shade deeper),
+   white numeral, fine dark keyline. */
+.truck .cab { display: grid; place-items: center; }
 .truck .convoy-no {
   display: grid;
   place-items: center;
-  width: calc(var(--cell) * 0.5);
-  height: calc(var(--cell) * 0.5);
-  border: 3px solid var(--outline);
-  border-radius: 8px;
-  background: #ffd21f;
-  color: var(--outline);
-  font-size: calc(var(--cell) * 0.42);
+  width: calc(var(--cell) * 0.34);
+  height: calc(var(--cell) * 0.34);
+  border: 1.5px solid var(--outline);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--c) 82%, #000);
+  color: #fff;
+  font-size: calc(var(--cell) * 0.27);
   font-weight: 700;
   line-height: 1;
-  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.55), 0 2px 0 rgba(0, 0, 0, 0.35);
+  text-shadow: -1px -1px 0 var(--outline), 1px -1px 0 var(--outline), -1px 1px 0 var(--outline), 1px 1px 0 var(--outline);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .gate.convoy-gate {
@@ -2948,18 +2909,24 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
   transform: translate(-50%, -50%) rotate(calc(var(--turn) * -1));
 }
 
-/* Convoy gates: badge to one side, the chip with the waiting number to the other (upright). */
-.board.gate-art .gate.convoy-gate .gw .g-badge { left: 32%; }
+/* Convoy gates: the badge stays in the middle of the leaf; the chip with the number the gate is
+   waiting for sits on the latch post, clear of it (upright). In the gate's color, white numeral. */
 .board.gate-art .gate.convoy-gate .wait {
   position: absolute;
   z-index: 1;
-  width: calc(var(--fence) * 0.78);
-  height: calc(var(--fence) * 0.78);
+  width: calc(var(--fence) * 0.7);
+  height: calc(var(--fence) * 0.7);
+  border: 1.5px solid var(--outline);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--c) 82%, #000);
+  color: #fff;
+  font-size: calc(var(--fence) * 0.52);
+  text-shadow: -1px -1px 0 var(--outline), 1px -1px 0 var(--outline), -1px 1px 0 var(--outline), 1px 1px 0 var(--outline);
 }
-.board.gate-art .gate.convoy-gate[data-side='top'] .wait { left: 68%; top: 50%; transform: translate(-50%, -50%); }
-.board.gate-art .gate.convoy-gate[data-side='bottom'] .wait { left: 32%; top: 50%; transform: translate(-50%, -50%); }
-.board.gate-art .gate.convoy-gate[data-side='left'] .wait { left: 50%; top: 32%; transform: translate(-50%, -50%); }
-.board.gate-art .gate.convoy-gate[data-side='right'] .wait { left: 50%; top: 68%; transform: translate(-50%, -50%); }
+.board.gate-art .gate.convoy-gate[data-side='top'] .wait { left: 97%; top: 50%; transform: translate(-50%, -50%); }
+.board.gate-art .gate.convoy-gate[data-side='bottom'] .wait { left: 3%; top: 50%; transform: translate(-50%, -50%); }
+.board.gate-art .gate.convoy-gate[data-side='left'] .wait { left: 50%; top: 3%; transform: translate(-50%, -50%); }
+.board.gate-art .gate.convoy-gate[data-side='right'] .wait { left: 50%; top: 97%; transform: translate(-50%, -50%); }
 
 @media (prefers-reduced-motion: reduce) {
   .gw .g-leaf { transition: none; }
