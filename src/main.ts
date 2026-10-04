@@ -91,7 +91,7 @@ function showLevels(requested = savedRegion()): void {
       ${gagsOn() ? `<button class="binoculars" aria-label="Wildlife Log">${BINOCULARS}</button>` : ''}
       <button class="gear" aria-label="Settings">${uiImg('icon_gear')}</button>
       <h1>Rush Hour Rigs</h1>
-      <p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>
+      ${Object.keys(progress.best).length ? '' : '<p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>'}
     </header>
     <div class="daily-block"></div>
     <div class="regions" role="tablist"></div>
@@ -147,21 +147,21 @@ function showLevels(requested = savedRegion()): void {
     const best = progress.best[level.id];
     const open = levelOpen(REGIONS, regionIndex, i, progress.best, progress.demo);
     const li = document.createElement('li');
+    // One compact row per level; the whole row is the button. Three small hats (empty until earned),
+    // or a padlock and what opens it.
     li.innerHTML = open
       ? `<button class="level-btn" data-index="${i}">
           <span class="n">${i + 1}</span>
-          <span class="label"></span>
-          <span class="hats">${best === undefined ? '' : hatsHtml(hardHats(best, level.par))}</span>
+          <span class="label"><span class="lname"></span></span>
+          <span class="hats" aria-label="${best === undefined ? 'not cleared' : `${hardHats(best, level.par)} of 3 hard hats`}">${hatsHtml(best === undefined ? 0 : hardHats(best, level.par))}</span>
         </button>`
       : `<button class="level-btn locked" data-index="${i}" aria-disabled="true">
-          <span class="n">${PADLOCK}</span>
+          <span class="n">${i + 1}</span>
           <span class="label"><span class="lname"></span><span class="lock-text"></span></span>
+          <span class="lock">${PADLOCK}</span>
         </button>`;
-    if (open) li.querySelector('.label')!.textContent = level.name;
-    else {
-      li.querySelector('.lname')!.textContent = level.name;
-      li.querySelector('.lock-text')!.textContent = levelLockText(REGIONS, regionIndex, i, progress.best);
-    }
+    li.querySelector('.lname')!.textContent = level.name;
+    if (!open) li.querySelector('.lock-text')!.textContent = levelLockText(REGIONS, regionIndex, i, progress.best);
     list.append(li);
   });
   list.addEventListener('click', (e) => {
