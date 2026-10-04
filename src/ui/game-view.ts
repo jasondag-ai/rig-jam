@@ -17,7 +17,8 @@ import { applyCamo, loadLog, record, saveLog, sightingToast } from './wildlife-l
 import { GagLayer, type GagOptions } from './gag-layer.ts';
 import { gagsOn } from './flags.ts';
 import { companyLine, tierFor } from './gags.ts';
-import { Sprite } from './anim.ts';
+import { animStill } from './anim.ts';
+import { gsap } from 'gsap';
 import { onTap } from './tap.ts';
 import type { BumpHit } from './lines.ts';
 
@@ -52,8 +53,8 @@ export class GameView {
   private hintBtn: HTMLButtonElement;
   private noteEl: HTMLElement;
   private winEl: HTMLElement;
-  /** The win card's animated characters (stopped when it's replaced). */
-  private winSprites: Sprite[] = [];
+  /** The win card's character motion (killed when the card is replaced). */
+  private winMotion: gsap.core.Animation[] = [];
   private stage: HTMLElement;
   private level: Level;
   private handlers: GameViewHandlers;
@@ -380,7 +381,8 @@ export class GameView {
         ? '<button class="btn primary" data-act="next">Next level ›</button>'
         : '<p class="verdict">That was the last level in this field. Nice work!</p>';
 
-    this.winSprites.forEach((sp) => sp.destroy());
+    this.winMotion.forEach((t) => t.kill());
+    this.winMotion = [];
     this.winEl.innerHTML = `
       <div class="card">
         <h2>Pad cleared!</h2>
@@ -401,28 +403,38 @@ export class GameView {
         </div>
       </div>`;
     this.winEl.querySelector('.company-says')!.textContent = companyLine(moves, par);
-    // The Company Man (Batch C portrait): a nod at par, a scowl when it's well over, otherwise his
-    // usual grumpy idle. The roughneck mascot celebrates a perfect solve, otherwise stands there.
+    // The characters are ONE still image each, moved only in code (cycling their sprite frames
+    // jittered: the frames don't line up). Company Man: his usual look, or the scowl when it's well
+    // over. Roughneck: wrench up on a perfect solve, otherwise standing.
     const tier = tierFor(moves, par);
-    const boss = new Sprite('boss', 66 / 226);
-    boss.el.style.transform = 'translate(33px, 66px)';
-    this.winEl.querySelector('.company-man')!.append(boss.el);
-    const mascot = new Sprite('roughneck', 104 / 226);
-    mascot.el.style.transform = 'translate(52px, 104px)';
-    this.winEl.querySelector('.mascot')!.append(mascot.el);
-    if (reducedMotion()) {
-      boss.show(tier === 'par' ? 'company_man_nod' : tier === 'over' ? 'company_man_scowl' : 'company_man_idle', 3);
-      mascot.show(moves <= par ? 'roughneck_mascot_celebrate' : 'roughneck_mascot_idle', moves <= par ? 4 : 0);
-    } else {
-      const bossIdle = () => boss.play('company_man_idle', { fps: 6, loop: -1 });
-      if (tier === 'par') boss.play('company_man_nod', { fps: 9, loop: 1 }).eventCallback('onComplete', bossIdle);
-      else if (tier === 'over') boss.play('company_man_scowl', { fps: 8 }).eventCallback('onComplete', () => boss.show('company_man_scowl', 5));
-      else bossIdle();
-      if (moves <= par) mascot.play('roughneck_mascot_celebrate', { fps: 12, loop: -1 });
-      else mascot.play('roughneck_mascot_idle', { fps: 7, loop: -1 });
-    }
-    this.winSprites = [boss, mascot];
+    const perfect = moves <= par;
     this.winEl.hidden = false;
+    // Each still is sized to its box on the card (the boxes are smaller on short screens).
+    const bossBox = this.winEl.querySelector<HTMLElement>('.company-man')!;
+    const boss = animStill(tier === 'over' ? 'company_man_scowl' : 'company_man_idle', bossBox.clientHeight || 58, tier === 'over' ? 3 : 0);
+    bossBox.append(boss);
+    const mascotBox = this.winEl.querySelector<HTMLElement>('.mascot')!;
+    const mascot = animStill(perfect ? 'roughneck_mascot_celebrate' : 'roughneck_mascot_idle', mascotBox.clientHeight || 80, perfect ? 9 : 0);
+    mascotBox.append(mascot);
+    if (!reducedMotion()) {
+      // Roughneck: one bounce with squash and stretch (and a small lift of the wrench arm), then he
+      // breathes. Everything turns about his boots, so he never shifts on the card.
+      gsap.set(mascot, { transformOrigin: '50% 94%' });
+      const m = gsap.timeline({ delay: 0.3 });
+      if (perfect) {
+        m.to(mascot, { scaleY: 0.86, scaleX: 1.1, duration: 0.14, ease: 'power2.out' })
+          .to(mascot, { y: -16, scaleY: 1.1, scaleX: 0.94, rotation: -5, duration: 0.24, ease: 'power2.out' })
+          .to(mascot, { y: 0, scaleY: 1, scaleX: 1, rotation: 0, duration: 0.2, ease: 'power2.in' })
+          .to(mascot, { scaleY: 0.9, scaleX: 1.07, duration: 0.09, ease: 'power1.out' })
+          .to(mascot, { scaleY: 1, scaleX: 1, duration: 0.4, ease: 'elastic.out(1, 0.5)' });
+      }
+      m.to(mascot, { scaleY: 1.025, scaleX: 0.992, duration: 1.7, ease: 'sine.inOut', repeat: -1, yoyo: true });
+      // Company Man: one slow, small nod as his line appears, then he holds still.
+      gsap.set(boss, { transformOrigin: '50% 100%' });
+      const b = gsap.timeline({ delay: 0.45 });
+      b.to(boss, { rotation: 5, y: 2.5, duration: 0.55, ease: 'sine.inOut' }).to(boss, { rotation: 0, y: 0, duration: 0.7, ease: 'sine.inOut' });
+      this.winMotion = [m, b];
+    }
     sound.win(hats, moves, par);
   }
 
