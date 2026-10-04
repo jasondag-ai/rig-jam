@@ -101,9 +101,9 @@ something, give exact clicks and one command at a time.
   seamless source in `tools/ground-art/` blended through soft random masks, plus a slow tone drift.
   Sources are cleaned first: the mud's puddles are filled in with mud (`fill_puddles`), the snow's
   baked tire ruts are smoothed away (`smooth_snow`). Outside the berm: `grass-<season>.webp`, a 768px
-  field that wraps, drawn at 384px, the source repeating every 96px inside it (fine blades, same
-  scale every season; winter's rows are also quarter-turned so its weave doesn't show; spring grass
-  is a stand-in tinted from summer). Writes `src/ui/ground-tiles.json` (tones; each theme's
+  field that wraps, drawn at 384px, the source repeating every 96px inside it (fine blades; spring
+  grass is a stand-in tinted from summer). Winter's is a SNOW field (`snow_field` + `drifts`, made
+  from the pad's cleaned snow): cool and a step darker than the pad, with gentle drifts. Writes `src/ui/ground-tiles.json` (tones; each theme's
   `--pad`/`--ground` match them). `applyTheme` adds `.ground-tex` once both images are in (flat
   colors until then).
 - Ground variety (`src/ui/lease-detail.ts`, tested): `planDetail(level, ground, seed)` is pure and
@@ -117,7 +117,11 @@ something, give exact clicks and one command at a time.
   each gate's gap; `paintBerm` shades it on a canvas (`canvas.berm`, under the yard) from a height
   map with seeded lumps, lit from the top left, soft shadow down-right onto the pad, grass creeping
   up the outer slope and tufts. Looks per ground (`BERM_LOOKS`): brown dirt (gravel), wet dark mud
-  with shine (mud), snow with dry stalks (snow). Repainted only when size, level or season changes.
+  with shine (mud), snow (its shaded side and its shadow on the pad are a soft blue-grey, never
+  charcoal: `ambient`/`sun`). The outer foot is ragged (slow noise along the berm), not a smooth
+  tube, and the crest takes a brighter highlight. Tufts are never stamped at even steps: loose
+  clumps with gaps, three shapes (fan, stalks with seed heads, rosette), varied size and lean; dry
+  tan stalks in winter. Repainted only when size, level or season changes.
   Picture only: the engine's walls block trucks. `--fence` is still the band's thickness in px.
 - Pipe swing gates (`.gate-art`, set by `gateArt` once the pieces from `gate_open_v2.png` load, cut
   by `tools/fence-sprites.py`): each sits in its gap in the berm: hinge post, leaf (white frame
@@ -127,6 +131,10 @@ something, give exact clicks and one command at a time.
   the leaf swings 90 degrees (260ms ease-out): outward on top/bottom, inward on the sides; none with
   reduced motion. Wrong-color gates simply stay shut. Convoy gates keep the badge centred and put the
   waiting-number chip (gate color, white numeral) on the latch post, clear of it. Fallback: the colored tabs (`.sym` + `.boom`).
+- Winter light: the warm sun wash, warm corner shade and warm vignette are swapped for clean
+  white light on the pad and a cool blue falloff outside (`[data-theme='winter']` rules), so the pad
+  is the brightest surface on screen. `scenery.ts` scatters a few dry tan grass stalks in the snow
+  (`winterStalks`, seeded per level).
 - Lighting pass (end of style.css): warm top-left light graded into the pad and outside-ground
   backgrounds, a slight sepia on the trees, soft down-right drop shadows on the berm, gates, trees
   and HUD, and a warm vignette (`.vignette`, z 0: over the scenery, under the board, HUD and
@@ -214,8 +222,10 @@ something, give exact clicks and one command at a time.
   body: shirt, a round bare cartoon cheek at the back (intended, no detail), coveralls bunched round
   his knees, a toilet paper streamer trailing from his hand. Puppet rig (`WORKER_RIG`). He doesn't go
   back in. Once per level.
-- Block heater cords (Duvernay): each truck plugged into a post in the fence behind it; first move
-  rips the cord out (whip + sparks); the post keeps a dangling plug. Restart re-plugs.
+- Block heater cords (Duvernay): each truck plugged into a post on the berm's inner slope behind
+  it; the cord is a cable (thick dark jacket, lighter line along it, orange plug at the truck) with
+  a coil of slack on the ground, all inside the pad and berm. First move rips it out (whip +
+  sparks); the post keeps a dangling plug. Restart re-plugs.
 - Landowner (Montney): first time any lane wears to `WEAR_CAP`, he rides along below the board on
   his quad, shakes his fist, "Who's paying for these ruts?", rides off. Once per level.
 - Character animation: GSAP on puppet rigs. `src/ui/rig.ts`: each part of a drawing is a group with
@@ -353,18 +363,19 @@ something, give exact clicks and one command at a time.
 - `src/ui/` – DOM rendering, drag input, screens, local progress.
 - Truck sprites: `public/sprites/trucks/<kind>-<color>(@2x).webp`, made by `python3
   tools/truck-sprites.py` from the sources in `tools/truck-art/` (top-down, cab at the top, white).
-  The script drops any soft shadow in the source, trims, turns each cab-right, and repaints the
+  The script cleans the silhouette (steepened alpha: no soft shadow, no fringe), trims, turns each cab-right, and repaints the
   gate color through per-kind regions (`PAINT`): the cab on every truck, the whole body on pickup
   and picker, the tank shell on vac and water (plus water's rear fenders), and the engine housing
   and deck on the frac unit (it has no tank). Chrome, tires, walkways, hatches, hose reels and the
-  pump's fluid end stay neutral. It bakes the dark toy outline and writes
+  pump's fluid end stay neutral. It bakes ONE crisp dark toy outline (drawn 4x oversize and scaled down, so the
+  edge is clean and anti-aliased) and writes
   `src/ui/truck-sprites.json` (measured paint color and painted share; `sprites.test.ts` checks the
   color matches its gate, colors stay apart, each stands out from every season's pad, and the
   share is at least 0.40 for every kind). `sprites.ts` adds the `<img>` in the truck's `.art`
   (rotated like the SVG) and the SVG stays as the fallback until it loads (`.sprite-on`) or fails.
   Sprites preload per level and all in idle time. `npm run test:e2e:sprites`.
-- Season coats: the same script bakes `snow-<kind>(@2x).webp` (winter: a light dusting on the top
-  surfaces) and `mud-<kind>(@2x).webp` (spring: spatter along the sides and back), one layer per
+- Season coats: the same script bakes `snow-<kind>(@2x).webp` (winter: a crisp flat snow cap on the
+  cab roof and the tank's crest, `SNOW` boxes per kind, blue-grey at its rim) and `mud-<kind>(@2x).webp` (spring: spatter along the sides and back), one layer per
   kind for every color, clipped inside the truck's own shape with soft edges. The truck's `.coat`
   element (in `.art`, so it turns with the sprite) shows one by theme. No CSS-drawn snow or grime.
 - ONE shadow per truck: the soft `.ground-shadow` (it spreads while dragging). No filter shadows on
@@ -372,7 +383,7 @@ something, give exact clicks and one command at a time.
 - Truck markings: the symbol badge (`.sym`) is a small disc (0.37 cell) in the truck's color with a
   thin white keyline inside a hairline dark edge, centred on the body clear of the cab. A convoy
   truck's number is a small tag on the cab roof (`.convoy-no`, in `.cab`): the truck's color a shade
-  deeper, white numeral, fine dark keyline. `node e2e/truck-shots.mjs` saves judging screenshots.
+  deeper, white numeral, fine dark keyline. `node e2e/board-shots.mjs` saves judging screenshots.
 - Obstacle sprites: `public/sprites/obstacles/<kind>(@2x).webp` from `tools/obstacle-art/` (3/4
   high-angle on a concrete slab, intentionally unlike the top-down trucks), made by `python3
   tools/obstacle-sprites.py` (trim, outline, writes `src/ui/obstacle-sprites.json` aspect ratios).

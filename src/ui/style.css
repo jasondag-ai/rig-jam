@@ -1955,12 +1955,12 @@ canvas.lease-detail {
   pointer-events: none;
 }
 
-.cord {
-  fill: none;
-  stroke: #1c1c1c;
-  stroke-width: 5;
-  stroke-linecap: round;
-}
+/* A cable, not a wire: a thick dark jacket with a lighter line along it, a coil of slack on the
+   ground, and an orange plug at the truck. It stays on the pad, starting at its post. */
+.cord path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.cord .cord-core { stroke: #1b1815; stroke-width: 9; }
+.cord .cord-hi { stroke: #6e675e; stroke-width: 2.6; }
+.cord .cord-plug { fill: #ff8a00; stroke: #1b1815; stroke-width: 2.5; }
 
 .spark {
   z-index: 7;
@@ -3289,3 +3289,29 @@ img.hat { width: 100%; height: auto; }
 /* The Daily Pad button once today's pad is cleared: green, with no box behind it (the old flat
    green fill showed as a blue rectangle round the button once it was hue-shifted). */
 .daily-btn.done { background: none; }
+
+/* ---------- Winter light: cool, with the pad the brightest surface on screen ----------
+   The warm sun wash and the warm-dark corners are for dirt and grass; on snow they read as dirty
+   sand. Winter gets clean white light on the pad and a cool blue falloff outside it. */
+[data-theme='winter'].screen.ground-tex {
+  background:
+    linear-gradient(to bottom, var(--sky-top) 0, var(--sky-bottom) var(--horizon), transparent var(--horizon)),
+    radial-gradient(ellipse 90% 60% at 15% 30%, rgba(255, 255, 255, 0.16), transparent 70%),
+    linear-gradient(to bottom, transparent 55%, rgba(40, 70, 130, 0.16)),
+    var(--grass-tile) 0 0 / 384px 384px repeat,
+    var(--ground);
+}
+[data-theme='winter'].screen.ground-tex .lease-ground {
+  background:
+    radial-gradient(ellipse 85% 75% at 22% 18%, rgba(255, 255, 255, 0.5), transparent 72%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.14) 45%, rgba(110, 140, 190, 0.07)),
+    var(--lease-img) center / 100% 100% no-repeat,
+    var(--pad);
+}
+[data-theme='winter'] .vignette {
+  background: radial-gradient(ellipse 75% 70% at 50% 48%, transparent 60%, rgba(40, 62, 110, 0.26) 100%);
+}
+
+/* Dry grass stalks poking through the snow outside the berm (scenery.ts), seeded per level. */
+.trees .stalk { position: absolute; display: block; overflow: visible; pointer-events: none; }
+.trees .stalk path { fill: none; stroke-linecap: round; }

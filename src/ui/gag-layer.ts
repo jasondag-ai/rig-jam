@@ -99,6 +99,8 @@ export interface Bands {
   ground: number;
 }
 
+/** How far beside its lane's centre line a block heater post stands, in cells. */
+const POST_ASIDE = 0.32;
 const PUFF: Record<GagOptions['ground'], string> = { gravel: '#dcc9a0', mud: '#7a5532', snow: '#ffffff' };
 
 type SpotterState = 'walking' | 'asleep' | 'waking';
@@ -148,7 +150,7 @@ export class GagLayer {
   private spotter: { el: HTMLElement; state: SpotterState; x: number; y: number; w: number; h: number } | null = null;
   private biffy: { el: HTMLElement; spot: BiffySpot; done: boolean } | null = null;
   private biffySprite: Sprite | null = null;
-  private cords = new Map<string, { cord: Cord; post: HTMLElement; line: SVGPathElement | null }>();
+  private cords = new Map<string, { cord: Cord; post: HTMLElement; line: SVGGElement | null }>();
   private cordLayer: SVGSVGElement | null = null;
   private landownerDone = false;
   /** The bush the bear would squat beside stands there from the start of the level. */
@@ -206,7 +208,7 @@ export class GagLayer {
     if (this.bush) this.placeBush(this.bush);
     for (const { cord, post, line } of this.cords.values()) {
       this.placePost(post, cord);
-      if (line) line.setAttribute('d', this.cordPath(cord));
+      if (line) this.drawCord(line, this.cordPath(cord), cord.to);
     }
   }
 
@@ -630,10 +632,12 @@ export class GagLayer {
     for (const t of level.trucks) {
       const cord = cordFor(level, t);
       const post = this.figure('gag plug-post', PLUG_POST);
-      let line: SVGPathElement | null = null;
+      // The cable: a dark jacket, a lighter line along it, and the plug at the truck's end.
+      let line: SVGGElement | null = null;
       if (Math.hypot(cord.to.x - cord.from.x, cord.to.y - cord.from.y) > 0.01) {
-        line = document.createElementNS(NS, 'path');
+        line = document.createElementNS(NS, 'g');
         line.setAttribute('class', 'cord');
+        line.innerHTML = '<path class="cord-core"/><path class="cord-hi"/><rect class="cord-plug" width="13" height="10" rx="2.5"/>';
         this.cordLayer.append(line);
       }
       this.cords.set(t.id, { cord, post, line });
@@ -642,32 +646,61 @@ export class GagLayer {
 
   private placePost(post: HTMLElement, cord: Cord): void {
     const { cellPx: cell, fencePx: fence } = this.host;
-    // Sized to sit inside the fence band with a little room either side.
+    // On the berm's inner slope, right at the pad's edge, so the cord plugs straight into it and
+    // nothing (post, cord or dangling plug) reaches outside the berm.
     const h = fence * 0.78;
     const w = h * 0.67;
     const along = fence + (cord.index + 0.5) * cell;
-    const across = cord.side === 'left' || cord.side === 'top' ? fence * 0.5 : fence * 1.5 + cell * SIZE;
+    const across = cord.side === 'left' || cord.side === 'top' ? fence * 0.68 : fence * 1.32 + cell * SIZE;
     const vertical = cord.side === 'left' || cord.side === 'right';
     Object.assign(post.style, {
       width: `${w}px`,
       height: `${h}px`,
       // Beside the lane, so it never covers a gate in the same spot.
-      left: `${(vertical ? across : along + cell * 0.32) - w / 2}px`,
-      top: `${(vertical ? along - cell * 0.32 : across) - h / 2}px`,
+      left: `${(vertical ? across : along + cell * POST_ASIDE) - w / 2}px`,
+      top: `${(vertical ? along - cell * POST_ASIDE : across) - h / 2}px`,
     });
   }
 
-  /** A slightly sagging cord from the pad edge to the truck's rear (pad units: 100 per cell). */
+  /**
+   * The cord's path (pad units: 100 per cell): out of its post at the pad's edge, a coil of slack
+   * lying on the ground, then a slightly sagging run to the truck's rear.
+   */
   private cordPath(c: Cord): string {
     const [x1, y1, x2, y2] = [c.from.x * 100, c.from.y * 100, c.to.x * 100, c.to.y * 100];
-    const sag = 9;
     const horizontal = Math.abs(y2 - y1) < 1;
-    const mx = (x1 + x2) / 2 + (horizontal ? 0 : sag);
-    const my = (y1 + y2) / 2 + (horizontal ? sag : 0);
-    return `M${x1} ${y1} Q${mx} ${my} ${x2} ${y2}`;
+    // The post stands beside the lane: start there, at the pad's edge.
+    const sx = horizontal ? x1 : x1 + POST_ASIDE * 100;
+    const sy = horizontal ? y1 - POST_ASIDE * 100 : y1;
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    const dir = horizontal ? Math.sign(x2 - x1) : Math.sign(y2 - y1);
+    // Too short for a coil: just a curve from the post to the truck.
+    if (len < 55) return horizontal ? `M${sx} ${sy} Q${sx + dir * 12} ${y1} ${x2} ${y2}` : `M${sx} ${sy} Q${x1} ${sy + dir * 12} ${x2} ${y2}`;
+    // Join the lane's centre line a little way in, loop once, carry on to the truck with a sag.
+    const join = Math.min(32, len * 0.3);
+    const r = 11;
+    const sag = 7;
+    if (horizontal) {
+      const jx = x1 + dir * join;
+      const mx = (jx + x2) / 2;
+      return `M${sx} ${sy} C${sx + dir * 14} ${sy} ${jx - dir * 12} ${y1} ${jx} ${y1} c${dir * r * 2.4} ${r * 2.6} ${-dir * r * 2.4} ${r * 2.6} ${dir * 6} 0 Q${mx} ${y1 + sag} ${x2} ${y2}`;
+    }
+    const jy = y1 + dir * join;
+    const my = (jy + y2) / 2;
+    return `M${sx} ${sy} C${sx} ${sy + dir * 14} ${x1} ${jy - dir * 12} ${x1} ${jy} c${-r * 2.6} ${dir * r * 2.4} ${-r * 2.6} ${-dir * r * 2.4} 0 ${dir * 6} Q${x1 + sag} ${my} ${x2} ${y2}`;
   }
 
-  private rip(id: string, c: { cord: Cord; post: HTMLElement; line: SVGPathElement | null }): void {
+  /** Puts a path on both layers of a cord and its plug at the loose end. */
+  private drawCord(line: SVGGElement, d: string, end: { x: number; y: number }, plug = true): void {
+    line.querySelectorAll('path').forEach((p) => p.setAttribute('d', d));
+    const rect = line.querySelector('rect');
+    if (!rect) return;
+    if (!plug) return rect.remove();
+    rect.setAttribute('x', String(end.x * 100 - 6.5));
+    rect.setAttribute('y', String(end.y * 100 - 5));
+  }
+
+  private rip(id: string, c: { cord: Cord; post: HTMLElement; line: SVGGElement | null }): void {
     this.cords.delete(id);
     c.post.classList.add('ripped');
     sound.cordSnap();
@@ -688,7 +721,7 @@ export class GagLayer {
       const horizontal = Math.abs(to.y - from.y) < 0.01;
       const mx = ((from.x + ex) / 2) * 100 + (horizontal ? 0 : amp);
       const my = ((from.y + ey) / 2) * 100 + (horizontal ? amp : 0);
-      line.setAttribute('d', `M${from.x * 100} ${from.y * 100} Q${mx} ${my} ${ex * 100} ${ey * 100}`);
+      this.drawCord(line, `M${from.x * 100} ${from.y * 100} Q${mx} ${my} ${ex * 100} ${ey * 100}`, { x: ex, y: ey }, false);
       if (k < 1) requestAnimationFrame(step);
       else line.remove();
     };
