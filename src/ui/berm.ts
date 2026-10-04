@@ -65,6 +65,10 @@ interface Look {
   shade: RGB;
   /** Wet shine, 0 = dry. */
   gloss: number;
+  /** Light on a surface facing away from the sun (ambient), and how much the sun adds. Snow keeps
+   * its shaded side light and blue; dirt goes properly dark. */
+  ambient: number;
+  sun: number;
   /** Grass creeping up the outer slope (null = none), and how many tufts per band-length of berm. */
   turf: RGB | null;
   tufts: number;
@@ -74,11 +78,12 @@ interface Look {
 
 export const BERM_LOOKS: Record<Ground, Look> = {
   // Cardium summer: dry brown dirt, plenty of grass on the outer slope.
-  gravel: { dark: [118, 82, 50], light: [176, 132, 88], shade: [150, 120, 120], gloss: 0, turf: [92, 128, 40], tufts: 2.2, blades: ['#4f8a1e', '#6fa82c', '#8dbf3a', '#3d6f18'], shadow: 'rgba(45, 25, 8, 0.45)' },
+  gravel: { dark: [118, 82, 50], light: [176, 132, 88], shade: [150, 120, 120], gloss: 0, ambient: 0.36, sun: 0.98, turf: [92, 128, 40], tufts: 2.2, blades: ['#4f8a1e', '#6fa82c', '#8dbf3a', '#3d6f18'], shadow: 'rgba(45, 25, 8, 0.45)' },
   // Montney spring: wet dark mud, a few new shoots.
-  mud: { dark: [50, 33, 21], light: [104, 74, 50], shade: [140, 125, 135], gloss: 0.5, turf: [78, 96, 34], tufts: 0.6, blades: ['#6f9a2a', '#8fb53a', '#55801f'], shadow: 'rgba(20, 10, 2, 0.5)' },
-  // Duvernay winter: snow over the berm, dry stalks poking through.
-  snow: { dark: [208, 222, 240], light: [255, 255, 255], shade: [150, 175, 215], gloss: 0.12, turf: null, tufts: 0.45, blades: ['#b99a5c', '#9c7f48', '#d1b877'], shadow: 'rgba(50, 80, 130, 0.38)' },
+  mud: { dark: [50, 33, 21], light: [104, 74, 50], shade: [140, 125, 135], gloss: 0.5, ambient: 0.36, sun: 0.98, turf: [78, 96, 34], tufts: 0.6, blades: ['#6f9a2a', '#8fb53a', '#55801f'], shadow: 'rgba(20, 10, 2, 0.5)' },
+  // Duvernay winter: snow over the berm. Its shaded side is a soft blue-grey, never charcoal, and
+  // its shadow on the pad is the same cool blue. Dry tan stalks poke through.
+  snow: { dark: [224, 233, 246], light: [255, 255, 255], shade: [168, 190, 226], gloss: 0.1, ambient: 0.8, sun: 0.33, turf: null, tufts: 0.7, blades: ['#b99a5c', '#9c7f48', '#c8ad6c', '#8a6f3e'], shadow: 'rgba(70, 105, 160, 0.3)' },
 };
 
 /** Repeatable value noise in 0..1. */
@@ -142,7 +147,15 @@ export function paintBerm(canvas: HTMLCanvasElement, g: BermGeometry, ground: Gr
         i = Math.floor((pad + edge) / px); // skip across the pad
         continue;
       }
-      const h = bermHeight(g, x, y);
+      let h = bermHeight(g, x, y);
+      if (h <= 0) continue;
+      // A ragged outer foot: the outer slope ends sooner in some places than others (slow noise
+      // along the berm), so the outline is pushed-up dirt, not a smooth tube.
+      const ox0 = x < 0 ? -x : x > pad ? x - pad : 0;
+      const oy0 = y < 0 ? -y : y > pad ? y - pad : 0;
+      const out = Math.hypot(ox0, oy0) / edge;
+      const foot = 0.78 + 0.22 * noise(x / (g.band * 1.6) + 11, y / (g.band * 1.6) + 11) - 0.08 * noise(x / (g.band * 0.5) + 31, y / (g.band * 0.5) + 31);
+      if (out > foot - 0.2) h *= 1 - smooth(foot - 0.2, foot, out);
       if (h <= 0) continue;
       const k = j * n + i;
       base[k] = h;
@@ -182,7 +195,9 @@ export function paintBerm(canvas: HTMLCanvasElement, g: BermGeometry, ground: Gr
         b += (look.turf[2] - b) * t;
       }
       // Light: bright on the slope facing the sun, tinted shade on the far side, darker at the foot.
-      const bright = 0.36 + 0.98 * diffuse;
+      // A brighter, harder highlight along the crest where it catches the sun.
+      const crest = smooth(0.82, 0.97, h) * smooth(0.55, 0.8, diffuse) * 0.12;
+      const bright = look.ambient + look.sun * diffuse + crest;
       const inShade = 1 - smooth(0.25, 0.75, diffuse);
       const foot = 0.82 + 0.18 * smooth(0, 0.35, h);
       const m = bright * foot;
@@ -217,43 +232,81 @@ export function paintBerm(canvas: HTMLCanvasElement, g: BermGeometry, ground: Gr
   ctx.drawImage(layer, 0, 0);
 }
 
-/** Grass tufts (or winter's dry stalks) on the outer slope. */
+/**
+ * Grass on the outer slope (dry tan stalks in winter). Nothing is stamped at even steps: tufts come
+ * in loose clumps with gaps between, each one of three shapes (a fan of blades, a few tall stalks
+ * with seed heads, a low rosette), in its own size, leaning its own way, mostly away from the pad.
+ */
 function tufts(ctx: CanvasRenderingContext2D, g: BermGeometry, look: Look, seed: number, scale: number): void {
   const rand = mulberry32(seed ^ 0x9e3779b9);
   const pad = g.cell * SIZE;
   const edge = g.band + g.over;
-  const count = Math.round(((pad * 4) / g.band) * look.tufts);
+  const winter = look.turf === null;
   ctx.save();
   ctx.scale(scale, scale);
   ctx.translate(edge, edge);
   ctx.lineCap = 'round';
-  for (let t = 0; t < count; t++) {
-    // A spot along the perimeter, on the outer slope.
-    const side = Math.floor(rand() * 4);
-    const along = -g.band * 0.6 + rand() * (pad + g.band * 1.2);
-    const out = edge * (0.62 + rand() * 0.34);
-    const x = side === 0 || side === 2 ? along : side === 1 ? pad + out : -out;
-    const y = side === 0 ? -out : side === 2 ? pad + out : along;
-    const size = g.band * (0.2 + rand() * 0.16);
-    const blades = 3 + Math.floor(rand() * 4);
-    if (bermHeight(g, x, y) < 0.12) {
-      for (let b = 0; b < blades * 3; b++) rand(); // keep the sequence the same whatever is skipped
-      continue;
+  const perimeter = pad * 4;
+  // Walk round the pad: a clump of 1-4 tufts close together, then a gap of varying length.
+  let at = rand() * g.band;
+  const mean = g.band / look.tufts;
+  while (at < perimeter) {
+    const clump = 1 + Math.floor(rand() * rand() * 4);
+    for (let c = 0; c < clump; c++) {
+      const s = (at + (rand() - 0.5) * g.band * 0.5 + perimeter) % perimeter;
+      const side = Math.floor(s / pad);
+      const along = s % pad;
+      const out = edge * (0.56 + rand() * 0.32);
+      const x = side === 0 ? along : side === 1 ? pad + out : side === 2 ? pad - along : -out;
+      const y = side === 0 ? -out : side === 1 ? along : side === 2 ? pad + out : pad - along;
+      // Pointing away from the pad, give or take; winter stalks lean with the wind a little.
+      const outward = [-Math.PI / 2, 0, Math.PI / 2, Math.PI][side];
+      const lean = outward + (rand() - 0.5) * 1.5;
+      const size = g.band * (0.16 + rand() * rand() * 0.34);
+      const kind = winter ? (rand() < 0.75 ? 'stalks' : 'fan') : rand() < 0.5 ? 'fan' : rand() < 0.6 ? 'rosette' : 'stalks';
+      const picks = [rand(), rand(), rand(), rand(), rand(), rand(), rand(), rand()];
+      at += g.band * (0.18 + rand() * 0.3);
+      if (bermHeight(g, x, y) < 0.15) continue;
+      drawTuft(ctx, x, y, lean, size, kind, look, picks, g.band);
     }
-    ctx.fillStyle = 'rgba(20, 14, 4, 0.28)';
-    ctx.beginPath();
-    ctx.ellipse(x + size * 0.12, y + size * 0.1, size * 0.42, size * 0.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-    for (let b = 0; b < blades; b++) {
-      const lean = (b / (blades - 1) - 0.5) * 1.5 + (rand() - 0.5) * 0.3;
-      const len = size * (0.7 + rand() * 0.6);
-      ctx.strokeStyle = look.blades[Math.floor(rand() * look.blades.length)];
-      ctx.lineWidth = Math.max(0.9, g.band * 0.055);
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.quadraticCurveTo(x + Math.sin(lean) * len * 0.3, y - len * 0.6, x + Math.sin(lean) * len, y - Math.cos(lean) * len);
-      ctx.stroke();
-    }
+    at += mean * (0.3 + rand() * 2.2);
   }
   ctx.restore();
+}
+
+function drawTuft(ctx: CanvasRenderingContext2D, x: number, y: number, lean: number, size: number, kind: string, look: Look, picks: number[], band: number): void {
+  const color = (i: number) => look.blades[Math.floor(picks[i % picks.length] * look.blades.length) % look.blades.length];
+  const dir = (a: number, len: number): [number, number] => [x + Math.cos(a) * len, y + Math.sin(a) * len];
+  // A soft seat where it meets the ground.
+  ctx.fillStyle = look.turf === null ? 'rgba(90, 120, 170, 0.22)' : 'rgba(20, 14, 4, 0.26)';
+  ctx.beginPath();
+  ctx.ellipse(x, y, size * 0.4, size * 0.22, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const blade = (a: number, len: number, width: number, bend: number, i: number, head = false) => {
+    const [ex, ey] = dir(a, len);
+    const [cx, cy] = dir(a + bend, len * 0.55);
+    ctx.strokeStyle = color(i);
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.quadraticCurveTo(cx, cy, ex, ey);
+    ctx.stroke();
+    if (head) {
+      ctx.fillStyle = color(i + 1);
+      ctx.beginPath();
+      ctx.ellipse(ex, ey, width * 1.25, width * 0.75, a, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+  const w = Math.max(0.9, band * 0.05);
+  if (kind === 'fan') {
+    const n = 3 + Math.floor(picks[0] * 4);
+    for (let i = 0; i < n; i++) blade(lean + (i / (n - 1) - 0.5) * (0.9 + picks[1] * 0.9), size * (0.75 + picks[(i + 2) % 8] * 0.6), w, (picks[(i + 3) % 8] - 0.5) * 0.5, i);
+  } else if (kind === 'stalks') {
+    const n = 2 + Math.floor(picks[0] * 3);
+    for (let i = 0; i < n; i++) blade(lean + (i / Math.max(1, n - 1) - 0.5) * 0.5 + (picks[(i + 1) % 8] - 0.5) * 0.25, size * (1.25 + picks[(i + 2) % 8] * 0.9), w * 0.8, (picks[(i + 4) % 8] - 0.5) * 0.7, i, true);
+  } else {
+    const n = 5 + Math.floor(picks[0] * 4);
+    for (let i = 0; i < n; i++) blade(lean + (i / n - 0.5) * Math.PI * 1.5, size * (0.4 + picks[(i + 2) % 8] * 0.35), w * 1.1, 0.2, i);
+  }
 }
