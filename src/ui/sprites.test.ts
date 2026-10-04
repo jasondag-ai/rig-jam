@@ -83,9 +83,9 @@ describe('obstacle sprites', () => {
 });
 
 describe('ground tiles', () => {
-  it('one lease surface and a grass tile for every season, as WebP', () => {
+  it('one lease surface and a grass field for every season, as WebP', () => {
     for (const id of ['summer', 'spring', 'winter'])
-      for (const [kind, max] of [['lease', 300_000], ['grass', 160_000]] as const) {
+      for (const [kind, max] of [['lease', 300_000], ['grass', 200_000]] as const) {
         const file = `public/sprites/ground/${kind}-${id}.webp`;
         expect(existsSync(file), file).toBe(true);
         expect(statSync(file).size, file).toBeLessThan(max);

@@ -1,32 +1,32 @@
 {
   "pad-summer": {
-    "mean": "#bda78e",
-    "dark": "#af9982",
-    "light": "#cab59d"
+    "mean": "#bda78f",
+    "dark": "#b09a83",
+    "light": "#cbb59d"
   },
   "pad-spring": {
-    "mean": "#523a29",
-    "dark": "#452f1f",
-    "light": "#634a38"
+    "mean": "#523a2a",
+    "dark": "#473120",
+    "light": "#5b4333"
   },
   "pad-winter": {
-    "mean": "#dce5f1",
-    "dark": "#c0cfe7",
-    "light": "#f2f6fa"
+    "mean": "#d8e1ec",
+    "dark": "#cfd8e3",
+    "light": "#e0e8f2"
   },
   "grass-summer": {
-    "mean": "#5a831f",
-    "dark": "#386114",
-    "light": "#83a734"
+    "mean": "#59821f",
+    "dark": "#4c7819",
+    "light": "#688d25"
   },
   "grass-spring": {
-    "mean": "#5f8a1c",
-    "dark": "#3a6612",
-    "light": "#89ae30"
+    "mean": "#5e881c",
+    "dark": "#507d16",
+    "light": "#6e9321"
   },
   "grass-winter": {
-    "mean": "#b9aea6",
-    "dark": "#827267",
-    "light": "#e8e8eb"
+    "mean": "#b7aca4",
+    "dark": "#94867b",
+    "light": "#d7d3d3"
   }
 }
