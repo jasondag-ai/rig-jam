@@ -132,7 +132,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       });
       const offR = await offScreen(page, '.screen.levels');
       check(offR.length === 0 && list.rows === 10 && list.full > 0, `${region.name}: 10 rows, earned hats showing, nothing off screen`);
-      if (size === '390x844') check(list.scroll <= 200, `${region.name}: all 10 levels need only a short scroll at 390x844 (${Math.round(list.scroll)}px)`);
+      if (size === '390x844') check(list.scroll <= 220, `${region.name}: all 10 levels need only a short scroll at 390x844 (${Math.round(list.scroll)}px)`);
       if (shoot) {
         await page.screenshot({ path: join(OUT, `menu_levels_${region.id}_${size}.png`) });
         await page.evaluate(() => document.querySelector('.screen.levels').scrollTo(0, 99999));

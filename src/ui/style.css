@@ -3393,7 +3393,7 @@ img.hat { width: 100%; height: auto; }
   font-weight: 700;
 }
 .safety-sign .sign-foot.used { background: #ffc21a; }
-.daily-block .safety-sign { margin-bottom: 32px; }
+.daily-block .safety-sign { margin-bottom: 29px; }
 .level-btn .lock img.padlock,
 .region-tab.locked img.padlock { filter: grayscale(1) brightness(1.1); opacity: 0.6; }
 
@@ -3401,4 +3401,4 @@ img.hat { width: 100%; height: auto; }
 .overlay.win { background: rgba(30, 20, 10, 0.3); }
 
 /* Room for the tree line between the header and the sign. */
-.levels .daily-block { margin-top: 38px; }
+.levels .daily-block { margin-top: 30px; }

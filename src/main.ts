@@ -59,7 +59,7 @@ function shake(el: HTMLElement): void {
   el.classList.add('nope');
 }
 /** The level list's tree line: how tall its tallest trees are, and so how far under the header the horizon sits. */
-const LIST_TREES = 30;
+const LIST_TREES = 24;
 const REGION_KEY = 'rush-hour-rigs:region';
 let game: GameView | null = null;
 

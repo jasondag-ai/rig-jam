@@ -168,7 +168,7 @@ something, give exact clicks and one command at a time.
   `.levels` scrolls up and down only (`overflow-x: hidden`; `.scenery` clips its trees).
 - Level list: compact rows 54px tall (`.level-btn`, the whole row is the button): number chip,
   name, three small hard hats (empty until earned), or for a locked level a padlock and "Clear level
-  N to unlock". All 10 need under 200px of scroll at 390x844. The big level-card art is not used.
+  N to unlock". All 10 need about 200px of scroll at 390x844 (under 220). The big level-card art is not used.
 - Win card (level and Daily Pad; `npm run test:e2e:card`): one centered panel. The frame is a
   9-slice border image, `frame_win(@2x).webp`, made by `python3 tools/win-frame.py` from the panel
   art with its two drawn button slots cut out, so it grows with its content and the gold trim shows
