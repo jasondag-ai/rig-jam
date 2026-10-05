@@ -2,11 +2,13 @@
 // reference (~/Desktop/RHR Art Inbox/bear_rabbit_reference.html): the same drawings, poses, beats
 // and timing. The hare's ears twitch behind the bush; the bear lumbers in on all fours from off
 // screen, sniffs, sits, strains, spots the ears, SNATCH, a long look, the wipe, inspects, sets the
-// hare down clear of the bush, pats it and strolls off; the hare, violated, trudges back BEHIND
-// the bush (it goes behind only once its front edge reaches the bush) and sinks out of sight.
+// hare down clear of the bush, pats it and strolls off; the hare, violated (an "ugh" scribble over
+// its head), trudges back BEHIND the bush (it goes behind only once its front edge reaches the
+// bush) and stays hidden there. This is the reference as LOCKED (its 21:03 revision).
 // strip-gags.ts puts them on screen.
 /* eslint-disable */
 import { addEl, makePup, place, type Pup } from './puppet-stage.ts';
+import { treeArt } from './trees.ts';
 const O = '#2b1e16';
 const ease = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
 const clamp = (x: number, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -87,12 +89,17 @@ export const HARE = `
   <ellipse cx="22" cy="58" rx="3" ry="2.4" fill="#fbfbf8" stroke="${O}" stroke-width="1.6"/><ellipse cx="32" cy="59" rx="3" ry="2.4" fill="#fbfbf8" stroke="${O}" stroke-width="1.6"/>
 </g></g>`;
 
-/* ---------------- snowy bush ---------------- */
-export const BUSH = `
-<ellipse cx="50" cy="66" rx="44" ry="5" fill="rgba(80,100,130,.18)"/>
-<path d="M10 64 Q4 46 18 40 Q20 24 38 26 Q46 12 62 22 Q80 18 82 36 Q98 42 90 64 Z" fill="#3e6f4c" stroke="${O}" stroke-width="2.8" stroke-linejoin="round"/>
-<path d="M24 46 Q32 38 44 40 M56 34 Q66 30 74 38" stroke="#5d9168" stroke-width="3" fill="none" stroke-linecap="round"/>
-<path d="M16 40 Q20 26 36 28 Q44 14 62 22 Q78 20 80 34 Q72 32 66 36 Q58 28 48 34 Q40 30 32 36 Q24 34 16 40 Z" fill="#f6f8fb" stroke="${O}" stroke-width="2.2" stroke-linejoin="round"/>`;
+/* ---------------- the bush ----------------
+   BUSH RULE (GAME_BIBLE, Oct 4): a gag prop matches the board art exactly. So this is the board's
+   own willow bush (trees.ts: olive green, light round blobs, darker underside, brown stems), with
+   a light dusting of snow on each blob like the board's winter trees. Drawn in the willow's 80 x 56 box. */
+const BUSH_LOBES: [number, number, number][] = [[18, 38, 16], [34, 28, 19], [52, 28, 18], [64, 39, 14]];
+export const BUSH =
+  `<ellipse cx="40" cy="53" rx="34" ry="3.6" fill="rgba(80,100,130,.18)"/>` +
+  treeArt('willow', 'summer', 2) +
+  BUSH_LOBES.map(([x, y, r]) => `<path d="M${x - r * 0.78} ${y - r * 0.5} Q${x - r * 0.5} ${y - r * 1.02} ${x} ${y - r * 0.9} Q${x + r * 0.55} ${y - r * 0.98} ${x + r * 0.74} ${y - r * 0.42} Q${x + r * 0.3} ${y - r * 0.62} ${x} ${y - r * 0.5} Q${x - r * 0.4} ${y - r * 0.66} ${x - r * 0.78} ${y - r * 0.5} Z" fill="#ffffff" stroke="${O}" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`).join('');
+/** The bush's box and where it stands in it. */
+export const BUSH_BOX = { vw: 80, vh: 56, ax: 40, ay: 53 };
 
 /** The pose at a time. `from` and `to`: where the bear walks in from and out to, in his own units (the reference's are -400 and 560). */
 export function bPose(t: number, from = -400, to = 560): any {
@@ -139,7 +146,7 @@ export function bPose(t: number, from = -400, to = 560): any {
       const k = seg(t,10.7,11.3); p.near = {x: lerp(46, 118, ease(clamp(k*2))), y: lerp(116, 62, ease(clamp(k*2)))}; p.hare = 'paw'; p.hShock = 1; p.hFrazzle = true; p.hRot = -6;
       p.sPupX = 2.5; p.sPupY = 1.5; p.sHead = k > .5 ? Math.sin(seg(k,.5,1)*Math.PI*2)*5 : 0; p.mouth = GRIN;
     } else if (t >= 11.3){
-      const k = seg(t,11.3,11.8); p.near = t < 11.8 ? {x: lerp(118, 142, ease(k)), y: lerp(62, 118, ease(k))} : {x: 142, y: 98 - Math.abs(Math.sin((t-11.8)*14))*4};
+      const k = seg(t,11.3,11.8); p.near = t < 11.8 ? {x: lerp(118, 126, ease(k)), y: lerp(62, 118, ease(k))} : {x: 126, y: 98 - Math.abs(Math.sin((t-11.8)*14))*4};
       p.hare = t < 11.8 ? 'paw' : 'ground'; p.hShock = 1; p.hFrazzle = true; p.mouth = GRIN; p.sPupX = 2; p.sPupY = 2;
     }
   }
@@ -162,11 +169,11 @@ export const BEAR_BEATS: [number, string, string][] = [
   [7.4, 'snatch', 'SNATCH. Grabs the hare out of the bush'], [7.9, 'long-look', 'Holds it up and looks at it. A long beat. The hare realises'],
   [8.9, 'swing', 'Swings it round behind him'], [9.15, 'wipe', 'WIPE. Fast and vigorous. Pure bliss. Total shock'],
   [10.7, 'inspect', 'Inspects the hare. Satisfied nod'], [11.3, 'set-down', 'Sets it down. Pat on the head'],
-  [12.0, 'violated', 'The hare: violated. Huge eyes, wobbly mouth, a little storm cloud overhead'],
-  [12.4, 'bear-leaves', 'The bear drops to all fours and strolls off, happy'], [14.4, 'trudge', 'It trudges back behind the bush and sinks out of sight'], [15.8, 'gone', 'Gone'],
+  [12.0, 'violated', 'The hare: violated. Huge eyes, wobbly mouth, an "ugh" scribble over its head'],
+  [12.4, 'bear-leaves', 'The bear drops to all fours and strolls off, happy'], [14.4, 'trudge', 'It trudges back behind the bush and stays hidden there'], [15.8, 'gone', 'Gone'],
 ];
 export const BEAR_END = 16.0;
-export const BEAR_FRAC = 0.27, HARE_FRAC = 0.07, BUSH_FRAC = 0.2;
+export const BEAR_FRAC = 0.27, HARE_FRAC = 0.07, BUSH_FRAC = 0.18;
 /** How far left of the bush the bear sits, as a share of the screen's width (the reference: 0.38 and 0.6). */
 export const BEAR_GAP = 0.22;
 
@@ -175,7 +182,7 @@ export function bearScene(layer: HTMLElement, bush: { x: number; y: number }, sc
   const sc: any = { scale };
   const z = (p: Pup, n: number) => ((p.svg.style.zIndex = String(n)), p);
   sc.hare = z(makePup(layer, HARE, { vw: 60, vh: 80, ax: 30, ay: 76, frac: HARE_FRAC * scale, spot: { x: bush.x, y: bush.y } }), 2);
-  sc.bushEl = z(makePup(layer, BUSH, { vw: 100, vh: 70, ax: 50, ay: 66, frac: BUSH_FRAC * scale, spot: { x: bush.x, y: bush.y } }), 3);
+  sc.bushEl = z(makePup(layer, BUSH, { ...BUSH_BOX, frac: BUSH_FRAC * scale, spot: { x: bush.x, y: bush.y } }), 3);
   sc.bear = z(makePup(layer, BEAR, { vw: 160, vh: 140, ax: 80, ay: 134, frac: BEAR_FRAC * scale, spot: { x: bush.x - BEAR_GAP * scale, y: bush.y } }), 4);
   sc.ov = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   sc.ov.setAttribute('class', 'pup-overlay');
@@ -215,20 +222,27 @@ export function bearApply(sc: any, p: any, t: number): void {
   }
   // hare
   const H: Pup = sc.hare, hq = H.q, u = R.u, r = R.r;
-  const hu = H.frac*r.width/60, bu = sc.bushEl.frac*r.width/100;
+  const hu = H.frac*r.width/60, bu = sc.bushEl.frac*r.width/BUSH_BOX.vw;
   const bearPt = (x: number, y: number) => ({x: B.spot.x*r.width + (x - 80 + (p.mode === 'gone' ? 0 : p.x))*u, y: B.spot.y*r.height + (y - 134 + p.y)*u});
-  let hx = 0, hy = 0, hrot = 0, z = 2, hidden = false;
-  const groundSpot = {x: B.spot.x*r.width + (146 - 80)*u, y: B.spot.y*r.height};   // fixed spot on the snow, never follows the bear
+  let hx = 0, hy = 0, hrot = 0, z = 2;
+  const groundSpot = {x: B.spot.x*r.width + (128 - 80)*u, y: B.spot.y*r.height};   // fixed spot on the snow, never follows the bear
   const bx = sc.bushEl.spot.x*r.width + 4*u, by = sc.bushEl.spot.y*r.height - 10*u;
   if (p.hare === 'bush'){ hx = bx; hy = by + (Math.sin(t*3) > .95 ? -2*u : 0); z = 2; }
   else if (p.hare === 'paw'){ const pt = bearPt(p.near.x, p.near.y); hx = pt.x; hy = pt.y + 18*hu; hrot = p.hRot; z = 5; }
   else if (p.hare === 'ground'){ hx = groundSpot.x; hy = groundSpot.y; z = 5; }
-  else if (p.hare === 'back'){ const k = p.hBack;
-    hx = lerp(groundSpot.x, bx, ease(seg(k,0,.6))); hy = lerp(groundSpot.y, by, ease(seg(k,0,.6))) - Math.abs(Math.sin(seg(k,0,.6)*Math.PI*2))*4*u + seg(k,.6,.9)*12*u;
-    // Behind the bush only once its front edge (its leading foot; it trudges right) has reached the bush's own edge; hidden only when sunk behind it.
-    z = hx + 19*hu >= sc.bushEl.spot.x*r.width - 42*bu ? 2 : 5; hidden = k > .9; }
-  H.svg.style.zIndex = String(z); H.svg.style.visibility = p.hareShow && !hidden ? 'visible' : 'hidden';
+  else if (p.hare === 'back'){ const k = ease(seg(p.hBack,0,.85));
+    const ex = sc.bushEl.spot.x*r.width, ey = sc.bushEl.spot.y*r.height;
+    hx = lerp(groundSpot.x, ex, k); hy = lerp(groundSpot.y, ey, k) - Math.abs(Math.sin(k*Math.PI*2))*3*u;
+    // Behind the bush only once its front edge (its leading foot; it trudges right) has reached the bush's own edge. It stays hidden there.
+    z = hx + 19*hu >= ex - 38*bu ? 2 : 5; }
+  H.svg.style.zIndex = String(z); H.svg.style.visibility = p.hareShow ? 'visible' : 'hidden';
   H.spot = {x: hx/r.width, y: hy/r.height}; place(H);
+  // The board's bush stands on bare stems, so behind it the hare is cut off at the bottom of the
+  // leaves (from the bush's edge inward): nothing of it shows between the stems.
+  if (z === 2){ const hw = H.frac*r.width, hh = hw*80/60, left = hx - 30*hu, top = hy - 76*hu;
+    const cutX = Math.max(0, Math.min(hw, sc.bushEl.spot.x*r.width - 38*bu - left)), cutY = Math.max(0, Math.min(hh, sc.bushEl.spot.y*r.height - 12*bu - top));
+    H.svg.style.clipPath = `polygon(0 -50%, 100% -50%, 100% ${cutY}px, ${cutX}px ${cutY}px, ${cutX}px 100%, 0 100%)`; }
+  else H.svg.style.clipPath = '';
   hq('.flip').setAttribute('transform', '');
   hq('.root').setAttribute('transform', `rotate(${hrot} 30 50)`);
   const sh = p.hShock;
@@ -244,14 +258,14 @@ export function bearApply(sc: any, p: any, t: number): void {
   if (p.sweat >= 0 && p.mode === 'sit'){ const k = p.sweat; const a = bearPt(70, 30), b = bearPt(100, 26);
     const drop = (x: number, y: number, dx: number, dy: number) => `<path d="M0 -3 Q2.2 0 0 2.2 Q-2.2 0 0 -3 Z" fill="#9fd3f2" stroke="${O}" stroke-width=".8" transform="translate(${x + dx*k*14*u} ${y + dy*k*14*u - Math.sin(k*Math.PI)*6*u}) scale(${Math.max(.9, u*1.6)})" opacity="${1-k}"/>`;
     extra += drop(a.x, a.y, -1, -.2) + drop(b.x, b.y, 1, -.4); }
-  if (p.cloud > 0 && !hidden){
+  if (p.cloud > 0){
     const cx = hx + 2*hu, cy = hy - 92*hu, sc2 = hu*p.cloud;
-    extra += `<g transform="translate(${cx} ${cy}) scale(${sc2})" opacity="${p.cloud}">
-      <circle cx="-2" cy="26" r="2.2" fill="#fff" stroke="${O}" stroke-width="1"/><circle cx="2" cy="20" r="3.2" fill="#fff" stroke="${O}" stroke-width="1.1"/>
-      <ellipse cx="0" cy="2" rx="17" ry="12" fill="#fff" stroke="${O}" stroke-width="1.6"/>
-      <path d="M-10 2 Q-11 -5 -4 -5 Q-2 -11 5 -8 Q11 -9 11 -2 Q14 2 9 4 L-8 4 Q-12 4 -10 2 Z" fill="#7d8592" stroke="${O}" stroke-width="1.2"/>
-      <path d="M-4 5 L-6 9 M1 5 L-1 9 M6 5 L4 9" stroke="#4f8fd0" stroke-width="1.2" stroke-linecap="round"/>
-      <path d="M2 4 L0 8 L2.5 8 L0.5 12" stroke="#f2c230" stroke-width="1.3" fill="none" stroke-linejoin="round"/></g>`; }
+    // an "ugh" scribble: a tangled squiggle of loops over its head, jittering
+    let d = ''; for (let i = 0; i <= 120; i++){ const k = i/120, th = k*Math.PI*2*5.5;
+      const x = -13 + k*26 + 5*Math.cos(th) + Math.sin(t*23 + k*9)*.5, y = 4.2*Math.sin(th) * (1 - Math.abs(k - .5)*.6);
+      d += (i ? ' L' : 'M') + x.toFixed(2) + ' ' + y.toFixed(2); }
+    extra += `<g transform="translate(${cx} ${cy + 6*hu}) scale(${sc2*1.15}) rotate(${Math.sin(t*14)*4})" opacity="${p.cloud}">
+      <path d="${d}" fill="none" stroke="${O}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>`; }
   // wipe speed lines
   let html = extra;
   if (p.wipeLines){ const pt = bearPt(44, 117), L = 14*u;

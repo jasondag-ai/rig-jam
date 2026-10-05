@@ -146,14 +146,17 @@ something, give exact clicks and one command at a time.
     times in a row (`undosInARow`; a move starts the count again). On short screens there is little
     sky and they fly over the treetops, smaller.
   - THE BEAR AND THE SNOWSHOE HARE (gag 10, LEGENDARY; `bear.ts`, ported from
-    `bear_rabbit_reference.html`). Duvernay 8 to 10 have his snowy bush as permanent scenery
+    `bear_rabbit_reference.html`). Duvernay 8 to 10 have his bush as permanent scenery
     (`BushProp`, `.bush-layer`, at `BUSH_X`, right of the biffy; the scenery's own willow anchor is
     left out there and `bearBox` keeps trees off). Trigger (`GAG_TRIGGERS.bear`, `bearComesNow`): a
     perfect solve (at par) on one of those levels, 1 time in 3 (every time in demo mode or with
     `?bear=1`). The win is saved at once (`recordWinOnce`) and the win card waits until he has
     gone. One layer holds hare (z 2 behind the bush, z 5 in his paw or on the snow), bush (3), bear
-    (4) and the overlay (sweat, speed lines, the hare's storm cloud). The hare goes behind the bush
-    only when its leading foot reaches the bush's edge, sinks, and is hidden only once covered.
+    (4) and the overlay (sweat, speed lines, the hare's "ugh" scribble). The hare goes behind the
+    bush only when its leading foot reaches the bush's edge, and stays hidden there. BUSH RULE
+    (GAME_BIBLE): a gag prop matches the board art, so the bush is the board's own willow
+    (`treeArt('willow', 'summer', 2)`) with a snow dusting, not the reference's drawing; it stands
+    on bare stems, so the hare is clipped at the bottom of the leaves while behind it.
     Log card: legendary gold frame.
   - THE BULL AND THE COW (gag 11, Montney; `bull.ts`, ported from `bull_cow_reference.html`). The
     Holstein cow is permanent scenery grazing in the Montney strip (`CowProp`, `.cow-layer`, at

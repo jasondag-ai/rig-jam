@@ -209,7 +209,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
         const { context, page } = await open(browser, { width, height, level: [duv, li] });
         await wait(300);
         const b = await page.evaluate(() => {
-          const s = document.querySelector('.bush-layer svg.pup path');
+          const s = document.querySelector('.bush-layer svg.pup');
           if (!s) return null;
           const r = s.getBoundingClientRect(), R = (q) => document.querySelector(q).getBoundingClientRect();
           const biffy = R('.biffy-layer svg.pup .root');
@@ -227,7 +227,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     const level = REGIONS[duv].levels[7];
     const { context, page } = await open(browser, { query: QUIET + '&bear=1', level: [duv, 7] });
     let st = newGame(level);
-    const watching = watch(page, 'bear', { parts: { foot: '.bear-layer svg.pup:nth-of-type(1) .root > ellipse:nth-of-type(1)', hare: '.bear-layer svg.pup:nth-of-type(1) .root', bush: '.bear-layer svg.pup:nth-of-type(2) path:nth-of-type(1)', bear: '.bear-layer svg.pup:nth-of-type(3) .root' } }, 40000);
+    const watching = watch(page, 'bear', { parts: { foot: '.bear-layer svg.pup:nth-of-type(1) .root > ellipse:nth-of-type(1)', hare: '.bear-layer svg.pup:nth-of-type(1) .root', bush: '.bear-layer svg.pup:nth-of-type(2)', bear: '.bear-layer svg.pup:nth-of-type(3) .root', scribble: '.bear-layer .pup-overlay g[opacity] path[fill="none"]' } }, 40000);
     for (const m of solve(level)) {
       const exit = getMoveRange(st, m.id)?.exitDelta === m.delta;
       await drag(page, m.id, m.delta + (exit ? Math.sign(m.delta) * 0.4 : 0), 520);
@@ -242,14 +242,17 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     const leave = log.filter((f) => f.beat === 'bear-leaves' || f.beat === 'trudge').map((f) => f.bear).filter((b) => b.l < 5000).at(-1);
     check(log[0].bear.r <= 0 && leave.l >= W - 2, `the bear comes in on all fours from fully off screen and strolls off until fully off screen (${Math.round(log[0].bear.r)} to ${Math.round(leave.l)})`);
     const start = log[0];
-    check(start.hare.z === 2 && start.hare.vis && start.hare.t < start.bush.t && start.hare.b > start.bush.t + 6, 'the hare is behind the bush from the start, only its ears showing');
+    const leafTop = start.bush.t + ((start.bush.b - start.bush.t) * 9) / 56; // the leaves start 9 units down the bush's 56-unit box
+    check(start.hare.z === 2 && start.hare.vis && start.hare.t < leafTop && start.hare.b > leafTop + 6, 'the hare is behind the bush from the start, only its ears showing');
     const down = log.filter((f) => f.beat === 'violated')[3];
     check(down.hare.z === 5 && down.foot.r <= down.bush.l + 1, `he sets it down clear of the bush, not in it (its foot ${(down.bush.l - down.foot.r).toFixed(1)}px from the bush)`);
     const trudge = log.filter((f) => f.beat === 'trudge' && f.hare);
     const behind = trudge.filter((f) => f.hare.z === 2), front = trudge.filter((f) => f.hare.z === 5);
     check(front.length > 3 && behind.length > 10 && front.every((f) => f.foot.r <= f.bush.l + 1.5) && behind[0].foot.r >= behind[0].bush.l - 1.5, `it goes behind the bush only when its front edge reaches the bush (${front.length} frames in front, then ${behind.length} behind)`);
-    const vanish = trudge.findIndex((f) => !f.hare.vis), lastSeen = trudge[vanish - 1];
-    check(vanish > 0 && lastSeen.hare.z === 2 && lastSeen.hare.l >= lastSeen.bush.l && lastSeen.hare.r <= lastSeen.bush.r && lastSeen.hare.t >= lastSeen.bush.t - 1.5, 'it sinks out of sight behind the bush and is hidden only once the bush covers it');
+    const end = trudge.at(-1), gone = log.filter((f) => f.beat === 'gone' && f.hare);
+    check(end.hare.z === 2 && end.hare.l >= end.bush.l && end.hare.r <= end.bush.r && behind.every((f) => f.hare.vis) && gone.every((f) => f.hare.z === 2), 'it walks in behind the bush and stays hidden there: it never vanishes part way');
+    const scribble = log.filter((f) => f.beat === 'violated' && f.scribble).length;
+    check(scribble > 10, 'an "ugh" scribble jitters over its head');
     check(log.every((f) => f.others === 0), 'nothing else was on stage');
     await page.waitForFunction(() => !document.querySelector('.overlay').hidden, null, { timeout: 4000 }).catch(() => {});
     const after = await page.evaluate(() => ({ card: !document.querySelector('.overlay').hidden, bush: getComputedStyle(document.querySelector('.bush-layer')).visibility, log: JSON.parse(localStorage.getItem('rush-hour-rigs:log') ?? '{}').found ?? [] }));

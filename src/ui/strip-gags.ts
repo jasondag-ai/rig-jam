@@ -3,7 +3,7 @@
 // Each gag is a timeline ported from its approved reference; `TimelineGag` runs one: its layers
 // cover the whole game screen and take no touches, so characters enter from fully off screen and
 // leave until fully off screen, never clipped (the gopher alone is cut off at his hole).
-import { BEAR_BEATS, BEAR_END, BEAR_FRAC, BEAR_GAP, BUSH, BUSH_FRAC, bPose, bearApply, bearScene } from './bear.ts';
+import { BEAR_BEATS, BEAR_END, BEAR_FRAC, BEAR_GAP, BUSH, BUSH_BOX, BUSH_FRAC, bPose, bearApply, bearScene } from './bear.ts';
 import { BULL_BEATS, BULL_END, BULL_FRAC, BULL_GAP, COW_FRAC, COW_REST, PRIMP, bullApply, bullPose, bullScene, cowApply, cowPup } from './bull.ts';
 import { A_BEATS, A_END, BIFFY_FRAC, B_BEATS, B_END, aApply, bApply, biffyPup, biffyRest, runawayScene } from './biffy.ts';
 import type { EggHost, EggResult } from './egg-gags.ts';
@@ -82,7 +82,7 @@ export function bearBox(screenW: number, strip: { top: number; bottom: number })
   return { x: left, y: ground - h, width: right - left, height: h };
 }
 
-/** The bear's bush: permanent scenery on his levels (the reference's snowy bush), where the hare hides. */
+/** The bear's bush: permanent scenery on his levels (the board's own bush with a dusting of snow), where the hare hides. */
 export class BushProp {
   readonly layer: HTMLElement;
   pup: Pup;
@@ -94,7 +94,7 @@ export class BushProp {
     this.layer.className = 'scene-layer puppet-layer prop-layer bush-layer';
     this.layer.setAttribute('aria-hidden', 'true');
     host.screen.append(this.layer);
-    this.pup = makePup(this.layer, BUSH, { vw: 100, vh: 70, ax: 50, ay: 66, frac: BUSH_FRAC, spot: { x: BUSH_X, y: 0.8 } });
+    this.pup = makePup(this.layer, BUSH, { ...BUSH_BOX, frac: BUSH_FRAC, spot: { x: BUSH_X, y: 0.8 } });
     this.layout();
   }
 
