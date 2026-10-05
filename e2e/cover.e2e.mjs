@@ -121,7 +121,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }
 {
   console.log('\nskipping the cover');
   const { context, page } = await run({ width: 390, height: 844 });
-  await page.goto(ROOT + '?gag=gopher', { waitUntil: 'networkidle' });
+  await page.goto(ROOT + '?gag=nearmiss', { waitUntil: 'networkidle' });
   check(!(await page.$('.screen.cover')) && !!(await page.$('.screen.game')), '?gag= links open straight into the scene');
   await context.close();
 }

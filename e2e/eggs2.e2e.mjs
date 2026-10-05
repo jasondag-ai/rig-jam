@@ -253,7 +253,9 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     check(log[0].bear.r <= 0 && leave.l >= W - 2, `the bear comes in on all fours from fully off screen and strolls off until fully off screen (${Math.round(log[0].bear.r)} to ${Math.round(leave.l)})`);
     const start = log[0];
     const leafTop = start.bush.t + ((start.bush.b - start.bush.t) * 9) / 56; // the leaves start 9 units down the bush's 56-unit box
-    check(start.hare.z === 2 && start.hare.vis && start.hare.t < leafTop && start.hare.b > leafTop + 6, 'the hare is behind the bush from the start, only its ears showing');
+    const peek = log.find((f) => f.t - start.t > 900);
+    check(start.hare.z === 2 && start.hare.t >= leafTop - 0.5, 'on the first frame the hare is down out of sight behind the bush (nobody appears by magic)');
+    check(peek.hare.z === 2 && peek.hare.vis && peek.hare.t < leafTop && peek.hare.b > leafTop + 6, 'then its ears pop up over the bush and twitch there');
     const down = log.filter((f) => f.beat === 'violated')[3];
     check(down.hare.z === 5 && down.foot.r <= down.bush.l + 1, `he sets it down clear of the bush, not in it (its foot ${(down.bush.l - down.foot.r).toFixed(1)}px from the bush)`);
     const trudge = log.filter((f) => f.beat === 'trudge' && f.hare);

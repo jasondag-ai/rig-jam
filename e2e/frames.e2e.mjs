@@ -53,7 +53,10 @@ for (const [name, { gag, region, level }] of Object.entries(PREVIEWS)) {
   await page.locator('.region-tab').nth(REGIONS.findIndex((r) => r.id === region)).click();
   await page.locator('.level-btn').nth(level - 1).click();
   await page.waitForSelector('.board .truck.sprite-on');
-  await wait(700);
+  // Everything on the board settled first (season coats and other images arrive after the sprites).
+  await page.waitForLoadState('networkidle');
+  await page.evaluate(() => Promise.all([...document.images].filter((i) => !i.complete).map((i) => new Promise((r) => { i.onload = i.onerror = r; }))));
+  await wait(1500);
   const before = await page.screenshot();
   const end = await page.evaluate((g) => window.__rhrGag.end(g), gag);
   const held = await page.evaluate((g) => window.__rhrGag.hold(g, 0), gag);
