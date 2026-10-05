@@ -3505,7 +3505,8 @@ img.hat { width: 100%; height: auto; }
 .log-card .art .moose-still { width: 84px; height: 84px; overflow: visible; }
 
 /* ---------- The bottom strip: the permanent biffy and its gags, the landowner, Near Miss (strip-gags.ts) ---------- */
-.puppet-layer.biffy-layer { z-index: 0; }
+.puppet-layer.biffy-layer,
+.puppet-layer.prop-layer { z-index: 0; }
 .puppet-layer.strip-layer { z-index: 9; overflow: visible; }
 /* The gopher comes up out of his hole: his layer ends at the hole line and sits just over the scenery. */
 .puppet-layer.gopher-layer { z-index: 0; bottom: auto; overflow: hidden; }

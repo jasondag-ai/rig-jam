@@ -91,7 +91,7 @@ export class BushProp {
   constructor(host: EggHost) {
     this.host = host;
     this.layer = document.createElement('div');
-    this.layer.className = 'scene-layer puppet-layer biffy-layer bush-layer';
+    this.layer.className = 'scene-layer puppet-layer prop-layer bush-layer';
     this.layer.setAttribute('aria-hidden', 'true');
     host.screen.append(this.layer);
     this.pup = makePup(this.layer, BUSH, { vw: 100, vh: 70, ax: 50, ay: 66, frac: BUSH_FRAC, spot: { x: BUSH_X, y: 0.8 } });
@@ -140,7 +140,7 @@ export class CowProp {
   constructor(host: EggHost) {
     this.host = host;
     this.layer = document.createElement('div');
-    this.layer.className = 'scene-layer puppet-layer biffy-layer cow-layer';
+    this.layer.className = 'scene-layer puppet-layer prop-layer cow-layer';
     this.layer.setAttribute('aria-hidden', 'true');
     host.screen.append(this.layer);
     this.pup = cowPup(this.layer, { x: COW_X, y: 0.8 }, 1);
