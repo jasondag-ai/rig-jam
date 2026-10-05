@@ -131,9 +131,18 @@ console.log('\nwebkit 390x844: a driver reacts while a gag is on screen');
   await page.waitForSelector('.strip-layer[data-gag="biffyA"]', { state: 'attached', timeout: 5000 });
   await drag(page, pick.mover, -pick.step, 700);
   const w = await bubble(page);
-  check(w?.witness === 'biffyA' && w.text === WITNESS_LINES.biffyA, `with Biffy A on screen, the truck just moved says "${w?.text}"`);
-  const from = await page.evaluate((id) => { const b = document.querySelector('.bubble').getBoundingClientRect(), t = document.querySelector(`.truck[data-id="${id}"]`).getBoundingClientRect(); return Math.hypot(b.left + b.width / 2 - (t.left + t.width / 2), b.top + b.height / 2 - (t.top + t.height / 2)); }, pick.mover);
-  check(from < 150, `the bubble is at that truck (${Math.round(from)}px from it)`);
+  check(w?.witness === 'biffyA' && w.text === WITNESS_LINES.biffyA, `with Biffy A on screen, a driver says "${w?.text}"`);
+  // The driver of the truck NEAREST the biffy speaks (not simply the one just moved): the bubble is at that truck's cab.
+  const from = await page.evaluate(() => {
+    const b = document.querySelector('.bubble');
+    const biffy = document.querySelector('.biffy-layer svg.pup').getBoundingClientRect();
+    const gap = (a, c) => Math.hypot(Math.max(0, a.left - c.right, c.left - a.right), Math.max(0, a.top - c.bottom, c.top - a.bottom));
+    const nearest = [...document.querySelectorAll('.truck:not(.exiting)')].map((t) => ({ id: t.dataset.id, d: gap(t.getBoundingClientRect(), biffy) })).sort((x, y) => x.d - y.d)[0];
+    const cab = document.querySelector(`.truck[data-id="${b.dataset.speaker}"] .cab`).getBoundingClientRect();
+    const [x, y] = b.dataset.tip.split(',').map(Number);
+    return { speaker: b.dataset.speaker, nearest: nearest.id, off: Math.hypot(Math.max(0, cab.left - x, x - cab.right), Math.max(0, cab.top - y, y - cab.bottom)) };
+  });
+  check(from.speaker === from.nearest && from.off < 4, `it is the driver of truck ${from.nearest}, the one nearest the biffy, and the bubble's tail is on his cab (truck ${from.speaker}, ${from.off.toFixed(1)} px off)`);
   await page.evaluate(() => document.querySelector('.bubble')?.remove());
   await drag(page, pick.mover, pick.step, 700);
   check(!(await bubble(page)) && (await page.$$('.strip-layer[data-gag="biffyA"]')).length > 0, 'once per gag per level: the next move says nothing more about it, though Biffy A is still on');

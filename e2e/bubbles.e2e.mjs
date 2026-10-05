@@ -77,7 +77,8 @@ const probe = (page, bubbleSel, speakerSel, ms = 700, timeout = 20000) =>
             frames.push(measure(b));
           }
           if ((seen && (now - seen > follow || !b)) || now - t0 > limit) return res(frames);
-          requestAnimationFrame(tick);
+          // Measured once each frame's own work is done (the game moves the bubble in the frame, before it is painted).
+          requestAnimationFrame(() => setTimeout(tick, 0));
         };
         tick();
       }),
@@ -103,7 +104,8 @@ const drag = (page, id, cells, settle = 300) =>
     let x = r.x + r.width / 2, y = r.y + r.height / 2;
     const ev = (type) => el.dispatchEvent(new PointerEvent(type, { pointerId: 31, pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, bubbles: true, cancelable: true, buttons: 1 }));
     ev('pointerdown');
-    for (let k = 0; k < 10; k++) { if (h) x += (n * cell) / 10; else y += (n * cell) / 10; ev('pointermove'); await new Promise((q) => requestAnimationFrame(q)); }
+    // (Pointer moves arrive between frames, as a real finger's do.)
+    for (let k = 0; k < 10; k++) { if (h) x += (n * cell) / 10; else y += (n * cell) / 10; ev('pointermove'); await new Promise((q) => setTimeout(q, 17)); }
     ev('pointerup');
     await new Promise((q) => setTimeout(q, ms));
   }, [id, cells, settle]);
