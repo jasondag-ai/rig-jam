@@ -40,8 +40,8 @@ export const GAG_TRIGGERS = {
   bull: { region: 'montney', cowTaps: 1 },
   /** Gag 12, the porcupine (Cardium, at the bush): tap the bush this many times (the same pattern as the bear's bush). */
   porcupine: { region: 'cardium', bushTaps: 3 },
-  /** Gag 13, gopher lunch (Cardium, at the gopher mound): this long with no moves (after the magpie and the worker have had their turns). */
-  gopherLunch: { region: 'cardium', idleMs: 30_000 },
+  /** Gag 13, gopher lunch (Cardium, at the gopher mound): a press of the Hint button, with this chance each press. Demo mode: every time. */
+  gopherLunch: { region: 'cardium', onHint: true, chance: 1 / 2 },
   /**
    * Gag 14, Safety Sam (any region): this many blocked moves (bumps) in a row with no move made in
    * between, OR one push at a wrong-colour gate. Once per level.
@@ -64,7 +64,7 @@ export const GAG_TRIGGERS = {
  * plays right away, even if another is playing; it waits only if it shares a character or a prop
  * with one that is on (`SHARES`), and then it plays as soon as that one has left. None starts once
  * the level is won. The gags that come by themselves when the player sits idle (the magpie, the
- * sleepy worker, gopher lunch, the frozen tongue) still come one at a time, with `idleCooldownMs`
+ * sleepy worker, the frozen tongue) still come one at a time, with `idleCooldownMs`
  * between them, so an idle lease is not a parade. Demo mode and `?gag=` previews have no cooldown;
  * `?cooldown=0.1` scales it (tests).
  */
@@ -105,7 +105,7 @@ export const PREVIEWS: Record<string, { gag: GagId; region: string; level: numbe
 };
 
 /** The gags that come by themselves after a quiet spell, in the order they take their turns. */
-export const IDLE_GAGS: GagId[] = ['magpie', 'worker', 'gopherLunch', 'tongue'];
+export const IDLE_GAGS: GagId[] = ['magpie', 'worker', 'tongue'];
 
 /**
  * What each gag uses that another gag might also need: a character or a prop. Two gags that share
@@ -131,6 +131,9 @@ export const SHARES: Record<GagId, string[]> = {
 };
 /** Must this gag wait for one of those playing? */
 export const mustWait = (id: GagId, playing: Iterable<GagId>): boolean => [...playing].some((p) => p === id || SHARES[p].some((x) => SHARES[id].includes(x)));
+
+/** Does the worker come for his lunch on this press of Hint? Always in demo mode. */
+export const lunchComes = (demo: boolean, random: () => number = Math.random): boolean => demo || random() < GAG_TRIGGERS.gopherLunch.chance;
 
 /** Does the bear come on this roll (the bush tapped enough times)? Always in demo mode. */
 export const bearComes = (demo: boolean, random: () => number = Math.random): boolean => demo || random() < GAG_TRIGGERS.bear.chance;

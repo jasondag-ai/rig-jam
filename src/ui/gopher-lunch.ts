@@ -34,7 +34,7 @@ export const LIP = `
 <path d="M23.18 18.4 A10.2 5.2 0 0 0 42.82 18.4 Z" fill="#3a2414"/>
 <path d="M25 18.4 A8 3.6 0 0 0 41 18.4 Z" fill="#120a04"/>`;
 /** The reference's own mound is 92 units across its heap, in a box drawn at this share of the screen's width. */
-export const REF_MOUND = { drawn: 92, frac: 0.113 };
+export const REF_MOUND = { drawn: 92, frac: 0.13 };
 /** The board mound's width (its whole box, px) that makes its heap the size of the reference's. */
 export const moundWidthFor = (screenW: number, scale: number): number => ((REF_MOUND.frac * scale * screenW * REF_MOUND.drawn) / 100) * (MOUND_BOX.vw / MOUND_DRAWN);
 
@@ -59,19 +59,20 @@ export const LUNCH_BEATS: [number, string, string][] = [
   [9.6, 'bite', 'Without looking, he reaches back, grabs it, takes a bite'], [10.3, 'eyes-huge', 'Chews... stops. Looks at the crust. Eyes go huge'],
   [10.8, 'cheeks', 'Behind him the gopher pops up, cheeks stuffed, chewing happily'], [11.5, 'ducks', 'He turns to look at the hole. The gopher ducks just in time'],
   [12.0, 'deadpan', 'He looks back at us. Deadpan'], [12.8, 'boils-over', 'He boils over. Red face, steam, gets up'],
-  [13.6, 'hurls-crust', 'Glares back and hurls the crust down the hole'], [14.3, 'stomps-off', 'Stomps off, fuming, fully off screen'],
-  [15.0, 'burp', 'The gopher pops up chewing the crust. Burp. Grin. Gone'], [16.2, 'quiet-again', 'Just the quiet mound again, exactly like the start'],
+  [13.6, 'hurls-crust', 'Glares back and hurls the crust down the hole'], [14.3, 'stomps-off', 'Hop-turns and stomps off past the mound, glaring at the hole, fully off screen'],
+  [16.6, 'burp', 'The gopher pops up chewing the crust. Burp. Grin. Gone'], [17.7, 'quiet-again', 'Just the quiet mound again, exactly like the start'],
 ];
-/** SAME START, SAME END: it ends on the empty mound (he is off screen by 16.6). */
-export const LUNCH_END = 16.7;
-/** How far left of the mound's middle the worker sits, as a share of the screen's width (the reference: 0.655 against 0.752). */
-export const LUNCH_GAP = 0.097;
+/** SAME START, SAME END: it ends on the empty mound (he is off screen by 17.0, the gopher down by 17.65). */
+export const LUNCH_END = 17.9;
+/** How far left of the mound's middle the worker sits, as a share of the screen's width (the reference: 0.657 against 0.7531). */
+export const LUNCH_GAP = 0.0961;
 
 /**
  * The pose at a time. `from`: where the worker's picture walks in from and `out`: where it walks off
- * to at the end, both in his own drawing's units (the reference walks in from -300).
+ * to at the end, both in his own drawing's units. He comes in from the NEAR edge, past the mound,
+ * and leaves the same way (the reference: in from 250, off to 260).
  */
-export function lunchPose(t: number, from = -300, out = -300): any {
+export function lunchPose(t: number, from = 250, out = 260): any {
   const w: any = {x:0, y:0, rot:0, sx:1, sy:1, face:1, dx:from, thB:0,thF:0,shB:0,shF:0, arB:0,arF:-30,foF:-60,foB:0, head:0,hatY:0,hatR:0,
     px:71.5,py:33.5, lid:'M65 28 L75 28 L75 29 L65 29 Z', brow:'M65 24.5 Q70 22.5 76 24.5', mouth:'M64 47 Q68 48.5 72 47', show:true, phone:false, blush:0, steam:false};
   const g: any = {dy:80, cheeks:false, chew:0, grin:false, lids:'half'};
@@ -86,8 +87,8 @@ export function lunchPose(t: number, from = -300, out = -300): any {
 
   // ----- worker -----
   if (t < .5){ w.show = false; }
-  else if (t < 3.0){ const k = seg(t,.5,3.0); w.dx = lerp(from, 0, 1 - Math.pow(1-k,1.6)); walk(w, 1.6, 26); w.arF = -40; w.foF = -60; }
-  else if (t < 3.3){ const k = seg(t,3.0,3.3); w.dx = 0; w.y = -Math.sin(k*Math.PI)*7; w.face = k < .5 ? 1 : -1; w.arF = -40; w.foF = -60; w.thB = w.thF = -10*Math.sin(k*Math.PI); }   // hop turn, snaps at the top
+  else if (t < 3.0){ const k = seg(t,.5,3.0); w.face = -1; w.dx = lerp(from, 0, k < .85 ? k/.85*.94 : .94 + ease((k-.85)/.15)*.06); walk(w, 1.8, 22); w.arF = -40; w.foF = -60; }   // short walk in from the near edge, steady pace
+  else if (t < 3.3){ w.dx = 0; w.face = -1; w.arF = -40; w.foF = -60; w.head = 8; w.px = 72.5; w.py = 36; }   // eyes the spot
   else if (t < 4.0){ const k = ease(seg(t,3.3,3.85)); w.dx = 0; w.face = -1; w.y = 24*k + Math.sin(seg(t,3.85,4.0)*Math.PI)*-1.5; w.thB = w.thF = -90*k; w.shB = w.shF = 95*Math.sin(k*Math.PI)*(1-k*.2) ;
     if (k > .99){ w.shB = w.shF = 0; } w.arF = lerp(-40, 10, k); w.foF = lerp(-60, -20, k); w.arB = 10*k; }
   else { w.dx = 0; w.face = -1; sit(w); w.arF = 10; w.foF = -20; }
@@ -106,8 +107,9 @@ export function lunchPose(t: number, from = -300, out = -300): any {
     w.y = 24*(1-k); w.thB = w.thF = -90*(1-k); w.shB = w.shF = 95*Math.sin((1-k)*Math.PI)*.8; w.arF = lerp(-48, -70, k); w.foF = -80; w.arB = 10; }
   if (t >= 13.6 && t < 14.3){ ANGRY(w); const k = seg(t,13.6,14.2); w.y = 0; w.thB = w.thF = 0; w.shB = w.shF = 0; w.arB = 0; w.head = -6; w.px = 66.5; w.py = 33;                                               // glares back, hurls the crust
     w.arF = k < .4 ? lerp(-70, -150, ease(k/.4)) : lerp(-150, 60, ease((k-.4)/.6)); w.foF = k < .4 ? -60 : -10; w.rot = k < .4 ? -4*ease(k/.4) : lerp(-4, 4, (k-.4)/.6); }
-  if (t >= 14.3){ ANGRY(w); const k = seg(t,14.3,16.6); w.dx = lerp(0, out, k); w.show = t < 16.6; walk(w, 1.15, 30); w.y -= Math.abs(Math.sin(t*2*Math.PI*1.15))*1.5; w.arF = -20 + Math.sin(t*2*Math.PI*1.15)*12; w.foF = -95; w.arB = -Math.sin(t*2*Math.PI*1.15)*20; w.px = 74.2; w.py = 34;
-    if (t > 15.1 && t < 15.5){ w.head = -4; w.px = 66.5; } }                                                                                          // stomps off, one last glare back
+  if (t >= 14.3 && t < 14.55){ ANGRY(w); const k = seg(t,14.3,14.55); w.face = k < .5 ? -1 : 1; w.y = -Math.sin(k*Math.PI)*6; w.thB = w.thF = -12*Math.sin(k*Math.PI); w.shB = w.shF = 18*Math.sin(k*Math.PI); w.arB = 0; w.arF = -20; w.foF = -95; }   // hop-turn
+  if (t >= 14.55){ ANGRY(w); w.face = 1; const k = seg(t,14.55,17.0); w.dx = lerp(0, out, k); w.show = t < 17.0; walk(w, 1.5, 26); w.y -= Math.abs(Math.sin(t*2*Math.PI*1.15))*1.5; w.arF = -20 + Math.sin(t*2*Math.PI*1.15)*12; w.foF = -95; w.arB = -Math.sin(t*2*Math.PI*1.15)*20; w.px = 74.2; w.py = 34;
+    if (t > 15.3 && t < 15.8){ w.head = 6; w.px = 73; w.py = 37; } }   // glares down at the hole as he stomps past
 
   // ----- food -----
   if (t < 4.55) food = 'hand';
@@ -130,7 +132,7 @@ export function lunchPose(t: number, from = -300, out = -300): any {
 
   // ----- gopher head -----
   if (t >= 10.8 && t < 11.55){ const k = seg(t,10.8,11.0); g.dy = lerp(80, 24, ease(k)); g.cheeks = true; g.chew = Math.sin(t*24); if (t > 11.3) g.grin = true; if (t > 11.45) g.dy = lerp(24, 80, seg(t,11.45,11.55)); }
-  if (t >= 15.0 && t < 16.1){ const k = seg(t,15.0,15.15); g.dy = lerp(80, 24, ease(k)); g.cheeks = true; g.chew = Math.sin(t*24); g.burp = t > 15.45 && t < 15.75; if (t > 15.6){ g.grin = true; g.cheeks = false; } if (t > 15.9) g.dy = lerp(24, 80, seg(t,15.9,16.05)); }
+  if (t >= 16.6 && t < 17.7){ const k = seg(t,16.6,16.75); g.dy = lerp(80, 24, ease(k)); g.cheeks = true; g.chew = Math.sin(t*24); g.burp = t > 17.05 && t < 17.35; if (t > 17.2){ g.grin = true; g.cheeks = false; } if (t > 17.5) g.dy = lerp(24, 80, seg(t,17.5,17.65)); }
   return {w, g, a, food};
 }
 
@@ -155,8 +157,14 @@ function workerApply(b: Pup, p: any): void {
   q('.lid').setAttribute('d', p.lid); q('.brow').setAttribute('d', p.brow);
   q('.mouth').setAttribute('d', p.mouth); q('.mouth').setAttribute('fill', p.mouth.includes('Z') ? '#7a2a22' : 'none');
   q('.phone').style.display = p.phone ? '' : 'none';
-  q('.blush').setAttribute('opacity', p.blush); q('.blush').setAttribute('r', 4 + p.blush*3);
+  // His WHOLE face flushes (skin and eyelid), not a cheek spot.
+  q('.blush').setAttribute('opacity', 0);
+  const bb = b as any;
+  if (!bb.skin){ bb.skin = [...q('.head').querySelectorAll('circle')].filter((c: SVGElement) => c.getAttribute('fill') === SKIN).concat([q('.lid')]); bb.nose = [...q('.head').querySelectorAll('circle')].find((c: SVGElement) => c.getAttribute('fill') === SKIN2); }
+  const f = p.blush || 0; bb.skin.forEach((e: SVGElement) => e.setAttribute('fill', mixC(SKIN, '#e07a6c', f))); bb.nose?.setAttribute('fill', mixC(SKIN2, '#c95a4c', f));
 }
+const SKIN = '#f0c09a', SKIN2 = '#dfa47c';
+const mixC = (a: string, b: string, k: number) => { const pa = [1,3,5].map(i => parseInt(a.slice(i,i+2),16)), pb = [1,3,5].map(i => parseInt(b.slice(i,i+2),16)); return '#' + pa.map((v,i) => Math.round(v + (pb[i]-v)*k).toString(16).padStart(2,'0')).join(''); };
 
 function putFood(el: HTMLElement, x: number, y: number, wpx: number, show: boolean): void { el.style.opacity = show ? '1' : '0'; el.style.width = wpx+'px'; el.style.height = (wpx*16/26)+'px'; el.style.transform = `translate3d(${x - wpx/2}px, ${y - wpx*16/52}px, 0)`; }
 
@@ -202,7 +210,8 @@ export function lunchApply(sc: any, P: any, t: number): void {
   // where his glove is right now
   const gl = Wk.q('.armF .fore circle').getBoundingClientRect(); const gx = gl.left + gl.width/2 - r.left, gy = gl.top + gl.height/2 - r.top;
   // food spot: behind him on the ground, just short of the mound
-  const fx = sc.moundX - 46*um - 9*wu, fy = groundY - 4*wu, fw = 15*wu;
+  if (food === 'hand' && t > 4.3) sc.dropX = gx;                                   // it lands where his hand sets it down
+  const fx = sc.dropX ?? (sc.moundX - 46*um - 9*wu), fy = groundY - 4*wu, fw = 15*wu;
   sc.food = { x: fx, y: fy };
   // gopher arm
   let pawX = hx, pawY = hy, arm = '';
@@ -216,8 +225,8 @@ export function lunchApply(sc: any, P: any, t: number): void {
   if (sc.armHtml !== arm) sc.arm.innerHTML = sc.armHtml = arm;
   // food
   const inHole = a.show && a.k < .35;
-  sc.sand.style.zIndex = food === 'hand' ? '7' : '4'; sc.crust.style.zIndex = food === 'crustHand' ? '7' : '4';
-  putFood(sc.sand, food === 'hand' ? gx : food === 'paw' ? pawX : fx, food === 'hand' ? gy : food === 'paw' ? pawY + 2*gu : fy, fw, w.show && (food === 'hand' || food === 'ground' || (food === 'paw' && !inHole)));
+  sc.sand.style.zIndex = food === 'hand' ? '5' : '4';   // held: just behind the glove, so the hand grips it
+  putFood(sc.sand, food === 'hand' ? gx : food === 'paw' ? pawX : fx, food === 'hand' ? gy - 3.5*wu : food === 'paw' ? pawY + 2*gu : fy, fw, w.show && (food === 'hand' || food === 'ground' || (food === 'paw' && !inHole)));
   if (food === 'crustHand') sc.throwFrom = {x: gx + 3*wu, y: gy};
   if (food === 'thrown'){ const k = seg(t,13.84,14.2), f0 = sc.throwFrom || {x: gx, y: gy}, cx = lerp(f0.x, hx, k), cy = lerp(f0.y, hy, k) - Math.sin(k*Math.PI)*22*um;
     sc.crust.style.zIndex = '4'; putFood(sc.crust, cx, cy, fw*(1 - k*.3), k < .92); sc.crust.style.transform += ` rotate(${k*720}deg)`; }
@@ -240,7 +249,7 @@ export function lunchApply(sc: any, P: any, t: number): void {
   crumbs(7.2, 8.5, 9, 2.0);
   if (t > 7.25 && t < 8.5){ const k = (t*3) % 1, s = Math.max(10, 4.2*um*2);
     html += `<text x="${hx + 10*um}" y="${hy - 14*um - k*6*um}" font-family="Fredoka, sans-serif" font-weight="700" font-size="${s}" fill="#fff" stroke="${O}" stroke-width="${s*.22}" paint-order="stroke" opacity="${1-k*.5}">chomp</text>`; }
-  if (g.burp){ const k = seg(t,15.45,15.75), s = Math.max(10, 4.2*um*2); crumbs(15.45, 15.75, 4, 1.2);
+  if (g.burp){ const k = seg(t,17.05,17.35), s = Math.max(10, 4.2*um*2); crumbs(17.05, 17.35, 4, 1.2);
     html += `<text x="${hx + 8*um}" y="${hy - 26*um - k*5*um}" font-family="Fredoka, sans-serif" font-weight="700" font-size="${s}" fill="#fff" stroke="${O}" stroke-width="${s*.22}" paint-order="stroke">burp</text>`; }
   if (w.steam && w.show){ const hp = Wk.q('.hat').getBoundingClientRect(); for (let i = 0; i < 3; i++){ const k = ((t*1.6 + i/3) % 1), sx = hp.left - r.left + hp.width*(.25 + i*.25), sy = hp.top - r.top - k*14*wu;
     html += `<circle class="steam" cx="${sx + Math.sin(k*6 + i)*2*wu}" cy="${sy}" r="${(1.5 + k*3)*wu}" fill="#ffffff" stroke="#c9cfd6" stroke-width="${.7*wu}" opacity="${(1-k)*.9}"/>`; } }

@@ -409,21 +409,43 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
   }
 
   if (engine === 'webkit' && want('gopherLunch')) {
-    // ---------- Gopher lunch: 30 s idle in Cardium (3 s here) ----------
-    console.log(`\n${engine}: gopher lunch, 30 s idle in Cardium (3 s here)`);
-    const { context, page } = await open(browser, { query: QUIET.replace('&off=lunch,sam,tongue', '') + '&idle=0.1', level: [region('cardium'), 5] });
+    // ---------- Gopher lunch: a press of Hint in Cardium, one time in two ----------
+    console.log(`\n${engine}: gopher lunch, a press of Hint in Cardium (one time in two; ?lunch=0 and ?lunch=1 fix the roll here)`);
+    {
+      // The roll that fails: Hint works as ever and nobody comes. Idle no longer brings him either.
+      const { context, page } = await open(browser, { query: QUIET.replace('&off=lunch,sam,tongue', '&off=sam,tongue') + '&idle=0.1&lunch=0', level: [region('cardium'), 5] });
+      await wait(4500);
+      check(!(await page.$('.strip-layer')), 'sitting idle no longer brings him (30 s, 3 s here, and more)');
+      await page.locator('[data-act="hint"]').click();
+      await wait(900);
+      check(!(await page.$('.strip-layer')) && (await page.locator('.truck.hinted').count()) === 1, 'a press of Hint that loses the roll: the hint shows, nobody comes');
+      await context.close();
+    }
+    {
+      // Montney has no mound: Hint never brings him there.
+      const { context, page } = await open(browser, { query: QUIET.replace('&off=lunch,sam,tongue', '&off=sam,tongue') + '&lunch=1', level: [region('montney'), 5] });
+      await page.locator('[data-act="hint"]').click();
+      await wait(900);
+      check(!(await page.$('.strip-layer')), 'not in Montney');
+      await context.close();
+    }
+    const { context, page } = await open(browser, { query: QUIET.replace('&off=lunch,sam,tongue', '&off=sam,tongue') + '&lunch=1', level: [region('cardium'), 5] });
     const geo = await page.evaluate(() => {
       const m = document.querySelector('.scenery [data-anchor="mound"]').getBoundingClientRect(), note = document.querySelector('.note').getBoundingClientRect(), board = document.querySelector('.board').getBoundingClientRect();
       return { base: m.top + (29.5 / 34) * m.height, heap: (m.width * 59) / 64, ground: note.top - 4, holeY: m.top + (17 / 34) * m.height, left: m.left, right: m.right, top: m.top, clear: m.top > board.bottom };
     });
-    check(Math.abs(geo.base - geo.ground) < 1.5 && Math.abs(geo.heap - 0.113 * W * 0.92) < 2.5 && geo.clear, `the board's mound stands on the strip's ground line at the reference's size (heap ${geo.heap.toFixed(1)}px)`);
-    await wait(1500);
-    check(!(await page.$('.strip-layer')), 'not before the idle time is up');
+    check(Math.abs(geo.base - geo.ground) < 1.5 && Math.abs(geo.heap - 0.13 * W * 0.92) < 2.5 && geo.clear, `the board's mound stands on the strip's ground line at the reference's size (heap ${geo.heap.toFixed(1)}px)`);
+    await wait(600);
+    check(!(await page.$('.strip-layer')), 'not before Hint is pressed');
     const watching = watch(page, 'gopherLunch', { parts: { worker: '.lunch-layer > svg.pup:not(:first-of-type) .torso', head: '.lunch-layer svg.pup .hat', crust: '.lunch-layer .pup-food:last-of-type', steam: '.lunch-layer .pup-overlay .steam', gopher: '.lunch-layer .pup-clip svg.pup .head', clip: '.lunch-layer .pup-clip', lip: '.lunch-layer > svg.pup', sand: '.lunch-layer .pup-food', paw: '.lunch-layer .pup-overlay .paw' } }, 32000);
+    await page.locator('[data-act="hint"]').click();
     const log = await watching;
+    check(log.length > 100 && (await page.locator('.truck.hinted').count()) === 1, 'a press of Hint that wins the roll brings him, and the hint still shows');
     check(sameBeats(log, 'gopherLunch'), `the reference beats, in order, to the quiet mound again (${beatsOf(log).length} of ${GAGS.gopherLunch.beats.length})`);
     const first = log.find((f) => f.worker?.vis), last = log.filter((f) => f.worker?.vis).at(-1);
-    check(first.worker.r <= 0 && last.worker.r <= 2, `the worker strolls in from fully off screen and leaves until fully off screen (${Math.round(first.worker.r)} to ${Math.round(last.worker.r)})`);
+    check(first.worker.l >= W && last.worker.l >= W - 2, `the worker strolls in from fully off the NEAR edge (the right) and leaves the same way until fully off screen (${Math.round(first.worker.l)} to ${Math.round(last.worker.l)})`);
+    const walkIn = log.filter((f) => f.beat === 'stroll-in' && f.worker?.vis);
+    check(walkIn.every((f, i) => i === 0 || f.worker.l <= walkIn[i - 1].worker.l + 0.5) && walkIn.some((f) => f.worker.l > geo.right) , 'he walks in past the mound to his spot');
     const f0 = log[5];
     check(Math.abs(f0.clip.b - geo.holeY) < 1.5 && Math.abs(f0.lip.l - geo.left) < 1.5 && Math.abs(f0.lip.t - geo.top) < 1.5 && Math.abs(f0.lip.r - geo.right) < 1.5, 'it plays at the board\'s own mound: the gopher is cut off at its hole line and the near lip lies exactly over its hole');
     const sits = log.filter((f) => f.beat === 'phone');
@@ -665,7 +687,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       if (mode === 'game') check(by.bear?.art && by.bear.legendary && !!(await page.$('.log-card[data-id="bear"] .legend-tag')), 'the Bear has a LEGENDARY card with a gold frame and puppet art');
       if (mode === 'game') check(by.bull?.art && by.bull.text === 'Not seen yet.', 'Bull and Cow has a card with puppet art');
       if (mode === 'game') check(by.porcupine?.art && by.lunch?.art && by.porcupine.text === 'Not seen yet.', 'Porcupine and Gopher Lunch have cards with puppet art');
-      else check(by.porcupine.text === 'Tap the bush three times in Cardium.' && by.lunch.text === 'Sit tight for 30 seconds in Cardium.', 'demo mode shows the porcupine\'s and the lunch\'s hints');
+      else check(by.porcupine.text === 'Tap the bush three times in Cardium.' && by.lunch.text === 'Press Hint in Cardium. One time in two.', 'demo mode shows the porcupine\'s and the lunch\'s hints');
       if (mode === 'game') check(by.sam?.art && by.tongue?.art && by.sam.text === 'Not seen yet.', 'Safety Sam and Frozen Tongue have cards with puppet art');
       else check(by.sam.text === 'Bump three times in a row, or push a truck at a wrong-colour gate.' && by.tongue.text === 'Sit tight for 30 seconds on a winter level.', 'demo mode shows Sam\'s and the tongue\'s hints');
       if (mode === 'game') check(by.marshmallow?.art && by.geese?.art && by.marshmallow.text === 'Not seen yet.' && by.geese.text === 'Not seen yet.', `Marshmallow and Lost Goose have cards with puppet art; the game hides the hints (${cards.length} cards)`);

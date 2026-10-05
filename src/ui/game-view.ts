@@ -17,9 +17,9 @@ import { uiImg } from './ui-art.ts';
 import { preloadSprites } from './sprites.ts';
 import { defaultKind } from './vehicles.ts';
 import { applyCamo, loadLog, record, saveLog, sightingToast, type Sighting } from './wildlife-log.ts';
-import { bearAlways, bearNever, cooldownScale, eggOff, gagTest, magpieOn, mooseOn, workerOn } from './flags.ts';
+import { bearAlways, bearNever, cooldownScale, eggOff, gagTest, lunchAlways, lunchNever, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
-import { BackAndForth, GAG_RULES, GAG_TRIGGERS, IDLE_GAGS, Wiggle, bearComes, bermBump, mustWait, wrongGateBump, type GagId } from './gag-triggers.ts';
+import { BackAndForth, GAG_RULES, GAG_TRIGGERS, IDLE_GAGS, Wiggle, bearComes, bermBump, lunchComes, mustWait, wrongGateBump, type GagId } from './gag-triggers.ts';
 import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
@@ -614,7 +614,6 @@ export class GameView {
     const due: Record<string, boolean> = {
       magpie: !!this.magpie && idle >= T.magpie.idleMs * this.idleScale,
       worker: !!this.worker && this.worker.canPlay() && idle >= T.worker.idleMs * this.idleScale,
-      gopherLunch: !!this.strips.gopherLunch && idle >= T.gopherLunch.idleMs * this.idleScale,
       tongue: !!this.strips.tongue && !!this.riser?.fits && idle >= T.tongue.idleMs * this.idleScale,
     };
     const next = IDLE_GAGS.find((g) => due[g] && !this.eggDone.has(g));
@@ -662,6 +661,8 @@ export class GameView {
 
   private onHint(): void {
     if (isWon(this.state)) return;
+    // Gopher lunch (Cardium): any press of Hint may bring the worker in with his sandwich.
+    if (this.strips.gopherLunch && !this.eggDone.has('gopherLunch') && !lunchNever() && lunchComes(loadProgress().demo || lunchAlways())) this.fire('gopherLunch');
     if (this.hintStep === 1 && this.hint) {
       const range = getMoveRange(this.state, this.hint.id);
       this.board.showHintTarget(this.hint, this.state, range?.exitDelta === this.hint.delta);

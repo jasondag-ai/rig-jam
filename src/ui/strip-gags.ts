@@ -652,9 +652,10 @@ export const lunchDef: TimelineDef = {
     const m = moundEl.getBoundingClientRect();
     const { scale } = stripGeom(screen.width, host.strip());
     const scene = lunchScene(layer('lunch-layer'), { left: m.left - screen.left, top: m.top - screen.top, width: m.width, height: m.height }, scale, moundEl);
-    // In from past the left edge, and off past it again (in his drawing's units).
+    // In from past the NEAR edge (the right one: the mound is on that side), past the mound, and
+    // off the same way at the end (in his drawing's units; his box is 120 wide about his middle).
     const w = 0.19 * scale * screen.width, u = w / 120, at = scene.moundX - LUNCH_GAP * scale * screen.width;
-    const from = -(at + w) / u;
+    const from = (screen.width - at) / u + 66;
     return { apply: (t) => lunchApply(scene, lunchPose(t, from, from), t), done: () => (moundEl.style.transform = '') };
   },
 };

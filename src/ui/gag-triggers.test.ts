@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BackAndForth, GAG_RULES, GAG_TRIGGERS, IDLE_GAGS, SHARES, Wiggle, bearComes, bermBump, mustWait, wrongGateBump } from './gag-triggers.ts';
+import { BackAndForth, GAG_RULES, GAG_TRIGGERS, IDLE_GAGS, SHARES, Wiggle, bearComes, bermBump, lunchComes, mustWait, wrongGateBump } from './gag-triggers.ts';
 import { BEAR_BEATS, BEAR_END, bPose } from './bear.ts';
 import { BUSH_X, COW_X, PORC_BUSH_X, bearBox, bushBox, cowBox, moundSpot } from './strip-gags.ts';
 import { BUSH_BOX, BUSH_FRAC, bushMarkup } from './gag-bush.ts';
@@ -9,7 +9,7 @@ import { SAM, SAM_BEATS, SAM_END, backGlove, samPose } from './sam.ts';
 import { BUDDY, BUDDY_FAR, BUDDY_STOP, STAND, TONGUE_BEATS, TONGUE_END, tonguePose } from './frozen-tongue.ts';
 import { RISER_X, riserBox, riserHeight } from './strip-gags.ts';
 import { treeArt } from './trees.ts';
-import { cooldownScale, eggOff } from './flags.ts';
+import { cooldownScale, eggOff, lunchAlways, lunchNever } from './flags.ts';
 import { BULL_BEATS, BULL_END, COW_REST, SHIFT as PRIMP_SHIFT, T_BACK, T_GRAZE, T_HOME, bullPose } from './bull.ts';
 import { A_BEATS, A_END, A_SHAKE, BIFFY_SIZE, B_BEATS, B_END, B_OFF, B_ROLL_OFF, B_SHAKE, B_SHUT, biffy } from './biffy.ts';
 import { L_BEATS, L_END, lPose } from './landowner.ts';
@@ -321,7 +321,7 @@ describe('gag rules and the gag bush', () => {
   });
 
   it('the idle gags still take turns, with a cooldown between them; tests can scale it and leave gags out', () => {
-    expect(IDLE_GAGS).toEqual(['magpie', 'worker', 'gopherLunch', 'tongue']);
+    expect(IDLE_GAGS).toEqual(['magpie', 'worker', 'tongue']);
     expect(GAG_RULES.idleCooldownMs).toBe(60_000);
     expect(cooldownScale('')).toBe(1);
     expect(cooldownScale('?cooldown=0')).toBe(0);
@@ -396,14 +396,25 @@ describe('the porcupine (gag 12)', () => {
 });
 
 describe('gopher lunch (gag 13)', () => {
-  it('is set off by 30 s with no moves, in Cardium', () => {
-    expect(GAG_TRIGGERS.gopherLunch).toEqual({ region: 'cardium', idleMs: 30_000 });
+  it('is set off by a press of Hint in Cardium, one time in two (always in demo mode); no longer an idle gag', () => {
+    expect(GAG_TRIGGERS.gopherLunch).toEqual({ region: 'cardium', onHint: true, chance: 1 / 2 });
+    expect(IDLE_GAGS).not.toContain('gopherLunch');
+    expect(lunchComes(false, () => 0.49)).toBe(true);
+    expect(lunchComes(false, () => 0.5)).toBe(false);
+    expect(lunchComes(true, () => 0.99)).toBe(true);
+    expect(lunchAlways('?lunch=1')).toBe(true);
+    expect(lunchNever('?lunch=0')).toBe(true);
+    expect(lunchAlways('')).toBe(false);
+    expect(lunchNever('')).toBe(false);
   });
 
   it('plays the reference beats, ending as it began: he boils over, hurls the crust down the hole and stomps off; a last burp; the quiet mound', () => {
-    expect(LUNCH_BEATS.map((b) => b[0])).toEqual([0, 0.5, 3.0, 4.0, 4.8, 5.2, 5.7, 6.9, 7.2, 8.6, 9.6, 10.3, 10.8, 11.5, 12.0, 12.8, 13.6, 14.3, 15.0, 16.2]);
+    expect(LUNCH_BEATS.map((b) => b[0])).toEqual([0, 0.5, 3.0, 4.0, 4.8, 5.2, 5.7, 6.9, 7.2, 8.6, 9.6, 10.3, 10.8, 11.5, 12.0, 12.8, 13.6, 14.3, 16.6, 17.7]);
     expect(lunchPose(0.4).w.show).toBe(false);
-    expect(lunchPose(0.5, -640).w.dx).toBe(-640);
+    // He walks in from the NEAR edge (the right), facing the way he walks, past the mound.
+    expect(lunchPose(0.5, 640).w.dx).toBe(640);
+    expect(lunchPose(1.5).w.face).toBe(-1);
+    expect(lunchPose(1.5).w.dx).toBeGreaterThan(0);
     expect(lunchPose(3.5).w.face).toBe(-1);
     expect(lunchPose(4.3).food).toBe('hand');
     expect(lunchPose(5).w.phone).toBe(true);
@@ -420,10 +431,14 @@ describe('gopher lunch (gag 13)', () => {
     expect(Math.abs(lunchPose(13.59).w.y)).toBeLessThan(0.5);
     expect(lunchPose(14).food).toBe('thrown');
     expect(lunchPose(14.5).food).toBe('gone');
-    expect(lunchPose(16.59, -300, -700).w.dx).toBeLessThan(-690);
-    expect(lunchPose(16.6).w.show).toBe(false);
+    // A hop-turn, then off the way he came, facing the way he walks.
+    expect(lunchPose(14.4).w.face).toBe(-1);
+    expect(lunchPose(14.5).w.face).toBe(1);
+    expect(lunchPose(16.99, 300, 700).w.dx).toBeGreaterThan(690);
+    expect(lunchPose(16.99).w.face).toBe(1);
+    expect(lunchPose(17.0).w.show).toBe(false);
     // The gopher's last word, then SAME START, SAME END: nobody there, the gopher down his hole, no food.
-    expect(lunchPose(15.6).g.burp).toBe(true);
+    expect(lunchPose(17.2).g.burp).toBe(true);
     const start = lunchPose(0.2), end = lunchPose(LUNCH_END);
     expect(end.w.show).toBe(false);
     expect(end.g.dy).toBe(start.g.dy);
@@ -434,7 +449,7 @@ describe('gopher lunch (gag 13)', () => {
     const strip = { top: 600, bottom: 700 };
     const spot = moundSpot(390, strip);
     expect(spot.baseY).toBe(stripGeom(390, strip).ground);
-    expect((spot.w * MOUND_DRAWN) / 64).toBeCloseTo(0.113 * 390 * 0.92, 1);
+    expect((spot.w * MOUND_DRAWN) / 64).toBeCloseTo(0.13 * 390 * 0.92, 1);
     expect(moundWidthFor(390, 0.5)).toBeCloseTo(spot.w / 2, 5);
   });
 });

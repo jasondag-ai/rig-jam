@@ -24,6 +24,9 @@ export const eggOff = (name: string, search: string = location.search): boolean 
 export const gagTest = (search: string = location.search): boolean => new URLSearchParams(search).get('gagtest') === '1';
 /** `?bear=1`: the bear comes every time his bush has been tapped enough (tests). */
 export const bearAlways = (search: string = location.search): boolean => new URLSearchParams(search).get('bear') === '1';
+/** `?lunch=1`: a press of Hint always brings gopher lunch; `?lunch=0`: never (tests). */
+export const lunchAlways = (search: string = location.search): boolean => new URLSearchParams(search).get('lunch') === '1';
+export const lunchNever = (search: string = location.search): boolean => new URLSearchParams(search).get('lunch') === '0';
 /** `?bear=0`: he never comes (tests of the bush's shake). */
 export const bearNever = (search: string = location.search): boolean => new URLSearchParams(search).get('bear') === '0';
 export const mooseOn = (search: string = location.search): boolean => MOOSE_ON && new URLSearchParams(search).get('moose') !== '0';
