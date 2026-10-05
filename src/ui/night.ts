@@ -5,7 +5,8 @@
 // are dimmed much less so every colour reads; a warm glow round each flare flickers with its flame;
 // each cab has small headlight glows. Pure numbers and rules here (tested); the look and the fades
 // are in style.css ("Night").
-import type { Ground } from './themes.ts';
+import { GAG_TRIGGERS } from './gag-triggers.ts';
+import type { Ground, ThemeId } from './themes.ts';
 
 export const NIGHT = {
   /** The night's colour, laid over the ground, berm and scenery at this strength. */
@@ -21,6 +22,8 @@ export const NIGHT = {
   /** The flare's glow, in cells across. */
   glowCells: 2.5,
 };
+/** Does night ever fall on a level of this season? Montney's spring and Duvernay's winter: yes. Cardium's summer: never. */
+export const nightComes = (theme: ThemeId): boolean => (GAG_TRIGGERS.night.themes as readonly string[]).includes(theme);
 export const nightRgba = (ground: Ground): string => `rgba(${NIGHT.shade[ground].join(', ')}, ${NIGHT.alpha[ground]})`;
 
 /** After this long with no move on a night level, a truck speaks up (once per level; never a fail). */

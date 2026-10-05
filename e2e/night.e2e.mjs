@@ -92,6 +92,17 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       await context.close();
     }
 
+    // ---------- Cardium never goes dark ----------
+    console.log(`\n${engine}: Cardium 5: idle, and it stays day`);
+    {
+      const { context, page } = await open(browser, { query: QUIET + '&idle=0.1', level: [region('cardium'), 4] });
+      await wait(3000 + 4000 + 1500 + 1500);
+      const s = await state(page);
+      check(!s.night && !s.board && s.shade === 0 && s.sky === 0 && s.pad === 0 && s.lamps.every((l) => l === 0), 'long past the idle time, the fade and the nudge (10 s here): still full daylight');
+      check(!(await page.$('.bubble[data-nudge]')), 'and no nudge');
+      await context.close();
+    }
+
     // ---------- An idle level fades to night, and the next move brings the day back ----------
     console.log(`\n${engine}: Duvernay 8 (Hoarfrost): idle, night falls; a move, day returns`);
     {

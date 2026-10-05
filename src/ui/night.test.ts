@@ -4,7 +4,7 @@ import daily from '../levels/daily.json' with { type: 'json' };
 import manifest from './truck-sprites.json' with { type: 'json' };
 import { THEMES } from './themes.ts';
 import { GAG_TRIGGERS } from './gag-triggers.ts';
-import { NIGHT, NUDGE_LINE, STARS, contrast, dimmed, nightForced, luminance, nightRgba, nightSky, rgb, shaded } from './night.ts';
+import { NIGHT, NUDGE_LINE, STARS, contrast, dimmed, nightComes, nightForced, luminance, nightRgba, nightSky, rgb, shaded } from './night.ts';
 
 // Gate fills, kept in sync with :root in style.css (and tools/truck-sprites.py).
 const GATES: Record<string, string> = { red: '#ff4747', blue: '#2f8bff', yellow: '#ffd21f', green: '#22c55e', orange: '#ff8a00', purple: '#a55cff' };
@@ -19,7 +19,9 @@ describe('night levels', () => {
   });
 
   it('night comes when the player goes idle: 30 s, a 4 s fade in, a 2 s fade back at the next move', () => {
-    expect(GAG_TRIGGERS.night).toEqual({ idleMs: 30_000, fadeInMs: 4000, fadeOutMs: 2000 });
+    expect(GAG_TRIGGERS.night).toEqual({ idleMs: 30_000, fadeInMs: 4000, fadeOutMs: 2000, themes: ['spring', 'winter'] });
+    // Only Montney and Duvernay go dark. Cardium never does.
+    for (const r of REGIONS) expect(nightComes(r.theme), r.id).toBe(r.id !== 'cardium');
     // ?night=1 pins it on and ?night=0 keeps it away (previews, screenshots, tests).
     expect(nightForced('')).toBeNull();
     expect(nightForced('?night=1')).toBe(true);

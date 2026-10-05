@@ -4,7 +4,7 @@ import { BoardView } from './board-view.ts';
 import { sceneryHtml } from './scenery.ts';
 import { applyTheme, type Theme } from './themes.ts';
 import type { Season } from './trees.ts';
-import { NUDGE_LINE, nightForced, nightRgba, nightSky } from './night.ts';
+import { NUDGE_LINE, nightComes, nightForced, nightRgba, nightSky } from './night.ts';
 import { WITNESS_LINES } from './lines.ts';
 import { hatsHtml } from './hats.ts';
 import { copyText } from './clipboard.ts';
@@ -335,7 +335,7 @@ export class GameView {
         if (isWon(this.state) || document.hidden) return;
         const now = performance.now();
         // Night falls after a quiet spell; the next thing the player does brings the day back (`played`).
-        if (!this.night && !this.board.moving && now - this.lastPlayAt >= GAG_TRIGGERS.night.idleMs * this.idleScale) this.setNight(true);
+        if (!this.night && nightComes(this.theme.id) && !this.board.moving && now - this.lastPlayAt >= GAG_TRIGGERS.night.idleMs * this.idleScale) this.setNight(true);
         // The nudge: a while after night has fully fallen, a truck speaks up. Once per level; never a fail.
         // (Not while a gag is on: its own line may be up, and the bubble is shared.)
         if (this.night && !this.nudged && !this.eggsOn.size && now - this.nightAt >= GAG_TRIGGERS.night.fadeInMs + GAG_TRIGGERS.nightNudge.afterNightMs * this.idleScale) {
