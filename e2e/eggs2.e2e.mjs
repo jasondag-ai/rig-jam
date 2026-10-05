@@ -9,7 +9,7 @@ import { mkdirSync, renameSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { REGIONS } from '../src/levels/regions.ts';
-import { solve } from '../src/engine/index.ts';
+import { getMoveRange, newGame, solve, tryMove } from '../src/engine/index.ts';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
 const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
@@ -28,6 +28,7 @@ const W = 390;
 /** name: [preview, beats, clip name, selector of the gag's main layer] */
 const GAGS = {
   marshmallow: { preview: 'marshmallow', clip: 'gag89_marshmallow', beats: ['walk-in', 'eyes-flare', 'telescope', 'roast', 'fwoomp', 'eyes-pop', 'yank', 'blow', 'sniff-shrug', 'crispy', 'ear-smoke', 'gone'] },
+  bear: { preview: 'bear', clip: 'gag10_bear', beats: ['hare-nibbles', 'bear-in', 'sniff', 'sit', 'smug', 'strain', 'relief', 'spots-ears', 'snatch', 'long-look', 'swing', 'wipe', 'inspect', 'set-down', 'violated', 'bear-leaves', 'trudge', 'gone'] },
   geese: { preview: 'geese', clip: 'gag89_geese', beats: ['v-flies', 'wrong-way', 'pass', 'stall', 'honk', 'snap-turn', 'chase', 'straggler', 'feather'] },
 };
 const want = (name) => !ONLY || ONLY === name;
@@ -82,7 +83,7 @@ const watch = (page, gag, { pups = '', parts = {}, flip = '' } = {}, ms = 24000)
       new Promise((res) => {
         const log = [];
         const t0 = performance.now();
-        const box = (el) => { const b = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { l: b.left, r: b.right, t: b.top, b: b.bottom, vis: cs.visibility !== 'hidden' && cs.display !== 'none' && cs.opacity !== '0' }; };
+        const box = (el) => { const b = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { l: b.left, r: b.right, t: b.top, b: b.bottom, z: +(el.closest('svg')?.style.zIndex || 0), vis: cs.visibility !== 'hidden' && cs.display !== 'none' && cs.opacity !== '0' }; };
         const tick = () => {
           const layers = [...document.querySelectorAll(`.strip-layer[data-gag="${name}"]`)];
           const now = performance.now() - t0;
@@ -198,6 +199,63 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     await context.close();
   }
 
+  if (engine === 'webkit' && want('bear')) {
+    // ---------- The bear's bush: permanent on his levels ----------
+    const duv = region('duvernay');
+    for (const [width, height] of [[390, 844], [375, 667]]) {
+      console.log(`\n${engine} ${width}x${height}: the bear's bush`);
+      for (const li of [7, 8, 9, 6]) {
+        const { context, page } = await open(browser, { width, height, level: [duv, li] });
+        await wait(300);
+        const b = await page.evaluate(() => {
+          const s = document.querySelector('.bush-layer svg.pup path');
+          if (!s) return null;
+          const r = s.getBoundingClientRect(), R = (q) => document.querySelector(q).getBoundingClientRect();
+          const biffy = R('.biffy-layer svg.pup .root');
+          const trees = [...document.querySelectorAll('.scenery .sc')].filter((t) => { const q = t.getBoundingClientRect(); const m = q.width * 0.25; return q.left + m < r.right && q.right - m > r.left && q.top < r.bottom && q.bottom > r.bottom - 4; }).length;
+          return { ok: r.top >= R('.board').bottom && r.bottom <= R('.note').top + 1 && r.right <= innerWidth && r.left > biffy.right, trees, old: document.querySelectorAll('.scenery [data-anchor="bush"]').length, touch: getComputedStyle(document.querySelector('.bush-layer')).pointerEvents };
+        });
+        if (li === 6) check(b === null, 'Duvernay 7: no bear bush');
+        else check(b?.ok && b.old === 0 && b.touch === 'none' && b.trees === 0, `Duvernay ${li + 1}: his snowy bush stands in the strip, clear of the lease, the tip line, the biffy and the trees`);
+        await context.close();
+      }
+    }
+
+    // ---------- The bear: a perfect solve on Duvernay 8 (with ?bear=1 he comes every time) ----------
+    console.log(`\n${engine}: bear, a perfect solve on Duvernay 8`);
+    const level = REGIONS[duv].levels[7];
+    const { context, page } = await open(browser, { query: QUIET + '&bear=1', level: [duv, 7] });
+    let st = newGame(level);
+    const watching = watch(page, 'bear', { parts: { foot: '.bear-layer svg.pup:nth-of-type(1) .root > ellipse:nth-of-type(1)', hare: '.bear-layer svg.pup:nth-of-type(1) .root', bush: '.bear-layer svg.pup:nth-of-type(2) path:nth-of-type(1)', bear: '.bear-layer svg.pup:nth-of-type(3) .root' } }, 40000);
+    for (const m of solve(level)) {
+      const exit = getMoveRange(st, m.id)?.exitDelta === m.delta;
+      await drag(page, m.id, m.delta + (exit ? Math.sign(m.delta) * 0.4 : 0), 520);
+      st = tryMove(st, m.id, m.delta).state;
+    }
+    await page.waitForSelector('.strip-layer[data-gag="bear"]', { state: 'attached', timeout: 6000 });
+    await wait(1500);
+    const during = await page.evaluate((id) => ({ card: !document.querySelector('.overlay').hidden, saved: !!JSON.parse(localStorage.getItem('rush-hour-rigs:v2')).best?.[id] || JSON.stringify(JSON.parse(localStorage.getItem('rush-hour-rigs:v2'))).includes(id) }), level.id);
+    check(!during.card && during.saved, 'he comes before the win card; the win is already saved');
+    const log = await watching;
+    check(sameBeats(log, 'bear'), `the reference beats, in order (${beatsOf(log).length} of ${GAGS.bear.beats.length})`);
+    const leave = log.filter((f) => f.beat === 'bear-leaves' || f.beat === 'trudge').map((f) => f.bear).filter((b) => b.l < 5000).at(-1);
+    check(log[0].bear.r <= 0 && leave.l >= W - 2, `the bear comes in on all fours from fully off screen and strolls off until fully off screen (${Math.round(log[0].bear.r)} to ${Math.round(leave.l)})`);
+    const start = log[0];
+    check(start.hare.z === 2 && start.hare.vis && start.hare.t < start.bush.t && start.hare.b > start.bush.t + 6, 'the hare is behind the bush from the start, only its ears showing');
+    const down = log.filter((f) => f.beat === 'violated')[3];
+    check(down.hare.z === 5 && down.foot.r <= down.bush.l + 1, `he sets it down clear of the bush, not in it (its foot ${(down.bush.l - down.foot.r).toFixed(1)}px from the bush)`);
+    const trudge = log.filter((f) => f.beat === 'trudge' && f.hare);
+    const behind = trudge.filter((f) => f.hare.z === 2), front = trudge.filter((f) => f.hare.z === 5);
+    check(front.length > 3 && behind.length > 10 && front.every((f) => f.foot.r <= f.bush.l + 1.5) && behind[0].foot.r >= behind[0].bush.l - 1.5, `it goes behind the bush only when its front edge reaches the bush (${front.length} frames in front, then ${behind.length} behind)`);
+    const vanish = trudge.findIndex((f) => !f.hare.vis), lastSeen = trudge[vanish - 1];
+    check(vanish > 0 && lastSeen.hare.z === 2 && lastSeen.hare.l >= lastSeen.bush.l && lastSeen.hare.r <= lastSeen.bush.r && lastSeen.hare.t >= lastSeen.bush.t - 1.5, 'it sinks out of sight behind the bush and is hidden only once the bush covers it');
+    check(log.every((f) => f.others === 0), 'nothing else was on stage');
+    await page.waitForFunction(() => !document.querySelector('.overlay').hidden, null, { timeout: 4000 }).catch(() => {});
+    const after = await page.evaluate(() => ({ card: !document.querySelector('.overlay').hidden, bush: getComputedStyle(document.querySelector('.bush-layer')).visibility, log: JSON.parse(localStorage.getItem('rush-hour-rigs:log') ?? '{}').found ?? [] }));
+    check(after.card && after.bush === 'visible' && after.log.includes('bear'), 'then the win card comes, the bush is back, and the Bear is in the Wildlife Log');
+    await context.close();
+  }
+
   // ---------- Reduced motion: simple fades ----------
   if (engine === 'webkit') {
     console.log(`\n${engine}: reduced motion`);
@@ -221,8 +279,9 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       await page.waitForSelector('.log-card');
       const cards = await page.$$eval('.log-card', (cs) => cs.map((c) => ({ id: c.dataset.id, text: c.querySelector('p').textContent, art: !!c.querySelector('.art svg.egg-still'), legendary: c.classList.contains('legendary') })));
       const by = Object.fromEntries(cards.map((c) => [c.id, c]));
+      if (mode === 'game') check(by.bear?.art && by.bear.legendary && !!(await page.$('.log-card[data-id="bear"] .legend-tag')), 'the Bear has a LEGENDARY card with a gold frame and puppet art');
       if (mode === 'game') check(by.marshmallow?.art && by.geese?.art && by.marshmallow.text === 'Not seen yet.' && by.geese.text === 'Not seen yet.', `Marshmallow and Lost Goose have cards with puppet art; the game hides the hints (${cards.length} cards)`);
-      else check(by.marshmallow.text === 'Tap a flare stack three times.' && by.geese.text === 'Undo three times in a row.', 'demo mode shows each gag\'s hint');
+      else check(by.marshmallow.text === 'Tap a flare stack three times.' && by.geese.text === 'Undo three times in a row.' && by.bear.text === 'Solve Duvernay 8, 9 or 10 at par. One time in three.', 'demo mode shows each gag\'s hint');
       await context.close();
     }
   }

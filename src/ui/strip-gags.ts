@@ -3,6 +3,7 @@
 // Each gag is a timeline ported from its approved reference; `TimelineGag` runs one: its layers
 // cover the whole game screen and take no touches, so characters enter from fully off screen and
 // leave until fully off screen, never clipped (the gopher alone is cut off at his hole).
+import { BEAR_BEATS, BEAR_END, BEAR_FRAC, BEAR_GAP, BUSH, BUSH_FRAC, bPose, bearApply, bearScene } from './bear.ts';
 import { A_BEATS, A_END, BIFFY_FRAC, B_BEATS, B_END, aApply, bApply, biffyPup, biffyRest, runawayScene } from './biffy.ts';
 import type { EggHost, EggResult } from './egg-gags.ts';
 import { GEESE_LINE, GOOSE_FRAC, G_BEATS, G_END, SKY, gApply, geeseScene } from './geese.ts';
@@ -10,7 +11,7 @@ import { LANDOWNER_FRAC, L_BEATS, L_END, lApply, lPose, landownerScene } from '.
 import { LANDOWNER_LINE } from './lines.ts';
 import { MM_BEATS, MM_END, MM_LINE, marshmallowScene, mmApply, mmPose } from './marshmallow.ts';
 import { GOPHER_FRAC, NEAR_MISS_LINE, N_BEATS, N_END, nApply, nPose, nearMissScene } from './near-miss.ts';
-import { place, type Pup } from './puppet-stage.ts';
+import { makePup, place, type Pup } from './puppet-stage.ts';
 import { WORKER_FRAC } from './worker.ts';
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -67,6 +68,53 @@ export class BiffyProp {
   reset(): void {
     this.red = false;
     this.rest();
+  }
+}
+
+/** Where the bear's bush stands across the screen (a share of its width): right of the biffy, with room for the bear to sit between them. */
+export const BUSH_X = 0.76;
+/** The patch of the strip kept clear of trees for the bush, the hare's spot and the sitting bear. */
+export function bearBox(screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
+  const { ground, scale } = stripGeom(screenW, strip);
+  const left = (BUSH_X - BEAR_GAP * scale - BEAR_FRAC * scale * 0.3) * screenW, right = (BUSH_X + BUSH_FRAC * scale * 0.5) * screenW;
+  const h = BUSH_FRAC * scale * screenW * 0.6;
+  return { x: left, y: ground - h, width: right - left, height: h };
+}
+
+/** The bear's bush: permanent scenery on his levels (the reference's snowy bush), where the hare hides. */
+export class BushProp {
+  readonly layer: HTMLElement;
+  pup: Pup;
+  private host: EggHost;
+
+  constructor(host: EggHost) {
+    this.host = host;
+    this.layer = document.createElement('div');
+    this.layer.className = 'scene-layer puppet-layer biffy-layer bush-layer';
+    this.layer.setAttribute('aria-hidden', 'true');
+    host.screen.append(this.layer);
+    this.pup = makePup(this.layer, BUSH, { vw: 100, vh: 70, ax: 50, ay: 66, frac: BUSH_FRAC, spot: { x: BUSH_X, y: 0.8 } });
+    this.layout();
+  }
+
+  /** Where it stands (shares of the screen) and how big the scene is. */
+  spot(): { x: number; y: number; scale: number } {
+    const screen = this.host.screen.getBoundingClientRect();
+    const { ground, scale } = stripGeom(screen.width, this.host.strip());
+    return { x: BUSH_X, y: ground / (screen.height || 1), scale };
+  }
+
+  layout(): void {
+    if (!this.host.screen.getBoundingClientRect().height) return;
+    const { x, y, scale } = this.spot();
+    this.pup.frac = BUSH_FRAC * scale;
+    this.pup.spot = { x, y };
+    place(this.pup);
+  }
+
+  /** The gag draws its own bush in the same place (the hare goes behind it), so this one steps aside meanwhile. */
+  show(on: boolean): void {
+    this.layer.style.visibility = on ? '' : 'hidden';
   }
 }
 
@@ -327,6 +375,28 @@ export const geeseDef: TimelineDef = {
     return { apply: (t) => gApply(scene, t), bubble: { from: 3.7, to: 4.6, text: GEESE_LINE, at: () => ({ x: scene.at.x, y: scene.at.y - gw * 0.3 }) } };
   },
 };
+
+/**
+ * Gag 10 (LEGENDARY): the bear and the snowshoe hare, at the bear's bush. One layer holds the hare,
+ * the bush, the bear and the overlay, stacked as in the reference, so the hare can be behind the
+ * bush or in the bear's paw.
+ */
+export const bearDef = (bush: BushProp): TimelineDef => ({
+  name: 'bear',
+  beats: BEAR_BEATS,
+  end: BEAR_END,
+  stillAt: 9.2,
+  build(layer, host) {
+    const screen = host.screen.getBoundingClientRect();
+    const { x, y, scale } = bush.spot();
+    const scene = bearScene(layer('bear-layer'), { x, y }, scale);
+    bush.show(false);
+    // In from past the left edge, out past the right one (in the bear's own units).
+    const w = BEAR_FRAC * scale * screen.width, u = w / 160, at = (x - BEAR_GAP * scale) * screen.width;
+    const from = -(at + w) / u, to = (screen.width - at + w) / u;
+    return { apply: (t) => bearApply(scene, bPose(t, from, to), t), done: () => bush.show(true) };
+  },
+});
 
 // ---------- Wildlife Log card art: each puppet in a telling moment ----------
 

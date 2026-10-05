@@ -1,3 +1,4 @@
+import { bearStill } from './ui/bear.ts';
 import { geeseStill } from './ui/geese.ts';
 import { marshmallowStill } from './ui/marshmallow.ts';
 import { biffyAStill, biffyBStill, landownerStill, nearMissStill } from './ui/strip-gags.ts';
@@ -46,7 +47,7 @@ const LOG_ART: Record<Sighting, () => string> = {
   spotter: () => workerStill(),
   biffy: () => (gagsOn() ? `<div class="pair">${animStill('biffy_door_open', 84, 7).outerHTML}${WORKER_RIG}</div>` : biffyAStill()),
   landowner: () => (gagsOn() ? animStill('landowner_finger_wag', 84, 4).outerHTML : landownerStill()),
-  bear: () => animStill('bear_sit', 84, 7).outerHTML,
+  bear: () => (gagsOn() ? animStill('bear_sit', 84, 7).outerHTML : bearStill()),
   moose: () => mooseStill(),
   hotshot: () => HOTSHOT,
   gopher: () => animStill('gopher_whistle', 84, 4).outerHTML,
@@ -399,7 +400,7 @@ function forcedGag(): boolean {
   else if (gag === 'landowner' && !gagsOn()) showGame(REGIONS.findIndex((r) => r.id === 'montney'), 5, 'landownerquad');
   else if (gag === 'marshmallow') showGame(REGIONS.findIndex((r) => r.id === 'montney'), 1, 'marshmallow');
   else if (gag === 'geese' && !gagsOn()) showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, 'lostgoose');
-  else if (gag === 'bear') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 7, 'bear');
+  else if (gag === 'bear') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 7, gagsOn() ? 'bear' : 'bearhare');
   else if (gag === 'gopher' || gag === 'geese' || gag === 'pumper' || gag === 'hotshot') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 0, gag);
   else if (gag === 'moose') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 0, 'moose');
   else if (gag === 'biffy') {

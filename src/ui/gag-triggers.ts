@@ -23,9 +23,20 @@ export const GAG_TRIGGERS = {
   marshmallow: { flareTaps: 3 },
   /** Gag 9, the geese and the lost goose: Undo pressed this many times in a row (a move in between starts the count again). Any region. */
   geese: { undosInARow: 3 },
+  /**
+   * Gag 10, the bear and the hare (LEGENDARY): a perfect solve (at par) on one of these levels of
+   * the region, with this chance. It plays before the win card. Demo mode: every time.
+   */
+  bear: { region: 'duvernay', levels: [8, 9, 10], perfectSolve: true, chance: 1 / 3 },
 } as const;
 
-export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese';
+export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear';
+
+/** Is this one of the bear's levels (`level` counts from 1)? */
+export const bearLevel = (regionId: string, level: number): boolean => regionId === GAG_TRIGGERS.bear.region && (GAG_TRIGGERS.bear.levels as readonly number[]).includes(level);
+/** Does the bear come after this win? */
+export const bearComesNow = (moves: number, par: number, demo: boolean, random: () => number = Math.random): boolean =>
+  (!GAG_TRIGGERS.bear.perfectSolve || moves <= par) && (demo || random() < GAG_TRIGGERS.bear.chance);
 
 /** A bump of a truck up into the top berm, or down into the bottom one (not into a truck or equipment). */
 export const bermBump = (orient: 'h' | 'v', direction: 1 | -1, hit: string): 'top' | 'bottom' | null =>

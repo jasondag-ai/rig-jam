@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { BackAndForth, GAG_TRIGGERS, bermBump } from './gag-triggers.ts';
+import { BackAndForth, GAG_TRIGGERS, bearComesNow, bearLevel, bermBump } from './gag-triggers.ts';
+import { BEAR_BEATS, BEAR_END, bPose } from './bear.ts';
+import { BUSH_X, bearBox } from './strip-gags.ts';
 import { A_BEATS, A_END, BIFFY_FRAC, B_BEATS, B_END } from './biffy.ts';
 import { L_BEATS, L_END, lPose } from './landowner.ts';
 import { N_BEATS, N_END, nPose } from './near-miss.ts';
@@ -152,5 +154,46 @@ describe('marshmallow and geese: the reference, as approved', () => {
     expect(leadX(G_END, W, gw) - 4 * sp - gw / 2).toBeGreaterThan(W);
     // Same speed as the reference: it reaches the reference's end point at 9.0.
     expect(leadX(9, W, gw)).toBeCloseTo(W + 3.4 * sp + gw * 0.6);
+  });
+});
+
+describe('the bear and the hare (legendary)', () => {
+  it('comes only on a perfect solve of Duvernay 8 to 10, one time in three (every time in demo mode)', () => {
+    expect(GAG_TRIGGERS.bear).toEqual({ region: 'duvernay', levels: [8, 9, 10], perfectSolve: true, chance: 1 / 3 });
+    expect([7, 8, 9, 10].map((n) => bearLevel('duvernay', n))).toEqual([false, true, true, true]);
+    expect(bearLevel('montney', 9)).toBe(false);
+    expect(bearComesNow(12, 12, false, () => 0.2)).toBe(true);
+    expect(bearComesNow(12, 12, false, () => 0.5)).toBe(false);
+    expect(bearComesNow(13, 12, false, () => 0)).toBe(false);
+    expect(bearComesNow(12, 12, true, () => 0.99)).toBe(true);
+    expect(bearComesNow(13, 12, true, () => 0)).toBe(false);
+  });
+
+  it('plays the reference beats: in on all fours, sits, strains, snatch, the long look, the wipe, set down, strolls off; the hare trudges back', () => {
+    expect(BEAR_BEATS.map((b) => b[0])).toEqual([0, 0.2, 3.0, 3.5, 4.0, 4.8, 6.4, 6.9, 7.4, 7.9, 8.9, 9.15, 10.7, 11.3, 12.0, 12.4, 14.4, 15.8]);
+    expect(BEAR_END).toBeGreaterThanOrEqual(15.8);
+    expect(bPose(0)).toMatchObject({ mode: 'walk', x: -400, hare: 'bush' });
+    expect(bPose(0, -700).x).toBe(-700);
+    expect(bPose(4.4).mode).toBe('sit');
+    expect(bPose(5.5).sweat).toBeGreaterThanOrEqual(0);
+    expect(bPose(7.7).hare).toBe('paw');
+    expect(bPose(8.8).hShock).toBeCloseTo(1, 1);
+    expect(bPose(9.5)).toMatchObject({ wipeLines: true, hare: 'paw' });
+    expect(bPose(12.2)).toMatchObject({ hare: 'ground', hViolated: true });
+    expect(bPose(12.2).cloud).toBeGreaterThan(0);
+    expect(bPose(13).mode).toBe('walk');
+    expect(bPose(15.39, -400, 900).x).toBeGreaterThan(880);
+    expect(bPose(15.5).mode).toBe('gone');
+    expect(bPose(15).hare).toBe('back');
+    expect(bPose(15.9).hareShow).toBe(false);
+  });
+
+  it('his bush stands right of the biffy with room for him to sit between them', () => {
+    for (const [w, strip] of [[390, { top: 600, bottom: 700 }], [375, { top: 470, bottom: 538 }]] as const) {
+      const bear = bearBox(w, strip), biffy = biffyBox(w, strip);
+      expect(bear.x).toBeGreaterThan(biffy.x + biffy.width);
+      expect(bear.x + bear.width).toBeLessThan(w);
+      expect(BUSH_X * w).toBeLessThan(bear.x + bear.width);
+    }
   });
 });

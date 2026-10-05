@@ -44,6 +44,7 @@ export const EGGS: LogEntry[] = [
   { id: 'biffyB', name: 'The Runaway Roll', caption: 'It got away from him.', hint: 'Bump the bottom berm twice, quickly.' },
   { id: 'marshmallow', name: 'Marshmallow', caption: 'Mmm. Crispy.', hint: 'Tap a flare stack three times.' },
   { id: 'geese', name: 'Lost Goose', caption: 'Wrong way, buddy.', hint: 'Undo three times in a row.' },
+  { id: 'bear', name: 'Bear', caption: 'Does what bears do in the woods.', hint: 'Solve Duvernay 8, 9 or 10 at par. One time in three.', legendary: true },
 ];
 export const LIVE: Sighting[] = EGGS.map((e) => e.id);
 export const liveEntries = (all: boolean): LogEntry[] => (all ? LOG_ENTRIES : EGGS);

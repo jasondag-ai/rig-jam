@@ -22,4 +22,6 @@ export const magpieOn = (search: string = location.search): boolean => MAGPIE_ON
 export const WORKER_ON = true;
 export const MOOSE_ON = true;
 export const workerOn = (search: string = location.search): boolean => WORKER_ON && new URLSearchParams(search).get('worker') !== '0';
+/** `?bear=1`: the bear comes on every perfect solve of his levels (tests). */
+export const bearAlways = (search: string = location.search): boolean => new URLSearchParams(search).get('bear') === '1';
 export const mooseOn = (search: string = location.search): boolean => MOOSE_ON && new URLSearchParams(search).get('moose') !== '0';

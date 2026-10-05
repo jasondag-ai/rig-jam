@@ -6,7 +6,7 @@ import { applyTheme, type Theme } from './themes.ts';
 import { hatsHtml } from './hats.ts';
 import { copyText } from './clipboard.ts';
 import { shareText, streak, zeroIncident } from './daily.ts';
-import { hardHats, loadProgress, recordDailyClear, recordWin, saveProgress, spendHint } from './progress.ts';
+import { hardHats, loadProgress, type Progress, recordDailyClear, recordWin, saveProgress, spendHint } from './progress.ts';
 import { streakSignHtml } from './sign.ts';
 import { sound } from '../audio/engine.ts';
 import { toast } from './toast.ts';
@@ -15,10 +15,10 @@ import { preloadSprites } from './sprites.ts';
 import { defaultKind } from './vehicles.ts';
 import { applyCamo, liveCount, loadLog, record, saveLog, sightingToast, type Sighting } from './wildlife-log.ts';
 import { GagLayer, type GagOptions } from './gag-layer.ts';
-import { gagsOn, magpieOn, mooseOn, workerOn } from './flags.ts';
+import { bearAlways, gagsOn, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
-import { BackAndForth, GAG_TRIGGERS, bermBump, type GagId } from './gag-triggers.ts';
-import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
+import { BackAndForth, GAG_TRIGGERS, bearComesNow, bearLevel, bermBump, type GagId } from './gag-triggers.ts';
+import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, BushProp, bearBox, bearDef, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
 import { companyLine, tierFor } from './gags.ts';
@@ -111,6 +111,8 @@ export class GameView {
   private topBumps = 0;
   private lastExitAt = -Infinity;
   private undos = 0;
+  private bush: BushProp | null = null;
+  private won: { before: Progress; progress: Progress; earnedHint: boolean } | null = null;
   private flareTaps = 0;
   private backForth = new BackAndForth();
   private biffyWait = 0;
@@ -142,7 +144,7 @@ export class GameView {
     const board = this.board;
     this.idleScale = idleScale();
     const f = gagOptions.force;
-    const forced: Partial<Record<string, GagId>> = { magpie: 'magpie', worker: 'worker', nearmiss: 'nearMiss', landownerquad: 'landowner', biffya: 'biffyA', biffyb: 'biffyB', marshmallow: 'marshmallow', lostgoose: 'geese', ...(gagsOn() ? {} : { moose: 'moose' }) };
+    const forced: Partial<Record<string, GagId>> = { magpie: 'magpie', worker: 'worker', nearmiss: 'nearMiss', landownerquad: 'landowner', biffya: 'biffyA', biffyb: 'biffyB', marshmallow: 'marshmallow', lostgoose: 'geese', bearhare: 'bear', ...(gagsOn() ? {} : { moose: 'moose' }) };
     this.eggForced = (f && forced[f]) || null;
     board.onGrab = (id) => {
       this.lastMoveAt = performance.now();
@@ -250,6 +252,11 @@ export class GameView {
       // The marshmallow needs a flare stack to roast it on; the geese only need sky.
       if (level.obstacles.some((o) => o.kind === 'flare')) this.strips.marshmallow = new TimelineGag(egg, marshmallowDef);
       this.strips.geese = new TimelineGag(egg, geeseDef);
+      // The bear's levels have his bush, and the hare behind it.
+      if (bearLevel(this.regionId, gagOptions.levelIndex + 1) || this.eggForced === 'bear') {
+        this.bush = new BushProp(egg);
+        this.strips.bear = new TimelineGag(egg, bearDef(this.bush));
+      }
       // Taps on a flare stack (gag-triggers.ts): a touch that lifts where it landed, on a flare's picture.
       let down: { x: number; y: number } | null = null;
       this.el.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }), { capture: true });
@@ -316,9 +323,10 @@ export class GameView {
     this.el.style.setProperty('--horizon', `${Math.round(box.y - 4 - depth)}px`);
     // Kept clear of trees: the sleepy worker's spot by the left edge, and the biffy's.
     const strip = { top: box.y + box.height, bottom: controlsTop };
-    const clearings = [this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null].filter((c) => c !== null);
-    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, anchors: { bush: true, mound: this.regionId === 'cardium' }, clearings });
+    const clearings = [this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.bush ? bearBox(screen.width, strip) : null].filter((c) => c !== null);
+    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, anchors: { bush: !this.bush, mound: this.regionId === 'cardium' }, clearings });
     this.biffy?.layout();
+    this.bush?.layout();
     // Room outside the fence for the characters: between the HUD and the board, and below it.
     const buttonsTop = this.el.querySelector('.controls')!.getBoundingClientRect().top - screen.top;
     this.gags?.layout({
@@ -354,7 +362,20 @@ export class GameView {
       this.gags?.stop();
       window.clearInterval(this.eggTimer);
       this.clearEggs();
-      setTimeout(() => this.showWin(), WIN_DELAY_MS);
+      // A perfect solve on one of the bear's levels may bring him (gag-triggers.ts): the win is
+      // saved at once, and the card waits until he has gone.
+      const bear = this.strips.bear;
+      if (bear && !this.eggForced && bearComesNow(this.state.moves, this.level.par, loadProgress().demo || bearAlways())) {
+        this.recordWinOnce();
+        setTimeout(
+          () =>
+            void bear.play().then((r) => {
+              if (r === 'seen') this.seen('bear');
+              if (this.el.isConnected && isWon(this.state)) this.showWin();
+            }),
+          WIN_DELAY_MS,
+        );
+      } else setTimeout(() => this.showWin(), WIN_DELAY_MS);
     }
   }
 
@@ -586,13 +607,21 @@ export class GameView {
     this.hintBtn.classList.toggle('empty', hints === 0 && this.hintStep === 0);
   }
 
+  /** Saves the win (once, however long the card takes to come) and says what it changed. */
+  private recordWinOnce(): NonNullable<GameView['won']> {
+    if (this.won) return this.won;
+    const before = loadProgress();
+    let { progress, earnedHint } = recordWin(before, this.level.id, this.state.moves, this.level.par);
+    if (this.daily) progress = recordDailyClear(progress, this.daily.day);
+    saveProgress(progress);
+    return (this.won = { before, progress, earnedHint });
+  }
+
   private showWin(): void {
     const { moves } = this.state;
     const { par } = this.level;
-    const before = loadProgress();
-    let { progress, earnedHint } = recordWin(before, this.level.id, moves, par);
-    if (this.daily) progress = recordDailyClear(progress, this.daily.day);
-    saveProgress(progress);
+    const { before, progress, earnedHint } = this.recordWinOnce();
+    this.won = null;
     this.updateHud();
     const hats = hardHats(moves, par);
     const clean = zeroIncident(moves, par, this.bumps);
@@ -765,4 +794,4 @@ function fitRibbon(span: HTMLElement | null): void {
 }
 
 /** Which Wildlife Log entry each egg fills in. */
-const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese' };
+const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear' };
