@@ -5,6 +5,7 @@ import { sceneryHtml } from './scenery.ts';
 import { applyTheme, type Theme } from './themes.ts';
 import type { Season } from './trees.ts';
 import { NUDGE_LINE, nightForced, nightRgba, nightSky } from './night.ts';
+import { WITNESS_LINES } from './lines.ts';
 import { hatsHtml } from './hats.ts';
 import { copyText } from './clipboard.ts';
 import { shareText, streak, zeroIncident } from './daily.ts';
@@ -119,6 +120,9 @@ export class GameView {
   /** Gags on stage right now (several may play at once). */
   private eggsOn = new Set<GagId>();
   private wiggle = new Wiggle();
+  /** Gags that have come on in this level (the Company Man may mention it), and the ones a driver has already remarked on. */
+  private gagsThisLevel = new Set<GagId>();
+  private witnessed = new Set<GagId>();
   private bushTaps = 0;
   /** When night began to fall (0 by day). */
   private nightAt = 0;
@@ -416,6 +420,16 @@ export class GameView {
     this.resetHint();
     this.showLevelHint();
     this.board.sync(this.state, true, result.exited ? id : undefined);
+    // A witness line: with a gag on screen, the driver of the truck just moved remarks on it. Once per gag per level.
+    const watching = [...this.eggsOn].find((g) => !this.witnessed.has(g));
+    const mover = result.exited ? undefined : this.board.truckElement(id);
+    if (watching && mover && !this.eggForced) {
+      this.witnessed.add(watching);
+      // (Once the truck has settled where it was driven to.)
+      window.setTimeout(() => {
+        if (mover.isConnected && !isWon(this.state)) this.board.say(mover.querySelector('.cab') ?? mover, WITNESS_LINES[watching]).dataset.witness = watching;
+      }, 320);
+    }
     this.updateHud();
     if (isWon(this.state)) {
       window.clearInterval(this.eggTimer);
@@ -495,6 +509,8 @@ export class GameView {
     this.eggDone.clear();
     this.eggQueue = [];
     this.eggsOn.clear();
+    this.gagsThisLevel.clear();
+    this.witnessed.clear();
     this.bushTaps = 0;
     this.topBumps = 0;
     this.undos = 0;
@@ -519,6 +535,7 @@ export class GameView {
 
   private startEgg(id: GagId): void {
     this.eggsOn.add(id);
+    this.gagsThisLevel.add(id);
     void this.playEgg(id).then((r) => {
       this.eggsOn.delete(id);
       if (IDLE_GAGS.includes(id) && r !== 'none') this.lastIdleGagAt = performance.now();
@@ -757,7 +774,7 @@ export class GameView {
           <button class="btn quiet" data-act="levels">All levels</button>
         </div>
       </div>`;
-    this.winEl.querySelector('.company-says')!.textContent = companyLine(moves, par);
+    this.winEl.querySelector('.company-says')!.textContent = companyLine(moves, par, Math.random, this.gagsThisLevel.size > 0);
     setBannerCap(this.winEl.querySelector<HTMLElement>('.card h2')!);
     // The characters are flat puppet stills in the worker's build (win-cast.ts), one expression per
     // result (par, close, over), moved only by the little GSAP motion below.

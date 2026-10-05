@@ -15,7 +15,7 @@ import { A_BEATS, A_END, BIFFY_FRAC, B_BEATS, B_END, aApply, bApply, biffyPup, b
 import type { EggHost, EggResult } from './egg-gags.ts';
 import { GEESE_LINE, GOOSE_FRAC, G_BEATS, G_END, SKY, gApply, geeseScene } from './geese.ts';
 import { LANDOWNER_FRAC, L_BEATS, L_END, lApply, lPose, landownerScene } from './landowner.ts';
-import { LANDOWNER_LINE } from './lines.ts';
+import { LANDOWNER_LINES, fromPool } from './lines.ts';
 import { MM_BEATS, MM_END, MM_LINE, marshmallowScene, mmApply, mmPose } from './marshmallow.ts';
 import { GOPHER_FRAC, NEAR_MISS_LINE, N_BEATS, N_END, nApply, nPose, nearMissScene } from './near-miss.ts';
 import { makePup, place, type Pup } from './puppet-stage.ts';
@@ -484,7 +484,7 @@ export const landownerDef: TimelineDef = {
     const { ground, scale } = stripGeom(screen.width, host.strip());
     const scene = landownerScene(layer('landowner-layer'), ground / screen.height, scale);
     const w = LANDOWNER_FRAC * scale * screen.width;
-    return { apply: (t) => lApply(scene, lPose(t), t), bubble: { from: 4.0, to: 6.1, text: LANDOWNER_LINE, at: () => ({ x: screen.width / 2 + w * 0.05, y: ground - w * 0.74 }) } };
+    return { apply: (t) => lApply(scene, lPose(t), t), bubble: { from: 4.0, to: 6.1, text: fromPool(LANDOWNER_LINES), at: () => ({ x: screen.width / 2 + w * 0.05, y: ground - w * 0.74 }) } };
   },
 };
 

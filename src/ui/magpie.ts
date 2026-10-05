@@ -5,7 +5,7 @@
 // Animation rules (GAME_BIBLE): he always faces the way he travels, crouches before every big move,
 // squashes and stretches on landing and launch, moves on arcs, and leaves a feather behind.
 import { SIZE, cabSide, type GameState, type Level, type Truck } from '../engine/index.ts';
-export { MAGPIE_LINE } from './lines.ts';
+export { MAGPIE_LINES } from './lines.ts';
 
 const O = '#2b1e16';
 /** The bird, drawn facing right in a 120 x 120 box, feet at (60, 108). */

@@ -1,6 +1,6 @@
 import { SIZE, cabSide, convoyWaitingFor, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
 import { bumpTarget, pickSpeaker } from './bump.ts';
-import { pickLine, type BumpHit } from './lines.ts';
+import { bumpLine, type BumpHit } from './lines.ts';
 import { equipFit, equipmentSvg, gateClearance, phaseFor, runPumpjacks } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
 import { Spray } from './spray.ts';
@@ -65,6 +65,8 @@ export class BoardView {
   /** Stops the pumpjacks' ambient motion (obstacles.ts) when the level is rebuilt. */
   private stopPumpjacks: () => void = () => {};
   private lastLine: string | null = null;
+  /** How many times each truck has hit each kind of thing in this level (the lines escalate). */
+  private hitCounts = new Map<string, number>();
   /** Tire tracks laid by drags, under obstacles and trucks; wheel spray while trucks move. */
   private tracks: TrackLayer;
   private spray: Spray;
@@ -115,6 +117,7 @@ export class BoardView {
     this.level = level;
     this.drag = null;
     this.el.querySelectorAll('.gate, .obstacle, .ghost, .bubble, .dust').forEach((n) => n.remove());
+    this.hitCounts.clear();
     this.trucks.forEach((t) => t.remove());
     this.trucks.clear();
     // A clean pad: the track layer goes in first so obstacles and trucks sit on top of it.
@@ -378,19 +381,23 @@ export class BoardView {
     const state = this.getState();
     const target = bumpTarget(state, d.id, d.range, direction);
     this.onBump(d.id, direction, target.hit);
+    const key = `${d.id}:${target.hit}`;
+    const nth = (this.hitCounts.get(key) ?? 0) + 1;
+    this.hitCounts.set(key, nth);
     const speakerEl = this.trucks.get(pickSpeaker(state, d.id, target)) ?? d.el;
     sound.bump();
     sound.radio();
     setTimeout(() => {
-      if (speakerEl.isConnected) this.speak(speakerEl, target.hit);
+      if (speakerEl.isConnected) this.speak(speakerEl, target.hit, nth);
     }, RADIO_MS);
   }
 
-  private speak(truckEl: HTMLElement, hit: BumpHit): void {
-    const line = pickLine(hit, this.lastLine);
+  private speak(truckEl: HTMLElement, hit: BumpHit, nth: number): void {
+    const line = bumpLine(hit, nth, this.lastLine);
     this.lastLine = line;
     const b = this.say(truckEl.querySelector('.cab') ?? truckEl, line);
     b.dataset.hit = hit;
+    b.dataset.nth = String(nth);
     b.dataset.speaker = truckEl.dataset.id ?? '';
   }
 

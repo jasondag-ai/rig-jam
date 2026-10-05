@@ -4,7 +4,8 @@
 // splat and its drip belong to the truck, so they stay on it and move with it.
 import type { GameState, Side } from '../engine/index.ts';
 import { sound } from '../audio/engine.ts';
-import { BIRD, BIRD_FRAC, DRIP, DRIP_FULL, END, FEATHER, GONE, MAGPIE_LINE, SPLAT, STARTLE, T_BUBBLE, T_LAND, T_SMUG, T_SPLAT, beatAt, dripTurn, fxAt, offScreen, pickTruck, pose, poseAttrs, roofSpot, startlePose, travelFor, type Pose, type Travel } from './magpie.ts';
+import { BIRD, BIRD_FRAC, DRIP, DRIP_FULL, END, FEATHER, GONE, MAGPIE_LINES, SPLAT, STARTLE, T_BUBBLE, T_LAND, T_SMUG, T_SPLAT, beatAt, dripTurn, fxAt, offScreen, pickTruck, pose, poseAttrs, roofSpot, startlePose, travelFor, type Pose, type Travel } from './magpie.ts';
+import { fromPool } from './lines.ts';
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -197,7 +198,7 @@ export class MagpieGag {
     const anchor = document.createElement('i');
     Object.assign(anchor.style, { position: 'absolute', left: `${spot.x + side * run.w * 1.35}px`, top: `${spot.y - run.w * 0.15}px`, width: '0', height: '0' });
     run.layer.append(anchor);
-    const bubble = this.host.say(anchor, MAGPIE_LINE);
+    const bubble = this.host.say(anchor, fromPool(MAGPIE_LINES));
     bubble.dataset.speaker = run.truckId;
     bubble.dataset.magpie = 'true';
   }
