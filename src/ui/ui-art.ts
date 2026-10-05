@@ -7,7 +7,7 @@ const BASE = './sprites/ui/';
 export const uiImg = (name: string, cls = '') =>
   `<img class="ui-art ${cls}" alt="" aria-hidden="true" draggable="false" decoding="async" src="${BASE}${name}.webp" srcset="${BASE}${name}.webp 1x, ${BASE}${name}@2x.webp 2x" />`;
 
-const BACKGROUNDS = ['btn_undo', 'btn_hint', 'btn_restart', 'frame_win', 'sign_days_without_incident', 'badge_zero_incident'];
+const BACKGROUNDS = ['btn_undo', 'btn_neutral', 'btn_hint', 'btn_restart', 'frame_win', 'sign_days_without_incident', 'badge_zero_incident'];
 
 /** Sets --ui-<name> on the page for every art piece used as a background. */
 export function applyUiArt(root: HTMLElement = document.documentElement): void {
