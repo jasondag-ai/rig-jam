@@ -40,12 +40,20 @@ export const moundWidthFor = (screenW: number, scale: number): number => ((REF_M
 
 /* ---------------- lunch ---------------- */
 /* ---------------- lunch ---------------- */
+// The sandwich is TRIANGLE-CUT, not a burger (Jay, Oct 5): a half seen from above, crust along its
+// two straight edges, lettuce and ham peeking out along the cut. Drawn from Jay's description: the
+// reference file on the Desktop (saved Oct 5 11:50) still has the round one. If a newer file
+// arrives, port its drawing over this.
 const SANDWICH = `<svg viewBox="0 0 26 16" width="100%" height="100%" overflow="visible">
-<path d="M2 11 Q2 15 6 15 L20 15 Q24 15 24 11 Z" fill="#e9b867" stroke="${O}" stroke-width="1.6" stroke-linejoin="round"/>
-<path d="M2 10 Q5 7.5 8 10 Q11 7.5 14 10 Q17 7.5 20 10 Q23 7.5 25 10 L24 11.5 L2 11.5 Z" fill="#7cc04a" stroke="${O}" stroke-width="1.2" stroke-linejoin="round"/>
-<rect x="3" y="7.4" width="20" height="2.6" rx="1.3" fill="#e9837b" stroke="${O}" stroke-width="1.2"/>
-<path d="M2 7.5 Q2 1.5 13 1.5 Q24 1.5 24 7.5 Z" fill="#e9b867" stroke="${O}" stroke-width="1.6" stroke-linejoin="round"/>
-<path d="M6 4.8 Q9 3 13 3" stroke="#f6d79a" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>`;
+<path d="M24.6 2.6 Q22.6 5.6 20.4 4.9 Q18.9 7.6 16.6 6.9 Q15 9.6 12.7 8.9 Q11.2 11.6 8.9 10.9 Q7.4 13.6 5.1 12.9 Q4.4 15 2.6 13.4 L3 12 L23 1.5 Z" fill="#7cc04a" stroke="${O}" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M23 1.5 L3 12 L3.9 13.7 L24 3.2 Z" fill="#e9837b" stroke="${O}" stroke-width="1.1" stroke-linejoin="round"/>
+<path d="M3 1.5 L23 1.5 L3 12 Z" fill="#f6e3b4" stroke="${O}" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M4.4 9.6 L4.4 2.9 L19.6 2.9" stroke="#c98f45" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.5 6 L11.5 6" stroke="#fff6dc" stroke-width="1.2" stroke-linecap="round"/></svg>`;
+/** The gopher's arm against the reference's: 1.5x thicker, with a paw to match. */
+export const ARM = 1.5;
+/** The sandwich (and its crust) against the reference's size: a little bigger, so the triangle and its filling read on a phone. */
+export const FOOD = 1.4;
 const CRUST = `<svg viewBox="0 0 26 16" width="100%" height="100%" overflow="visible">
 <path d="M3 13 Q3 5 9 4 Q7 7 7 13 Z" fill="#c98f45" stroke="${O}" stroke-width="1.6" stroke-linejoin="round"/>
 <path d="M5 8 L6 8.6" stroke="#f6d79a" stroke-width="1" stroke-linecap="round"/></svg>`;
@@ -211,16 +219,18 @@ export function lunchApply(sc: any, P: any, t: number): void {
   const gl = Wk.q('.armF .fore circle').getBoundingClientRect(); const gx = gl.left + gl.width/2 - r.left, gy = gl.top + gl.height/2 - r.top;
   // food spot: behind him on the ground, just short of the mound
   if (food === 'hand' && t > 4.3) sc.dropX = gx;                                   // it lands where his hand sets it down
-  const fx = sc.dropX ?? (sc.moundX - 46*um - 9*wu), fy = groundY - 4*wu, fw = 15*wu;
+  const fx = sc.dropX ?? (sc.moundX - 46*um - 9*wu), fy = groundY - 4*wu, fw = 15*wu*FOOD;
   sc.food = { x: fx, y: fy };
   // gopher arm
   let pawX = hx, pawY = hy, arm = '';
   if (a.show){ pawX = lerp(hx, fx + a.tx*um*.5, a.k); pawY = lerp(hy - 2*um, fy + a.ty*um*.5, a.k) - Math.sin(a.k*Math.PI)*10*um;
     const cx = lerp(hx, pawX, .45), cy = Math.min(hy, pawY) - 12*um*Math.min(1, a.k*2);
     const d = `M${hx} ${hy + 2*um} Q${cx} ${cy} ${pawX} ${pawY}`;
-    arm = `<path d="${d}" stroke="${O}" stroke-width="${7.5*gu}" fill="none" stroke-linecap="round"/><path d="${d}" stroke="${FUR}" stroke-width="${4.4*gu}" fill="none" stroke-linecap="round"/>
-      <circle class="paw" cx="${pawX}" cy="${pawY}" r="${4.2*gu}" fill="${FUR2}" stroke="${O}" stroke-width="${2*gu}"/>
-      <path d="M${pawX - 3*gu} ${pawY + 3.4*gu} l${-.6*gu} ${2*gu} M${pawX} ${pawY + 4*gu} l0 ${2.2*gu} M${pawX + 3*gu} ${pawY + 3.4*gu} l${.6*gu} ${2*gu}" stroke="${O}" stroke-width="${1.2*gu}" stroke-linecap="round"/>`;
+    // (Jay, Oct 5: the arm about 1.5x thicker with a bigger paw. `ARM` scales the reference's widths.)
+    const au = gu*ARM;
+    arm = `<path d="${d}" stroke="${O}" stroke-width="${7.5*au}" fill="none" stroke-linecap="round"/><path d="${d}" stroke="${FUR}" stroke-width="${4.4*au}" fill="none" stroke-linecap="round"/>
+      <circle class="paw" cx="${pawX}" cy="${pawY}" r="${4.2*au}" fill="${FUR2}" stroke="${O}" stroke-width="${2*gu}"/>
+      <path d="M${pawX - 3*au} ${pawY + 3.4*au} l${-.6*au} ${2*au} M${pawX} ${pawY + 4*au} l0 ${2.2*au} M${pawX + 3*au} ${pawY + 3.4*au} l${.6*au} ${2*au}" stroke="${O}" stroke-width="${1.2*gu}" stroke-linecap="round"/>`;
   }
   if (sc.armHtml !== arm) sc.arm.innerHTML = sc.armHtml = arm;
   // food

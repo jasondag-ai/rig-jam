@@ -123,7 +123,8 @@ export const B_END = 7.6;
 export const BIFFY_FRAC = 0.15;
 /** The biffy is drawn this much of the reference's size (about 60 px tall at 390). The shuffler is not shrunk. */
 export const BIFFY_SIZE = 0.8;
-export const SHUFFLER_FRAC = 0.155;
+/** The shuffler is the worker's size (his head matches the worker's, as in the porcupine gag: about 62 px tall stood up, at 390). */
+export const SHUFFLER_FRAC = 0.243;
 
 /* door and jolt helpers shared by both gags */
 function doorAndBody(pp: Pup, door: number, jolt: number, rock: number, indRed: boolean): void {

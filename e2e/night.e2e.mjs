@@ -104,7 +104,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     }
 
     // ---------- An idle level fades to night, and the next move brings the day back ----------
-    console.log(`\n${engine}: Duvernay 8 (Hoarfrost): idle, night falls; a move, day returns`);
+    console.log(`\n${engine}: Duvernay 8: idle, night falls; a move, day returns`);
     {
       const level = REGIONS[region('duvernay')].levels[7];
       const { context, page } = await open(browser, { query: QUIET + '&idle=0.1', level: [region('duvernay'), 7] });
