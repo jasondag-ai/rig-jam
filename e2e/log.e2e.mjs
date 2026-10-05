@@ -70,7 +70,7 @@ const btn = await page.$eval('.binoculars', (b) => {
 check(btn.w >= 44 && btn.h >= 44 && btn.beside, `binoculars button next to the gear (${btn.w}x${btn.h}, "${btn.label}")`);
 let log = await openLog();
 check(log.count === '0/10' && log.cards.length === 10 && log.cards.every((c) => !c.found && c.title === '???'), `10 cards, none found (${log.count})`);
-check(log.cards.find((c) => c.id === 'bear').text === 'Only deep in the Duvernay.' && log.cards.find((c) => c.id === 'gopher').text === 'Seen in Cardium' && log.cards.find((c) => c.id === 'geese').text === 'Look up' && log.cards.find((c) => c.id === 'pumper').text === 'Making his rounds', 'unfound cards show hints');
+check(log.cards.every((c) => c.text === 'Not seen yet.'), 'unfound cards keep their secret in the game (hints show in demo mode only)');
 const silhouette = await page.$eval('.log-card.unfound .art', (a) => getComputedStyle(a).filter);
 const legend = await page.evaluate(() => {
   const cards = [...document.querySelectorAll('.log-card.legendary')];
