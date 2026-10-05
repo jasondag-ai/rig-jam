@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { BackAndForth, GAG_RULES, GAG_TRIGGERS, bearComesNow, bearLevel, bermBump } from './gag-triggers.ts';
+import { BackAndForth, GAG_RULES, GAG_TRIGGERS, wrongGateBump, bearComesNow, bearLevel, bermBump } from './gag-triggers.ts';
 import { BEAR_BEATS, BEAR_END, bPose } from './bear.ts';
 import { BUSH_X, COW_X, PORC_BUSH_X, bearBox, bushBox, cowBox, moundSpot } from './strip-gags.ts';
 import { BUSH_BOX, BUSH_FRAC, bushMarkup } from './gag-bush.ts';
 import { LUNCH_BEATS, LUNCH_END, MOUND_DRAWN, T_UP, T_WALK, lunchPose, moundWidthFor } from './gopher-lunch.ts';
 import { PC_BEATS, PC_END, SHIFT, pcPose } from './porcupine.ts';
+import { SAM, SAM_BEATS, SAM_END, backGlove, samPose } from './sam.ts';
+import { BUDDY, BUDDY_STOP, STAND, TONGUE_BEATS, TONGUE_END, T_HEAVE, T_POP, T_TURN, tonguePose } from './frozen-tongue.ts';
+import { RISER_X, riserBox, riserHeight } from './strip-gags.ts';
 import { treeArt } from './trees.ts';
 import { cooldownScale, eggOff } from './flags.ts';
 import { BULL_BEATS, BULL_END, PRIMP, bullPose, forelock } from './bull.ts';
@@ -352,5 +355,104 @@ describe('gopher lunch (gag 13)', () => {
     expect(spot.baseY).toBe(stripGeom(390, strip).ground);
     expect((spot.w * MOUND_DRAWN) / 64).toBeCloseTo(0.113 * 390 * 0.92, 1);
     expect(moundWidthFor(390, 0.5)).toBeCloseTo(spot.w / 2, 5);
+  });
+});
+
+describe('Safety Sam (gag 14)', () => {
+  it('is set off by three blocked moves in a row, or one push at a wrong-colour gate', () => {
+    expect(GAG_TRIGGERS.sam).toEqual({ bumpsInARow: 3, wrongGate: true });
+    const gates = [{ color: 'red', side: 'right', index: 2 }, { color: 'blue', side: 'top', index: 4 }];
+    const red = { orient: 'h' as const, row: 2, col: 1, color: 'red' }, green = { orient: 'h' as const, row: 2, col: 1, color: 'green' }, up = { orient: 'v' as const, row: 1, col: 4, color: 'green' };
+    expect(wrongGateBump(green, 1, 'wall', gates)).toBe(true); // a green truck pushed at the red gate
+    expect(wrongGateBump(red, 1, 'wall', gates)).toBe(false); // its own gate
+    expect(wrongGateBump(green, -1, 'wall', gates)).toBe(false); // plain berm on that side
+    expect(wrongGateBump(green, 1, 'truck', gates)).toBe(false); // it ran into a truck, not the gate
+    expect(wrongGateBump(up, -1, 'wall', gates)).toBe(true);
+    expect(wrongGateBump(up, 1, 'wall', gates)).toBe(false);
+  });
+
+  it("is the worker's build in the safety advisor's kit: white hat, navy, hi-vis vest, moustache, clipboard", () => {
+    expect(SAM).toContain('#35507a'); // navy
+    expect(SAM).toContain('#c9e24a'); // vest
+    expect(SAM).toContain('#f3f5f7'); // white hat
+    expect(SAM).not.toContain('#c8352b'); // no red coveralls left
+    expect(SAM).toContain('M60 46 Q63 41.5 69 42.5'); // the moustache
+    expect(SAM).toContain('class="clipboard"');
+    expect(SAM.startsWith('<g class="flip">')).toBe(true); // no pail, no long reach
+  });
+
+  it('plays the reference beats: march in, look up, tsk, scribble, SEE ME, fingers to eyes, point, back off', () => {
+    expect(SAM_BEATS.map((b) => b[0])).toEqual([0, 0.3, 2.0, 2.5, 3.8, 5.2, 6.5, 7.1, 7.8]);
+    expect(samPose(0.2).w.show).toBe(false);
+    expect(samPose(0.3, -700).w.dx).toBe(-700);
+    expect(samPose(3).w.tsk).toBe(true);
+    expect(samPose(4.5).w.board).toBe('write');
+    expect(samPose(5.8).w.board).toBe('show');
+    expect(samPose(6.9).w).toMatchObject({ vee: true, pen: false });
+    expect(samPose(6.9).w.arF).toBeLessThan(-140);
+    expect(samPose(7.5).w.arF).toBeCloseTo(-95);
+    // Backing off: still pointing, moving left, to wherever the edge is.
+    expect(samPose(9).w).toMatchObject({ vee: true, arF: -95 });
+    expect(samPose(10.59, -260, -900).w.dx).toBeLessThan(-880);
+    expect(samPose(SAM_END).w.show).toBe(false);
+    // His back glove (where the clipboard hangs) by arithmetic: straight down at rest, forward when raised.
+    expect(backGlove({ arB: 0, foB: 0, rot: 0, x: 0, y: 0 })).toEqual({ x: 52, y: 81 });
+    expect(backGlove(samPose(5.8).w).x).toBeGreaterThan(60);
+  });
+});
+
+describe('the frozen tongue (gag 15)', () => {
+  it('is set off by 30 s with no moves, on winter levels', () => {
+    expect(GAG_TRIGGERS.tongue).toEqual({ theme: 'winter', idleMs: 30_000 });
+  });
+
+  it('plays the reference beats, then the ending the game adds: a heave, the pop, and off the way he came', () => {
+    expect(TONGUE_BEATS.map((b) => b[0]).slice(0, 16)).toEqual([0, 0.3, 2.2, 2.7, 3.0, 3.3, 3.5, 5.0, 5.6, 7.0, 7.4, 7.9, 8.1, 8.6, 9.6, 11.0]);
+    expect(TONGUE_BEATS.slice(16).map((b) => b[0])).toEqual([T_HEAVE, T_POP, T_TURN]);
+    expect(T_HEAVE).toBeGreaterThan(12.0); // after the reference's blink
+    const at = (t: number) => tonguePose(t);
+    expect(at(0.2).w.show).toBe(false);
+    expect(tonguePose(0.3, -640).w.dx).toBe(-640);
+    expect(at(2.5).w.dx).toBe(STAND);
+    expect(at(2.9).tongue).toBe(0);
+    expect(at(3.4).tongue).toBe(1);
+    expect(at(4).w.arF).toBeLessThan(-70); // flailing
+    expect(at(5.5).bubble).toBe(true);
+    expect(at(6.5).bubble).toBe(false);
+    // The buddy: in, stops short of him, photo with a flash, cracks up, hop-turns and leaves.
+    expect(at(5).b.show).toBe(false);
+    expect(at(7.2).b.dx).toBe(BUDDY_STOP);
+    expect(at(8).flash).toBeGreaterThan(0);
+    expect(at(8).b.phone).toBe(true);
+    expect(at(10.5).b.face).toBe(-1);
+    expect(tonguePose(11.19, -300, -800).b.dx).toBeLessThan(-780);
+    expect(at(11.3).b.show).toBe(false);
+    expect(at(11.5).flake).toBeGreaterThan(0);
+    // The ending: still stuck through the heave, free at the pop, then walking off left, glove at his mouth.
+    expect(at(T_POP - 0.05)).toMatchObject({ tongue: 1 });
+    expect(at(T_POP - 0.05).stretch).toBeGreaterThan(0.9);
+    expect(at(T_POP + 0.1)).toMatchObject({ tongue: 0 });
+    expect(at(T_POP + 0.1).pop).toBeGreaterThan(0);
+    expect(at(T_TURN + 0.3).w.face).toBe(-1);
+    expect(tonguePose(TONGUE_END - 0.11, -300, -800).w.dx).toBeLessThan(-780);
+    expect(at(TONGUE_END).w.show).toBe(false);
+  });
+
+  it('his buddy is the same build in blue with an orange hat, clean shaven', () => {
+    expect(BUDDY).toContain('#4f7fb0');
+    expect(BUDDY).toContain('#f08a2a');
+    expect(BUDDY).not.toContain('#c8352b');
+    expect(BUDDY).not.toContain('M48 39 Q50 54 64 54'); // no beard
+  });
+
+  it('the riser stands by the right edge, on screen, with clear ground for the two of them', () => {
+    for (const [w, strip] of [[390, { top: 600, bottom: 700 }], [375, { top: 470, bottom: 538 }], [430, { top: 660, bottom: 780 }]] as const) {
+      const box = riserBox(w, strip), half = (riserHeight(w, strip) * 20) / 104;
+      expect(RISER_X * w + half).toBeLessThan(w);
+      expect(box.x + box.width).toBeLessThanOrEqual(w);
+      expect(box.x).toBeLessThan(RISER_X * w - 40 * stripGeom(w, strip).scale);
+      // About the worker's height, and inside a full strip.
+      expect(riserHeight(w, strip)).toBeLessThan(strip.bottom - strip.top);
+    }
   });
 });

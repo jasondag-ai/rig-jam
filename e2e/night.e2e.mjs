@@ -18,7 +18,7 @@ const check = (ok, text) => {
   if (!ok) failures++;
   console.log(`   ${ok ? 'ok  ' : 'FAIL'} ${text}`);
 };
-const QUIET = '?cover=0&magpie=0&worker=0&moose=0&cooldown=0&off=lunch';
+const QUIET = '?cover=0&magpie=0&worker=0&moose=0&cooldown=0&off=lunch,sam,tongue';
 const region = (id) => REGIONS.findIndex((r) => r.id === id);
 
 async function open(browser, { query = QUIET, level = [1, 1], reducedMotion = 'no-preference', width = 390, height = 844 } = {}) {

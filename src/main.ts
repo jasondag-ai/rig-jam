@@ -1,6 +1,8 @@
 import { bearStill } from './ui/bear.ts';
 import { bullStill } from './ui/bull.ts';
+import { tongueStill } from './ui/frozen-tongue.ts';
 import { geeseStill } from './ui/geese.ts';
+import { samStill } from './ui/sam.ts';
 import { lunchStill } from './ui/gopher-lunch.ts';
 import { porcupineStill } from './ui/porcupine.ts';
 import { marshmallowStill } from './ui/marshmallow.ts';
@@ -46,6 +48,8 @@ const LOG_ART: Record<Sighting, () => string> = {
   marshmallow: () => marshmallowStill(),
   porcupine: () => porcupineStill(),
   lunch: () => lunchStill(),
+  sam: () => samStill(),
+  tongue: () => tongueStill(),
   bull: () => bullStill(),
   biffyB: () => biffyBStill(),
   // Batch C character art (a telling frame of each), except the hot shot (its art is being redone).
@@ -405,6 +409,8 @@ function forcedGag(): boolean {
   else if (gag === 'nearmiss' || gag === 'biffya' || gag === 'biffyb') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, gag);
   else if (gag === 'landowner' && !gagsOn()) showGame(REGIONS.findIndex((r) => r.id === 'montney'), 5, 'landownerquad');
   else if (gag === 'porcupine' || gag === 'lunch') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, gag);
+  else if (gag === 'sam') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, 'sam');
+  else if (gag === 'tongue') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 1, 'tongue');
   else if (gag === 'bull') showGame(REGIONS.findIndex((r) => r.id === 'montney'), 5, 'bull');
   else if (gag === 'marshmallow') showGame(REGIONS.findIndex((r) => r.id === 'montney'), 1, 'marshmallow');
   else if (gag === 'geese' && !gagsOn()) showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, 'lostgoose');

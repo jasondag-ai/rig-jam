@@ -21,7 +21,7 @@ const check = (ok, text) => {
   if (!ok) failures++;
   console.log(`   ${ok ? 'ok  ' : 'FAIL'} ${text}`);
 };
-const QUIET = '?cover=0&magpie=0&worker=0&moose=0&cooldown=0&off=lunch';
+const QUIET = '?cover=0&magpie=0&worker=0&moose=0&cooldown=0&off=lunch,sam,tongue';
 const region = (id) => REGIONS.findIndex((r) => r.id === id);
 const W = 390;
 
@@ -32,6 +32,8 @@ const GAGS = {
   bull: { preview: 'bull', clip: 'gag11_bull', beats: ['cow-grazes', 'bull-in', 'freeze', 'lick-hoof', 'slick', 'chest-puff', 'hearts', 'cow-looks', 'eyes-huge', 'hop-turn', 'bolts', 'paws', 'charge', 'last-heart'] },
   porcupine: { preview: 'porcupine', clip: 'gag12_porcupine', beats: ['quiet-bush', 'stroll-in', 'look-around', 'squat', 'poke', 'roll-pops', 'springs-out', 'porcupine-bolts', 'scurry'] },
   gopherLunch: { preview: 'lunch', clip: 'gag13_gopher_lunch', beats: ['quiet-mound', 'stroll-in', 'plops-down', 'sets-it-down', 'phone', 'paw-peeks', 'feels-around', 'yank', 'chomp', 'crust-back', 'bite', 'eyes-huge', 'cheeks', 'ducks', 'deadpan', 'burp', 'gets-up', 'walks-off'] },
+  sam: { preview: 'sam', clip: 'gag14_safety_sam', beats: ['bad-moves', 'march-in', 'looks-up', 'tsk', 'scribble', 'see-me', 'fingers-to-eyes', 'points', 'backs-off'] },
+  tongue: { preview: 'tongue', clip: 'gag15_frozen_tongue', beats: ['frosty-riser', 'stroll-in', 'eyes-pipe', 'checks-around', 'lick', 'stuck', 'pulls', 'hewp', 'buddy-in', 'buddy-looks', 'phone-out', 'flash', 'deadpan', 'cracks-up', 'buddy-leaves', 'snowflake', 'heave', 'pop', 'trudges-off'] },
   geese: { preview: 'geese', clip: 'gag89_geese', beats: ['v-flies', 'wrong-way', 'pass', 'stall', 'honk', 'snap-turn', 'chase', 'straggler', 'feather'] },
 };
 const want = (name) => !ONLY || ONLY === name;
@@ -398,7 +400,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
   if (engine === 'webkit' && want('gopherLunch')) {
     // ---------- Gopher lunch: 30 s idle in Cardium (3 s here) ----------
     console.log(`\n${engine}: gopher lunch, 30 s idle in Cardium (3 s here)`);
-    const { context, page } = await open(browser, { query: QUIET.replace('&off=lunch', '') + '&idle=0.1', level: [region('cardium'), 5] });
+    const { context, page } = await open(browser, { query: QUIET.replace('&off=lunch,sam,tongue', '') + '&idle=0.1', level: [region('cardium'), 5] });
     const geo = await page.evaluate(() => {
       const m = document.querySelector('.scenery [data-anchor="mound"]').getBoundingClientRect(), note = document.querySelector('.note').getBoundingClientRect(), board = document.querySelector('.board').getBoundingClientRect();
       return { base: m.top + (29.5 / 34) * m.height, heap: (m.width * 59) / 64, ground: note.top - 4, holeY: m.top + (17 / 34) * m.height, left: m.left, right: m.right, top: m.top, clear: m.top > board.bottom };
@@ -421,6 +423,134 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     check(chomp.every((f) => !f.sand.vis), 'the sandwich is gone down the hole');
     const up = log.filter((f) => f.beat === 'cheeks' && f.gopher.t < geo.holeY - 6);
     check(up.length > 5, 'the gopher pops up behind him, cut off at the hole');
+    check(log.every((f) => f.others === 0), 'nothing else was on stage');
+    await context.close();
+  }
+
+  if (engine === 'webkit' && want('sam')) {
+    // ---------- Safety Sam: three blocked moves in a row, or a push at a wrong-colour gate ----------
+    const levels = REGIONS[region('cardium')].levels;
+    const SIDE = (t, dir) => (t.orient === 'h' ? (dir === 1 ? 'right' : 'left') : dir === 1 ? 'bottom' : 'top');
+    // A truck that can bump (it has no room one way) without pushing at any gate, and one that can push straight at a wrong-colour gate.
+    const find = (wantGate) => {
+      for (const [li, level] of levels.entries()) {
+        const st = newGame(level);
+        for (const t of st.trucks) {
+          const r = getMoveRange(st, t.id);
+          for (const dir of [1, -1]) {
+            const limit = dir === 1 ? r.max : r.min;
+            const atWall = (t.orient === 'h' ? t.col : t.row) + limit + (dir === 1 ? t.length : 0) === (dir === 1 ? 6 : 0);
+            const gate = level.gates.find((g) => g.side === SIDE(t, dir) && g.index === (t.orient === 'h' ? t.row : t.col));
+            if (r.exitDelta === limit + dir || r.exitDelta === limit) continue;
+            if (wantGate ? atWall && gate && gate.color !== t.color : atWall && !gate && !(t.orient === 'v' && dir === 1)) return { li, id: t.id, cells: limit + dir * 1.2 };
+          }
+        }
+      }
+      return null;
+    };
+    const plain = find(false), wrong = find(true);
+    console.log(`\n${engine}: Safety Sam, three blocked moves in a row (Cardium ${plain.li + 1})`);
+    {
+      const { context, page } = await open(browser, { query: QUIET.replace(',sam', ''), level: [region('cardium'), plain.li] });
+      const watching = watch(page, 'sam', { parts: { sam: '.sam-layer svg.pup .torso', see: '.sam-layer .see', vee: '.sam-layer .vee', tsk: '.sam-layer .pup-overlay text' } });
+      await drag(page, plain.id, plain.cells, 300);
+      const bumps1 = await page.evaluate(() => +document.querySelector('.misses b').textContent);
+      await wait(900);
+      check(bumps1 >= 1 && !(await page.$('.strip-layer')), 'one blocked move is not enough');
+      // Blocked again and again without a move in between: push from where it now stands.
+      await drag(page, plain.id, Math.sign(plain.cells) * 1.2, 300);
+      await wait(600);
+      check(!(await page.$('.strip-layer')), 'nor two');
+      await drag(page, plain.id, Math.sign(plain.cells) * 1.2, 300);
+      const log = await watching;
+      check(sameBeats(log, 'sam'), `on the third he comes: the reference beats, in order (${beatsOf(log).length} of ${GAGS.sam.beats.length})`);
+      const first = log.find((f) => f.sam?.vis), last = log.filter((f) => f.sam?.vis).at(-1);
+      check(first.sam.r <= 0 && last.sam.r <= 2, `he marches in from fully off screen and backs off until fully off screen (${Math.round(first.sam.r)} to ${Math.round(last.sam.r)})`);
+      const backing = log.filter((f) => f.beat === 'backs-off' && f.sam.vis);
+      check(backing.every((f, i) => i === 0 || f.sam.l <= backing[i - 1].sam.l + 0.5) && backing.every((f) => f.vee?.vis), 'he backs away to the left, still pointing');
+      check(log.filter((f) => f.beat === 'see-me').every((f) => f.see?.vis) && log.filter((f) => f.beat === 'scribble').every((f) => !f.see?.vis), 'SEE ME shows only when he turns the clipboard round');
+      check(log.some((f) => f.beat === 'tsk' && f.tsk), '"tsk" over his head as he shakes it');
+      check(log.every((f) => f.others === 0), 'nothing else was on stage');
+      for (let i = 0; i < 3; i++) await drag(page, plain.id, Math.sign(plain.cells) * 1.2, 250);
+      await wait(1000);
+      check(!(await page.$('.strip-layer')), 'once per level');
+      await context.close();
+    }
+    console.log(`\n${engine}: Safety Sam, a push at a wrong-colour gate (Cardium ${wrong.li + 1})`);
+    {
+      const { context, page } = await open(browser, { query: QUIET.replace(',sam', ''), level: [region('cardium'), wrong.li] });
+      await drag(page, wrong.id, wrong.cells, 300);
+      const came = await page.waitForSelector('.strip-layer[data-gag="sam"]', { state: 'attached', timeout: 4000 }).then(() => true).catch(() => false);
+      check(came, 'one push at a wrong-colour gate brings him');
+      await context.close();
+    }
+    {
+      const { context, page } = await open(browser, { query: QUIET.replace(',sam', ''), level: [region('cardium'), plain.li] });
+      // A move made between bumps starts the count again.
+      const st = newGame(levels[plain.li]);
+      const mover = st.trucks.map((t) => ({ t, r: getMoveRange(st, t.id) })).find(({ t, r }) => t.id !== plain.id && (r.max > 0 ? r.exitDelta !== 1 : r.min < 0 && r.exitDelta !== -1) && (r.max > 0 || r.min < 0));
+      await drag(page, plain.id, plain.cells, 250);
+      await drag(page, plain.id, Math.sign(plain.cells) * 1.2, 250);
+      if (mover) await drag(page, mover.t.id, mover.r.max > 0 ? 1 : -1, 400);
+      await drag(page, plain.id, Math.sign(plain.cells) * 1.2, 250);
+      await wait(900);
+      check(!mover || !(await page.$('.strip-layer')), 'a move made in between starts the count again');
+      await context.close();
+    }
+  }
+
+  if (engine === 'webkit' && want('tongue')) {
+    // ---------- The frosty riser: permanent on winter levels, never on the berm ----------
+    const duv = region('duvernay');
+    for (const [width, height] of [[390, 844], [375, 667], [393, 852], [430, 932], [390, 744], [375, 567]]) {
+      console.log(`\n${engine} ${width}x${height}: the frosty riser on every winter level`);
+      let bad = [], seen = 0, hidden = 0, tall = 0;
+      for (let li = 0; li < 10; li++) {
+        const { context, page } = await open(browser, { width, height, level: [duv, li] });
+        const b = await page.evaluate(() => {
+          const layer = document.querySelector('.riser-layer');
+          if (!layer) return null;
+          const r = layer.querySelector('svg.pup').getBoundingClientRect(), R = (q) => document.querySelector(q).getBoundingClientRect();
+          const board = R('.board'), berm = R('canvas.berm');
+          const vis = getComputedStyle(layer).visibility !== 'hidden';
+          const bush = document.querySelector('.bush-layer svg.pup')?.getBoundingClientRect();
+          return { vis, h: r.height, ok: r.top >= Math.max(board.bottom, berm.bottom) - 0.5 && r.bottom <= R('.note').top + 1 && r.right <= innerWidth && r.left >= 0, bush: !bush || r.left >= bush.right - 2, pe: getComputedStyle(layer).pointerEvents };
+        });
+        if (!b) bad.push(`${li + 1}: none`);
+        else if (!b.vis) hidden++;
+        else { seen++; tall = b.h; if (!b.ok || !b.bush || b.pe !== 'none') bad.push(`${li + 1}: ${JSON.stringify(b)}`); }
+        await context.close();
+      }
+      check(bad.length === 0, `Duvernay 1 to 10: ${seen} risers ${Math.round(tall)}px tall, each wholly below the berm and the lease, above the tip line, on screen, clear of the bear's bush${hidden ? `; left out on ${hidden} where the strip is too short for it` : ''}${bad.length ? ' ' + bad.join(' | ') : ''}`);
+    }
+    {
+      const { context, page } = await open(browser, { level: [region('montney'), 2] });
+      check(!(await page.$('.riser-layer')), 'no riser outside winter');
+      await context.close();
+    }
+
+    // ---------- The frozen tongue: 30 s idle on a winter level (3 s here) ----------
+    console.log(`\n${engine}: frozen tongue, 30 s idle on a winter level (3 s here)`);
+    const { context, page } = await open(browser, { query: QUIET.replace(',tongue', '') + '&idle=0.1', level: [duv, 1] });
+    const riser = await page.evaluate(() => { const r = document.querySelector('.riser-layer svg.pup').getBoundingClientRect(); return { l: r.left, r: r.right, x: r.left + r.width / 2 }; });
+    await wait(1500);
+    check(!(await page.$('.strip-layer')), 'not before the idle time is up');
+    const watching = watch(page, 'tongue', { parts: { worker: '.tongue-layer svg.pup:nth-of-type(1) .torso', buddy: '.tongue-layer svg.pup:nth-of-type(2) .torso', tongue: '.tongue-layer .pup-overlay .tongue', flake: '.tongue-layer .pup-overlay .flake', flash: '.tongue-layer .pup-flash' } }, 34000);
+    const bubble = bubbleOf(page, 'tongue', 20000);
+    const log = await watching;
+    check(sameBeats(log, 'tongue'), `the reference beats, in order, then he heaves free and leaves (${beatsOf(log).length} of ${GAGS.tongue.beats.length})`);
+    const vis = (k) => log.filter((f) => f[k]?.vis);
+    check(vis('worker')[0].worker.r <= 0 && vis('worker').at(-1).worker.r <= 2, `the worker strolls in from fully off screen and trudges off until fully off screen (${Math.round(vis('worker')[0].worker.r)} to ${Math.round(vis('worker').at(-1).worker.r)})`);
+    check(vis('buddy')[0].buddy.r <= 0 && vis('buddy').at(-1).buddy.r <= 2, 'so does his buddy');
+    const stuck = log.filter((f) => f.beat === 'pulls' && f.tongue);
+    check(stuck.length > 20 && stuck.every((f) => Math.abs(f.tongue.r - (riser.x - 4)) < 6) && Math.max(...stuck.map((f) => f.tongue.r - f.tongue.l)) > Math.min(...stuck.map((f) => f.tongue.r - f.tongue.l)) + 3, 'his tongue is stuck to the real riser and stretches as he pulls');
+    const b = await bubble;
+    check(b?.text === 'HEWP!' && b.box.x >= 4 && b.box.x + b.box.width <= W - 4, `"${b?.text}", on screen`);
+    const flashes = log.filter((f) => +f.flash?.vis && f.beat === 'flash');
+    const strip = await page.evaluate(() => ({ top: document.querySelector('.board').getBoundingClientRect().bottom, bottom: document.querySelector('.note').getBoundingClientRect().top }));
+    check(flashes.length > 2 && flashes.every((f) => f.flash.t >= strip.top - 1 && f.flash.b <= strip.bottom + 1), 'the camera flash lights the bottom strip only, never the lease');
+    check(log.some((f) => f.beat === 'snowflake' && f.flake), 'a snowflake drifts down onto his nose');
+    check(log.filter((f) => f.beat === 'trudges-off').every((f) => !f.tongue), 'in the end he pulls free');
     check(log.every((f) => f.others === 0), 'nothing else was on stage');
     await context.close();
   }
@@ -475,6 +605,8 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       if (mode === 'game') check(by.bull?.art && by.bull.text === 'Not seen yet.', 'Bull and Cow has a card with puppet art');
       if (mode === 'game') check(by.porcupine?.art && by.lunch?.art && by.porcupine.text === 'Not seen yet.', 'Porcupine and Gopher Lunch have cards with puppet art');
       else check(by.porcupine.text === 'Demo mode only for now: tap the bush in Cardium.' && by.lunch.text === 'Sit tight for 30 seconds in Cardium.', 'demo mode shows the porcupine\'s and the lunch\'s hints');
+      if (mode === 'game') check(by.sam?.art && by.tongue?.art && by.sam.text === 'Not seen yet.', 'Safety Sam and Frozen Tongue have cards with puppet art');
+      else check(by.sam.text === 'Bump three times in a row, or push a truck at a wrong-colour gate.' && by.tongue.text === 'Sit tight for 30 seconds on a winter level.', 'demo mode shows Sam\'s and the tongue\'s hints');
       if (mode === 'game') check(by.marshmallow?.art && by.geese?.art && by.marshmallow.text === 'Not seen yet.' && by.geese.text === 'Not seen yet.', `Marshmallow and Lost Goose have cards with puppet art; the game hides the hints (${cards.length} cards)`);
       else check(by.marshmallow.text === 'Tap a flare stack three times.' && by.geese.text === 'Undo three times in a row.' && by.bear.text === 'Solve Duvernay 8, 9 or 10 at par. One time in three.' && by.bull.text === 'Tap the cow in Montney.', 'demo mode shows each gag\'s hint');
       await context.close();

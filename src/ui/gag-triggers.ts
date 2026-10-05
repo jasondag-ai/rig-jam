@@ -37,6 +37,13 @@ export const GAG_TRIGGERS = {
   porcupine: { region: 'cardium', trigger: 'TBD', demoTapBush: true },
   /** Gag 13, gopher lunch (Cardium, at the gopher mound): this long with no moves (after the magpie and the worker have had their turns). */
   gopherLunch: { region: 'cardium', idleMs: 30_000 },
+  /**
+   * Gag 14, Safety Sam (any region): this many blocked moves (bumps) in a row with no move made in
+   * between, OR one push at a wrong-colour gate. Once per level.
+   */
+  sam: { bumpsInARow: 3, wrongGate: true },
+  /** Gag 15, the frozen tongue (winter levels, at the frosty riser): this long with no moves (after the magpie and the worker). */
+  tongue: { theme: 'winter', idleMs: 30_000 },
   /** Not a gag: on a night level, this long with no move and a truck says "While we're young, Sonny...". Once per level. */
   nightNudge: { idleMs: 25_000 },
 } as const;
@@ -49,7 +56,20 @@ export const GAG_TRIGGERS = {
  */
 export const GAG_RULES = { cooldownMs: 60_000 } as const;
 
-export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch';
+export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue';
+
+/** Is a bump a push at a wrong-colour gate? (A truck in line with a gate that is not its own; `hit` is what it ran into.) */
+export const wrongGateBump = (
+  truck: { orient: 'h' | 'v'; row: number; col: number; color: string },
+  direction: 1 | -1,
+  hit: string,
+  gates: { color: string; side: string; index: number }[],
+): boolean => {
+  if (hit !== 'wall') return false;
+  const side = truck.orient === 'h' ? (direction === 1 ? 'right' : 'left') : direction === 1 ? 'bottom' : 'top';
+  const index = truck.orient === 'h' ? truck.row : truck.col;
+  return gates.some((g) => g.side === side && g.index === index && g.color !== truck.color);
+};
 
 /** Is this one of the bear's levels (`level` counts from 1)? */
 export const bearLevel = (regionId: string, level: number): boolean => regionId === GAG_TRIGGERS.bear.region && (GAG_TRIGGERS.bear.levels as readonly number[]).includes(level);

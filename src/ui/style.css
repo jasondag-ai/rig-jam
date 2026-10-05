@@ -3515,6 +3515,8 @@ img.hat { width: 100%; height: auto; }
 .puppet-layer.geese-layer { z-index: 0; }
 .puppet-layer .pup-overlay { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .puppet-layer .pup-feather { border: 1.5px solid #2b1e16; }
+/* Frozen tongue: the buddy's camera flash lights the bottom strip only, never the lease. */
+.puppet-layer .pup-flash { position: absolute; left: 0; width: 100%; background: #fff; opacity: 0; pointer-events: none; z-index: 8; }
 /* Gopher lunch: the gopher's box ends at the hole line; the sandwich and the crust. */
 .puppet-layer .pup-clip { position: absolute; left: 0; top: 0; width: 100%; overflow: hidden; pointer-events: none; }
 .puppet-layer .pup-food { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; }

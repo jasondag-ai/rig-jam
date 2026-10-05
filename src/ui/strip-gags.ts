@@ -6,6 +6,8 @@
 import { BEAR_BEATS, BEAR_END, BEAR_FRAC, BEAR_GAP, bPose, bearApply, bearScene } from './bear.ts';
 import { BUSH_BOX, BUSH_FRAC, bushMarkup } from './gag-bush.ts';
 import { LUNCH_BEATS, LUNCH_END, LUNCH_GAP, lunchApply, lunchPose, lunchScene, moundWidthFor } from './gopher-lunch.ts';
+import { BUDDY_STOP, RISER_FRAC, TONGUE_BEATS, TONGUE_END, TONGUE_LINE, riserPup, tongueApply, tonguePose, tongueScene } from './frozen-tongue.ts';
+import { SAM_BEATS, SAM_END, SAM_X, samFrame, samPose, samScene } from './sam.ts';
 import { PC_BEATS, PC_END, PORC_FRAC, QUILL_SHUFFLER_FRAC, SHIFT, pcApply, pcPose, porcupineScene } from './porcupine.ts';
 import type { Season } from './trees.ts';
 import { BULL_BEATS, BULL_END, BULL_FRAC, BULL_GAP, COW_FRAC, COW_REST, PRIMP, bullApply, bullPose, bullScene, cowApply, cowPup } from './bull.ts';
@@ -150,6 +152,57 @@ export function bushBox(x: number, screenW: number, strip: { top: number; bottom
 export function moundSpot(screenW: number, strip: { top: number; bottom: number }): { baseY: number; w: number } {
   const { ground, scale } = stripGeom(screenW, strip);
   return { baseY: ground, w: moundWidthFor(screenW, scale) };
+}
+
+/** Where the frosty riser stands on winter levels (a share of the screen's width): by the right edge, clear of the bear's bush. */
+export const RISER_X = 0.93;
+/** The patch of the strip the riser and the stuck worker stand on (scenery keeps trees off it). */
+export function riserBox(screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
+  const { ground, scale } = stripGeom(screenW, strip);
+  const u = (WORKER_FRAC * scale * screenW) / 120;
+  // From where his buddy stops to the riser's far side.
+  return { x: RISER_X * screenW + (BUDDY_STOP - 20) * u, y: ground - 40 * u, width: (20 - BUDDY_STOP + 20) * u, height: 40 * u };
+}
+/** How tall the riser stands (px), for a strip. */
+export const riserHeight = (screenW: number, strip: { top: number; bottom: number }): number => (RISER_FRAC * stripGeom(screenW, strip).scale * screenW * 104) / 40;
+
+/** The frosty pipeline riser: permanent scenery on winter levels. It stands off the lease, never on the berm. */
+export class RiserProp {
+  readonly layer: HTMLElement;
+  pup: Pup;
+  private host: EggHost;
+
+  constructor(host: EggHost) {
+    this.host = host;
+    this.layer = document.createElement('div');
+    this.layer.className = 'scene-layer puppet-layer prop-layer riser-layer';
+    this.layer.setAttribute('aria-hidden', 'true');
+    host.screen.append(this.layer);
+    this.pup = riserPup(this.layer, { x: RISER_X, y: 0.8 }, 1);
+    this.layout();
+  }
+
+  scale(): number {
+    return stripGeom(this.host.screen.getBoundingClientRect().width, this.host.strip()).scale;
+  }
+
+  layout(): void {
+    const screen = this.host.screen.getBoundingClientRect();
+    if (!screen.height) return;
+    const strip = this.host.strip();
+    const { ground, scale } = stripGeom(screen.width, strip);
+    this.pup.frac = RISER_FRAC * scale;
+    this.pup.spot = { x: RISER_X, y: ground / screen.height };
+    place(this.pup);
+    // No room under the berm for it (a very short strip): it is left out rather than drawn over the lease.
+    const berm = this.host.board.querySelector('canvas.berm')?.getBoundingClientRect();
+    const clear = Math.max(strip.top, berm ? berm.bottom - screen.top : 0);
+    this.layer.style.visibility = this.pup.svg.getBoundingClientRect().top - screen.top < clear ? 'hidden' : '';
+  }
+
+  get fits(): boolean {
+    return this.layer.style.visibility !== 'hidden';
+  }
 }
 
 /** Where the cow grazes across the screen (a share of its width): the right of the strip, the bull stopping between her and the biffy. */
@@ -534,6 +587,43 @@ export const lunchDef: TimelineDef = {
     return { apply: (t) => lunchApply(scene, lunchPose(t, from, from), t), done: () => (moundEl.style.transform = '') };
   },
 };
+
+/** Gag 14: Safety Sam, in the middle of the bottom strip. No speech bubble: "tsk" and SEE ME are drawn. */
+export const samDef: TimelineDef = {
+  name: 'sam',
+  beats: SAM_BEATS,
+  end: SAM_END,
+  stillAt: 5.8,
+  build(layer, host) {
+    const screen = host.screen.getBoundingClientRect();
+    const { ground, scale } = stripGeom(screen.width, host.strip());
+    const scene = samScene(layer('sam-layer'), { x: SAM_X, y: ground / screen.height }, scale);
+    // In from past the left edge, and backing off past it again (in his drawing's units).
+    const w = WORKER_FRAC * scale * screen.width, from = -(SAM_X * screen.width + w) / (w / 120);
+    return { apply: (t) => samFrame(scene, samPose(t, from, from), t) };
+  },
+};
+
+/** Gag 15: the frozen tongue, at the (permanent) frosty riser. */
+export const tongueDef = (riser: RiserProp): TimelineDef => ({
+  name: 'tongue',
+  beats: TONGUE_BEATS,
+  end: TONGUE_END,
+  stillAt: 8.3,
+  build(layer, host) {
+    if (!riser.fits) return null;
+    const screen = host.screen.getBoundingClientRect();
+    const strip = host.strip();
+    const scale = riser.scale();
+    const scene = tongueScene(layer('tongue-layer'), riser.pup, scale, { top: strip.top, height: Math.max(0, strip.bottom - strip.top) });
+    // Both in from past the left edge and off past it again (in their drawing's units, from the riser).
+    const w = WORKER_FRAC * scale * screen.width, from = -(RISER_X * screen.width + w) / (w / 120);
+    return {
+      apply: (t) => tongueApply(scene, tonguePose(t, from, from), t),
+      bubble: { from: 5.0, to: 6.4, text: TONGUE_LINE, at: () => ({ x: scene.head.x, y: scene.head.y }) },
+    };
+  },
+});
 
 /** Gag 11: the bull and the (permanent) cow. No speech, just hearts. She stays gone once she has bolted. */
 export const bullDef = (cow: CowProp): TimelineDef => ({

@@ -111,14 +111,14 @@ something, give exact clicks and one command at a time.
   none starts for 60 s (`cooldownMs`). A trigger that fires while a gag is on or during the
   cooldown is IGNORED, not queued (the player can set it off again; counters use `>=`). Demo mode
   and `?gag=` previews have no cooldown. The bear (he comes at the win) is exempt. Tests:
-  `?cooldown=0` (or a scale), `?off=lunch,porcupine` leaves gags out. Every gag enters and leaves
+  `?cooldown=0` (or a scale), `?off=lunch,porcupine,sam,tongue` leaves gags out. Every gag enters and leaves
   fully off screen and its layers take no touches.
 - EGG SCHEDULING (`GameView.tickEggs`): ONE gag at a time, none while a truck is moving or once
   the level is won. A gag the player set off waits in `eggQueue` and plays as soon as the stage is
   free. The magpie comes after his idle time with no moves and the worker after his, each
   counted from the last move or the last gag leaving (the worker waits until the magpie has been),
   each once per level; one that was scared off or cancelled may try again.
-  `?gag=magpie|worker|moose|nearmiss|landowner|biffya|biffyb|marshmallow|geese|bear|bull|porcupine|lunch` plays one at once, again and again;
+  `?gag=magpie|worker|moose|nearmiss|landowner|biffya|biffyb|marshmallow|geese|bear|bull|porcupine|lunch|sam|tongue` plays one at once, again and again;
   `?idle=0.1` makes the idle times 10x shorter.
 - STRIP GAGS (gags 4 to 7; `src/ui/strip-gags.ts` runner `TimelineGag`, placement `stripGeom`;
   puppets and timelines ported as written from `near_miss_landowner_reference.html` and
@@ -194,6 +194,22 @@ something, give exact clicks and one command at a time.
     comes out of the hole. Every reference distance is in `um` (reference mound units). Trigger:
     30 s idle, after the magpie and worker. THE EXIT IS NOT IN THE REFERENCE (it loops with him
     sitting): from `T_UP` he gets up and walks off the way he came, crust in hand.
+  - SAFETY SAM (gag 14, any region; `sam.ts`, ported from `safety_sam_reference.html`): the
+    worker's build recoloured (white hat, navy, hi-vis vest, moustache) with a clipboard. Marches
+    in from the left to the middle of the strip, looks up, slow head shake ("tsk" is drawn), scribbles,
+    turns the clipboard (SEE ME), two fingers to his eyes, points, and BACKS off the left still
+    pointing (the one intended exception to "face the way you travel"). The clipboard hangs from
+    his back glove (`backGlove`, by arithmetic). Trigger (`GAG_TRIGGERS.sam`): 3 bumps in a row with
+    no move between (`bumpRun`), or one push at a wrong-colour gate (`wrongGateBump`). Once per level.
+  - THE FROZEN TONGUE (gag 15, winter levels; `frozen-tongue.ts`, ported from
+    `frozen_tongue_reference.html`). The frosty riser is permanent scenery on winter levels
+    (`RiserProp`, `.riser-layer`, at `RISER_X` by the right edge, clear of the bear's bush; left out
+    where a very short strip would put it on the berm: `fits`). The worker licks it and sticks, the
+    tongue stretches to the REAL riser, "HEWP!", his buddy (blue, orange hat) takes a photo (the
+    flash lights the bottom strip only), cracks up and leaves, a snowflake lands on his nose.
+    THE ENDING IS NOT IN THE REFERENCE (it loops with him stuck): from `T_HEAVE` he heaves, the
+    tongue snaps free (`T_POP`), and he trudges off left with a glove over his mouth. Trigger:
+    30 s idle on a winter level, after the magpie and worker.
   - `npm run test:e2e:eggs2` checks gags 8 and up the same way and saves their clips.
   - `npm run test:e2e:strip` checks all of it in WebKit (beats, real triggers, off-screen entry and
     exit, hole clip, biffy placement, reduced motion, log), 60 fps at 4x throttle in Chromium, and
@@ -514,7 +530,7 @@ something, give exact clicks and one command at a time.
 
 ## Wildlife Log
 - LIVE NOW: the log's button is back on the level list and the page lists only the gags that are in
-  the game (`EGGS`: magpie, sleepy worker, moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll, Marshmallow, Lost Goose, Porcupine, Gopher Lunch, Bull and Cow, Bear (legendary);
+  the game (`EGGS`: magpie, sleepy worker, moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll, Marshmallow, Lost Goose, Porcupine, Gopher Lunch, Safety Sam, Frozen Tongue, Bull and Cow, Bear (legendary);
   the old ten with `?gags=1`), with card art from their puppets (`magpieStill`, `workerStill`,
   `mooseStill`, `nearMissStill`, `landownerStill`, `biffyAStill`, `biffyBStill`), the count and toasts out of that number.
   An unfound card shows the gag's hint in DEMO mode only (`cardHint`); the game says "Not seen yet."
@@ -671,7 +687,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:eggs` – the sleepy worker and the moose: beats, entry and exit, cancel, triggers, reduced motion, log, frame rate, clips (start the dev server first)
 - `npm run test:e2e:strip` – Near Miss, landowner, Biffy A and B and the permanent biffy (start the dev server first)
 - `npm run test:e2e:night` – night levels: look, glow, headlights, nudge, frame rate (start the dev server first)
-- `npm run test:e2e:eggs2` – gags 8 and up: marshmallow, geese, bear, bull and cow, porcupine, gopher lunch, the cooldown (`ONLY=geese` runs one; start the dev server first)
+- `npm run test:e2e:eggs2` – gags 8 and up: marshmallow, geese, bear, bull and cow, porcupine, gopher lunch, Safety Sam, the riser and the frozen tongue, the cooldown (`ONLY=geese` runs one; start the dev server first)
 - `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)
