@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
 import { OBSTACLE_KINDS } from '../engine/index.ts';
 import { DAILY_LEVELS, REGIONS } from '../levels/regions.ts';
-import { OVER, PJ, STROKES_PER_MIN, STROKE_MS, equipFit, equipmentSvg, phaseFor, pumpjackPose } from './obstacles.ts';
+import { GATE_GAP, MIN_SCALE, OVER, PJ, STROKES_PER_MIN, STROKE_MS, equipFit, equipmentSvg, flowlineLeft, gateClearance, phaseFor, pumpjackPose } from './obstacles.ts';
 
 const TURN = Array.from({ length: 360 }, (_, i) => (i * Math.PI) / 180);
 
@@ -45,6 +45,39 @@ describe('equipment drawings', () => {
     expect(svg).not.toContain('eq-red"');
     // The flowline's run is horizontal.
     expect(svg).toMatch(/eq-flowline" d="M\d+ (\d+) L\d+ \1"/);
+  });
+});
+
+describe('equipment beside a gate', () => {
+  it('steps away from a gate at its side or below it; no gate, no change', () => {
+    expect(gateClearance('tank', 2, 3, [{ side: 'right', index: 2 }])).toEqual({ dx: 0, dy: 0, scale: 1 });
+    expect(gateClearance('wellhead', 2, 5, [{ side: 'right', index: 2 }]).dx).toBe(-GATE_GAP);
+    expect(gateClearance('wellhead', 2, 0, [{ side: 'left', index: 2 }]).dx).toBe(GATE_GAP);
+    expect(gateClearance('flare', 5, 3, [{ side: 'bottom', index: 3 }]).dy).toBe(-GATE_GAP);
+    expect(gateClearance('flare', 5, 3, [{ side: 'bottom', index: 2 }])).toEqual({ dx: 0, dy: 0, scale: 1 });
+  });
+
+  it('under a top gate its overhang stops short of the gate, and it is never shrunk much', () => {
+    const c = gateClearance('wellhead', 0, 2, [{ side: 'top', index: 2 }]);
+    expect((100 + OVER.wellhead) * c.scale).toBeLessThanOrEqual(100 + 1e-9);
+    for (const kind of OBSTACLE_KINDS) expect(gateClearance(kind, 0, 2, [{ side: 'top', index: 2 }]).scale).toBeGreaterThanOrEqual(MIN_SCALE);
+  });
+
+  it("the wellhead's flowline always points toward the middle of the pad", () => {
+    expect([0, 1, 2].map(flowlineLeft)).toEqual([false, false, false]);
+    expect([3, 4, 5].map(flowlineLeft)).toEqual([true, true, true]);
+    expect(equipmentSvg('wellhead', 5)).toContain('scale(-1 1)');
+    expect(equipmentSvg('wellhead', 6)).not.toContain('scale(-1 1)');
+  });
+
+  it('every shipped level: no piece touches a gate beside it', () => {
+    for (const levels of [...REGIONS.map((r) => r.levels), DAILY_LEVELS])
+      for (const l of levels)
+        for (const o of l.obstacles) {
+          const c = gateClearance(o.kind ?? 'pumpjack', o.row, o.col, l.gates);
+          const beside = l.gates.some((g) => (g.side === 'left' && o.col === 0 && g.index === o.row) || (g.side === 'right' && o.col === 5 && g.index === o.row) || (g.side === 'bottom' && o.row === 5 && g.index === o.col) || (g.side === 'top' && o.row === 0 && g.index === o.col));
+          expect(beside ? c.dx !== 0 || c.dy !== 0 || c.scale < 1 : c.dx === 0 && c.dy === 0 && c.scale === 1, `${l.id} ${o.kind}`).toBe(true);
+        }
   });
 });
 

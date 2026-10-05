@@ -1,7 +1,7 @@
 import { SIZE, cabSide, convoyWaitingFor, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
 import { bumpTarget, pickSpeaker } from './bump.ts';
 import { pickLine, type BumpHit } from './lines.ts';
-import { equipFit, equipmentSvg, phaseFor, runPumpjacks } from './obstacles.ts';
+import { equipFit, equipmentSvg, gateClearance, phaseFor, runPumpjacks } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
 import { Spray } from './spray.ts';
 import { coatSrc, gateArt, spriteImg, wireSprite } from './sprites.ts';
@@ -141,6 +141,10 @@ export class BoardView {
       const fit = equipFit(kind);
       const seed = o.row * SIZE + o.col;
       ob.style.setProperty('--eq-h', `${fit.height}%`);
+      const clear = gateClearance(kind, o.row, o.col, level.gates);
+      ob.style.setProperty('--eq-dx', `${clear.dx}%`);
+      ob.style.setProperty('--eq-dy', `${(clear.dy * 100) / fit.height}%`);
+      ob.style.setProperty('--eq-s', String(clear.scale));
       ob.style.setProperty('--eq-delay', `${-(seed % 7) * 0.31}s`);
       if (kind === 'pumpjack') ob.dataset.phase = String(phaseFor(seed));
       ob.innerHTML = equipmentSvg(kind, seed);

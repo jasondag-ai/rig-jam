@@ -6,7 +6,7 @@
 //
 // Every drawing is 100 units wide and stands on its cell (y 0..100); the tall ones stick up above
 // it by OVER units (negative y). Colours and the flame's flicker live in style.css ("Equipment").
-import type { ObstacleKind } from '../engine/index.ts';
+import { SIZE, type Gate, type ObstacleKind } from '../engine/index.ts';
 
 /** How far each kind sticks up above its own cell, in drawing units (100 = one cell). */
 export const OVER: Record<ObstacleKind, number> = { pumpjack: 6, tank: 12, wellhead: 12, flare: 46 };
@@ -19,6 +19,29 @@ export const OVER: Record<ObstacleKind, number> = { pumpjack: 6, tank: 12, wellh
 export function equipFit(kind: ObstacleKind): { height: number } {
   return { height: 100 + OVER[kind] };
 }
+
+/**
+ * Keeps a visible gap between a piece and a gate right beside its cell, so the pair never reads as
+ * one object: the piece is nudged a little away from a gate at its side or below it, and under a
+ * gate above it is drawn just small enough that its overhang stops short of the gate. All in
+ * percent of the cell; no gate beside it means no change.
+ */
+export function gateClearance(kind: ObstacleKind, row: number, col: number, gates: readonly Pick<Gate, 'side' | 'index'>[]): { dx: number; dy: number; scale: number } {
+  const at = (side: Gate['side'], index: number) => gates.some((g) => g.side === side && g.index === index);
+  const left = col === 0 && at('left', row);
+  const right = col === SIZE - 1 && at('right', row);
+  const dx = left && !right ? GATE_GAP : right && !left ? -GATE_GAP : 0;
+  const dy = row === SIZE - 1 && at('bottom', col) ? -GATE_GAP : 0;
+  // Under a top gate: no overhang at all, so the piece's top stays inside its own cell.
+  const scale = row === 0 && at('top', col) ? Math.max(MIN_SCALE, 100 / (100 + OVER[kind])) : 1;
+  return { dx, dy, scale };
+}
+/** How far a piece steps away from a gate beside it (percent of a cell), and the most it is ever shrunk. */
+export const GATE_GAP = 9;
+export const MIN_SCALE = 0.86;
+
+/** The wellhead's flowline runs toward the middle of the pad, never out toward the berm or a gate. */
+export const flowlineLeft = (col: number) => col >= SIZE / 2;
 
 // ---------- Pumpjack linkage (conventional beam pumping unit, side on) ----------
 
@@ -189,8 +212,8 @@ const WELLHEAD =
   ground(48, 14) +
   post(16, 78, 24) +
   // Flowline: sideways from the wing valve, on a support.
-  '<rect class="eq-steel" x="88" y="26" width="5" height="60" rx="1.5"/>' +
-  '<path class="eq-pipe-edge" d="M86 21 L99 21"/><path class="eq-flowline" d="M86 21 L99 21"/>' +
+  '<rect class="eq-steel" x="86.5" y="26" width="5" height="60" rx="1.5"/>' +
+  '<path class="eq-pipe-edge" d="M86 21 L94 21"/><path class="eq-flowline" d="M86 21 L94 21"/>' +
   '<rect class="eq-tree-dark" x="28" y="78" width="44" height="9" rx="2"/>' +
   '<rect class="eq-tree" x="36" y="58" width="28" height="21" rx="2.5"/>' +
   '<rect class="eq-tree-dark" x="31" y="53" width="38" height="7" rx="2"/>' +
@@ -240,7 +263,9 @@ const FLARE =
  */
 export function equipmentSvg(kind: ObstacleKind, seed = 0): string {
   if (kind === 'pumpjack') return pumpjack(phaseFor(seed));
-  return kind === 'tank' ? TANK : kind === 'wellhead' ? WELLHEAD : FLARE;
+  // A wellhead in the right half of the pad is mirrored, so its flowline points inward.
+  if (kind === 'wellhead') return flowlineLeft(seed % SIZE) ? WELLHEAD.replace(/(<svg[^>]*>)([\s\S]*)(<\/svg>)/, '$1<g transform="translate(100 0) scale(-1 1)">$2</g>$3') : WELLHEAD;
+  return kind === 'tank' ? TANK : FLARE;
 }
 
 /** Where in its stroke a pumpjack starts (radians), from its cell. */
