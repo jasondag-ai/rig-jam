@@ -98,7 +98,8 @@ something, give exact clicks and one command at a time.
   do not bring any of it back. ONE ART STYLE in play: the board's flat toy look and the puppets.
   Switches for tests (`src/ui/flags.ts`): `?magpie=0`, `?worker=0`, `?moose=0`, `?off=...`.
 - TRIGGER SETTINGS: every gag's trigger lives in ONE file, `src/ui/gag-triggers.ts` (`GAG_TRIGGERS`),
-  for Jay to tune after playing. Now: magpie 10 s idle; worker 20 s idle; moose = 2 bumps up into
+  for Jay to tune after playing. Now: magpie 10 s idle; worker 20 s idle OR 2 bumps of a truck
+  into another truck in one level (`truckBumps`); moose = 2 bumps up into
   the top berm (Duvernay); Near Miss = two exits within 3.5 s (Cardium); landowner = the same truck
   driven back and forth 4 times (`BackAndForth`), OR a fast wiggle: 4 reversals of one truck inside
   ONE drag within 2 s (`Wiggle`; the board reports each turn of the finger, `onReverse`, a quarter
@@ -106,14 +107,15 @@ something, give exact clicks and one command at a time.
   Biffy B = a second one within 1.4 s; marshmallow = 3 taps on a flare; geese = Undo 3 times in a
   row; bear = 3 taps on his bush on any Duvernay level, 1 in 3 (`bearComes`; else the bush shakes
   and drops a snow puff, `BushProp.shake`; demo mode always); bull = tap the cow (Montney);
-  porcupine = 3 taps on the Cardium bush (the bear's pattern, every time); gopher lunch = 30 s idle (Cardium); Sam = 3 bumps in a row
-  or a wrong-colour gate; frozen tongue = 30 s idle (winter); night = 30 s idle, nudge 15 s after.
+  porcupine = 3 taps on the Cardium bush (the bear's pattern, every time); gopher lunch = a press of Hint in Cardium, 1 time in 2
+  (`lunchComes`; demo mode always; `?lunch=1` / `?lunch=0` for tests); Sam = 3 bumps in a row
+  or a wrong-colour gate; frozen tongue = 30 s idle (winter); night = 30 s idle in Montney and Duvernay only, nudge 15 s after.
 - GAG RULES (GAME_BIBLE Oct 5; `GAG_RULES`, `SHARES`, `mustWait` in gag-triggers.ts; enforced in
   `GameView.fire`/`startEgg`/`tickEggs`): gags play AT THE SAME TIME. A trigger plays its gag right
   away, even during a drag and even if others are on; it waits (in `eggQueue`) only for a gag that
   shares its character or prop (`SHARES`: the biffy, the gopher, the bush, the worker in red) and
   then follows it on. Once per level; none once the level is won (a win clears them). The IDLE
-  gags (`IDLE_GAGS`: magpie, sleepy worker, gopher lunch, frozen tongue) still take turns, one at a
+  gags (`IDLE_GAGS`: magpie, sleepy worker, frozen tongue) still take turns, one at a
   time, with `idleCooldownMs` (60 s) between them; none in demo mode. Tests: `?cooldown=0` (or a
   scale), `?off=lunch,porcupine,sam,tongue` leaves gags out, `?bear=1` / `?bear=0`.
 - SAME START, SAME END (GAME_BIBLE Oct 5): a gag's last frame looks exactly like its first.
@@ -143,14 +145,22 @@ something, give exact clicks and one command at a time.
   - LANDOWNER (any region): rides in on the quad from off screen, skids, shakes his head, fist with
     "Who's paying for these ruts?", wheelie, hat blows off and is caught, out the far side.
   - THE BIFFY is permanent scenery (`BiffyProp`, `.biffy-layer`, under the board): bottom strip of
-    every level at `BIFFY_X`, about 80 px tall at 390 (smaller on a short strip), in its own
-    clearing (scenery `clearings`), clear of the board, tip line and buttons. No biffy appears and
+    every level at `BIFFY_X`, about 60 px tall at 390 (`BIFFY_SIZE` 0.8 of the reference, after
+    playing on a phone; the shuffler keeps his size; smaller on a short strip), standing up by the
+    berm (`biffyStand`: `BIFFY_GAP` 12 px of grass under the berm's foot), in its own clearing
+    (scenery `clearings`, plus `biffyLane`, a tree-free lane to the near screen edge), clear of
+    the board, tip line and buttons. No biffy appears and
     disappears any more. `npm run test:e2e:strip` checks there is exactly ONE on every level.
-  - BIFFY A "Occupied": door bangs open, the occupant looks back wide-eyed, nods, reaches, pulls it
+  - BIFFY SHAKES (Jay, Oct 5): the truck's bump shakes the biffy before the door opens: one small
+    shake for A (`A_SHAKE`), two bigger ones for B (`B_SHAKE`).
+  - BIFFY A "Occupied": his embarrassment flushes his WHOLE face dark pink (`.headTurn .skin`), no
+    cheek blush. Door bangs open, the occupant looks back wide-eyed, nods, reaches, pulls it
     shut; the indicator is red while he is caught (3.55 to 5.0 s), then clicks back to green
-    (`unlocked`). BIFFY B "The Runaway Roll": the roll rolls out and away, the arm gropes, he
-    shuffles after it off screen with paper on his boot, the door creaks shut; red from the jolt
-    until the door is shut, then green. The indicator always starts and ends green.
+    (`unlocked`). BIFFY B "The Runaway Roll": the roll glides out along the ground at one smooth
+    speed (no drop, no bounce), the arm gropes, he shuffles after it with paper on his boot, the
+    door creaks shut; red from the first bump until the door is shut, then green. The roll and the
+    shuffler both leave by the screen edge NEAREST the biffy (the left; he is mirrored), at the
+    reference's pace, so B is shorter than the reference (`B_ROLL_OFF`, `B_OFF`, `B_SHUT`). The indicator always starts and ends green.
   - MARSHMALLOW (gag 8, levels with a flare stack; `marshmallow.ts`, ported from
     `marshmallow_geese_reference.html`): the sleepy worker's drawing walks in from off the left,
     telescopes a stick in three clicks from his glove to the nearest REAL flare's pilot flame
@@ -204,8 +214,14 @@ something, give exact clicks and one command at a time.
     mound on the strip's ground line at the reference's size (`moundSpot`, scenery `moundAt`), the
     gopher's box ends at its hole line and `LIP` (the hole's near half) lies over it so the arm
     comes out of the hole. Every reference distance is in `um` (reference mound units). Trigger:
-    30 s idle. Ending (reference, Oct 5): he boils over (red face, steam), gets up, hurls the crust
-    down the hole and stomps off; the gopher pops up chewing it, burp, gone; the quiet mound again.
+    a press of Hint, 1 time in 2 (not idle any more). Reference of Oct 5 11:50: he walks in from
+    the NEAR edge (the right), past the mound, eyes the spot and plops down; the sandwich lands
+    where his hand sets it (`dropX`); his whole face flushes when he boils over (no blush spot);
+    he hurls the crust down the hole, hop-turns and stomps off the way he came, glaring down at
+    the hole; the gopher pops up chewing it, burp, gone; the quiet mound again (`LUNCH_END` 17.9).
+    STILL OWED: Jay asked for a thicker arm and a triangle-cut sandwich "from the reference", but
+    the file saved Oct 5 11:50 still has the round sandwich and the same arm. Port them when a
+    newer file arrives.
   - SAFETY SAM (gag 14, any region; `sam.ts`, ported from `safety_sam_reference.html`): the
     worker's build recoloured (white hat, navy, hi-vis vest, moustache) with a clipboard. Marches
     in from the left to the middle of the strip, looks up, slow head shake ("tsk" is drawn), scribbles,
@@ -226,7 +242,7 @@ something, give exact clicks and one command at a time.
   - `npm run test:e2e:strip` checks all of it in WebKit (beats, real triggers, off-screen entry and
     exit, hole clip, biffy placement, reduced motion, log), 60 fps at 4x throttle in Chromium, and
     saves `gag47_*.webm` clips.
-- THE SLEEPY WORKER (gag 2; `src/ui/worker.ts` pure and tested, runner `WorkerGag` in
+- THE SLEEPY WORKER (gag 2; he also comes on the second truck-into-truck bump of a level; `src/ui/worker.ts` pure and tested, runner `WorkerGag` in
   `src/ui/egg-gags.ts`; spec: `~/Desktop/RHR Art Inbox/worker_moose_puppet_reference.html`, ported as
   written). He has a clearing in the bottom strip by the screen's LEFT edge (`workerSpot`; scenery
   keeps trees out of it; a little smaller on a short strip, and he does not come if there is no
@@ -255,8 +271,9 @@ something, give exact clicks and one command at a time.
   layer's `data-beat` names the current one). `pose(t, travel)` gives every part's place;
   `travelFor` stretches the reference's flight so he starts and ends with his whole box past the
   screen's edge (`offScreen`, `data-off`). He is drawn on `.magpie-layer`, over the WHOLE game screen
-  (never clipped by the board, berm or any container), which takes no touches. About 40 px of bird
-  (`BIRD_FRAC`). He picks a parked truck whose cab roof is a full cell in from the board's edge
+  (never clipped by the board, berm or any container), which takes no touches. About 37 px of bird
+  (`BIRD_FRAC`, a quarter smaller than the reference after playing on a phone; his splat and drip
+  keep the reference's size, `MARK_FRAC`). He picks a parked truck whose cab roof is a full cell in from the board's edge
   (`pickTruck`). The splat and drip become part of that truck (`.magpie-splat`, `.magpie-drip` in
   its `.body`), so they ride with it; the drip runs toward the truck's front (`dripTurn`); restart or
   a new level clears them. "Seriously?" is said beside him, on the side with more room. Grab his
@@ -390,7 +407,9 @@ something, give exact clicks and one command at a time.
   the berm" is below it.) When the bear and gopher come back, play them at these anchors.
 
 ## Night
-- NO level starts at night and no level carries a night flag. On ANY level, after
+- NO level starts at night and no level carries a night flag. ONLY MONTNEY AND DUVERNAY GO DARK
+  (`GAG_TRIGGERS.night.themes`: spring and winter; `nightComes`); Cardium (summer) never does,
+  and a summer Daily Pad never does. On those levels, after
   `GAG_TRIGGERS.night.idleMs` (30 s) with nothing done by the player (`lastPlayAt`; gags do not
   count), the lease fades to night over `fadeInMs` (4 s); the next thing the player does (a truck
   picked up, a move, Undo, Restart: `played`) fades it back to day over `fadeOutMs` (2 s).
