@@ -6,6 +6,7 @@
 //    level; characters start and end fully off screen; the right line is said, on screen
 //  - one gag at a time; reduced motion: simple fades; the Wildlife Log lists all seven
 // Saves clips (gag47_*.webm) to OUT. Run with the dev server up: npm run test:e2e:strip
+import { LANDOWNER_LINES } from '../src/ui/lines.ts';
 import { DEMO, UNLOCKED } from './progress.mjs';
 import { chromium, webkit } from 'playwright';
 import { mkdirSync, renameSync, rmSync } from 'node:fs';
@@ -216,7 +217,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       check(sameBeats(log, 'landowner'), `the reference beats, in order (${beatsOf(log).length} of ${BEATS.landowner.length})`);
       check(log[0].quad.r <= 0 && log.filter((f) => f.beat === 'hat-catch').at(-1).quad.l >= 390, `he rides in from fully off screen and out until fully off screen (${Math.round(log[0].quad.r)} to ${Math.round(log.filter((f) => f.beat === 'hat-catch').at(-1).quad.l)})`);
       const b = await bubble;
-      check(b?.text === "Who's paying for these ruts?" && b.box.x >= 6 && b.box.x + b.box.width <= 384, `"${b?.text}", on screen`);
+      check(LANDOWNER_LINES.includes(b?.text) && b.box.x >= 6 && b.box.x + b.box.width <= 384, `"${b?.text}", on screen`);
       await context.close();
     }
 

@@ -552,12 +552,29 @@ something, give exact clicks and one command at a time.
   screenshots, close-ups and a clip.
 - `src/ui/vehicles.ts` – top-down SVG art per truck kind, drawn cab-right and rotated by CSS to face
   the gate. Body panels use the truck color; the gate symbol sits on an upright color badge.
-- `src/ui/lines.ts` – driver bump lines. Owner edits these freely. A bump shows only the speech
-  bubble plus a tick (with a shake) on the hazard near-miss counter next to the move counter.
-  Pools by trigger: `any` (every bump; tanks and wellheads use only this), `truck`, `wall` (fence or
-  wrong-color gate), `pumpjack`. A bump draws from its pool plus `any`, never repeating the last line.
-  Who speaks (`src/ui/bump.ts`): the truck that got hit; for a fence, wrong gate or obstacle, a random
-  other truck still on the pad; the dragged truck only when it is the last one. Bubbles stay on screen.
+- `src/ui/lines.ts` – EVERYTHING ANYBODY SAYS (v2: `~/Desktop/RHR Art Inbox/LINES_v2.md`, used exactly
+  as written; older lines all kept). Owner edits these freely. No em dashes.
+  - Bump lines: a bump shows only the speech bubble plus a tick (with a shake) on the hazard
+    near-miss counter. Pools (`BUMP_LINES`): `any` (every bump), `truck`, `wall` (berm or
+    wrong-colour gate), `pumpjack`, `tank`, `wellhead`, `flare`, and `convoy` (used alone, so the
+    line always explains the rule). A bump draws from its pool plus `any` (`linesFor`), never
+    repeating the last line (`pickLine`).
+  - Escalation (`ESCALATION`, `bumpLine`): the SAME truck hitting the SAME kind of thing again in
+    one level says the table's 2nd line, then its 3rd from then on (a wall: "It's still a wall.",
+    then "..."). The board counts per truck and kind (`hitCounts`); a new level or Restart starts over.
+  - Witness lines (`WITNESS_LINES`, one per gag id): while a gag is on screen, the player's next
+    move makes that truck's driver say the gag's line (`GameView.move`; bubble `data-witness`). Once
+    per gag per level; not for a truck driving out.
+  - Gag lines: the magpie and the landowner each have a pool (`MAGPIE_LINES`, `LANDOWNER_LINES`);
+    `fromPool` never gives the same line twice in a row.
+  - Company Man (`COMPANY_LINES`, 8 per result; `company.ts`): a line by result, never the same
+    twice in a row; if a gag played this level (`gagsThisLevel`), about 1 time in 3
+    (`FOURTH_WALL_ODDS`) one of `FOURTH_WALL_LINES` instead.
+  - Who speaks on a bump (`src/ui/bump.ts`): the truck that got hit; for the berm, a wrong gate or
+    equipment, a random other truck still on the pad; the dragged truck only when it is the last
+    one. Bubbles stay on screen; there is one bubble at a time.
+  - `npm run test:e2e:lines` checks own lines for tank, wellhead and flare, escalation, a witness
+    line and the Company Man in WebKit.
 - `src/levels/cardium.json`, `montney.json` – GENERATED. Never hand-edit; `src/levels/regions.ts`
   loads them.
 - `tools/generator.ts` – generator core (random layouts hill-climbed toward a target par, proven by
@@ -602,6 +619,7 @@ something, give exact clicks and one command at a time.
 - `npm run check-levels` – print levels and solutions
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
 - `npm run test:e2e:gags` – every puppet gag suite in turn: magpie, eggs, strip, eggs2 (start the dev server first)
+- `npm run test:e2e:lines` – bump lines by kind, escalation, witness lines, the Company Man (start the dev server first)
 - `npm run test:e2e:frames` – SAME START, SAME END: every strip gag's first and last frames show no character (start the dev server first)
 - `npm run test:e2e:fit` – every iPhone size, Safari and home-screen app, with screenshots (start the dev server first)
 - `npm run test:e2e:menus` – main page, level rows, win card fit and character motion, with screenshots (start the dev server first)

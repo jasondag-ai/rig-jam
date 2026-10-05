@@ -5,6 +5,7 @@
 // screen. Grabbing his truck startles him off early. He never blocks a touch. Every other gag is
 // off. Reduced motion: fade in, splat, fade out. Saves clips (magpie_*.webm) to OUT.
 // Run: npm run dev -- --host   (in one terminal), then:  npm run test:e2e:magpie
+import { MAGPIE_LINES } from '../src/ui/lines.ts';
 import { UNLOCKED } from './progress.mjs';
 import { chromium, webkit } from 'playwright';
 import { mkdirSync, renameSync, rmSync } from 'node:fs';
@@ -114,7 +115,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     check(t.truck && t.layer === 'none', 'he never blocks a touch: the truck under him still gets it');
     check(t.birdW > 30 && t.birdW < 62, `about 40 px of bird (${Math.round(t.birdW)}px with tail and beak)`);
     const b = await bubbleSeen;
-    check(b?.text === 'Seriously?' && b.box.x >= 6 && b.box.x + b.box.width <= width - 6 && t.clearOfBird, `"${b?.text}" from that truck, beside him and clear of the screen edge (x ${Math.round(b?.box.x)} to ${Math.round(b?.box.x + b?.box.width)})`);
+    check(MAGPIE_LINES.includes(b?.text) && b.box.x >= 6 && b.box.x + b.box.width <= width - 6 && t.clearOfBird, `"${b?.text}" from that truck, beside him and clear of the screen edge (x ${Math.round(b?.box.x)} to ${Math.round(b?.box.x + b?.box.width)})`);
     const m = await marks(page);
     check(!!m && m.n === 1 && m.onTruck && m.touches === 'none', `one splat left on truck ${m?.truck}'s roof`);
     check(m?.toward === true && m.dripLen > 8, `the drip runs toward the truck's front (cab ${m?.cab})`);
@@ -186,7 +187,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     await wait(1200);
     const b = await page.evaluate(() => ({ t: document.querySelector('.magpie-layer svg.magpie .root')?.getAttribute('transform'), splat: document.querySelectorAll('.magpie-splat').length, bubble: document.querySelector('.bubble')?.textContent, opacity: getComputedStyle(document.querySelector('.magpie-layer')).opacity }));
     check(a.beat === 'still' && a.t === b.t && b.opacity === '1', 'the bird fades in and holds still');
-    check(b.splat === 1 && b.bubble === 'Seriously?', 'the splat appears, with the driver\'s line');
+    check(b.splat === 1 && MAGPIE_LINES.includes(b.bubble), 'the splat appears, with the driver\'s line');
     await wait(2200);
     check(!(await page.$('.magpie-layer')) && (await page.$$('.magpie-splat')).length === 1, 'the bird fades out; the splat stays');
     await context.close();
