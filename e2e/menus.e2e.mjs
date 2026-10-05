@@ -100,13 +100,14 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     await fresh(page, null);
     const main = await page.evaluate(() => {
       const R = (s) => document.querySelector(s).getBoundingClientRect();
-      const [sign, daily, foot] = [R('.safety-sign'), R('.daily-btn'), R('.sign-foot')];
-      return { vw: innerWidth, sideways: document.querySelector('.screen.levels').scrollWidth > innerWidth + 1, sign: [sign.left, sign.right], daily: [daily.left, daily.right], foot: [foot.left, foot.right] };
+      const [sign, daily] = [R('.safety-sign'), R('.daily-btn')];
+      return { vw: innerWidth, sideways: document.querySelector('.screen.levels').scrollWidth > innerWidth + 1, sign: [sign.left, sign.right], daily: [daily.left, daily.right], foot: document.querySelectorAll('.sign-foot').length, text: document.querySelector('.screen.levels').textContent };
     });
     const off = await offScreen(page, '.screen.levels');
     check(off.length === 0 && !main.sideways, `main page: nothing runs off the screen (${off[0] ?? 'clear'})`);
     const margins = (r) => r[0] >= 15.5 && r[1] <= main.vw - 15.5;
-    check(margins(main.sign) && margins(main.daily) && margins(main.foot), `the sign and the Daily Pad button keep 16px side margins (sign ${main.sign.map(Math.round)}, button ${main.daily.map(Math.round)})`);
+    check(main.foot === 0 && !/Stand-Down/i.test(main.text), 'the home page has no Safety Stand-Down line');
+    check(margins(main.sign) && margins(main.daily), `the sign and the Daily Pad button keep 16px side margins (sign ${main.sign.map(Math.round)}, button ${main.daily.map(Math.round)})`);
     if (shoot) await page.screenshot({ path: join(OUT, `menu_main_${size}.png`) });
 
     const rows = await page.evaluate(() =>

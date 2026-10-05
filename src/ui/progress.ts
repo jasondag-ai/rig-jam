@@ -14,6 +14,8 @@ export interface Progress {
   demo: boolean;
   /** Regions whose "NEW LEASE OPEN" banner has been shown. */
   announced: string[];
+  /** Missed days a Safety Stand-Down covered that the player has been told about (the toast shows once each). */
+  standDowns: string[];
 }
 
 export const freshProgress = (): Progress => ({
@@ -23,6 +25,7 @@ export const freshProgress = (): Progress => ({
   dailyCleared: [],
   demo: false,
   announced: [],
+  standDowns: [],
 });
 
 /** Records today's Daily Pad as cleared (once per day). */
@@ -70,6 +73,7 @@ export function loadProgress(): Progress {
       dailyCleared: Array.isArray(p.dailyCleared) ? p.dailyCleared : [],
       demo: p.demo === true,
       announced: Array.isArray(p.announced) ? p.announced : [],
+      standDowns: Array.isArray(p.standDowns) ? p.standDowns : [],
     };
   } catch {
     return freshProgress();

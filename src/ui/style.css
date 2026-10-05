@@ -1253,18 +1253,7 @@ canvas.lease-detail {
   font-variant-numeric: tabular-nums;
 }
 
-.sign-foot {
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.18);
-  font-size: 13px;
-  font-weight: 600;
-}
 
-.sign-foot.used {
-  background: #ffc21a;
-  color: var(--ink);
-}
 
 .safety-sign.compact {
   padding: 8px 10px;
@@ -1883,9 +1872,8 @@ canvas.lease-detail {
     font-size: 14px;
   }
 
-  /* The full sign (header, stand-down note) is on the level list; the win card keeps the count. */
-  .card .safety-sign .sign-head,
-  .card .safety-sign .sign-foot {
+  /* The full sign (with its header) is on the level list; the win card keeps the count. */
+  .card .safety-sign .sign-head {
     display: none;
   }
 }
@@ -2743,8 +2731,7 @@ img.hat { width: 100%; height: auto; }
 }
 .safety-sign .sign-label { color: #11833f; font-size: clamp(11px, 4.2vw, 17px); line-height: 1; max-width: none; }
 .safety-sign .sign-count { padding: 0 8px; border-width: 2.5px; }
-.safety-sign .sign-foot { position: absolute; left: 0; right: 0; top: 100%; margin-top: 6px; color: var(--ink); background: rgba(255, 255, 255, 0.75); }
-.safety-sign { margin-bottom: 30px; }
+.safety-sign { margin-bottom: 12px; }
 .safety-sign.compact .sign-label { font-size: 12px; }
 .safety-sign.compact .sign-count { font-size: 24px; }
 .safety-sign .sign-count { font-size: clamp(22px, 8vw, 36px); line-height: 1.05; }
@@ -2849,7 +2836,6 @@ img.hat { width: 100%; height: auto; }
 .safety-sign .sign-main { right: 9.5%; gap: 6px; }
 .safety-sign .sign-label { white-space: nowrap; font-size: clamp(10px, 3.6vw, 15.5px); letter-spacing: 0.2px; }
 .daily-block .safety-sign .sign-count { min-width: 1.9em; padding: 0 6px; font-size: clamp(18px, 6.4vw, 28px); }
-.safety-sign .sign-foot { margin-top: 4px; padding: 2px 8px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .daily-btn {
   min-width: 0;
   min-height: 62px;
@@ -2965,9 +2951,8 @@ img.hat { width: 100%; height: auto; }
 .win .card .btn { min-height: 52px; font-size: 18px; }
 .win .card .btn-row .btn { min-height: 48px; }
 
-/* The streak sign (Daily Pad): the compact one, as wide as every other row, no stand-down note. */
+/* The streak sign (Daily Pad): the compact one, as wide as every other row. */
 .win .card .safety-sign { width: 100%; height: auto; margin: 0; }
-.win .card .safety-sign .sign-foot { display: none; }
 .win .card .safety-sign .sign-main { right: 10.5%; gap: 4px; }
 .win .card .safety-sign .sign-label { font-size: 11px; letter-spacing: 0; }
 .win .card .safety-sign .sign-count { min-width: 1.7em; padding: 0 5px; font-size: 20px; border-width: 2px; }
@@ -3068,16 +3053,7 @@ img.hat { width: 100%; height: auto; }
 }
 .gear img { width: 34px; height: 34px; }
 
-/* Level list: the stand-down note reads on any grass; a locked row's padlock is quiet. */
-.safety-sign .sign-foot {
-  border: 2px solid var(--outline);
-  border-radius: 9px;
-  background: var(--cream);
-  color: var(--ink);
-  font-weight: 700;
-}
-.safety-sign .sign-foot.used { background: #ffc21a; }
-.daily-block .safety-sign { margin-bottom: 29px; }
+.daily-block .safety-sign { margin-bottom: 12px; }
 .level-btn .lock img.padlock,
 .region-tab.locked img.padlock { filter: grayscale(1) brightness(1.1); opacity: 0.6; }
 

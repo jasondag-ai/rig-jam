@@ -74,6 +74,14 @@ export function streak(cleared: Iterable<string>, today: string): Streak {
   return { days, clearedToday, savedDays, standDownReady: !usedWeeks.has(weekOf(today)) };
 }
 
+/** What the game says when a Safety Stand-Down has just saved a streak. */
+export const STAND_DOWN_TOAST = 'Safety Stand-Down saved your streak.';
+/**
+ * The missed days a Safety Stand-Down has covered in the current run that the player has not been
+ * told about yet (`told`: the ones already announced). The weekly save itself is automatic (`streak`).
+ */
+export const newlySaved = (s: Streak, told: readonly string[]): string[] => (s.days > 0 ? s.savedDays.filter((d) => !told.includes(d)) : []);
+
 /** Cleared at par with no bumps. */
 export const zeroIncident = (moves: number, par: number, bumps: number) => moves <= par && bumps === 0;
 

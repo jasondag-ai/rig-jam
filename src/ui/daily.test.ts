@@ -99,11 +99,27 @@ describe('share text', () => {
 });
 
 describe('safety sign', () => {
-  it('says whether this week\'s stand-down is ready or used', async () => {
-    const { standDownText } = await import('./sign.ts');
-    expect(standDownText(streak(['2026-09-30'], '2026-09-30'))).toBe('Safety Stand-Down ready this week');
-    expect(standDownText(streak(['2026-09-30', '2026-10-01', '2026-10-03'], '2026-10-03'))).toBe(
-      'Safety Stand-Down used Fri · streak saved',
-    );
+  it('has no stand-down line: just the count', async () => {
+    const { streakSignHtml } = await import('./sign.ts');
+    const html = streakSignHtml(streak(['2026-09-30', '2026-10-01', '2026-10-03'], '2026-10-03'));
+    expect(html).not.toMatch(/Stand-Down/i);
+    expect(html).toContain('DAYS WITHOUT INCIDENT');
+  });
+
+  it('a stand-down that saves a streak is announced once', async () => {
+    const { STAND_DOWN_TOAST, newlySaved } = await import('./daily.ts');
+    expect(STAND_DOWN_TOAST).toBe('Safety Stand-Down saved your streak.');
+    // Friday Oct 2 was missed; the week's stand-down bridges it and the streak stands at 3.
+    const s = streak(['2026-09-30', '2026-10-01', '2026-10-03'], '2026-10-03');
+    expect(s.days).toBe(3);
+    expect(newlySaved(s, [])).toEqual(['2026-10-02']);
+    expect(newlySaved(s, ['2026-10-02'])).toEqual([]);
+    // The morning after a missed day, before today's pad is played: already saved, already said.
+    const morning = streak(['2026-09-30', '2026-10-01'], '2026-10-03');
+    expect(morning.days).toBe(2);
+    expect(newlySaved(morning, [])).toEqual(['2026-10-02']);
+    // Nothing missed, nothing to say; a broken streak (two days missed in one week) says nothing either.
+    expect(newlySaved(streak(['2026-09-30', '2026-10-01'], '2026-10-01'), [])).toEqual([]);
+    expect(newlySaved(streak(['2026-09-28'], '2026-10-02'), [])).toEqual([]);
   });
 });

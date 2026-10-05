@@ -10,7 +10,8 @@ import { biffyAStill, biffyBStill, landownerStill, nearMissStill } from './ui/st
 import { magpieStill } from './ui/magpie.ts';
 import './ui/style.css';
 import { DAILY_LEVELS, REGIONS, dailyTheme } from './levels/regions.ts';
-import { dayKey, padLevelIndex, padNumber, streak } from './ui/daily.ts';
+import { STAND_DOWN_TOAST, dayKey, newlySaved, padLevelIndex, padNumber, streak } from './ui/daily.ts';
+import { toast } from './ui/toast.ts';
 import { GameView } from './ui/game-view.ts';
 import { streakSignHtml } from './ui/sign.ts';
 import { hatsHtml } from './ui/hats.ts';
@@ -144,6 +145,12 @@ function showLevels(requested = savedRegion()): void {
   const pad = padNumber(today);
   const daily = DAILY_LEVELS[padLevelIndex(pad, DAILY_LEVELS.length)];
   const s = streak(progress.dailyCleared, today);
+  // The weekly Safety Stand-Down saves a streak by itself; say so once, the first time it shows.
+  const saved = newlySaved(s, progress.standDowns);
+  if (saved.length) {
+    saveProgress({ ...progress, standDowns: [...progress.standDowns, ...saved] });
+    void toast(STAND_DOWN_TOAST, { ms: 3000 });
+  }
   const block = screen.querySelector('.daily-block')!;
   block.innerHTML = `
     ${streakSignHtml(s)}
