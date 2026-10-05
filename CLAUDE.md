@@ -92,10 +92,33 @@ something, give exact clicks and one command at a time.
 - Touch tests: `setPointerCapture` is wrapped in try/catch so synthetic/edge-case pointers can't
   kill a drag. Playwright iPhone emulation: Chromium with real touch events (CDP
   `Input.dispatchTouchEvent`); WebKit with touch-type PointerEvents (its build has no touch drag API).
-- GAGS ARE OFF (`src/ui/flags.ts`, `GAGS_ON = false`, the one switch): no magpie, spotter, biffy,
-  landowner, wildlife, traffic, cords or reactions, no Wildlife Log button or toasts (the saved log
-  is untouched). `GameView.gags` is null. `?gags=1` turns them on for one page load (the gag and log
-  e2e suites use it). Build order is GAME_BIBLE 9b: fundamentals first, then gags one at a time.
+- GAGS ARE OFF except the magpie (`src/ui/flags.ts`: `GAGS_ON = false` is the one switch for the
+  rest: no spotter, biffy, landowner, wildlife, traffic, cords or reactions, no Wildlife Log button
+  or toasts; `GameView.gags` is null; `?gags=1` turns them on for one page load, for the gag and log
+  e2e suites). Gags come back ONE AT A TIME (GAME_BIBLE 9b), each behind its own flag: `MAGPIE_ON`
+  (`?magpie=0` turns him off for a page load). A sighting made while the log is hidden is still
+  saved, quietly.
+- THE MAGPIE (gag 1; `src/ui/magpie.ts` pure and tested, `src/ui/magpie-gag.ts` runner; spec: the
+  approved reference `~/Desktop/RHR Art Inbox/magpie_puppet_reference.html`, ported as written: same
+  parts, colours, outline, expressions, beats and timing). A code puppet, no sprites. After 10 s
+  with no moves (`MAGPIE_IDLE_MS`; a drag or a move restarts the clock), once per level:
+  fly in facing travel > wobble landing > hop-turn (never paper-thin) > sly look and blink > glance
+  left and right > crouch, tail up > strain while the drop slowly swells > relief > peek down > smug
+  puff and two chuckles > crouch > launch forward and up, a feather drifts down (`BEATS`; the
+  layer's `data-beat` names the current one). `pose(t, travel)` gives every part's place;
+  `travelFor` stretches the reference's flight so he starts and ends with his whole box past the
+  screen's edge (`offScreen`, `data-off`). He is drawn on `.magpie-layer`, over the WHOLE game screen
+  (never clipped by the board, berm or any container), which takes no touches. About 40 px of bird
+  (`BIRD_FRAC`). He picks a parked truck whose cab roof is a full cell in from the board's edge
+  (`pickTruck`). The splat and drip become part of that truck (`.magpie-splat`, `.magpie-drip` in
+  its `.body`), so they ride with it; the drip runs toward the truck's front (`dripTurn`); restart or
+  a new level clears them. "Seriously?" is said beside him, on the side with more room. Grab his
+  truck mid-gag and he startles (`startlePose`: feathers up, a hop, off forward, fully off screen)
+  and leaves no mark; he may try again after another idle stretch. Reduced motion: the bird fades in
+  smug, the splat appears, the bird fades out. Wildlife Log card: the smug pose (`magpieStill`).
+  `?gag=magpie` plays him at once on Cardium 6, again and again. `npm run test:e2e:magpie` checks all
+  of it in WebKit (frame rate in Chromium under 4x throttle) and saves clips. With `?gags=1` the gag
+  layer's pacing decides when he plays (`GagHost.playMagpie`).
 - Fit: `#app` is `100dvh`; `--safe-top/-bottom/-left/-right` (style.css `:root`) carry the safe-area
   insets and every screen pads with them. The game screen is HUD, stage (flex), note, controls; the
   lease is the largest square that fits the stage, so the sky band and bottom strip give way first.
@@ -241,9 +264,7 @@ something, give exact clicks and one command at a time.
 - Rules: gags never take touches (`pointer-events: none`) and stay outside the 6x6 grid or on truck
   roofs (block heater cords lie on the ground in the truck's own lane, under the trucks). Reduced
   motion: shown as still frames, no animation.
-- Magpie: 10s with no touch or move: lands on a random truck's roof, leaves 2-3 small droppings
-  (white blob, dark centre, drip; they ride on that truck until it exits), driver says
-  "Seriously?", flies off. Once per level (a cancelled one may retry).
+- Magpie: see THE MAGPIE above (the code puppet replaced the old drawing and sprite sheets).
 - Spotter: 20s idle: walks on below the fence carrying a pail, sits on it and dozes ("Zzz"). A
   touch while he's walking cancels him; a touch while he's asleep startles him: he falls off the
   pail and scrambles off. Once per idle stretch.
@@ -496,6 +517,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:fit` – every iPhone size, Safari and home-screen app, with screenshots (start the dev server first)
 - `npm run test:e2e:menus` – main page, level rows, win card fit and character motion, with screenshots (start the dev server first)
 - `npm run test:e2e:card` – win card frame, column, medal, confetti, with screenshots (start the dev server first)
+- `npm run test:e2e:magpie` – the magpie gag: beats, off-screen entry and exit, splat, startle, reduced motion, frame rate, clips (start the dev server first)
 - `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)

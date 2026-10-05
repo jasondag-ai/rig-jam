@@ -2,32 +2,6 @@
 // separate groups (wing, arms, door, fist) that style.css animates (look for "Gags").
 const OL = 'stroke="#2a1a0c" stroke-linejoin="round"';
 
-/** Black-and-white magpie, side view facing right. The wing flaps in flight. */
-export const MAGPIE = `
-<svg viewBox="0 0 64 44" aria-hidden="true">
-  <path d="M3 25 L24 19 L25 27 Z" fill="#1f4652" ${OL} stroke-width="2.5"/>
-  <ellipse cx="31" cy="25" rx="13" ry="9" fill="#1c1c1c" ${OL} stroke-width="2.5"/>
-  <ellipse cx="34" cy="29" rx="8" ry="5" fill="#fff"/>
-  <path d="M30 37 L28 42 M35 37 L36 42" stroke="#3a3a3a" stroke-width="2.5" stroke-linecap="round"/>
-  <g class="mp-wing">
-    <path d="M22 22 Q30 8 42 17 Q33 23 22 25 Z" fill="#1c1c1c" ${OL} stroke-width="2.5"/>
-    <path d="M27 19 Q33 14 38 17" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-  </g>
-  <circle cx="45" cy="16" r="7" fill="#1c1c1c" ${OL} stroke-width="2.5"/>
-  <circle cx="47.5" cy="14.5" r="2.4" fill="#fff"/>
-  <circle cx="48.2" cy="14.5" r="1.2" fill="#111"/>
-  <path d="M51 15 L60 17.5 L51 19.5 Z" fill="#5a5a5a" ${OL} stroke-width="2"/>
-</svg>`;
-
-/** One bird dropping: white blob, dark centre, a short drip. The magpie leaves two or three. */
-export const DROPPING = `
-<svg viewBox="0 0 20 24" aria-hidden="true">
-  <path d="M10 2 Q14 2 15 6 Q19 7 18 11 Q19 15 14 15 Q11 17 8 15 Q3 16 3 11 Q1 7 5 6 Q6 2 10 2 Z" fill="#fff" stroke="#7a7a7a" stroke-width="1.3"/>
-  <path d="M12.2 14.6 Q13.8 18 12.8 21 Q11.8 22.8 10.9 21.2 Q10.4 18 11 15.2 Z" fill="#fff" stroke="#7a7a7a" stroke-width="1.1"/>
-  <ellipse cx="10" cy="9.6" rx="3.4" ry="2.7" fill="#34322f"/>
-  <circle cx="8.8" cy="8.7" r="0.9" fill="#6b6a66"/>
-</svg>`;
-
 const SPOTTER_HEAD = `
   <circle cx="35" cy="22" r="10" fill="#e8b48a" ${OL} stroke-width="2.5"/>
   <path d="M23 17 Q24 6 35 6 Q46 6 47 17 Z" fill="#ffd21f" ${OL} stroke-width="2.5"/>

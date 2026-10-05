@@ -13,7 +13,9 @@ import json, os, re, sys
 from PIL import Image
 
 REJECTED = {
-    'bear_wipe', 'rabbit_deadpan_idle', 'rabbit_hop_away', 'magpie_poop', 'magpie_hop', 'moose_chew',
+    'bear_wipe', 'rabbit_deadpan_idle', 'rabbit_hop_away', 'moose_chew',
+    # The magpie is a code puppet now (src/ui/magpie.ts): none of its sheets are used.
+    'magpie_poop', 'magpie_hop', 'magpie_fly', 'magpie_land', 'magpie_take_off',
     'company_man_fist_pump', 'spotter_sleep', 'spotter_wake_startle', 'pumper_write_clipboard',
     'hotshot_drive', 'hotshot_brake', 'pumper_truck_drive', 'pumper_truck_door_open',
     'pumper_truck_door_close', 'pumper_get_in', 'pumper_get_out',
@@ -43,8 +45,7 @@ def main(root: str) -> None:
     manifest = {}
     for f in sorted(os.listdir(d)):
         if f == 'magpie_splat.png':
-            static(os.path.join(d, f), os.path.join(PUB, 'anim'), 'magpie_splat')
-            continue
+            continue  # the splat is drawn in code too
         m = re.match(r'(.+)_sheet\.png$', f)
         if not m or m.group(1) in REJECTED:
             continue

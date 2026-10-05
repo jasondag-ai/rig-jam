@@ -1928,19 +1928,6 @@ canvas.lease-detail {
 
 /* Magpie */
 /* Above speech bubbles: the driver yells while the bird is still standing on his roof. */
-.magpie {
-  z-index: 25;
-}
-
-.magpie .mp-wing {
-  transform-box: view-box;
-  transform-origin: 32px 22px;
-}
-
-.magpie.flying .mp-wing {
-  animation: flap 150ms ease-in-out infinite alternate;
-}
-
 @keyframes flap {
   from { transform: rotate(-35deg); }
   to { transform: rotate(25deg) scaleY(0.6); }
@@ -3470,3 +3457,30 @@ img.hat { width: 100%; height: auto; }
 .tracks[data-ground='mud'] .tt-edge.w3,
 .tracks[data-ground='mud'] .tt-edge.w4 { opacity: 0.24; }
 .ground-tex .tracks[data-ground='mud'] .tt-edge { opacity: 0.2; }
+
+/* ---------- The magpie (magpie-gag.ts) ----------
+   His layer covers the whole game screen, above the board, HUD and buttons (under the win card),
+   and takes no touches. Nothing here clips him: he leaves past the screen's own edge. */
+.magpie-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  overflow: visible;
+  pointer-events: none;
+}
+.magpie-layer svg.magpie { position: absolute; overflow: visible; pointer-events: none; }
+.magpie-layer .mp-fx { position: absolute; opacity: 0; pointer-events: none; }
+.magpie-layer .mp-drop > div {
+  width: 100%;
+  height: 100%;
+  border: 1.5px solid #2b1e16;
+  border-radius: 50% 50% 50% 50% / 35% 35% 65% 65%;
+  background: #f7f5ee;
+}
+/* What he leaves behind rides on the truck (under its badge), and takes no touches either. */
+.truck .magpie-splat,
+.truck .magpie-drip { position: absolute; pointer-events: none; }
+.truck .magpie-splat,
+.truck .magpie-drip { z-index: auto; }
+/* The Wildlife Log card: the smug pose. */
+.log-card .art .magpie-still { width: 84px; height: 84px; overflow: visible; }
