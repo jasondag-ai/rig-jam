@@ -19,9 +19,13 @@ export const GAG_TRIGGERS = {
    * long. (After one bump the game waits this long to see if a second is coming before playing A.)
    */
   biffyB: { bottomBermBumps: 2, withinMs: 1400 },
+  /** Gag 8, the marshmallow: this many taps on a flare stack in one level. Levels with a flare. */
+  marshmallow: { flareTaps: 3 },
+  /** Gag 9, the geese and the lost goose: Undo pressed this many times in a row (a move in between starts the count again). Any region. */
+  geese: { undosInARow: 3 },
 } as const;
 
-export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB';
+export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese';
 
 /** A bump of a truck up into the top berm, or down into the bottom one (not into a truck or equipment). */
 export const bermBump = (orient: 'h' | 'v', direction: 1 | -1, hit: string): 'top' | 'bottom' | null =>

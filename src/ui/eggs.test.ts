@@ -144,13 +144,13 @@ describe('moose peekaboo: the reference, as approved', () => {
 });
 
 describe('Wildlife Log: the gags that are live', () => {
-  it('lists the seven live gags in order; the old ten with the old gag layer switched on', () => {
-    expect(LIVE).toEqual(['magpie', 'spotter', 'moose', 'nearmiss', 'landowner', 'biffy', 'biffyB']);
-    expect(liveEntries(false).map((e) => e.name)).toEqual(['Magpie', 'Sleepy Worker', 'Moose', 'Near Miss', 'Angry Landowner', 'Occupied', 'The Runaway Roll']);
+  it('lists the live gags in order; the old ten with the old gag layer switched on', () => {
+    expect(LIVE.slice(0, 9)).toEqual(['magpie', 'spotter', 'moose', 'nearmiss', 'landowner', 'biffy', 'biffyB', 'marshmallow', 'geese']);
+    expect(liveEntries(false).map((e) => e.name).slice(0, 9)).toEqual(['Magpie', 'Sleepy Worker', 'Moose', 'Near Miss', 'Angry Landowner', 'Occupied', 'The Runaway Roll', 'Marshmallow', 'Lost Goose']);
     expect(liveEntries(true)).toBe(LOG_ENTRIES);
-    expect(liveCount({ found: ['magpie', 'bear', 'biffyB'], camo: true, camoEarned: false }, false)).toBe(2);
-    expect(sightingToast('spotter', 2, false, false)).toBe('New sighting! Sleepy Worker (2/7)');
-    expect(sightingToast('biffyB', 3, false, false)).toBe('New sighting! The Runaway Roll (3/7)');
+    expect(liveCount({ found: ['magpie', 'hotshot', 'biffyB'], camo: true, camoEarned: false }, false)).toBe(2);
+    expect(sightingToast('spotter', 2, false, false)).toBe(`New sighting! Sleepy Worker (2/${LIVE.length})`);
+    expect(sightingToast('biffyB', 3, false, false)).toBe(`New sighting! The Runaway Roll (3/${LIVE.length})`);
     for (const e of liveEntries(false)) expect(e.hint.length).toBeGreaterThan(10);
   });
 

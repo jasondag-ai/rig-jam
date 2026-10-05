@@ -3510,5 +3510,9 @@ img.hat { width: 100%; height: auto; }
 /* The gopher comes up out of his hole: his layer ends at the hole line and sits just over the scenery. */
 .puppet-layer.gopher-layer { z-index: 0; bottom: auto; overflow: hidden; }
 .puppet-layer .pup-dust { position: absolute; opacity: 0; border-radius: 50%; background: #cfc6b4; pointer-events: none; }
+/* The geese fly behind the HUD and the lease, over the trees. */
+.puppet-layer.geese-layer { z-index: 0; }
+.puppet-layer .pup-overlay { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.puppet-layer .pup-feather { border: 1.5px solid #2b1e16; }
 .puppet-layer .pup-roll { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; }
 .log-card .art .egg-still { width: 84px; height: 84px; overflow: visible; }

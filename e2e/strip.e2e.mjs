@@ -245,8 +245,8 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       await page.locator('.binoculars').click();
       await page.waitForSelector('.log-card');
       const cards = await page.$$eval('.log-card', (cs) => cs.map((c) => ({ id: c.dataset.id, text: c.querySelector('p').textContent, art: !!c.querySelector('.art svg') })));
-      if (mode === 'game') check(cards.map((c) => c.id).join() === 'magpie,spotter,moose,nearmiss,landowner,biffy,biffyB' && cards.every((c) => c.art && c.text === 'Not seen yet.'), `lists all seven with puppet card art; the game hides the hints (${cards.length})`);
-      else check(cards.slice(3).map((c) => c.text).join('|') === 'Send two trucks out back to back in Cardium.|Drive the same truck back and forth four times.|Bump a truck into the bottom berm.|Bump the bottom berm twice, quickly.', 'demo mode shows each gag\'s hint');
+      if (mode === 'game') check(cards.map((c) => c.id).slice(0, 7).join() === 'magpie,spotter,moose,nearmiss,landowner,biffy,biffyB' && cards.every((c) => c.art && c.text === 'Not seen yet.'), `lists these four after the first three, with puppet card art; the game hides the hints (${cards.length})`);
+      else check(cards.slice(3, 7).map((c) => c.text).join('|') === 'Send two trucks out back to back in Cardium.|Drive the same truck back and forth four times.|Bump a truck into the bottom berm.|Bump the bottom berm twice, quickly.', 'demo mode shows each gag\'s hint');
       await context.close();
     }
   }

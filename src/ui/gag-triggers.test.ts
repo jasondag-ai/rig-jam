@@ -5,10 +5,14 @@ import { L_BEATS, L_END, lPose } from './landowner.ts';
 import { N_BEATS, N_END, nPose } from './near-miss.ts';
 import { BIFFY_X, biffyBox, stripGeom } from './strip-gags.ts';
 import { workerSpot } from './worker.ts';
+import { G_BEATS, G_END, leadX } from './geese.ts';
+import { MM_BEATS, MM_END, handPos, mmPose } from './marshmallow.ts';
 
-describe('gag triggers: one settings file for all seven', () => {
+describe('gag triggers: one settings file for every gag', () => {
   it('holds every gag, with the placeholder values', () => {
-    expect(Object.keys(GAG_TRIGGERS)).toEqual(['magpie', 'worker', 'moose', 'nearMiss', 'landowner', 'biffyA', 'biffyB']);
+    expect(Object.keys(GAG_TRIGGERS).slice(0, 9)).toEqual(['magpie', 'worker', 'moose', 'nearMiss', 'landowner', 'biffyA', 'biffyB', 'marshmallow', 'geese']);
+    expect(GAG_TRIGGERS.marshmallow.flareTaps).toBe(3);
+    expect(GAG_TRIGGERS.geese.undosInARow).toBe(3);
     expect(GAG_TRIGGERS.magpie.idleMs).toBe(10_000);
     expect(GAG_TRIGGERS.worker.idleMs).toBe(20_000);
     expect(GAG_TRIGGERS.moose).toEqual({ region: 'duvernay', topBermBumps: 2 });
@@ -107,5 +111,46 @@ describe('the bottom strip: the permanent biffy', () => {
       expect(Math.abs(box.x + box.width / 2 - BIFFY_X * w)).toBeLessThan(0.01);
       if (worker) expect(box.x).toBeGreaterThan(worker.x + worker.w * 0.3);
     }
+  });
+});
+
+describe('marshmallow and geese: the reference, as approved', () => {
+  it('the marshmallow plays the reference beats, and the stick telescopes in three clicks', () => {
+    expect(MM_BEATS.map((b) => b[0])).toEqual([0, 2.0, 2.5, 3.6, 4.5, 4.6, 5.1, 5.8, 6.3, 7.0, 7.9, 10.4]);
+    expect(MM_END).toBeGreaterThan(10.4);
+    // Folded while he walks; a third longer at each click, with a hold after each; full reach in the flame.
+    expect(mmPose(1).ext).toBe(0);
+    const ext = (t: number) => mmPose(t).ext;
+    expect(ext(2.5 + 0.3)).toBeCloseTo(1 / 3);
+    expect(ext(2.5 + 0.36)).toBeCloseTo(1 / 3);
+    expect(ext(2.5 + 0.7)).toBeCloseTo(2 / 3);
+    expect(ext(3.59)).toBeCloseTo(1);
+    expect(ext(4)).toBe(1);
+    // FWOOMP: the fire is bigger than a flame, the hat jumps; then burnt, then eaten.
+    expect(mmPose(4.6).fire).toBeGreaterThan(1);
+    expect(mmPose(4.62).hatY).toBeLessThan(-6);
+    expect(mmPose(6.2).char).toBe(true);
+    expect(mmPose(7.5)).toMatchObject({ mm: false, bub: true });
+    expect(mmPose(10.45).show).toBe(false);
+  });
+
+  it('he walks in from, and out to, wherever the screen edge is', () => {
+    expect(mmPose(0).x).toBe(-300);
+    expect(mmPose(0, -520).x).toBe(-520);
+    expect(mmPose(2).x).toBe(0);
+    expect(mmPose(10.39, -300, 700).x).toBeGreaterThan(690);
+    // His glove moves with him.
+    expect(handPos(mmPose(0, -520)).x).toBeLessThan(-400);
+  });
+
+  it('the geese play the reference beats; the V goes from fully off the left to fully off the right, straggler and all', () => {
+    expect(G_BEATS.map((b) => b[0])).toEqual([0, 0.8, 2.9, 3.3, 3.7, 4.3, 4.6, 7.4, 9.0]);
+    const W = 390, gw = 34, sp = gw * 1.05;
+    // The lead's centre starts more than half a goose off the left edge.
+    expect(leadX(0, W, gw) + gw / 2).toBeLessThan(0);
+    // At the end the straggler, one spacing behind the last goose of the V (three back), is past the right edge.
+    expect(leadX(G_END, W, gw) - 4 * sp - gw / 2).toBeGreaterThan(W);
+    // Same speed as the reference: it reaches the reference's end point at 9.0.
+    expect(leadX(9, W, gw)).toBeCloseTo(W + 3.4 * sp + gw * 0.6);
   });
 });

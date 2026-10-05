@@ -1,0 +1,264 @@
+// Gags 8 and up (Playwright, WebKit as the judge; Chromium for the frame rate): the marshmallow on
+// the flare stack and the geese with the lost goose. Each plays its reference beats in order when
+// its trigger fires (gag-triggers.ts), characters start and end fully off screen, nothing takes a
+// touch, reduced motion fades a still, and each has a Wildlife Log card.
+// Saves clips to OUT. Run with the dev server up: npm run test:e2e:eggs2   (ONLY=geese to run one)
+import { DEMO, UNLOCKED } from './progress.mjs';
+import { chromium, webkit } from 'playwright';
+import { mkdirSync, renameSync, rmSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { REGIONS } from '../src/levels/regions.ts';
+import { solve } from '../src/engine/index.ts';
+
+const ROOT = process.env.URL ?? 'http://localhost:5173/';
+const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const ONLY = process.env.ONLY ?? '';
+mkdirSync(OUT, { recursive: true });
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+let failures = 0;
+const check = (ok, text) => {
+  if (!ok) failures++;
+  console.log(`   ${ok ? 'ok  ' : 'FAIL'} ${text}`);
+};
+const QUIET = '?cover=0&magpie=0&worker=0&moose=0';
+const region = (id) => REGIONS.findIndex((r) => r.id === id);
+const W = 390;
+
+/** name: [preview, beats, clip name, selector of the gag's main layer] */
+const GAGS = {
+  marshmallow: { preview: 'marshmallow', clip: 'gag89_marshmallow', beats: ['walk-in', 'eyes-flare', 'telescope', 'roast', 'fwoomp', 'eyes-pop', 'yank', 'blow', 'sniff-shrug', 'crispy', 'ear-smoke', 'gone'] },
+  geese: { preview: 'geese', clip: 'gag89_geese', beats: ['v-flies', 'wrong-way', 'pass', 'stall', 'honk', 'snap-turn', 'chase', 'straggler', 'feather'] },
+};
+const want = (name) => !ONLY || ONLY === name;
+
+async function open(browser, { width = W, height = 844, query = QUIET, reducedMotion = 'no-preference', video = null, level = [0, 5], progress = UNLOCKED, enter = true } = {}) {
+  const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, hasTouch: true, reducedMotion, ...(video ? { recordVideo: { dir: video, size: { width, height } } } : {}) });
+  const page = await context.newPage();
+  page.on('pageerror', (e) => console.log('ERR', e.message));
+  await page.goto(ROOT + query, { waitUntil: 'networkidle' });
+  if (!query.includes('gag=')) {
+    await page.evaluate((p) => { localStorage.clear(); localStorage.setItem('rush-hour-rigs:v2', p); }, progress);
+    await page.reload({ waitUntil: 'networkidle' });
+    if (enter) {
+      await page.locator('.region-tab').nth(level[0]).click();
+      await page.locator('.level-btn').nth(level[1]).click();
+    }
+  }
+  if (enter || query.includes('gag=')) await page.waitForSelector('.board .truck.sprite-on');
+  return { context, page };
+}
+
+/** Drags a truck by `cells` along its lane with touch pointer events. */
+const drag = (page, id, cells, settle = 420) =>
+  page.evaluate(async ([truckId, n, ms]) => {
+    const el = document.querySelector(`.truck[data-id="${truckId}"]:not(.exiting)`);
+    const r = el.getBoundingClientRect();
+    const h = el.classList.contains('horiz');
+    const cell = parseFloat(document.querySelector('.board').style.getPropertyValue('--cell'));
+    let x = r.x + r.width / 2, y = r.y + r.height / 2;
+    const ev = (type) => el.dispatchEvent(new PointerEvent(type, { pointerId: 21, pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, bubbles: true, cancelable: true, buttons: 1 }));
+    ev('pointerdown');
+    for (let k = 0; k < 8; k++) { if (h) x += (n * cell) / 8; else y += (n * cell) / 8; ev('pointermove'); await new Promise((q) => requestAnimationFrame(q)); }
+    ev('pointerup');
+    await new Promise((q) => setTimeout(q, ms));
+  }, [id, cells, settle]);
+
+/** A finger tap at a point (touch pointer events on whatever is there). */
+const tapAt = (page, x, y) =>
+  page.evaluate(([px, py]) => {
+    const el = document.elementFromPoint(px, py);
+    for (const type of ['pointerdown', 'pointerup']) el.dispatchEvent(new PointerEvent(type, { pointerId: 31, pointerType: 'touch', isPrimary: true, clientX: px, clientY: py, bubbles: true, cancelable: true }));
+    return el.className?.baseVal ?? el.className;
+  }, [x, y]);
+
+/**
+ * Follows a gag every frame until its layers have gone: the beat, the screen boxes of every puppet
+ * in `pups` (a selector), extra `parts`, and the horizontal flip of `flip`.
+ */
+const watch = (page, gag, { pups = '', parts = {}, flip = '' } = {}, ms = 24000) =>
+  page.evaluate(
+    ([name, pupSel, sel, flipSel, limit]) =>
+      new Promise((res) => {
+        const log = [];
+        const t0 = performance.now();
+        const box = (el) => { const b = el.getBoundingClientRect(); const cs = getComputedStyle(el); return { l: b.left, r: b.right, t: b.top, b: b.bottom, vis: cs.visibility !== 'hidden' && cs.display !== 'none' && cs.opacity !== '0' }; };
+        const tick = () => {
+          const layers = [...document.querySelectorAll(`.strip-layer[data-gag="${name}"]`)];
+          const now = performance.now() - t0;
+          if (layers.length) {
+            const f = { t: now, beat: layers.at(-1).dataset.beat, others: document.querySelectorAll('.strip-layer, .magpie-layer, .worker-layer, .moose-layer').length - layers.length };
+            if (pupSel) f.pups = [...document.querySelectorAll(pupSel)].map(box);
+            for (const [k, q] of Object.entries(sel)) { const el = document.querySelector(q); if (el) f[k] = box(el); }
+            if (flipSel) { const m = /scale\(([-\d.]+)/.exec([...document.querySelectorAll(flipSel)].at(-1)?.getAttribute('transform') ?? ''); f.flip = m ? +m[1] : 1; }
+            log.push(f);
+          }
+          if ((!layers.length && log.length) || now > limit) return res(log);
+          requestAnimationFrame(tick);
+        };
+        tick();
+      }),
+    [gag, pups, parts, flip, ms],
+  );
+const beatsOf = (log) => [...new Set(log.map((f) => f.beat).filter(Boolean))];
+const sameBeats = (log, name) => JSON.stringify(beatsOf(log)) === JSON.stringify(GAGS[name].beats);
+const bubbleOf = (page, gag, timeout = 14000) =>
+  page.waitForSelector(`.bubble[data-gag="${gag}"]`, { timeout }).then(async (b) => ({ text: await b.textContent(), box: await b.boundingBox() })).catch(() => null);
+
+for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
+  const browser = await type.launch();
+
+  if (engine === 'webkit' && want('marshmallow')) {
+    // ---------- Marshmallow: three taps on a flare stack ----------
+    const flareLevel = REGIONS[region('montney')].levels.findIndex((l) => l.obstacles?.some((o) => o.kind === 'flare'));
+    console.log(`\n${engine}: marshmallow, three taps on a flare stack (Montney ${flareLevel + 1})`);
+    const { context, page } = await open(browser, { level: [region('montney'), flareLevel] });
+    const flare = await page.evaluate(() => { const r = document.querySelector('.obstacle.flare svg').getBoundingClientRect(); const f = document.querySelector('.obstacle.flare .fl-flame').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height * 0.7, fx: f.left + f.width / 2, fy: f.top + f.height / 2 }; });
+    const watching = watch(page, 'marshmallow', { parts: { man: '.marshmallow-layer svg.pup .head', mm: '.marshmallow-layer .mm' } });
+    await tapAt(page, flare.x, flare.y);
+    await tapAt(page, flare.x, flare.y);
+    await wait(900);
+    check(!(await page.$('.strip-layer')), 'two taps are not enough');
+    await tapAt(page, flare.x, flare.y);
+    const bubble = bubbleOf(page, 'marshmallow');
+    const touch = page.waitForFunction(() => document.querySelector('.strip-layer[data-gag="marshmallow"]')?.dataset.beat === 'roast', null, { timeout: 12000 }).then(() =>
+      page.evaluate(([x, y]) => { const el = document.elementFromPoint(x, y); return { layer: !!el.closest('.puppet-layer'), pe: getComputedStyle(document.querySelector('.marshmallow-layer .pup-overlay')).pointerEvents }; }, [flare.fx, flare.fy + 60]),
+    );
+    const log = await watching;
+    check(sameBeats(log, 'marshmallow'), `the reference beats, in order (${beatsOf(log).length} of ${GAGS.marshmallow.beats.length})`);
+    const first = log.find((f) => f.man), walkOut = log.filter((f) => f.beat === 'ear-smoke' && f.man).at(-1);
+    check(first.man.r <= 0 && walkOut.man.l >= W - 4, `he walks in from fully off screen and strolls off until fully off screen (${Math.round(first.man.r)} to ${Math.round(walkOut.man.l)})`);
+    const roast = log.filter((f) => f.beat === 'roast' && f.mm).at(-1);
+    const mx = (roast.mm.l + roast.mm.r) / 2, my = (roast.mm.t + roast.mm.b) / 2;
+    check(Math.hypot(mx - flare.fx, my - flare.fy) < 9, `the stick is aimed at the real flare: the marshmallow sits in its pilot flame (${Math.round(Math.hypot(mx - flare.fx, my - flare.fy))}px off)`);
+    const steps = log.filter((f) => f.beat === 'telescope' && f.mm).map((f) => f.mm.t);
+    const holds = steps.filter((y, i) => i > 0 && Math.abs(y - steps[i - 1]) < 0.05).length;
+    check(holds > steps.length * 0.4 && steps.at(-1) < steps[0] - 60, `it telescopes in clicks, with holds between them (${holds} still frames of ${steps.length})`);
+    const t = await touch;
+    check(!t.layer && t.pe === 'none', 'the stick never blocks a touch');
+    const b = await bubble;
+    check(b?.text === 'Mmm. Crispy.' && b.box.x >= 4 && b.box.x + b.box.width <= W - 4, `"${b?.text}", on screen`);
+    check(log.every((f) => f.others === 0), 'nothing else was on stage');
+    for (let i = 0; i < 3; i++) await tapAt(page, flare.x, flare.y);
+    await wait(900);
+    check(!(await page.$('.strip-layer')), 'once per level');
+    await context.close();
+    {
+      const { context, page } = await open(browser, { level: [region('cardium'), 5] });
+      await page.locator('[data-act="undo"]').waitFor();
+      check((await page.$$('.obstacle.flare')).length === 0, 'levels with no flare stack have no marshmallow (nothing to tap)');
+      await context.close();
+    }
+  }
+
+  if (engine === 'webkit' && want('geese')) {
+    // ---------- Geese: Undo three times in a row ----------
+    console.log(`\n${engine}: geese, Undo three times in a row (Cardium 6)`);
+    const level = REGIONS[region('cardium')].levels[5];
+    const sol = solve(level).slice(0, 3);
+    const { context, page } = await open(browser, { level: [region('cardium'), 5] });
+    for (const m of sol) await drag(page, m.id, m.delta, 650);
+    const undo = () => page.locator('[data-act="undo"]').click();
+    const watching = watch(page, 'geese', { pups: '.geese-layer svg.pup', flip: '.geese-layer svg.pup .flip' });
+    await undo();
+    await undo();
+    await wait(900);
+    check(!(await page.$('.strip-layer')), 'two undos are not enough');
+    await undo();
+    const bubble = bubbleOf(page, 'geese');
+    const log = await watching;
+    check(sameBeats(log, 'geese'), `the reference beats, in order (${beatsOf(log).length} of ${GAGS.geese.beats.length})`);
+    const v = (f) => f.pups.slice(0, 7), lost = (f) => f.pups[7];
+    const last = log.at(-1);
+    check(log[0].pups.length === 8 && v(log[0]).every((g) => g.r <= 0), 'a V of seven starts fully off screen on the left');
+    check(v(last).every((g) => g.l >= W), 'and crosses until all seven are fully off screen on the right');
+    check(lost(log[0]).l >= W, 'the lost goose starts fully off screen on the right, going the wrong way');
+    const passed = log.find((f) => f.beat === 'pass'), stall = log.find((f) => f.beat === 'stall');
+    check(lost(stall).l < Math.min(...v(passed).map((g) => g.l)) || lost(stall).l < W * 0.5, `he keeps going after passing them before he stalls (x ${Math.round(lost(stall).l)})`);
+    check(log.every((f) => Math.abs(f.flip) >= 0.79), `he snaps around without ever going paper-thin (thinnest ${Math.min(...log.map((f) => Math.abs(f.flip))).toFixed(2)})`);
+    const vGone = log.find((f) => v(f).every((g) => g.l >= W));
+    check(lost(vGone).l < W + 40 && lost(last).l >= W && log.filter((f) => f.beat === 'straggler').every((f) => lost(f).l <= Math.min(...v(f).map((g) => g.l)) + 1), `he chases as the straggler and leaves last, fully off screen (x ${Math.round(lost(last).l)})`);
+    const b = await bubble;
+    check(b?.text === 'Honk?!' && b.box.x >= 4 && b.box.x + b.box.width <= W - 4, `"${b?.text}", on screen`);
+    await context.close();
+  }
+  if (engine === 'webkit' && want('geese')) {
+    const { context, page } = await open(browser, { query: '?gag=geese' });
+    await page.waitForSelector('.geese-layer', { state: 'attached', timeout: 8000 });
+    await page.waitForFunction(() => document.querySelector('.strip-layer[data-gag="geese"]')?.dataset.beat === 'chase', null, { timeout: 12000 });
+    const s = await page.evaluate(() => {
+      const layer = document.querySelector('.geese-layer');
+      const hud = document.querySelector('.hud').getBoundingClientRect();
+      const f = layer.querySelector('.pup-feather');
+      const tops = [...layer.querySelectorAll('svg.pup')].slice(0, 7).map((g) => g.querySelector('.root').getBoundingClientRect().top);
+      return { pe: getComputedStyle(layer).pointerEvents, z: getComputedStyle(layer).zIndex, feather: +getComputedStyle(f).opacity > 0.5, clear: Math.min(...tops) >= hud.bottom - 6, board: Math.max(...[...layer.querySelectorAll('svg.pup')].map((g) => g.getBoundingClientRect().bottom)) <= document.querySelector('.board').getBoundingClientRect().top + 4 };
+    });
+    check(s.pe === 'none' && s.z === '0' && s.clear && s.board, 'they fly in the sky band: under the HUD\'s row, above the lease, behind both, taking no touches');
+    check(s.feather, 'a feather drifts down from the snap-turn');
+    await context.close();
+  }
+
+  // ---------- Reduced motion: simple fades ----------
+  if (engine === 'webkit') {
+    console.log(`\n${engine}: reduced motion`);
+    for (const name of Object.keys(GAGS).filter(want)) {
+      const { context, page } = await open(browser, { query: `?gag=${GAGS[name].preview}`, reducedMotion: 'reduce' });
+      await page.waitForSelector('.strip-layer', { state: 'attached', timeout: 8000 });
+      await wait(800);
+      const snap = () => page.evaluate(() => { const l = [...document.querySelectorAll('.strip-layer')].at(-1); return l ? { beat: l.dataset.beat, o: getComputedStyle(l).opacity, at: [...l.querySelectorAll('svg.pup')].map((s) => s.style.left + s.innerHTML.length).join() } : null; });
+      const a = await snap();
+      await wait(500);
+      const b = await snap();
+      check(a?.beat === 'still' && a.o === '1' && a.at === b?.at, `${name}: fades in as a still and holds`);
+      await context.close();
+    }
+
+    // ---------- Wildlife Log ----------
+    console.log(`\n${engine}: Wildlife Log`);
+    for (const [mode, progress] of [['game', UNLOCKED], ['demo', DEMO]]) {
+      const { context, page } = await open(browser, { query: '?cover=0', progress, enter: false });
+      await page.locator('.binoculars').click();
+      await page.waitForSelector('.log-card');
+      const cards = await page.$$eval('.log-card', (cs) => cs.map((c) => ({ id: c.dataset.id, text: c.querySelector('p').textContent, art: !!c.querySelector('.art svg.egg-still'), legendary: c.classList.contains('legendary') })));
+      const by = Object.fromEntries(cards.map((c) => [c.id, c]));
+      if (mode === 'game') check(by.marshmallow?.art && by.geese?.art && by.marshmallow.text === 'Not seen yet.' && by.geese.text === 'Not seen yet.', `Marshmallow and Lost Goose have cards with puppet art; the game hides the hints (${cards.length} cards)`);
+      else check(by.marshmallow.text === 'Tap a flare stack three times.' && by.geese.text === 'Undo three times in a row.', 'demo mode shows each gag\'s hint');
+      await context.close();
+    }
+  }
+
+  // ---------- 60 fps with the CPU slowed 4x (Chromium) ----------
+  if (engine === 'chromium') {
+    for (const name of Object.keys(GAGS).filter(want)) {
+      console.log(`\n${engine}: ${name} frame rate with a 4x slower CPU (?gag=${GAGS[name].preview})`);
+      const { context, page } = await open(browser, { query: `?gag=${GAGS[name].preview}` });
+      const cdp = await context.newCDPSession(page);
+      await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+      const log = await watch(page, name, {}, 20000);
+      const gaps = log.slice(1).map((f, i) => f.t - log[i].t).slice(5).sort((x, y) => x - y);
+      const p95 = gaps[Math.floor(gaps.length * 0.95)];
+      check(log.length > 100 && p95 < 20, `p95 frame ${p95?.toFixed(1)} ms, median ${gaps[gaps.length >> 1]?.toFixed(1)} ms over the whole gag`);
+      await context.close();
+    }
+  }
+
+  // ---------- Clips (WebKit, 390x844, full screen) ----------
+  if (engine === 'webkit' && !process.env.NO_CLIPS) {
+    const dir = join(OUT, 'eggs2_clip_tmp');
+    for (const name of Object.keys(GAGS).filter(want)) {
+      const { context, page } = await open(browser, { query: `?gag=${GAGS[name].preview}`, video: dir });
+      await page.waitForSelector('.strip-layer', { state: 'attached', timeout: 8000 });
+      await page.waitForSelector('.strip-layer', { state: 'detached', timeout: 26000 });
+      await wait(600);
+      const video = page.video();
+      await context.close();
+      renameSync(await video.path(), join(OUT, `${GAGS[name].clip}.webm`));
+      console.log(`   saved ${GAGS[name].clip}.webm`);
+    }
+    rmSync(dir, { recursive: true, force: true });
+  }
+  await browser.close();
+}
+
+console.log(failures ? `\nFAILED: ${failures} check(s)` : '\nPASS');
+process.exit(failures ? 1 : 0);

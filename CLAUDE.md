@@ -110,7 +110,7 @@ something, give exact clicks and one command at a time.
   free. The magpie comes after his idle time with no moves and the worker after his, each
   counted from the last move or the last gag leaving (the worker waits until the magpie has been),
   each once per level; one that was scared off or cancelled may try again.
-  `?gag=magpie|worker|moose|nearmiss|landowner|biffya|biffyb` plays one at once, again and again;
+  `?gag=magpie|worker|moose|nearmiss|landowner|biffya|biffyb|marshmallow|geese` plays one at once, again and again;
   `?idle=0.1` makes the idle times 10x shorter.
 - STRIP GAGS (gags 4 to 7; `src/ui/strip-gags.ts` runner `TimelineGag`, placement `stripGeom`;
   puppets and timelines ported as written from `near_miss_landowner_reference.html` and
@@ -130,6 +130,22 @@ something, give exact clicks and one command at a time.
   - BIFFY A "Occupied": door bangs open, the occupant looks back wide-eyed, nods, reaches, pulls it
     shut; the indicator ends red. BIFFY B "The Runaway Roll": the roll rolls out and away, the arm
     gropes, he shuffles after it off screen with paper on his boot, the door creaks shut; green.
+  - MARSHMALLOW (gag 8, levels with a flare stack; `marshmallow.ts`, ported from
+    `marshmallow_geese_reference.html`): the sleepy worker's drawing walks in from off the left,
+    telescopes a stick in three clicks from his glove to the nearest REAL flare's pilot flame
+    (`marshmallowDef` reads `.obstacle.flare .fl-flame`; he stands left of it), FWOOMP (the real
+    flame flares up too), yanks it back, blows it out, sniffs, shrugs, "Mmm. Crispy.", ear smoke,
+    strolls off the right. The stick is an SVG overlay (`.pup-overlay`) over the lease that takes
+    no touches. Trigger: 3 taps on a flare stack (`flareTaps`; a tap = a touch that lifts where it
+    landed, on a flare's picture).
+  - GEESE (gag 9, any region; `geese.ts`): a V of 7 crosses left to right behind the HUD and the
+    lease (`.geese-layer`, z 0), hung just under the HUD's row (`host.sky()`); the lost goose flaps
+    the wrong way, passes them, stalls, double take, "Honk?!", snaps around (never thinner than
+    0.8), chases and leaves last; a feather drifts down. The reference stops the V at 9.0 with the
+    straggler on the edge, so the game flies on to `G_END` 9.7 at the same speed. Trigger: Undo 3
+    times in a row (`undosInARow`; a move starts the count again). On short screens there is little
+    sky and they fly over the treetops, smaller.
+  - `npm run test:e2e:eggs2` checks gags 8 and up the same way and saves their clips.
   - `npm run test:e2e:strip` checks all of it in WebKit (beats, real triggers, off-screen entry and
     exit, hole clip, biffy placement, reduced motion, log), 60 fps at 4x throttle in Chromium, and
     saves `gag47_*.webm` clips.
@@ -425,7 +441,7 @@ something, give exact clicks and one command at a time.
 
 ## Wildlife Log
 - LIVE NOW: the log's button is back on the level list and the page lists only the gags that are in
-  the game (`EGGS`: magpie, sleepy worker, moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll;
+  the game (`EGGS`: magpie, sleepy worker, moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll, Marshmallow, Lost Goose;
   the old ten with `?gags=1`), with card art from their puppets (`magpieStill`, `workerStill`,
   `mooseStill`, `nearMissStill`, `landownerStill`, `biffyAStill`, `biffyBStill`), the count and toasts out of that number.
   An unfound card shows the gag's hint in DEMO mode only (`cardHint`); the game says "Not seen yet."
@@ -580,6 +596,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:magpie` – the magpie gag: beats, off-screen entry and exit, splat, startle, reduced motion, frame rate, clips (start the dev server first)
 - `npm run test:e2e:eggs` – the sleepy worker and the moose: beats, entry and exit, cancel, triggers, reduced motion, log, frame rate, clips (start the dev server first)
 - `npm run test:e2e:strip` – Near Miss, landowner, Biffy A and B and the permanent biffy (start the dev server first)
+- `npm run test:e2e:eggs2` – gags 8 and up: marshmallow, geese (`ONLY=geese` runs one; start the dev server first)
 - `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)

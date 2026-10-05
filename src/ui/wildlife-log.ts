@@ -3,7 +3,7 @@
 // `rush-hour-rigs:` key, so "Reset progress" clears it too. `?log=all` previews a full log.
 import { STORAGE_PREFIX } from './progress.ts';
 
-export type Sighting = 'magpie' | 'spotter' | 'biffy' | 'landowner' | 'bear' | 'moose' | 'hotshot' | 'gopher' | 'geese' | 'pumper' | 'nearmiss' | 'biffyB';
+export type Sighting = 'magpie' | 'spotter' | 'biffy' | 'landowner' | 'bear' | 'moose' | 'hotshot' | 'gopher' | 'geese' | 'pumper' | 'nearmiss' | 'biffyB' | 'marshmallow';
 
 export interface LogEntry {
   id: Sighting;
@@ -42,6 +42,8 @@ export const EGGS: LogEntry[] = [
   { id: 'landowner', name: 'Angry Landowner', caption: 'Wants a word about the ruts.', hint: 'Drive the same truck back and forth four times.' },
   { id: 'biffy', name: 'Occupied', caption: 'Knock first.', hint: 'Bump a truck into the bottom berm.' },
   { id: 'biffyB', name: 'The Runaway Roll', caption: 'It got away from him.', hint: 'Bump the bottom berm twice, quickly.' },
+  { id: 'marshmallow', name: 'Marshmallow', caption: 'Mmm. Crispy.', hint: 'Tap a flare stack three times.' },
+  { id: 'geese', name: 'Lost Goose', caption: 'Wrong way, buddy.', hint: 'Undo three times in a row.' },
 ];
 export const LIVE: Sighting[] = EGGS.map((e) => e.id);
 export const liveEntries = (all: boolean): LogEntry[] => (all ? LOG_ENTRIES : EGGS);

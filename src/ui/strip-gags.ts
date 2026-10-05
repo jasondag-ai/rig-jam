@@ -5,10 +5,13 @@
 // leave until fully off screen, never clipped (the gopher alone is cut off at his hole).
 import { A_BEATS, A_END, BIFFY_FRAC, B_BEATS, B_END, aApply, bApply, biffyPup, biffyRest, runawayScene } from './biffy.ts';
 import type { EggHost, EggResult } from './egg-gags.ts';
+import { GEESE_LINE, GOOSE_FRAC, G_BEATS, G_END, SKY, gApply, geeseScene } from './geese.ts';
 import { LANDOWNER_FRAC, L_BEATS, L_END, lApply, lPose, landownerScene } from './landowner.ts';
 import { LANDOWNER_LINE } from './lines.ts';
+import { MM_BEATS, MM_END, MM_LINE, marshmallowScene, mmApply, mmPose } from './marshmallow.ts';
 import { GOPHER_FRAC, NEAR_MISS_LINE, N_BEATS, N_END, nApply, nPose, nearMissScene } from './near-miss.ts';
 import { place, type Pup } from './puppet-stage.ts';
+import { WORKER_FRAC } from './worker.ts';
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const beatAt = (beats: [number, string, string][], t: number) => beats.reduce((name, b) => (t >= b[0] ? b[1] : name), beats[0][1]);
@@ -268,6 +271,62 @@ export const biffyBDef = (biffy: BiffyProp): TimelineDef => ({
     };
   },
 });
+
+/**
+ * Gag 8: the worker roasts a marshmallow on the nearest REAL flare's pilot flame. He stands in the
+ * bottom strip with the flare to his right; the stick lies over the lease but takes no touches.
+ */
+export const marshmallowDef: TimelineDef = {
+  name: 'marshmallow',
+  beats: MM_BEATS,
+  end: MM_END,
+  stillAt: 4.75,
+  build(layer, host) {
+    const flames = [...host.board.querySelectorAll<SVGElement>('.obstacle.flare .fl-flame')];
+    if (!flames.length) return null;
+    const screen = host.screen.getBoundingClientRect();
+    const { ground, scale } = stripGeom(screen.width, host.strip());
+    const w = WORKER_FRAC * scale * screen.width;
+    const centre = (f: SVGElement) => {
+      const r = f.getBoundingClientRect();
+      return { x: r.left - screen.left + r.width / 2, y: r.top - screen.top + r.height * 0.55 };
+    };
+    // He stands a little left of the flare so the stick leans up and to the right, as in the reference.
+    const stand = (tip: { x: number }) => Math.max(w * 0.6, Math.min(screen.width - w * 1.1, tip.x - screen.width * 0.25));
+    // The nearest flare: the one with the shortest reach from where he would stand for it.
+    const pick = flames.map((f) => ({ f, tip: centre(f) })).sort((a, b) => Math.hypot(a.tip.x - stand(a.tip), a.tip.y - ground) - Math.hypot(b.tip.x - stand(b.tip), b.tip.y - ground))[0];
+    const x = stand(pick.tip);
+    const scene = marshmallowScene(layer('marshmallow-layer'), { x: x / screen.width, y: ground / screen.height }, scale, pick.tip, pick.f);
+    // In from past the left edge, out past the right one (in his drawing's units).
+    const u = w / 120;
+    const from = -(x + w) / u, to = (screen.width - x + w) / u;
+    return {
+      apply: (t) => mmApply(scene, mmPose(t, from, to), t),
+      bubble: { from: 7.27, to: 8.0, text: MM_LINE, at: () => ({ x: x + w * 0.3, y: ground - w * 0.8 }) },
+      done: () => (pick.f.style.scale = ''),
+    };
+  },
+};
+
+/** Gag 9: the geese cross the sky band above the lease; the lost goose goes the wrong way. */
+export const geeseDef: TimelineDef = {
+  name: 'geese',
+  beats: G_BEATS,
+  end: G_END,
+  stillAt: 4.0,
+  build(layer, host) {
+    const screen = host.screen.getBoundingClientRect();
+    const sky = host.sky();
+    const scale = Math.max(0.6, Math.min(1, sky.height / 150));
+    const gw = GOOSE_FRAC * scale * screen.width;
+    // The reference's band (the V's lead at 0.36 of it, the lost goose at 0.6), hung so the top of
+    // the V clears the HUD: the flock flies in the open sky, behind the HUD's row.
+    const height = SKY.height * scale;
+    const top = sky.top + 6 + 3 * gw * 1.05 * 0.32 + gw * 0.25 - SKY.lead * height;
+    const scene = geeseScene(layer('geese-layer'), { top, height }, scale);
+    return { apply: (t) => gApply(scene, t), bubble: { from: 3.7, to: 4.6, text: GEESE_LINE, at: () => ({ x: scene.at.x, y: scene.at.y - gw * 0.3 }) } };
+  },
+};
 
 // ---------- Wildlife Log card art: each puppet in a telling moment ----------
 

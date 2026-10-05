@@ -1,3 +1,5 @@
+import { geeseStill } from './ui/geese.ts';
+import { marshmallowStill } from './ui/marshmallow.ts';
 import { biffyAStill, biffyBStill, landownerStill, nearMissStill } from './ui/strip-gags.ts';
 import { magpieStill } from './ui/magpie.ts';
 import './ui/style.css';
@@ -37,6 +39,7 @@ const BINOCULARS = uiImg('icon_binoculars');
 /** Card art for each Wildlife Log entry (found: in color; not yet: a dark silhouette). */
 const LOG_ART: Record<Sighting, () => string> = {
   nearmiss: () => nearMissStill(),
+  marshmallow: () => marshmallowStill(),
   biffyB: () => biffyBStill(),
   // Batch C character art (a telling frame of each), except the hot shot (its art is being redone).
   magpie: () => magpieStill(),
@@ -47,7 +50,7 @@ const LOG_ART: Record<Sighting, () => string> = {
   moose: () => mooseStill(),
   hotshot: () => HOTSHOT,
   gopher: () => animStill('gopher_whistle', 84, 4).outerHTML,
-  geese: () => `<div class="flock">${[0, 3, 5].map((f) => animStill('canada_goose_flap', 48, f).outerHTML).join('')}</div>`,
+  geese: () => (gagsOn() ? `<div class="flock">${[0, 3, 5].map((f) => animStill('canada_goose_flap', 48, f).outerHTML).join('')}</div>` : geeseStill()),
   pumper: () => animStill('pumper_check_gauge', 84, 4).outerHTML,
 };
 
@@ -394,6 +397,8 @@ function forcedGag(): boolean {
   // The bottom-strip gags: ?gag=nearmiss | landowner | biffya | biffyb.
   else if (gag === 'nearmiss' || gag === 'biffya' || gag === 'biffyb') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, gag);
   else if (gag === 'landowner' && !gagsOn()) showGame(REGIONS.findIndex((r) => r.id === 'montney'), 5, 'landownerquad');
+  else if (gag === 'marshmallow') showGame(REGIONS.findIndex((r) => r.id === 'montney'), 1, 'marshmallow');
+  else if (gag === 'geese' && !gagsOn()) showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, 'lostgoose');
   else if (gag === 'bear') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 7, 'bear');
   else if (gag === 'gopher' || gag === 'geese' || gag === 'pumper' || gag === 'hotshot') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 0, gag);
   else if (gag === 'moose') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 0, 'moose');

@@ -18,13 +18,13 @@ import { GagLayer, type GagOptions } from './gag-layer.ts';
 import { gagsOn, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
 import { BackAndForth, GAG_TRIGGERS, bermBump, type GagId } from './gag-triggers.ts';
-import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, landownerDef, nearMissDef } from './strip-gags.ts';
+import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
 import { companyLine, tierFor } from './gags.ts';
 import { animStill } from './anim.ts';
 import { gsap } from 'gsap';
-import { onTap } from './tap.ts';
+import { TAP_SLOP, onTap } from './tap.ts';
 import type { BumpHit } from './lines.ts';
 
 /** Screen-changing buttons: act on the first tap, even on iOS (see tap.ts). */
@@ -110,6 +110,8 @@ export class GameView {
   /** Trigger bookkeeping (gag-triggers.ts): bumps into the top berm, the last exit, back-and-forth moves, a first bump into the bottom berm waiting to see if it becomes a double. */
   private topBumps = 0;
   private lastExitAt = -Infinity;
+  private undos = 0;
+  private flareTaps = 0;
   private backForth = new BackAndForth();
   private biffyWait = 0;
   private eggTimer = 0;
@@ -140,7 +142,7 @@ export class GameView {
     const board = this.board;
     this.idleScale = idleScale();
     const f = gagOptions.force;
-    const forced: Partial<Record<string, GagId>> = { magpie: 'magpie', worker: 'worker', nearmiss: 'nearMiss', landownerquad: 'landowner', biffya: 'biffyA', biffyb: 'biffyB', ...(gagsOn() ? {} : { moose: 'moose' }) };
+    const forced: Partial<Record<string, GagId>> = { magpie: 'magpie', worker: 'worker', nearmiss: 'nearMiss', landownerquad: 'landowner', biffya: 'biffyA', biffyb: 'biffyB', marshmallow: 'marshmallow', lostgoose: 'geese', ...(gagsOn() ? {} : { moose: 'moose' }) };
     this.eggForced = (f && forced[f]) || null;
     board.onGrab = (id) => {
       this.lastMoveAt = performance.now();
@@ -231,6 +233,11 @@ export class GameView {
         bandPx: () => board.fencePx,
         strip: () => this.strip(),
         above: () => Math.max(0, board.el.getBoundingClientRect().top - this.el.querySelector('.hud')!.getBoundingClientRect().bottom),
+        sky: () => {
+          const screen = this.el.getBoundingClientRect();
+          const top = this.el.querySelector('.hud')!.getBoundingClientRect().bottom - screen.top;
+          return { top, height: Math.max(0, board.el.getBoundingClientRect().top - screen.top - top) };
+        },
         state: () => this.state,
         say: (anchor, text) => board.say(anchor, text),
       };
@@ -240,6 +247,26 @@ export class GameView {
       this.biffy = new BiffyProp(egg);
       this.strips = { landowner: new TimelineGag(egg, landownerDef), biffyA: new TimelineGag(egg, biffyADef(this.biffy)), biffyB: new TimelineGag(egg, biffyBDef(this.biffy)) };
       if (this.regionId === GAG_TRIGGERS.nearMiss.region) this.strips.nearMiss = new TimelineGag(egg, nearMissDef);
+      // The marshmallow needs a flare stack to roast it on; the geese only need sky.
+      if (level.obstacles.some((o) => o.kind === 'flare')) this.strips.marshmallow = new TimelineGag(egg, marshmallowDef);
+      this.strips.geese = new TimelineGag(egg, geeseDef);
+      // Taps on a flare stack (gag-triggers.ts): a touch that lifts where it landed, on a flare's picture.
+      let down: { x: number; y: number } | null = null;
+      this.el.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }), { capture: true });
+      this.el.addEventListener(
+        'pointerup',
+        (e) => {
+          const tap = down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < TAP_SLOP;
+          down = null;
+          if (!tap || !this.strips.marshmallow) return;
+          const onFlare = [...board.el.querySelectorAll('.obstacle.flare')].some((ob) => {
+            const r = (ob.querySelector('svg') ?? ob).getBoundingClientRect();
+            return e.clientX >= r.left - 6 && e.clientX <= r.right + 6 && e.clientY >= r.top - 6 && e.clientY <= r.bottom + 6;
+          });
+          if (onFlare && ++this.flareTaps === GAG_TRIGGERS.marshmallow.flareTaps) this.queueEgg('marshmallow');
+        },
+        { capture: true },
+      );
       // By themselves (the other gags off), the eggs keep their own clock.
       this.eggTimer = window.setInterval(() => this.tickEggs(), 250);
     }
@@ -309,6 +336,7 @@ export class GameView {
     }
     this.state = result.state;
     this.lastMoveAt = performance.now();
+    this.undos = 0;
     this.gags?.moved(id, delta);
     if (result.exited) this.gags?.exited();
     // Easter-egg triggers (gag-triggers.ts): the same truck back and forth; two exits back to back.
@@ -334,6 +362,7 @@ export class GameView {
     if (!canUndo(this.state) || isWon(this.state)) return;
     this.state = undo(this.state);
     this.lastMoveAt = performance.now();
+    if (++this.undos === GAG_TRIGGERS.geese.undosInARow) this.queueEgg('geese');
     this.board.removeLastTrack();
     this.resetHint();
     this.showLevelHint();
@@ -403,6 +432,8 @@ export class GameView {
     this.eggDone.clear();
     this.eggQueue = [];
     this.topBumps = 0;
+    this.undos = 0;
+    this.flareTaps = 0;
     this.lastExitAt = -Infinity;
     this.backForth.reset();
     this.biffy?.reset();
@@ -734,4 +765,4 @@ function fitRibbon(span: HTMLElement | null): void {
 }
 
 /** Which Wildlife Log entry each egg fills in. */
-const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB' };
+const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese' };

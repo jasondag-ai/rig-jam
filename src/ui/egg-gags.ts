@@ -18,6 +18,8 @@ export interface EggHost {
   strip(): { top: number; bottom: number };
   /** Room above the board, below the HUD, in px. */
   above(): number;
+  /** The sky band over the lease in screen px: from under the HUD's row down to the top berm. */
+  sky(): { top: number; height: number };
   state(): GameState;
   say(anchor: Element, text: string): HTMLElement;
 }
