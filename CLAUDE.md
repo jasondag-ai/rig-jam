@@ -102,7 +102,8 @@ something, give exact clicks and one command at a time.
   for Jay to tune after playing. Placeholders now: magpie 10 s idle; worker 20 s idle; moose = 2
   bumps up into the top berm (Duvernay); Near Miss = two exits within 3.5 s (Cardium); landowner =
   the same truck driven back and forth 4 times (`BackAndForth`: 4 direction changes in a row, any
-  other truck resets it); Biffy A = one bump down into the bottom berm; Biffy B = a second one
+  other truck resets it); marshmallow = 3 taps on a flare; geese = Undo 3 times in a row; bear = a
+  perfect solve on Duvernay 8 to 10, 1 in 3; bull = tap the cow (Montney); night nudge 25 s; Biffy A = one bump down into the bottom berm; Biffy B = a second one
   within 1.4 s (so A waits that long before it plays; once one of the two has played in a level, any
   bottom bump brings the other). `bermBump` says which berm a bump hit.
 - EGG SCHEDULING (`GameView.tickEggs`): ONE gag at a time, none while a truck is moving or once
@@ -333,6 +334,30 @@ something, give exact clicks and one command at a time.
   shaded from the top left, soil clumps, a hole with depth, grass tufts, soft contact shadow). Sized to the bottom strip, clear of
   the board, gates and buttons; trees give them room. (The side margins are only 16px, so "beside
   the berm" is below it.) When the bear and gopher come back, play them at these anchors.
+
+## Night levels
+- A level whose JSON has `"night": true` plays at night (`src/ui/night.ts`, pure and tested; look
+  in style.css "Night"). `gen-levels` sets the flag on every level with a flare stack (now Montney
+  2, 8, 10 and Duvernay 4, 8, 10); any level can carry it. The engine and solver never read it.
+  `?night=1` / `?night=0` force it for previews and screenshots.
+- ONE shade (`--night`, from `nightRgba(ground)`: deeper on mud, stronger on snow) over everything
+  that is ground or scenery: `.night-shade` on the screen (over the scenery, vignette and strip
+  props, under the lease, HUD and buttons; it also holds the stars and the moon, `nightSky`),
+  `.night-pad` inside `.lease-ground`, and the berm's canvas shaded as it is painted (`paintBerm`'s
+  `shade`). Sky colours are overridden so they come out deep blue through it. Equipment is dimmed
+  with a filter (0.7; the flare 0.92). Trucks keep 0.9 and gates 0.92 of their brightness; symbol
+  badges, convoy tags, hints, the HUD, buttons and win card are untouched. Gag puppets are not dimmed.
+- Flare glow: `.flare-glow` inside the flare's obstacle (behind its drawing, over the ground and the
+  trucks near it), 2.5 cells across, flickering in step with the flame (same period and
+  `--eq-delay`). Headlights: `.lamps` in every truck, two soft glows at the cab end (`data-cab`).
+  Reduced motion: no flicker, no twinkle.
+- The nudge: after `GAG_TRIGGERS.nightNudge.idleMs` (25 s) with nothing done by the PLAYER
+  (`lastPlayAt`; gags do not reset it), a random truck says `NUDGE_LINE`. Once per level visit. Never
+  a fail state.
+- Tests: `night.test.ts` (flags match flares, shade about half brightness and cooler, every truck
+  and gate colour clear of the night pad); `npm run test:e2e:night` (WebKit pixels against the same
+  level by day, glow, headlights, nudge, 60 fps at 4x throttle in Chromium);
+  `node e2e/night-shots.mjs` saves `night_*.png`.
 
 ## Cover (title screen)
 - `src/ui/cover.ts`: shown on every app open (never between levels). Hero image `public/cover.webp`
@@ -584,12 +609,13 @@ something, give exact clicks and one command at a time.
 ## Level JSON format
 ```json
 {
-  "id": "01", "name": "First Load", "par": 2, "hint": "optional one-line tip",
+  "id": "01", "name": "First Load", "par": 2, "hint": "optional one-line tip", "night": true,
   "trucks": [{ "id": "A", "color": "red", "row": 2, "col": 0, "length": 2, "orient": "h", "kind": "pickup" }],
   "gates":  [{ "color": "red", "side": "right", "index": 2 }],
   "obstacles": [{ "row": 4, "col": 4, "kind": "tank" }]
 }
 ```
+- `night` is optional and cosmetic (see Night levels).
 - `row`/`col` are 0-5 and mark the truck's top-left cell. `orient` is `h` or `v`.
 - Gate `index` is the row for `left`/`right` gates and the column for `top`/`bottom` gates.
 - Colors: red, blue, yellow, green, orange, purple.
@@ -620,6 +646,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:magpie` – the magpie gag: beats, off-screen entry and exit, splat, startle, reduced motion, frame rate, clips (start the dev server first)
 - `npm run test:e2e:eggs` – the sleepy worker and the moose: beats, entry and exit, cancel, triggers, reduced motion, log, frame rate, clips (start the dev server first)
 - `npm run test:e2e:strip` – Near Miss, landowner, Biffy A and B and the permanent biffy (start the dev server first)
+- `npm run test:e2e:night` – night levels: look, glow, headlights, nudge, frame rate (start the dev server first)
 - `npm run test:e2e:eggs2` – gags 8 and up: marshmallow, geese, bear, bull and cow (`ONLY=geese` runs one; start the dev server first)
 - `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
