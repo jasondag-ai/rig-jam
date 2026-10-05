@@ -36,7 +36,7 @@
     ]
   },
   {
-    "id": "m03", "name": "Lease Road", "par": 6,
+    "id": "m03", "name": "Dog Leg", "par": 6,
     "trucks": [
       {"id":"A","color":"red","row":3,"col":1,"length":2,"orient":"v","kind":"picker"},
       {"id":"B","color":"blue","row":2,"col":2,"length":2,"orient":"h","kind":"pickup"},
@@ -57,7 +57,7 @@
     ]
   },
   {
-    "id": "m04", "name": "Wellsite Shuffle", "par": 7,
+    "id": "m04", "name": "Choke Point", "par": 7,
     "trucks": [
       {"id":"A","color":"red","row":5,"col":0,"length":3,"orient":"h","kind":"water"},
       {"id":"B","color":"blue","row":2,"col":3,"length":3,"orient":"h","kind":"vac"},
@@ -79,7 +79,7 @@
     ]
   },
   {
-    "id": "m05", "name": "Pipe Rack", "par": 8,
+    "id": "m05", "name": "Stuck Pipe", "par": 8,
     "trucks": [
       {"id":"A","color":"red","row":3,"col":3,"length":3,"orient":"v","kind":"water"},
       {"id":"B","color":"blue","row":1,"col":2,"length":2,"orient":"v","kind":"pickup"},
@@ -104,7 +104,7 @@
     ]
   },
   {
-    "id": "m06", "name": "Tank Farm", "par": 9,
+    "id": "m06", "name": "Line Pack", "par": 9,
     "trucks": [
       {"id":"A","color":"red","row":3,"col":4,"length":2,"orient":"v","kind":"pickup"},
       {"id":"B","color":"blue","row":2,"col":1,"length":2,"orient":"v","kind":"picker"},
@@ -129,7 +129,7 @@
     ]
   },
   {
-    "id": "m07", "name": "Flare Stack", "par": 10,
+    "id": "m07", "name": "Flare Up", "par": 10,
     "trucks": [
       {"id":"A","color":"red","row":3,"col":4,"length":2,"orient":"h","kind":"picker"},
       {"id":"B","color":"blue","row":3,"col":3,"length":2,"orient":"v","kind":"pickup"},
@@ -156,7 +156,7 @@
     ]
   },
   {
-    "id": "m08", "name": "Swab Rig", "par": 11,
+    "id": "m08", "name": "Fishing Job", "par": 11,
     "trucks": [
       {"id":"A","color":"red","row":1,"col":1,"length":2,"orient":"v","kind":"pickup"},
       {"id":"B","color":"blue","row":1,"col":4,"length":2,"orient":"h","kind":"picker"},
@@ -184,7 +184,7 @@
     ]
   },
   {
-    "id": "m09", "name": "Frost Laws", "par": 12,
+    "id": "m09", "name": "Pinch Point", "par": 12,
     "trucks": [
       {"id":"A","color":"red","row":4,"col":1,"length":2,"orient":"v","kind":"pickup"},
       {"id":"B","color":"blue","row":5,"col":2,"length":2,"orient":"h","kind":"picker"},
@@ -214,7 +214,7 @@
     ]
   },
   {
-    "id": "m10", "name": "Last Call", "par": 14,
+    "id": "m10", "name": "Bottoms Up", "par": 14,
     "trucks": [
       {"id":"A","color":"red","row":2,"col":1,"length":3,"orient":"v","kind":"frac"},
       {"id":"B","color":"blue","row":0,"col":5,"length":3,"orient":"v","kind":"water"},

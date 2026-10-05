@@ -1,6 +1,6 @@
 [
   {
-    "id": "v01", "name": "Convoy Briefing", "par": 6,
+    "id": "v01", "name": "Tailgate Meeting", "par": 6,
     "hint": "Convoys leave in order. Number 1 first.",
     "trucks": [
       {"id":"A","color":"red","row":1,"col":1,"length":2,"orient":"v","convoy":1,"kind":"picker"},
@@ -17,7 +17,7 @@
     "obstacles": []
   },
   {
-    "id": "v02", "name": "Frost Heave", "par": 7,
+    "id": "v02", "name": "Rig Up", "par": 7,
     "trucks": [
       {"id":"A","color":"red","row":1,"col":3,"length":3,"orient":"v","convoy":2,"kind":"vac"},
       {"id":"B","color":"blue","row":0,"col":5,"length":3,"orient":"v","kind":"water"},
@@ -36,7 +36,7 @@
     ]
   },
   {
-    "id": "v03", "name": "Ice Road", "par": 8,
+    "id": "v03", "name": "Zipper Frac", "par": 8,
     "trucks": [
       {"id":"A","color":"red","row":0,"col":1,"length":2,"orient":"v","convoy":1,"kind":"pickup"},
       {"id":"B","color":"red","row":1,"col":3,"length":3,"orient":"v","convoy":2,"kind":"vac"},
@@ -55,7 +55,7 @@
     "obstacles": []
   },
   {
-    "id": "v04", "name": "Block Heater", "par": 9,
+    "id": "v04", "name": "Hot Shot", "par": 9,
     "trucks": [
       {"id":"A","color":"blue","row":4,"col":4,"length":2,"orient":"h","kind":"pickup"},
       {"id":"B","color":"red","row":2,"col":1,"length":3,"orient":"h","convoy":2,"kind":"water"},
@@ -76,7 +76,7 @@
     ]
   },
   {
-    "id": "v05", "name": "Whiteout", "par": 10,
+    "id": "v05", "name": "Shut In", "par": 10,
     "trucks": [
       {"id":"A","color":"blue","row":2,"col":4,"length":2,"orient":"h","kind":"picker"},
       {"id":"B","color":"red","row":4,"col":0,"length":3,"orient":"h","convoy":1,"kind":"vac"},
@@ -98,7 +98,7 @@
     "obstacles": []
   },
   {
-    "id": "v06", "name": "Chinook", "par": 11,
+    "id": "v06", "name": "Trip Out", "par": 11,
     "trucks": [
       {"id":"A","color":"red","row":2,"col":1,"length":2,"orient":"h","convoy":2,"kind":"pickup"},
       {"id":"B","color":"blue","row":0,"col":2,"length":2,"orient":"v","kind":"picker"},
@@ -122,7 +122,7 @@
     ]
   },
   {
-    "id": "v07", "name": "Cold Start", "par": 12,
+    "id": "v07", "name": "Lost Circulation", "par": 12,
     "trucks": [
       {"id":"A","color":"blue","row":2,"col":0,"length":2,"orient":"v","kind":"picker"},
       {"id":"B","color":"red","row":1,"col":0,"length":2,"orient":"h","convoy":1,"kind":"pickup"},
@@ -148,7 +148,7 @@
     ]
   },
   {
-    "id": "v08", "name": "Hoarfrost", "par": 12,
+    "id": "v08", "name": "Sweet Spot", "par": 12,
     "trucks": [
       {"id":"A","color":"red","row":0,"col":3,"length":2,"orient":"h","convoy":1,"kind":"picker"},
       {"id":"B","color":"blue","row":0,"col":1,"length":3,"orient":"v","kind":"vac"},
@@ -175,7 +175,7 @@
     ]
   },
   {
-    "id": "v09", "name": "Plug-In Row", "par": 14,
+    "id": "v09", "name": "Flowback", "par": 14,
     "trucks": [
       {"id":"A","color":"red","row":1,"col":4,"length":2,"orient":"v","convoy":1,"kind":"pickup"},
       {"id":"B","color":"red","row":1,"col":1,"length":3,"orient":"h","convoy":2,"kind":"frac"},
@@ -203,7 +203,7 @@
     ]
   },
   {
-    "id": "v10", "name": "Deep Freeze", "par": 15,
+    "id": "v10", "name": "Rig Down", "par": 15,
     "trucks": [
       {"id":"A","color":"red","row":3,"col":4,"length":3,"orient":"v","convoy":2,"kind":"water"},
       {"id":"B","color":"yellow","row":1,"col":3,"length":3,"orient":"h","kind":"frac"},

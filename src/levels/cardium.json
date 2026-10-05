@@ -1,6 +1,6 @@
 [
   {
-    "id": "c01", "name": "Spud Day", "par": 2,
+    "id": "c01", "name": "Spud In", "par": 2,
     "hint": "Drag a truck along its length. It drives out through the gate with its color and symbol.",
     "trucks": [
       {"id":"A","color":"red","row":3,"col":2,"length":3,"orient":"v","kind":"water"},
@@ -13,7 +13,7 @@
     "obstacles": []
   },
   {
-    "id": "c02", "name": "Wrong Gate", "par": 3,
+    "id": "c02", "name": "Kick Off", "par": 3,
     "hint": "A gate of the wrong color stays shut, like the berm.",
     "trucks": [
       {"id":"A","color":"red","row":5,"col":1,"length":2,"orient":"h","kind":"pickup"},
@@ -29,7 +29,7 @@
     "obstacles": []
   },
   {
-    "id": "c03", "name": "Pecking Order", "par": 4,
+    "id": "c03", "name": "Snub In", "par": 4,
     "trucks": [
       {"id":"A","color":"red","row":0,"col":0,"length":3,"orient":"h","kind":"vac"},
       {"id":"B","color":"blue","row":5,"col":3,"length":2,"orient":"h","kind":"picker"},
@@ -46,7 +46,7 @@
     "obstacles": []
   },
   {
-    "id": "c04", "name": "Back It Up", "par": 5,
+    "id": "c04", "name": "Back Off", "par": 5,
     "hint": "Sometimes a truck has to back away from its gate to let another one through.",
     "trucks": [
       {"id":"A","color":"red","row":1,"col":1,"length":2,"orient":"h","kind":"picker"},
@@ -83,7 +83,7 @@
     "obstacles": []
   },
   {
-    "id": "c06", "name": "Crew Change", "par": 7,
+    "id": "c06", "name": "Packers", "par": 7,
     "trucks": [
       {"id":"A","color":"red","row":0,"col":5,"length":2,"orient":"v","kind":"pickup"},
       {"id":"B","color":"blue","row":2,"col":1,"length":2,"orient":"v","kind":"picker"},
@@ -125,7 +125,7 @@
     "obstacles": []
   },
   {
-    "id": "c08", "name": "Night Shift", "par": 9,
+    "id": "c08", "name": "Frac Plug", "par": 9,
     "trucks": [
       {"id":"A","color":"red","row":2,"col":1,"length":2,"orient":"v","kind":"pickup"},
       {"id":"B","color":"blue","row":0,"col":3,"length":2,"orient":"v","kind":"picker"},
@@ -147,7 +147,7 @@
     "obstacles": []
   },
   {
-    "id": "c09", "name": "Rig Move", "par": 10,
+    "id": "c09", "name": "Cluster Spacing", "par": 10,
     "trucks": [
       {"id":"A","color":"red","row":3,"col":2,"length":2,"orient":"v","kind":"picker"},
       {"id":"B","color":"blue","row":2,"col":1,"length":2,"orient":"h","kind":"pickup"},
@@ -171,7 +171,7 @@
     "obstacles": []
   },
   {
-    "id": "c10", "name": "Turnaround", "par": 12,
+    "id": "c10", "name": "Material Transfer", "par": 12,
     "trucks": [
       {"id":"A","color":"red","row":0,"col":1,"length":3,"orient":"v","kind":"frac"},
       {"id":"B","color":"blue","row":4,"col":0,"length":3,"orient":"h","kind":"water"},
