@@ -91,7 +91,7 @@ export interface GagOptions {
   force?: ForcedGag | null;
 }
 
-export type ForcedGag = 'bear' | 'biffy' | 'moose' | 'gopher' | 'geese' | 'pumper' | 'hotshot' | 'magpie' | 'worker' | 'nearmiss' | 'landownerquad' | 'biffya' | 'biffyb' | 'marshmallow' | 'lostgoose' | 'bearhare' | 'bull';
+export type ForcedGag = 'bear' | 'biffy' | 'moose' | 'gopher' | 'geese' | 'pumper' | 'hotshot' | 'magpie' | 'worker' | 'nearmiss' | 'landownerquad' | 'biffya' | 'biffyb' | 'marshmallow' | 'lostgoose' | 'bearhare' | 'bull' | 'porcupine' | 'lunch' | 'sam' | 'tongue';
 
 /** Free space above and below the board, in px, for characters outside the fence. */
 export interface Bands {
@@ -908,7 +908,7 @@ export class GagLayer {
 
   /** ?gag=…: play that scene now, and again 1.5s after it ends, with nothing else on stage. */
   private tickForced(gag: ForcedGag): void {
-    if (gag === 'magpie' || gag === 'worker' || gag === 'nearmiss' || gag === 'landownerquad' || gag === 'biffya' || gag === 'biffyb' || gag === 'marshmallow' || gag === 'lostgoose' || gag === 'bearhare' || gag === 'bull') return; // the game view plays these itself
+    if (gag === 'magpie' || gag === 'worker' || gag === 'nearmiss' || gag === 'landownerquad' || gag === 'biffya' || gag === 'biffyb' || gag === 'marshmallow' || gag === 'lostgoose' || gag === 'bearhare' || gag === 'bull' || gag === 'porcupine' || gag === 'lunch' || gag === 'sam' || gag === 'tongue') return; // the game view plays these itself
     if (reducedMotion() || this.wildGag || this.biffyPlaying || performance.now() < this.forceAt) return;
     const ctl = new AbortController();
     this.wildGag = ctl;

@@ -3,7 +3,11 @@
 // Each gag is a timeline ported from its approved reference; `TimelineGag` runs one: its layers
 // cover the whole game screen and take no touches, so characters enter from fully off screen and
 // leave until fully off screen, never clipped (the gopher alone is cut off at his hole).
-import { BEAR_BEATS, BEAR_END, BEAR_FRAC, BEAR_GAP, BUSH, BUSH_BOX, BUSH_FRAC, bPose, bearApply, bearScene } from './bear.ts';
+import { BEAR_BEATS, BEAR_END, BEAR_FRAC, BEAR_GAP, bPose, bearApply, bearScene } from './bear.ts';
+import { BUSH_BOX, BUSH_FRAC, bushMarkup } from './gag-bush.ts';
+import { LUNCH_BEATS, LUNCH_END, LUNCH_GAP, lunchApply, lunchPose, lunchScene, moundWidthFor } from './gopher-lunch.ts';
+import { PC_BEATS, PC_END, PORC_FRAC, QUILL_SHUFFLER_FRAC, SHIFT, pcApply, pcPose, porcupineScene } from './porcupine.ts';
+import type { Season } from './trees.ts';
 import { BULL_BEATS, BULL_END, BULL_FRAC, BULL_GAP, COW_FRAC, COW_REST, PRIMP, bullApply, bullPose, bullScene, cowApply, cowPup } from './bull.ts';
 import { A_BEATS, A_END, BIFFY_FRAC, B_BEATS, B_END, aApply, bApply, biffyPup, biffyRest, runawayScene } from './biffy.ts';
 import type { EggHost, EggResult } from './egg-gags.ts';
@@ -82,19 +86,27 @@ export function bearBox(screenW: number, strip: { top: number; bottom: number })
   return { x: left, y: ground - h, width: right - left, height: h };
 }
 
-/** The bear's bush: permanent scenery on his levels (the board's own bush with a dusting of snow), where the hare hides. */
+/**
+ * A gag bush: permanent scenery where a gag needs one (the bear's levels; Cardium, for the
+ * porcupine), drawn as the board's own bush (gag-bush.ts). It takes the place of the scenery's bush there.
+ */
 export class BushProp {
   readonly layer: HTMLElement;
   pup: Pup;
   private host: EggHost;
+  /** Where it stands across the screen (a share of its width). */
+  readonly x: number;
+  readonly season: Season;
 
-  constructor(host: EggHost) {
+  constructor(host: EggHost, x: number, season: Season) {
     this.host = host;
+    this.x = x;
+    this.season = season;
     this.layer = document.createElement('div');
     this.layer.className = 'scene-layer puppet-layer prop-layer bush-layer';
     this.layer.setAttribute('aria-hidden', 'true');
     host.screen.append(this.layer);
-    this.pup = makePup(this.layer, BUSH, { ...BUSH_BOX, frac: BUSH_FRAC, spot: { x: BUSH_X, y: 0.8 } });
+    this.pup = makePup(this.layer, bushMarkup(season), { ...BUSH_BOX, frac: BUSH_FRAC, spot: { x, y: 0.8 } });
     this.layout();
   }
 
@@ -102,7 +114,7 @@ export class BushProp {
   spot(): { x: number; y: number; scale: number } {
     const screen = this.host.screen.getBoundingClientRect();
     const { ground, scale } = stripGeom(screen.width, this.host.strip());
-    return { x: BUSH_X, y: ground / (screen.height || 1), scale };
+    return { x: this.x, y: ground / (screen.height || 1), scale };
   }
 
   layout(): void {
@@ -113,10 +125,31 @@ export class BushProp {
     place(this.pup);
   }
 
+  /** Is this point (client px) on the bush? */
+  hit(x: number, y: number): boolean {
+    const r = this.pup.svg.getBoundingClientRect();
+    return x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 4 && y <= r.bottom + 4;
+  }
+
   /** The gag draws its own bush in the same place (the hare goes behind it), so this one steps aside meanwhile. */
   show(on: boolean): void {
     this.layer.style.visibility = on ? '' : 'hidden';
   }
+}
+
+/** Where the porcupine's bush stands in Cardium (the reference: 0.52; a little left of that here, so the
+ * worker at lunch by the mound sits clear of it), about where the scenery's own bush stood. */
+export const PORC_BUSH_X = 0.48;
+/** The patch of the strip a gag bush stands on (scenery keeps trees off it). */
+export function bushBox(x: number, screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
+  const { ground, scale } = stripGeom(screenW, strip);
+  const w = BUSH_FRAC * scale * screenW;
+  return { x: x * screenW - w / 2, y: ground - w * 0.6, width: w, height: w * 0.6 };
+}
+/** Where the Cardium mound stands for the gags: on the strip's ground line, its heap the size of the reference's. */
+export function moundSpot(screenW: number, strip: { top: number; bottom: number }): { baseY: number; w: number } {
+  const { ground, scale } = stripGeom(screenW, strip);
+  return { baseY: ground, w: moundWidthFor(screenW, scale) };
 }
 
 /** Where the cow grazes across the screen (a share of its width): the right of the strip, the bull stopping between her and the biffy. */
@@ -316,7 +349,7 @@ export const nearMissDef: TimelineDef = {
     const under = layer('gopher-layer');
     under.style.height = `${hole.y}px`;
     const over = layer('hotshot-layer');
-    const scene = nearMissScene(under, over, { x: hole.x / screen.width, y: 1 }, (hole.y + 12 * (screen.width / 390)) / screen.height, scale);
+    const scene = nearMissScene(under, over, { x: hole.x / screen.width, y: 1 }, Math.min(hole.y + 12 * (screen.width / 390), stripGeom(screen.width, host.strip()).ground) / screen.height, scale);
     scene.holeY = hole.y;
     const w = GOPHER_FRAC * scale * screen.width;
     return { apply: (t) => nApply(scene, nPose(t), t), bubble: { from: 6.0, to: 7.8, text: NEAR_MISS_LINE, at: () => ({ x: hole.x + (hole.x > screen.width * 0.6 ? -1 : 1) * w * 1.6, y: hole.y - w * 0.7 }) } };
@@ -457,6 +490,50 @@ export const bearDef = (bush: BushProp): TimelineDef => ({
     return { apply: (t) => bearApply(scene, bPose(t, from, to), t), done: () => bush.show(true) };
   },
 });
+
+/**
+ * Gag 12: the porcupine, at the gag bush. One layer holds the porcupine and the squatting worker
+ * (behind the bush), the bush, the shuffler and the roll, stacked as in the reference.
+ */
+export const porcupineDef = (bush: BushProp): TimelineDef => ({
+  name: 'porcupine',
+  beats: PC_BEATS,
+  end: PC_END,
+  stillAt: 6.2,
+  build(layer, host) {
+    const screen = host.screen.getBoundingClientRect();
+    const { x, y, scale } = bush.spot();
+    const scene = porcupineScene(layer('porcupine-layer'), { x, y }, scale, bush.season);
+    bush.show(false);
+    // The worker in from past the left edge and off past it again; the porcupine out past the right one (each in its own units).
+    const at = x * screen.width;
+    const unit = (frac: number, box: number) => (frac * scale * screen.width) / box;
+    const from = -(at + 0.19 * scale * screen.width) / unit(0.19, 120);
+    const out = -(at + QUILL_SHUFFLER_FRAC * scale * screen.width) / unit(QUILL_SHUFFLER_FRAC, 120);
+    const bolt = (screen.width - at + PORC_FRAC * scale * screen.width) / unit(PORC_FRAC, 100);
+    return { apply: (t) => pcApply(scene, pcPose(t + SHIFT, from, out, bolt), t + SHIFT), done: () => bush.show(true) };
+  },
+});
+
+/** Gag 13: gopher lunch, at the board's own gopher mound (Cardium). */
+export const lunchDef: TimelineDef = {
+  name: 'gopherLunch',
+  beats: LUNCH_BEATS,
+  end: LUNCH_END,
+  stillAt: 10.9,
+  build(layer, host) {
+    const moundEl = host.screen.querySelector<SVGElement>('.scenery [data-anchor="mound"]');
+    if (!moundEl) return null;
+    const screen = host.screen.getBoundingClientRect();
+    const m = moundEl.getBoundingClientRect();
+    const { scale } = stripGeom(screen.width, host.strip());
+    const scene = lunchScene(layer('lunch-layer'), { left: m.left - screen.left, top: m.top - screen.top, width: m.width, height: m.height }, scale, moundEl);
+    // In from past the left edge, and off past it again (in his drawing's units).
+    const w = 0.19 * scale * screen.width, u = w / 120, at = scene.moundX - LUNCH_GAP * scale * screen.width;
+    const from = -(at + w) / u;
+    return { apply: (t) => lunchApply(scene, lunchPose(t, from, from), t), done: () => (moundEl.style.transform = '') };
+  },
+};
 
 /** Gag 11: the bull and the (permanent) cow. No speech, just hearts. She stays gone once she has bolted. */
 export const bullDef = (cow: CowProp): TimelineDef => ({

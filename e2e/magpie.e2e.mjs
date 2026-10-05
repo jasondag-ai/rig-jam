@@ -22,7 +22,7 @@ const check = (ok, text) => {
 };
 const BEATS = ['fly-in', 'land', 'hop-turn', 'look', 'glance', 'crouch', 'strain', 'relief', 'peek', 'smug', 'wind-up', 'launch', 'gone'];
 
-async function open(browser, { width = 390, height = 844, query = '?cover=0&idle=0.1', reducedMotion = 'no-preference', video = null, level = [0, 5] } = {}) {
+async function open(browser, { width = 390, height = 844, query = '?cover=0&idle=0.1&cooldown=0&off=lunch', reducedMotion = 'no-preference', video = null, level = [0, 5] } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, hasTouch: true, reducedMotion, ...(video ? { recordVideo: { dir: video, size: { width, height } } } : {}) });
   const page = await context.newPage();
   page.on('pageerror', (e) => console.log('ERR', e.message));

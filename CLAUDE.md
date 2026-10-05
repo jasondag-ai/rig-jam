@@ -106,12 +106,19 @@ something, give exact clicks and one command at a time.
   perfect solve on Duvernay 8 to 10, 1 in 3; bull = tap the cow (Montney); night nudge 25 s; Biffy A = one bump down into the bottom berm; Biffy B = a second one
   within 1.4 s (so A waits that long before it plays; once one of the two has played in a level, any
   bottom bump brings the other). `bermBump` says which berm a bump hit.
+- GAG RULES (`GAG_RULES` in gag-triggers.ts, enforced in `GameView.tickEggs`/`queueEgg`): one gag
+  at a time; none while a truck is dragged or moving, or once the level is won; after one ends,
+  none starts for 60 s (`cooldownMs`). A trigger that fires while a gag is on or during the
+  cooldown is IGNORED, not queued (the player can set it off again; counters use `>=`). Demo mode
+  and `?gag=` previews have no cooldown. The bear (he comes at the win) is exempt. Tests:
+  `?cooldown=0` (or a scale), `?off=lunch,porcupine` leaves gags out. Every gag enters and leaves
+  fully off screen and its layers take no touches.
 - EGG SCHEDULING (`GameView.tickEggs`): ONE gag at a time, none while a truck is moving or once
   the level is won. A gag the player set off waits in `eggQueue` and plays as soon as the stage is
   free. The magpie comes after his idle time with no moves and the worker after his, each
   counted from the last move or the last gag leaving (the worker waits until the magpie has been),
   each once per level; one that was scared off or cancelled may try again.
-  `?gag=magpie|worker|moose|nearmiss|landowner|biffya|biffyb|marshmallow|geese|bear|bull` plays one at once, again and again;
+  `?gag=magpie|worker|moose|nearmiss|landowner|biffya|biffyb|marshmallow|geese|bear|bull|porcupine|lunch` plays one at once, again and again;
   `?idle=0.1` makes the idle times 10x shorter.
 - STRIP GAGS (gags 4 to 7; `src/ui/strip-gags.ts` runner `TimelineGag`, placement `stripGeom`;
   puppets and timelines ported as written from `near_miss_landowner_reference.html` and
@@ -156,8 +163,7 @@ something, give exact clicks and one command at a time.
     (4) and the overlay (sweat, speed lines, the hare's "ugh" scribble). The hare goes behind the
     bush only when its leading foot reaches the bush's edge, and stays hidden there. BUSH RULE
     (GAME_BIBLE): a gag prop matches the board art, so the bush is the board's own willow
-    (`treeArt('willow', 'summer', 2)`) with a snow dusting, not the reference's drawing; it stands
-    on bare stems, so the hare is clipped at the bottom of the leaves while behind it.
+    with a snow dusting (see THE GAG BUSH), not the reference's drawing.
     Log card: legendary gold frame.
   - THE BULL AND THE COW (gag 11, Montney; `bull.ts`, ported from `bull_cow_reference.html`). The
     Holstein cow is permanent scenery grazing in the Montney strip (`CowProp`, `.cow-layer`, at
@@ -170,6 +176,24 @@ something, give exact clicks and one command at a time.
     IS NOT IN THE REFERENCE FILE: it was built from the GAME_BIBLE's description and takes `PRIMP`
     (1.8 s) after the freeze; every later reference beat is that much later. If a newer reference
     with the primp arrives, port its primp over this one.
+  - THE GAG BUSH (`gag-bush.ts`): BUSH RULE, every gag bush is the board's own willow drawing
+    (`treeArt('willow', …)`), never a reference page's blob; in winter in leaf with a snow dusting.
+    `BushProp(host, x, season)` is the permanent one (bear levels at `BUSH_X`; all of Cardium at
+    `PORC_BUSH_X`, where it stands in for the scenery's anchor bush). It stands on bare stems, so
+    anything behind it is cut off under the leaves across its width (`behindBush`).
+  - THE PORCUPINE (gag 12, Cardium; `porcupine.ts`, ported from `porcupine_reference.html`; the
+    reference starts its clock at `SHIFT` 2.4, so `pcPose(t + SHIFT)`). The porcupine is behind
+    the bush from the first frame. The worker strolls in from the left with a roll, looks about,
+    squats behind the bush, POKE (hat pops, the roll pops up over the bush and drops back), springs
+    out and scurries off left with quills in his bum; the porcupine bolts off the right, quills up.
+    Trigger: TBD (`GAG_TRIGGERS.porcupine`); in DEMO MODE only, a tap on the bush plays it.
+  - GOPHER LUNCH (gag 13, Cardium; `gopher-lunch.ts`, ported from `gopher_lunch_reference.html`):
+    played at the BOARD'S OWN mound, not a second drawing: with these gags the scenery stands the
+    mound on the strip's ground line at the reference's size (`moundSpot`, scenery `moundAt`), the
+    gopher's box ends at its hole line and `LIP` (the hole's near half) lies over it so the arm
+    comes out of the hole. Every reference distance is in `um` (reference mound units). Trigger:
+    30 s idle, after the magpie and worker. THE EXIT IS NOT IN THE REFERENCE (it loops with him
+    sitting): from `T_UP` he gets up and walks off the way he came, crust in hand.
   - `npm run test:e2e:eggs2` checks gags 8 and up the same way and saves their clips.
   - `npm run test:e2e:strip` checks all of it in WebKit (beats, real triggers, off-screen entry and
     exit, hole clip, biffy placement, reduced motion, log), 60 fps at 4x throttle in Chromium, and
@@ -490,7 +514,7 @@ something, give exact clicks and one command at a time.
 
 ## Wildlife Log
 - LIVE NOW: the log's button is back on the level list and the page lists only the gags that are in
-  the game (`EGGS`: magpie, sleepy worker, moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll, Marshmallow, Lost Goose, Bull and Cow, Bear (legendary);
+  the game (`EGGS`: magpie, sleepy worker, moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll, Marshmallow, Lost Goose, Porcupine, Gopher Lunch, Bull and Cow, Bear (legendary);
   the old ten with `?gags=1`), with card art from their puppets (`magpieStill`, `workerStill`,
   `mooseStill`, `nearMissStill`, `landownerStill`, `biffyAStill`, `biffyBStill`), the count and toasts out of that number.
   An unfound card shows the gag's hint in DEMO mode only (`cardHint`); the game says "Not seen yet."
@@ -647,7 +671,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:eggs` – the sleepy worker and the moose: beats, entry and exit, cancel, triggers, reduced motion, log, frame rate, clips (start the dev server first)
 - `npm run test:e2e:strip` – Near Miss, landowner, Biffy A and B and the permanent biffy (start the dev server first)
 - `npm run test:e2e:night` – night levels: look, glow, headlights, nudge, frame rate (start the dev server first)
-- `npm run test:e2e:eggs2` – gags 8 and up: marshmallow, geese, bear, bull and cow (`ONLY=geese` runs one; start the dev server first)
+- `npm run test:e2e:eggs2` – gags 8 and up: marshmallow, geese, bear, bull and cow, porcupine, gopher lunch, the cooldown (`ONLY=geese` runs one; start the dev server first)
 - `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)

@@ -3,6 +3,7 @@ import { seedFrom } from '../engine/rng.ts';
 import { BoardView } from './board-view.ts';
 import { sceneryHtml } from './scenery.ts';
 import { applyTheme, type Theme } from './themes.ts';
+import type { Season } from './trees.ts';
 import { NUDGE_LINE, isNight, nightRgba, nightSky } from './night.ts';
 import { hatsHtml } from './hats.ts';
 import { copyText } from './clipboard.ts';
@@ -16,10 +17,10 @@ import { preloadSprites } from './sprites.ts';
 import { defaultKind } from './vehicles.ts';
 import { applyCamo, liveCount, loadLog, record, saveLog, sightingToast, type Sighting } from './wildlife-log.ts';
 import { GagLayer, type GagOptions } from './gag-layer.ts';
-import { bearAlways, gagsOn, magpieOn, mooseOn, workerOn } from './flags.ts';
+import { bearAlways, cooldownScale, eggOff, gagsOn, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
-import { BackAndForth, GAG_TRIGGERS, bearComesNow, bearLevel, bermBump, type GagId } from './gag-triggers.ts';
-import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, BushProp, CowProp, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
+import { BackAndForth, GAG_RULES, GAG_TRIGGERS, bearComesNow, bearLevel, bermBump, type GagId } from './gag-triggers.ts';
+import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, BUSH_X, BushProp, CowProp, PORC_BUSH_X, bushBox, lunchDef, moundSpot, porcupineDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
 import { companyLine, tierFor } from './gags.ts';
@@ -120,6 +121,7 @@ export class GameView {
   private topBumps = 0;
   private lastExitAt = -Infinity;
   private undos = 0;
+  private lastGagEndAt = -Infinity;
   private bush: BushProp | null = null;
   private cow: CowProp | null = null;
   private cowTaps = 0;
@@ -155,7 +157,7 @@ export class GameView {
     const board = this.board;
     this.idleScale = idleScale();
     const f = gagOptions.force;
-    const forced: Partial<Record<string, GagId>> = { magpie: 'magpie', worker: 'worker', nearmiss: 'nearMiss', landownerquad: 'landowner', biffya: 'biffyA', biffyb: 'biffyB', marshmallow: 'marshmallow', lostgoose: 'geese', bearhare: 'bear', bull: 'bull', ...(gagsOn() ? {} : { moose: 'moose' }) };
+    const forced: Partial<Record<string, GagId>> = { magpie: 'magpie', worker: 'worker', nearmiss: 'nearMiss', landownerquad: 'landowner', biffya: 'biffyA', biffyb: 'biffyB', marshmallow: 'marshmallow', lostgoose: 'geese', bearhare: 'bear', bull: 'bull', porcupine: 'porcupine', lunch: 'gopherLunch', ...(gagsOn() ? {} : { moose: 'moose' }) };
     this.eggForced = (f && forced[f]) || null;
     board.onGrab = (id) => {
       this.lastMoveAt = this.lastPlayAt = performance.now();
@@ -267,6 +269,14 @@ export class GameView {
       // The marshmallow needs a flare stack to roast it on; the geese only need sky.
       if (level.obstacles.some((o) => o.kind === 'flare')) this.strips.marshmallow = new TimelineGag(egg, marshmallowDef);
       this.strips.geese = new TimelineGag(egg, geeseDef);
+      // Cardium: the porcupine's bush (the board's own bush, at the gags' size) and gopher lunch at the mound.
+      if (this.regionId === GAG_TRIGGERS.porcupine.region || this.eggForced === 'porcupine' || this.eggForced === 'gopherLunch') {
+        if (!eggOff('porcupine')) {
+          this.bush = new BushProp(egg, PORC_BUSH_X, theme.id as Season);
+          this.strips.porcupine = new TimelineGag(egg, porcupineDef(this.bush));
+        }
+        if (!eggOff('lunch')) this.strips.gopherLunch = new TimelineGag(egg, lunchDef);
+      }
       // Montney has the cow grazing in the strip; tap her and the bull comes.
       if (this.regionId === GAG_TRIGGERS.bull.region || this.eggForced === 'bull') {
         this.cow = new CowProp(egg);
@@ -274,7 +284,7 @@ export class GameView {
       }
       // The bear's levels have his bush, and the hare behind it.
       if (bearLevel(this.regionId, gagOptions.levelIndex + 1) || this.eggForced === 'bear') {
-        this.bush = new BushProp(egg);
+        this.bush = new BushProp(egg, BUSH_X, 'winter');
         this.strips.bear = new TimelineGag(egg, bearDef(this.bush));
       }
       // Taps on a flare stack (gag-triggers.ts): a touch that lifts where it landed, on a flare's picture.
@@ -286,13 +296,15 @@ export class GameView {
           const tap = down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < TAP_SLOP;
           down = null;
           if (!tap) return;
-          if (this.cow?.hit(e.clientX, e.clientY) && ++this.cowTaps === GAG_TRIGGERS.bull.cowTaps) this.queueEgg('bull');
+          // The porcupine's trigger is TBD: in demo mode only, a tap on the bush plays it.
+          if (this.strips.porcupine && GAG_TRIGGERS.porcupine.demoTapBush && loadProgress().demo && this.bush?.hit(e.clientX, e.clientY)) this.queueEgg('porcupine');
+          if (this.cow?.hit(e.clientX, e.clientY) && ++this.cowTaps >= GAG_TRIGGERS.bull.cowTaps) this.queueEgg('bull');
           if (!this.strips.marshmallow) return;
           const onFlare = [...board.el.querySelectorAll('.obstacle.flare')].some((ob) => {
             const r = (ob.querySelector('svg') ?? ob).getBoundingClientRect();
             return e.clientX >= r.left - 6 && e.clientX <= r.right + 6 && e.clientY >= r.top - 6 && e.clientY <= r.bottom + 6;
           });
-          if (onFlare && ++this.flareTaps === GAG_TRIGGERS.marshmallow.flareTaps) this.queueEgg('marshmallow');
+          if (onFlare && ++this.flareTaps >= GAG_TRIGGERS.marshmallow.flareTaps) this.queueEgg('marshmallow');
         },
         { capture: true },
       );
@@ -368,8 +380,8 @@ export class GameView {
     }
     // Kept clear of trees: the sleepy worker's spot by the left edge, and the biffy's.
     const strip = { top: box.y + box.height, bottom: controlsTop };
-    const clearings = [this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.bush ? bearBox(screen.width, strip) : null, this.cow ? cowBox(screen.width, strip) : null].filter((c) => c !== null);
-    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, anchors: { bush: !this.bush, mound: this.regionId === 'cardium' }, clearings });
+    const clearings = [this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.bush ? (this.bush.x === BUSH_X ? bearBox(screen.width, strip) : bushBox(this.bush.x, screen.width, strip)) : null, this.cow ? cowBox(screen.width, strip) : null].filter((c) => c !== null);
+    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, anchors: { bush: !this.bush, mound: this.regionId === 'cardium' }, moundAt: this.strips.gopherLunch || this.strips.nearMiss ? moundSpot(screen.width, strip) : undefined, clearings });
     this.biffy?.layout();
     this.bush?.layout();
     if (!this.strips.bull?.playing) this.cow?.layout();
@@ -429,7 +441,7 @@ export class GameView {
     if (!canUndo(this.state) || isWon(this.state)) return;
     this.state = undo(this.state);
     this.lastMoveAt = this.lastPlayAt = performance.now();
-    if (++this.undos === GAG_TRIGGERS.geese.undosInARow) this.queueEgg('geese');
+    if (++this.undos >= GAG_TRIGGERS.geese.undosInARow) this.queueEgg('geese');
     this.board.removeLastTrack();
     this.resetHint();
     this.showLevelHint();
@@ -510,8 +522,19 @@ export class GameView {
   /** The player set a gag off: it waits its turn (once per level). */
   private queueEgg(id: GagId): void {
     if (this.eggForced || this.eggDone.has(id) || this.eggQueue.includes(id)) return;
+    // A trigger that fires while a gag is on, or during the cooldown after one, is ignored (GAG_RULES).
+    if (this.cooldownMs() > 0 && (this.cooling() || this.eggPlaying())) return;
     if (id === 'moose' ? !this.moose : !this.strips[id]) return;
     this.eggQueue.push(id);
+  }
+
+  /** The cooldown between gags (GAG_RULES): none in demo mode or a preview. */
+  private cooldownMs(): number {
+    return this.eggForced || loadProgress().demo ? 0 : GAG_RULES.cooldownMs * cooldownScale();
+  }
+
+  private cooling(): boolean {
+    return performance.now() - this.lastGagEndAt < this.cooldownMs();
   }
 
   private eggPlaying(): boolean {
@@ -540,6 +563,7 @@ export class GameView {
     const run = (id: GagId) =>
       void this.playEgg(id).then((r) => {
         this.lastMoveAt = performance.now() + (this.eggForced ? 900 : 0);
+        if (r !== 'none') this.lastGagEndAt = performance.now();
         if (r !== 'seen' || this.eggForced) return;
         this.eggDone.add(id);
         this.seen(EGG_SIGHTING[id]);
@@ -550,13 +574,17 @@ export class GameView {
       if (this.eggForced === 'bull') this.cow?.reset();
       return run(this.eggForced);
     }
+    if (this.cooling()) return;
     const next = this.eggQueue.shift();
     if (next) return run(next);
     const T = GAG_TRIGGERS;
     if (this.magpie && !this.eggDone.has('magpie') && idle >= T.magpie.idleMs * this.idleScale) return run('magpie');
     // The worker waits his turn: the magpie first if he is still to come.
     const magpieFirst = this.magpie && !this.eggDone.has('magpie');
-    if (this.worker && !this.eggDone.has('worker') && !magpieFirst && idle >= T.worker.idleMs * this.idleScale && this.worker.canPlay()) return run('worker');
+    const workerDue = this.worker && !this.eggDone.has('worker') && this.worker.canPlay();
+    if (workerDue && !magpieFirst && idle >= T.worker.idleMs * this.idleScale) return run('worker');
+    // Gopher lunch waits its turn too: the magpie and the worker first if they are still to come.
+    if (this.strips.gopherLunch && !this.eggDone.has('gopherLunch') && !magpieFirst && !workerDue && idle >= T.gopherLunch.idleMs * this.idleScale) return run('gopherLunch');
   }
 
   /** A bump: count it and give the hazard counter a quick shake. */
@@ -565,7 +593,7 @@ export class GameView {
     // one (the biffy's side) for Biffy A, or Biffy B if a second bump follows quickly.
     const bumped = this.state.trucks.find((t) => t.id === truckId);
     const berm = bumped ? bermBump(bumped.orient, direction, hit) : null;
-    if (berm === 'top' && ++this.topBumps === GAG_TRIGGERS.moose.topBermBumps) this.queueEgg('moose');
+    if (berm === 'top' && ++this.topBumps >= GAG_TRIGGERS.moose.topBermBumps) this.queueEgg('moose');
     if (berm === 'bottom' && this.biffy) {
       if (this.biffyWait) {
         window.clearTimeout(this.biffyWait);
@@ -846,4 +874,4 @@ function fitRibbon(span: HTMLElement | null): void {
 }
 
 /** Which Wildlife Log entry each egg fills in. */
-const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull' };
+const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull', porcupine: 'porcupine', gopherLunch: 'lunch' };

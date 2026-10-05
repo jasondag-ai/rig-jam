@@ -1,6 +1,8 @@
 import { bearStill } from './ui/bear.ts';
 import { bullStill } from './ui/bull.ts';
 import { geeseStill } from './ui/geese.ts';
+import { lunchStill } from './ui/gopher-lunch.ts';
+import { porcupineStill } from './ui/porcupine.ts';
 import { marshmallowStill } from './ui/marshmallow.ts';
 import { biffyAStill, biffyBStill, landownerStill, nearMissStill } from './ui/strip-gags.ts';
 import { magpieStill } from './ui/magpie.ts';
@@ -42,6 +44,8 @@ const BINOCULARS = uiImg('icon_binoculars');
 const LOG_ART: Record<Sighting, () => string> = {
   nearmiss: () => nearMissStill(),
   marshmallow: () => marshmallowStill(),
+  porcupine: () => porcupineStill(),
+  lunch: () => lunchStill(),
   bull: () => bullStill(),
   biffyB: () => biffyBStill(),
   // Batch C character art (a telling frame of each), except the hot shot (its art is being redone).
@@ -400,6 +404,7 @@ function forcedGag(): boolean {
   // The bottom-strip gags: ?gag=nearmiss | landowner | biffya | biffyb.
   else if (gag === 'nearmiss' || gag === 'biffya' || gag === 'biffyb') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, gag);
   else if (gag === 'landowner' && !gagsOn()) showGame(REGIONS.findIndex((r) => r.id === 'montney'), 5, 'landownerquad');
+  else if (gag === 'porcupine' || gag === 'lunch') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, gag);
   else if (gag === 'bull') showGame(REGIONS.findIndex((r) => r.id === 'montney'), 5, 'bull');
   else if (gag === 'marshmallow') showGame(REGIONS.findIndex((r) => r.id === 'montney'), 1, 'marshmallow');
   else if (gag === 'geese' && !gagsOn()) showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, 'lostgoose');

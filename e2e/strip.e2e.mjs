@@ -29,7 +29,7 @@ const BEATS = {
   biffyA: ['sits', 'jolt', 'door-open', 'oblivious', 'look-back', 'eye-pop', 'nod', 'reach', 'pull-shut', 'occupied', 'done'],
   biffyB: ['sits', 'jolt', 'door-open', 'roll-out', 'roll-away', 'grope', 'shuffle', 'off-screen', 'door-shut'],
 };
-const QUIET = '?cover=0&magpie=0&worker=0&moose=0';
+const QUIET = '?cover=0&magpie=0&worker=0&moose=0&cooldown=0&off=lunch';
 const cardium = REGIONS.findIndex((r) => r.id === 'cardium');
 
 // A Cardium level whose best solution has two exits in a row before its last move.

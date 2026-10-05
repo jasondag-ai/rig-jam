@@ -53,6 +53,11 @@ export interface SceneryOptions {
   depth?: number;
   /** Permanent gag anchors below the box: the bear's willow bush (every region), the gopher's dirt mound (Cardium). */
   anchors?: { bush?: boolean; mound?: boolean };
+  /**
+   * Stands the mound on a given line at a given size instead (the strip's ground line, at the gags'
+   * size: gopher lunch has the worker sit beside it): `baseY` is where its base stands, `w` its box width.
+   */
+  moundAt?: { baseY: number; w: number };
   /** Patches kept clear of trees (the sleepy worker's spot, the biffy). */
   clearings?: Box[];
 }
@@ -191,7 +196,12 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
     const size = Math.max(14, Math.min(34, bandBelow - BERM_CLEAR - 6));
     const y = Math.min(height - 2, floor + BERM_CLEAR + size + 2);
     if (options.anchors.bush) anchors.push({ kind: 'bush', x: box.x + box.width * 0.54, y, w: size * 0.8 * ART.willow, h: size * 0.8 });
-    if (options.anchors.mound) anchors.push({ kind: 'mound', x: box.x + box.width * 0.78, y, w: size * 1.5, h: size * 0.8 });
+    if (options.anchors.mound) {
+      const at = options.moundAt;
+      const w = at ? at.w : size * 1.5, h = at ? (at.w * 34) / 64 : size * 0.8;
+      // Its base line is 29.5 of the drawing's 34 units down; the rest is shadow and grass.
+      anchors.push({ kind: 'mound', x: box.x + box.width * 0.78, y: at ? at.baseY + (h * 4.5) / 34 : y, w, h });
+    }
     // Trees give the anchors room.
     items = items.filter((it) => {
       const b = treeBox(it);

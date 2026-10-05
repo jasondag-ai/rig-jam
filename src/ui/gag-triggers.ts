@@ -30,11 +30,26 @@ export const GAG_TRIGGERS = {
   bear: { region: 'duvernay', levels: [8, 9, 10], perfectSolve: true, chance: 1 / 3 },
   /** Gag 11, the bull and the cow: this many taps on the cow grazing in the bottom strip. */
   bull: { region: 'montney', cowTaps: 1 },
+  /**
+   * Gag 12, the porcupine (Cardium, at the bush): its trigger is TBD until Jay has played it, so in
+   * the game nothing sets it off yet. In DEMO MODE only, a tap on the bush plays it.
+   */
+  porcupine: { region: 'cardium', trigger: 'TBD', demoTapBush: true },
+  /** Gag 13, gopher lunch (Cardium, at the gopher mound): this long with no moves (after the magpie and the worker have had their turns). */
+  gopherLunch: { region: 'cardium', idleMs: 30_000 },
   /** Not a gag: on a night level, this long with no move and a truck says "While we're young, Sonny...". Once per level. */
   nightNudge: { idleMs: 25_000 },
 } as const;
 
-export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull';
+/**
+ * RULES FOR EVERY GAG: one at a time; none while a truck is being dragged or moving, or once the
+ * level is won; and after one ends, none starts for `cooldownMs`. A trigger that fires while a gag
+ * is on or during the cooldown is ignored (the player can set it off again later). Demo mode and
+ * `?gag=` previews have no cooldown; `?cooldown=0.1` scales it (tests).
+ */
+export const GAG_RULES = { cooldownMs: 60_000 } as const;
+
+export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch';
 
 /** Is this one of the bear's levels (`level` counts from 1)? */
 export const bearLevel = (regionId: string, level: number): boolean => regionId === GAG_TRIGGERS.bear.region && (GAG_TRIGGERS.bear.levels as readonly number[]).includes(level);

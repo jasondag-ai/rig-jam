@@ -33,6 +33,17 @@ describe('scenery', () => {
     expect(of(LEVELS[0].seed)).not.toBe(of(LEVELS[1].seed));
   });
 
+  it('the mound can be stood on a given line at a given size (for the gags that play at it)', () => {
+    const l = LEVELS.find((x) => x.region === 'cardium')!, sc = SCREENS[0];
+    const { anchors } = sceneryItems(l.theme, sc.w, sc.floor, sc.box, { seed: l.seed, depth: 20, anchors: { bush: false, mound: true }, moundAt: { baseY: sc.floor - 6, w: 44 } });
+    const m = anchors.find((a) => a.kind === 'mound')!;
+    expect(anchors.length).toBe(1);
+    expect(m.w).toBe(44);
+    expect(m.h).toBeCloseTo((44 * 34) / 64);
+    // Its base line (29.5 of 34 units down) is on the line asked for.
+    expect(m.y - (m.h * 4.5) / 34).toBeCloseTo(sc.floor - 6);
+  });
+
   it('gag anchors: a willow bush in every region, a dirt mound in Cardium only, clear of the board and the buttons', () => {
     for (const s of SCREENS)
       for (const l of LEVELS) {

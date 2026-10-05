@@ -21,7 +21,7 @@ const check = (ok, text) => {
   if (!ok) failures++;
   console.log(`   ${ok ? 'ok  ' : 'FAIL'} ${text}`);
 };
-const QUIET = '?cover=0&magpie=0&worker=0&moose=0';
+const QUIET = '?cover=0&magpie=0&worker=0&moose=0&cooldown=0&off=lunch';
 const region = (id) => REGIONS.findIndex((r) => r.id === id);
 const W = 390;
 
@@ -30,6 +30,8 @@ const GAGS = {
   marshmallow: { preview: 'marshmallow', clip: 'gag89_marshmallow', beats: ['walk-in', 'eyes-flare', 'telescope', 'roast', 'fwoomp', 'eyes-pop', 'yank', 'blow', 'sniff-shrug', 'crispy', 'ear-smoke', 'gone'] },
   bear: { preview: 'bear', clip: 'gag10_bear', beats: ['hare-nibbles', 'bear-in', 'sniff', 'sit', 'smug', 'strain', 'relief', 'spots-ears', 'snatch', 'long-look', 'swing', 'wipe', 'inspect', 'set-down', 'violated', 'bear-leaves', 'trudge', 'gone'] },
   bull: { preview: 'bull', clip: 'gag11_bull', beats: ['cow-grazes', 'bull-in', 'freeze', 'lick-hoof', 'slick', 'chest-puff', 'hearts', 'cow-looks', 'eyes-huge', 'hop-turn', 'bolts', 'paws', 'charge', 'last-heart'] },
+  porcupine: { preview: 'porcupine', clip: 'gag12_porcupine', beats: ['quiet-bush', 'stroll-in', 'look-around', 'squat', 'poke', 'roll-pops', 'springs-out', 'porcupine-bolts', 'scurry'] },
+  gopherLunch: { preview: 'lunch', clip: 'gag13_gopher_lunch', beats: ['quiet-mound', 'stroll-in', 'plops-down', 'sets-it-down', 'phone', 'paw-peeks', 'feels-around', 'yank', 'chomp', 'crust-back', 'bite', 'eyes-huge', 'cheeks', 'ducks', 'deadpan', 'burp', 'gets-up', 'walks-off'] },
   geese: { preview: 'geese', clip: 'gag89_geese', beats: ['v-flies', 'wrong-way', 'pass', 'stall', 'honk', 'snap-turn', 'chase', 'straggler', 'feather'] },
 };
 const want = (name) => !ONLY || ONLY === name;
@@ -344,6 +346,108 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     await context.close();
   }
 
+  if (engine === 'webkit' && want('porcupine')) {
+    // ---------- Every gag bush is the board's bush ----------
+    console.log(`\n${engine}: the gag bush is the board's bush`);
+    for (const [r, li, snow] of [['cardium', 5, false], ['duvernay', 7, true]]) {
+      const { context, page } = await open(browser, { level: [region(r), li] });
+      const b = await page.evaluate(() => {
+        const fills = (root) => new Set([...root.querySelectorAll('ellipse, circle, path')].map((e) => e.getAttribute('fill')).filter((f) => f && f !== 'none' && !f.startsWith('rgba')));
+        const gag = fills(document.querySelector('.bush-layer svg.pup'));
+        // The board's own bush: the willow symbol the scenery draws from (summer leaves).
+        const defs = document.querySelector('.tree-defs');
+        const board = fills(defs.querySelector('symbol[id^="t-willow-summer-2"]') ?? document.createElement('i'));
+        return { gag: [...gag], board: [...board], stems: !!document.querySelector('.bush-layer svg.pup path[stroke="#5a3d22"]'), old: document.querySelectorAll('.scenery [data-anchor="bush"]').length };
+      });
+      const leaves = ['#6f9638', '#95bf4a', '#4f7426'];
+      check(leaves.every((c) => b.gag.includes(c)) && b.stems && b.old === 0, `${r} ${li + 1}: olive green, light blobs, darker underside, brown stems (the board willow's own colours); it stands in for the scenery's bush`);
+      check(b.gag.includes('#ffffff') === snow, snow ? 'the winter bush has a light snow dusting' : 'no snow on the summer bush');
+      await context.close();
+    }
+
+    // ---------- Porcupine: no trigger in the game yet; in demo mode, tap the bush ----------
+    console.log(`\n${engine}: porcupine (Cardium 6)`);
+    {
+      const { context, page } = await open(browser, { level: [region('cardium'), 5] });
+      const at = await page.evaluate(() => { const r = document.querySelector('.bush-layer svg.pup').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+      await tapAt(page, at.x, at.y);
+      await wait(1200);
+      check(!(await page.$('.strip-layer')), 'in the game nothing sets it off yet (trigger TBD): a tap on the bush does nothing');
+      await context.close();
+    }
+    const { context, page } = await open(browser, { level: [region('cardium'), 5], progress: DEMO });
+    const at = await page.evaluate(() => { const r = document.querySelector('.bush-layer svg.pup').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    const watching = watch(page, 'porcupine', { parts: { porc: '.porcupine-layer svg.pup:nth-of-type(1) .root', worker: '.porcupine-layer svg.pup:nth-of-type(2) .head', bush: '.porcupine-layer svg.pup:nth-of-type(3)', shuf: '.porcupine-layer svg.pup:nth-of-type(4) .root', roll: '.porcupine-layer .pup-roll' } });
+    const clipped = page.waitForSelector('.porcupine-layer', { state: 'attached', timeout: 8000 }).then(() => page.evaluate(() => { const l = document.querySelector('.porcupine-layer'); return { clip: l.querySelector('svg.pup').style.clipPath.startsWith('polygon'), pe: getComputedStyle(l).pointerEvents, z: l.querySelector('svg.pup').style.zIndex, bushZ: l.querySelectorAll('svg.pup')[2].style.zIndex }; }));
+    await tapAt(page, at.x, at.y);
+    const c = await clipped;
+    const log = await watching;
+    check(sameBeats(log, 'porcupine'), `demo mode, tap the bush: the reference beats, in order (${beatsOf(log).length} of ${GAGS.porcupine.beats.length})`);
+    const quiet = log.filter((f) => f.beat === 'quiet-bush' || f.beat === 'stroll-in' || f.beat === 'look-around');
+    check(c.clip && +c.z < +c.bushZ && quiet.every((f) => f.porc.l >= f.bush.l && f.porc.r <= f.bush.r && f.porc.t >= f.bush.t), 'the porcupine is hidden behind the bush from the start: inside its outline, behind it, cut off under the leaves');
+    const walkIn = log.find((f) => f.worker?.vis), run = log.filter((f) => f.shuf?.vis && f.shuf.l < 5000);
+    check(walkIn.worker.r <= 0 && run.at(-1).shuf.r <= 2, `the worker strolls in from fully off screen and scurries off until fully off screen (${Math.round(walkIn.worker.r)} to ${Math.round(run.at(-1).shuf.r)})`);
+    const bolt = log.filter((f) => f.porc.vis && f.porc.l < 5000).at(-1);
+    check(bolt.porc.l >= W - 2, `the porcupine bolts out the other way until fully off screen (x ${Math.round(bolt.porc.l)})`);
+    const pop = log.filter((f) => f.roll && (f.beat === 'roll-pops' || f.beat === 'springs-out' || f.beat === 'porcupine-bolts'));
+    check(Math.min(...pop.map((f) => f.roll.t)) < pop[0].bush.t && pop.length > 4, 'the roll pops straight up over the bush');
+    check(c.pe === 'none' && log.every((f) => f.others === 0), 'the layer takes no touches; nothing else was on stage');
+    await context.close();
+  }
+
+  if (engine === 'webkit' && want('gopherLunch')) {
+    // ---------- Gopher lunch: 30 s idle in Cardium (3 s here) ----------
+    console.log(`\n${engine}: gopher lunch, 30 s idle in Cardium (3 s here)`);
+    const { context, page } = await open(browser, { query: QUIET.replace('&off=lunch', '') + '&idle=0.1', level: [region('cardium'), 5] });
+    const geo = await page.evaluate(() => {
+      const m = document.querySelector('.scenery [data-anchor="mound"]').getBoundingClientRect(), note = document.querySelector('.note').getBoundingClientRect(), board = document.querySelector('.board').getBoundingClientRect();
+      return { base: m.top + (29.5 / 34) * m.height, heap: (m.width * 59) / 64, ground: note.top - 4, holeY: m.top + (17 / 34) * m.height, left: m.left, right: m.right, top: m.top, clear: m.top > board.bottom };
+    });
+    check(Math.abs(geo.base - geo.ground) < 1.5 && Math.abs(geo.heap - 0.113 * W * 0.92) < 2.5 && geo.clear, `the board's mound stands on the strip's ground line at the reference's size (heap ${geo.heap.toFixed(1)}px)`);
+    await wait(1500);
+    check(!(await page.$('.strip-layer')), 'not before the idle time is up');
+    const watching = watch(page, 'gopherLunch', { parts: { worker: '.lunch-layer svg.pup .torso', head: '.lunch-layer svg.pup .hat', gopher: '.lunch-layer .pup-clip svg.pup .head', clip: '.lunch-layer .pup-clip', lip: '.lunch-layer > svg.pup', sand: '.lunch-layer .pup-food', paw: '.lunch-layer .pup-overlay .paw' } }, 32000);
+    const log = await watching;
+    check(sameBeats(log, 'gopherLunch'), `the reference beats, in order, then he gets up and walks off (${beatsOf(log).length} of ${GAGS.gopherLunch.beats.length})`);
+    const first = log.find((f) => f.worker?.vis), last = log.filter((f) => f.worker?.vis).at(-1);
+    check(first.worker.r <= 0 && last.worker.r <= 2, `the worker strolls in from fully off screen and leaves until fully off screen (${Math.round(first.worker.r)} to ${Math.round(last.worker.r)})`);
+    const f0 = log[5];
+    check(Math.abs(f0.clip.b - geo.holeY) < 1.5 && Math.abs(f0.lip.l - geo.left) < 1.5 && Math.abs(f0.lip.t - geo.top) < 1.5 && Math.abs(f0.lip.r - geo.right) < 1.5, 'it plays at the board\'s own mound: the gopher is cut off at its hole line and the near lip lies exactly over its hole');
+    const sits = log.filter((f) => f.beat === 'phone');
+    check(sits.every((f) => f.worker.r < geo.left + 6 && f.worker.b <= geo.ground + 12), 'he sits just left of the mound, his back to it');
+    const paws = log.filter((f) => f.paw && (f.beat === 'paw-peeks' || f.beat === 'feels-around'));
+    check(paws.length > 20 && Math.min(...paws.map((f) => f.paw.l)) < geo.left, `the paw comes out of the hole and reaches past the mound for the sandwich (${paws.length} frames)`);
+    const chomp = log.filter((f) => f.beat === 'chomp');
+    check(chomp.every((f) => !f.sand.vis), 'the sandwich is gone down the hole');
+    const up = log.filter((f) => f.beat === 'cheeks' && f.gopher.t < geo.holeY - 6);
+    check(up.length > 5, 'the gopher pops up behind him, cut off at the hole');
+    check(log.every((f) => f.others === 0), 'nothing else was on stage');
+    await context.close();
+  }
+
+  if (engine === 'webkit' && !ONLY) {
+    // ---------- The cooldown: after a gag, none for 60 s (3 s here) ----------
+    console.log(`\n${engine}: the cooldown between gags (60 s; 3 s here)`);
+    const level = REGIONS[region('cardium')].levels;
+    const li = level.findIndex((l) => newGame(l).trucks.some((t) => t.orient === 'v' && t.row + t.length === 6 && getMoveRange(newGame(l), t.id)?.exitDelta !== 1));
+    const id = newGame(level[li]).trucks.find((t) => t.orient === 'v' && t.row + t.length === 6 && getMoveRange(newGame(level[li]), t.id)?.exitDelta !== 1).id;
+    const { context, page } = await open(browser, { query: QUIET.replace('&cooldown=0', '&cooldown=0.05'), level: [region('cardium'), li] });
+    await drag(page, id, 2);
+    await page.waitForSelector('.strip-layer[data-gag="biffyA"]', { state: 'attached', timeout: 5000 });
+    await drag(page, id, 2, 200);
+    await drag(page, id, 2, 200);
+    await page.waitForSelector('.strip-layer', { state: 'detached', timeout: 9000 });
+    const ended = Date.now();
+    await drag(page, id, 2);
+    await wait(1900);
+    check(!(await page.$('.strip-layer')), 'a trigger during a gag or during the cooldown is ignored');
+    await wait(Math.max(0, 3200 - (Date.now() - ended)));
+    await drag(page, id, 2);
+    const next = await page.waitForSelector('.strip-layer', { state: 'attached', timeout: 4000 }).then((l) => l.getAttribute('data-gag')).catch(() => null);
+    check(next === 'biffyB', `once it has passed, the next trigger plays (${next})`);
+    await context.close();
+  }
+
   // ---------- Reduced motion: simple fades ----------
   if (engine === 'webkit') {
     console.log(`\n${engine}: reduced motion`);
@@ -369,6 +473,8 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       const by = Object.fromEntries(cards.map((c) => [c.id, c]));
       if (mode === 'game') check(by.bear?.art && by.bear.legendary && !!(await page.$('.log-card[data-id="bear"] .legend-tag')), 'the Bear has a LEGENDARY card with a gold frame and puppet art');
       if (mode === 'game') check(by.bull?.art && by.bull.text === 'Not seen yet.', 'Bull and Cow has a card with puppet art');
+      if (mode === 'game') check(by.porcupine?.art && by.lunch?.art && by.porcupine.text === 'Not seen yet.', 'Porcupine and Gopher Lunch have cards with puppet art');
+      else check(by.porcupine.text === 'Demo mode only for now: tap the bush in Cardium.' && by.lunch.text === 'Sit tight for 30 seconds in Cardium.', 'demo mode shows the porcupine\'s and the lunch\'s hints');
       if (mode === 'game') check(by.marshmallow?.art && by.geese?.art && by.marshmallow.text === 'Not seen yet.' && by.geese.text === 'Not seen yet.', `Marshmallow and Lost Goose have cards with puppet art; the game hides the hints (${cards.length} cards)`);
       else check(by.marshmallow.text === 'Tap a flare stack three times.' && by.geese.text === 'Undo three times in a row.' && by.bear.text === 'Solve Duvernay 8, 9 or 10 at par. One time in three.' && by.bull.text === 'Tap the cow in Montney.', 'demo mode shows each gag\'s hint');
       await context.close();

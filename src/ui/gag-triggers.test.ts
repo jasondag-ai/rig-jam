@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { BackAndForth, GAG_TRIGGERS, bearComesNow, bearLevel, bermBump } from './gag-triggers.ts';
+import { BackAndForth, GAG_RULES, GAG_TRIGGERS, bearComesNow, bearLevel, bermBump } from './gag-triggers.ts';
 import { BEAR_BEATS, BEAR_END, bPose } from './bear.ts';
-import { BUSH_X, COW_X, bearBox, cowBox } from './strip-gags.ts';
+import { BUSH_X, COW_X, PORC_BUSH_X, bearBox, bushBox, cowBox, moundSpot } from './strip-gags.ts';
+import { BUSH_BOX, BUSH_FRAC, bushMarkup } from './gag-bush.ts';
+import { LUNCH_BEATS, LUNCH_END, MOUND_DRAWN, T_UP, T_WALK, lunchPose, moundWidthFor } from './gopher-lunch.ts';
+import { PC_BEATS, PC_END, SHIFT, pcPose } from './porcupine.ts';
+import { treeArt } from './trees.ts';
+import { cooldownScale, eggOff } from './flags.ts';
 import { BULL_BEATS, BULL_END, PRIMP, bullPose, forelock } from './bull.ts';
 import { A_BEATS, A_END, BIFFY_FRAC, B_BEATS, B_END } from './biffy.ts';
 import { L_BEATS, L_END, lPose } from './landowner.ts';
@@ -246,5 +251,106 @@ describe('the bull and the cow', () => {
       expect(cow.x + cow.width).toBeLessThanOrEqual(w);
       expect(COW_X * w).toBeGreaterThan(biffy.x + biffy.width + 60);
     }
+  });
+});
+
+describe('gag rules and the gag bush', () => {
+  it('a 60 s cooldown after every gag; tests can scale it and leave gags out', () => {
+    expect(GAG_RULES.cooldownMs).toBe(60_000);
+    expect(cooldownScale('')).toBe(1);
+    expect(cooldownScale('?cooldown=0')).toBe(0);
+    expect(cooldownScale('?cooldown=0.05')).toBe(0.05);
+    expect(cooldownScale('?cooldown=x')).toBe(1);
+    expect(eggOff('lunch', '?off=lunch,porcupine')).toBe(true);
+    expect(eggOff('lunch', '')).toBe(false);
+  });
+
+  it("BUSH RULE: the gag bush is the board's own willow drawing; in winter it keeps its leaves under a snow dusting", () => {
+    const board = treeArt('willow', 'summer', 2);
+    expect(bushMarkup('summer')).toContain(board);
+    expect(bushMarkup('winter')).toContain(board);
+    expect(bushMarkup('summer')).not.toContain('#ffffff');
+    expect((bushMarkup('winter').match(/fill="#ffffff"/g) ?? []).length).toBe(4);
+    expect(bushMarkup('spring')).toContain(treeArt('willow', 'spring', 2));
+    // About the size of the references' bush (62 px of leaves at 390).
+    expect((BUSH_FRAC * 390 * 76) / BUSH_BOX.vw).toBeGreaterThan(60);
+    expect((BUSH_FRAC * 390 * 76) / BUSH_BOX.vw).toBeLessThan(72);
+  });
+});
+
+describe('the porcupine (gag 12)', () => {
+  it('has no trigger in the game yet (TBD); demo mode taps the bush', () => {
+    expect(GAG_TRIGGERS.porcupine).toEqual({ region: 'cardium', trigger: 'TBD', demoTapBush: true });
+  });
+
+  it('plays the reference with its clock started at SHIFT: the porcupine is behind the bush from the first frame', () => {
+    expect(SHIFT).toBe(2.4);
+    expect(PC_BEATS.map((b) => b[0])).toEqual([0, 1.0, 3.0, 3.7, 5.1, 5.2, 5.5, 5.6, 5.8]);
+    for (let t = 0; t < 5.5; t += 0.25) expect(pcPose(t + SHIFT).pc).toMatchObject({ x: 0, show: true });
+    // The worker: not there, strolls in, looks about, squats behind the bush, POKE.
+    expect(pcPose(0.5 + SHIFT).w.show).toBe(false);
+    expect(pcPose(1.0 + SHIFT, -700).w.x).toBe(-700);
+    expect(pcPose(3.3 + SHIFT).w).toMatchObject({ x: -98, behind: false });
+    expect(pcPose(4.8 + SHIFT).w).toMatchObject({ behind: true, roll: 'none' });
+    expect(pcPose(4.8 + SHIFT).w.y).toBeGreaterThan(13);
+    expect(pcPose(5.2 + SHIFT).w.starburst).toBeGreaterThan(0);
+    expect(pcPose(5.2 + SHIFT).w.hatY).toBeLessThan(-5);
+    // Then the shuffler off one way and the porcupine, quills up, off the other.
+    expect(pcPose(6 + SHIFT).w.show).toBe(false);
+    expect(pcPose(6 + SHIFT).s).toMatchObject({ show: true });
+    expect(pcPose(7.89 + SHIFT, -320, -900).s.x).toBeLessThan(-880);
+    expect(pcPose(6.5 + SHIFT).pc).toMatchObject({ face: 1, puff: 1 });
+    expect(pcPose(7.59 + SHIFT, -320, -300, 800).pc.x).toBeGreaterThan(780);
+    expect(pcPose(PC_END + SHIFT).pc.show).toBe(false);
+    expect(pcPose(PC_END + SHIFT).s.show).toBe(false);
+  });
+
+  it('its bush stands between the biffy and the mound', () => {
+    for (const [w, strip] of [[390, { top: 600, bottom: 700 }], [375, { top: 470, bottom: 538 }]] as const) {
+      const bush = bushBox(PORC_BUSH_X, w, strip), biffy = biffyBox(w, strip);
+      expect(bush.x).toBeGreaterThan(biffy.x + biffy.width);
+      expect(bush.x + bush.width).toBeLessThan(w * 0.66);
+    }
+  });
+});
+
+describe('gopher lunch (gag 13)', () => {
+  it('is set off by 30 s with no moves, in Cardium', () => {
+    expect(GAG_TRIGGERS.gopherLunch).toEqual({ region: 'cardium', idleMs: 30_000 });
+  });
+
+  it('plays the reference beats, then the exit the game adds: up, and off the way he came', () => {
+    expect(LUNCH_BEATS.map((b) => b[0]).slice(0, 16)).toEqual([0, 0.5, 3.0, 4.0, 4.8, 5.2, 5.7, 6.9, 7.2, 8.6, 9.6, 10.3, 10.8, 11.5, 12.0, 12.7]);
+    expect(LUNCH_BEATS.slice(16).map((b) => b[0])).toEqual([T_UP, T_WALK]);
+    expect(T_UP).toBeGreaterThan(13.5); // after the reference's last move (the gopher is down by 13.45)
+    expect(lunchPose(0.4).w.show).toBe(false);
+    expect(lunchPose(0.5, -640).w.dx).toBe(-640);
+    expect(lunchPose(3.5).w.face).toBe(-1);
+    expect(lunchPose(4.3).food).toBe('hand');
+    expect(lunchPose(5).w.phone).toBe(true);
+    expect(lunchPose(5).food).toBe('ground');
+    expect(lunchPose(6.8).a).toMatchObject({ show: true, k: 1, grab: true });
+    expect(lunchPose(7).food).toBe('paw');
+    expect(lunchPose(8).food).toBe('gone');
+    expect(lunchPose(9.3).food).toBe('crust');
+    expect(lunchPose(10.5).food).toBe('crustHand');
+    expect(lunchPose(11.2).g).toMatchObject({ dy: 24, cheeks: true });
+    expect(lunchPose(11.8).g.dy).toBe(80);
+    expect(lunchPose(13.1).g.burp).toBe(true);
+    // The exit: sitting until T_UP, standing by T_WALK, off by the end, crust still in hand.
+    expect(lunchPose(13.5).w.y).toBe(24);
+    expect(Math.abs(lunchPose(T_WALK - 0.01).w.y)).toBeLessThan(1);
+    expect(lunchPose(15, -300, -500).w.dx).toBeLessThan(-100);
+    expect(lunchPose(LUNCH_END - 0.11, -300, -500).w.dx).toBeLessThan(-490);
+    expect(lunchPose(LUNCH_END).w.show).toBe(false);
+    expect(lunchPose(15).food).toBe('crustHand');
+  });
+
+  it("the board's mound is set on the strip's ground line with its heap the size of the reference's", () => {
+    const strip = { top: 600, bottom: 700 };
+    const spot = moundSpot(390, strip);
+    expect(spot.baseY).toBe(stripGeom(390, strip).ground);
+    expect((spot.w * MOUND_DRAWN) / 64).toBeCloseTo(0.113 * 390 * 0.92, 1);
+    expect(moundWidthFor(390, 0.5)).toBeCloseTo(spot.w / 2, 5);
   });
 });
