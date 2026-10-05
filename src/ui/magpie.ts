@@ -50,8 +50,10 @@ export const SPLAT = `<svg viewBox="0 0 40 30" width="100%" height="100%"><path 
 export const DRIP = `<svg viewBox="0 0 12 40" preserveAspectRatio="none" width="100%" height="100%" style="overflow:visible"><path d="M2 0 L10 0 Q8 18 8.6 30 A3.6 3.6 0 1 1 3.4 30 Q4 18 2 0 Z" fill="#f7f5ee" stroke="${O}" stroke-width="1.4" vector-effect="non-scaling-stroke"/></svg>`;
 export const FEATHER = `<svg viewBox="0 0 30 12" width="100%" height="100%"><path d="M2 6 Q10 0 28 5 Q10 12 2 6 Z" fill="#245d8f" stroke="${O}" stroke-width="1.5"/><path d="M4 6 L27 5" stroke="#f7fafc" stroke-width="1"/></svg>`;
 
-/** The bird's box is this share of the screen's width (about 40 px of bird at 390 px). */
-export const BIRD_FRAC = 0.15;
+/** The bird's box is this share of the screen's width (about 37 px of bird at 390 px; a quarter smaller than the reference, after playing on a phone). */
+export const BIRD_FRAC = 0.1125;
+/** What he leaves behind keeps the reference's size: the splat and drip are measured in this share of the screen's width. */
+export const MARK_FRAC = 0.15;
 
 /** When each beat starts (seconds), and what it is (`data-beat` on the layer names the current one). */
 export const BEATS: [number, string, string][] = [

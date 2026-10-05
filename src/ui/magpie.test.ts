@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../engine/index.ts';
 import { DAILY_LEVELS, REGIONS } from '../levels/regions.ts';
-import { BEATS, BIRD, BIRD_FRAC, END, GONE, REFERENCE_TRAVEL, STARTLE, T_SMUG, T_SPLAT, beatAt, dripTurn, fxAt, magpieStill, offScreen, pickTruck, pose, roofSpot, startlePose, travelFor } from './magpie.ts';
+import { BEATS, BIRD, BIRD_FRAC, MARK_FRAC, END, GONE, REFERENCE_TRAVEL, STARTLE, T_SMUG, T_SPLAT, beatAt, dripTurn, fxAt, magpieStill, offScreen, pickTruck, pose, roofSpot, startlePose, travelFor } from './magpie.ts';
 
 const frames = (from: number, to: number, step = 1 / 60) => Array.from({ length: Math.round((to - from) / step) }, (_, i) => from + i * step);
 
 describe('magpie puppet: the reference, as approved', () => {
-  it('has the reference parts, and is about 40 px of bird at 390 px', () => {
+  it('has the reference parts, and is about 37 px of bird at 390 px, a quarter smaller than the reference', () => {
     for (const part of ['flip', 'root', 'tail', 'legs', 'body', 'wing', 'head', 'beak', 'pupil', 'glint', 'lid']) expect(BIRD).toContain(`class="${part}"`);
     // The bird fills about 100 of its 120-unit box.
-    expect(BIRD_FRAC * 390 * (100 / 120)).toBeGreaterThan(40);
-    expect(BIRD_FRAC * 390 * (100 / 120)).toBeLessThan(56);
+    expect(BIRD_FRAC * 390 * (100 / 120)).toBeGreaterThan(32);
+    expect(BIRD_FRAC * 390 * (100 / 120)).toBeLessThan(42);
+    expect(BIRD_FRAC / MARK_FRAC).toBeCloseTo(0.75, 9);
   });
 
   it('plays the reference beats at the reference times', () => {

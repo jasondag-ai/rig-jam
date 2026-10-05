@@ -4,7 +4,7 @@
 // splat and its drip belong to the truck, so they stay on it and move with it.
 import type { GameState, Side } from '../engine/index.ts';
 import { sound } from '../audio/engine.ts';
-import { BIRD, BIRD_FRAC, DRIP, DRIP_FULL, END, FEATHER, GONE, MAGPIE_LINES, SPLAT, STARTLE, T_BUBBLE, T_LAND, T_SMUG, T_SPLAT, beatAt, dripTurn, fxAt, offScreen, pickTruck, pose, poseAttrs, roofSpot, startlePose, travelFor, type Pose, type Travel } from './magpie.ts';
+import { BIRD, BIRD_FRAC, MARK_FRAC, DRIP, DRIP_FULL, END, FEATHER, GONE, MAGPIE_LINES, SPLAT, STARTLE, T_BUBBLE, T_LAND, T_SMUG, T_SPLAT, beatAt, dripTurn, fxAt, offScreen, pickTruck, pose, poseAttrs, roofSpot, startlePose, travelFor, type Pose, type Travel } from './magpie.ts';
 import { fromPool } from './lines.ts';
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -19,6 +19,9 @@ export interface MagpieHost {
   /** Puts a gag's layer on the screen (under the night's shade). */
   mount?(el: HTMLElement): void;
 }
+
+/** The splat and drip against the bird's width: he is smaller than the reference, his mark is not. */
+const MARK = MARK_FRAC / BIRD_FRAC;
 
 interface Run {
   layer: HTMLElement;
@@ -153,7 +156,7 @@ export class MagpieGag {
       drop.style.opacity = '1';
     } else drop.style.opacity = '0';
     // The drip keeps running toward the truck's front, whatever the bird is doing.
-    if (run.drip && fx.drip !== null) run.drip.style.height = `${fx.drip * run.w}px`;
+    if (run.drip && fx.drip !== null) run.drip.style.height = `${fx.drip * run.w * MARK}px`;
     // A feather left behind on take-off, drifting down.
     const feather = run.layer.querySelector<HTMLElement>('.mp-feather')!;
     const f = run.startle ? fxAt(10.0 + (t - run.startle.at - STARTLE.hop)).feather : fx.feather;
@@ -180,7 +183,7 @@ export class MagpieGag {
     const later = (ms: number, f: () => void) => window.setTimeout(() => this.run === run && f(), ms);
     later(450, () => {
       this.leaveSplat(run);
-      if (run.drip) run.drip.style.height = `${DRIP_FULL * run.w}px`;
+      if (run.drip) run.drip.style.height = `${DRIP_FULL * run.w * MARK}px`;
       sound.grunt();
       this.speak(run, spot);
     });
@@ -242,17 +245,20 @@ export class MagpieGag {
    */
   private leaveSplat(run: Run): void {
     if (run.splat || !run.truckEl.isConnected) return;
+    // Where it lands is measured from the bird; how big it is, is the mark's own size (`m`).
     const { w, local } = run;
+    const m = w * MARK;
+    const [cx, cy] = [local.x - 0.23 * w, local.y + 0.04 * w];
     const home = run.truckEl.querySelector('.body') ?? run.truckEl;
     const before = home.querySelector('.bed');
     const drip = document.createElement('div');
     drip.className = 'magpie-drip';
     drip.innerHTML = DRIP;
-    Object.assign(drip.style, { left: `${local.x - 0.23 * w - 0.045 * w}px`, top: `${local.y + 0.04 * w}px`, width: `${0.09 * w}px`, height: `${0.08 * w}px`, transformOrigin: '50% 0', transform: `rotate(${dripTurn(run.truckEl.dataset.cab as Side)}deg)` });
+    Object.assign(drip.style, { left: `${cx - 0.045 * m}px`, top: `${cy}px`, width: `${0.09 * m}px`, height: `${0.08 * m}px`, transformOrigin: '50% 0', transform: `rotate(${dripTurn(run.truckEl.dataset.cab as Side)}deg)` });
     const splat = document.createElement('div');
     splat.className = 'dropping magpie-splat';
     splat.innerHTML = SPLAT;
-    Object.assign(splat.style, { left: `${local.x - 0.36 * w}px`, top: `${local.y - 0.06 * w}px`, width: `${0.26 * w}px`, height: `${0.2 * w}px` });
+    Object.assign(splat.style, { left: `${cx - 0.13 * m}px`, top: `${cy - 0.1 * m}px`, width: `${0.26 * m}px`, height: `${0.2 * m}px` });
     home.insertBefore(drip, before);
     home.insertBefore(splat, before);
     run.splat = splat;
@@ -262,7 +268,7 @@ export class MagpieGag {
 
   private finish(run: Run, splatted: boolean): void {
     cancelAnimationFrame(run.frame);
-    if (run.drip && splatted) run.drip.style.height = `${DRIP_FULL * run.w}px`;
+    if (run.drip && splatted) run.drip.style.height = `${DRIP_FULL * run.w * MARK}px`;
     run.layer.remove();
     if (this.run === run) this.run = null;
     run.done(splatted);
