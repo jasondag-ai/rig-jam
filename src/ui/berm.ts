@@ -123,7 +123,7 @@ const LIGHT = (() => {
  * Paints the berm. The canvas covers the board plus `g.over` on every side; `scale` is device px per
  * CSS px. `seed` keeps a level's lumps and tufts the same every time.
  */
-export function paintBerm(canvas: HTMLCanvasElement, g: BermGeometry, ground: Ground, seed: number, scale: number): void {
+export function paintBerm(canvas: HTMLCanvasElement, g: BermGeometry, ground: Ground, seed: number, scale: number, shade = ''): void {
   const look = BERM_LOOKS[ground];
   const edge = g.band + g.over; // pad origin sits this far into the canvas
   const css = g.cell * SIZE + edge * 2;
@@ -240,6 +240,14 @@ export function paintBerm(canvas: HTMLCanvasElement, g: BermGeometry, ground: Gr
   ctx.shadowOffsetY = g.band * 0.16 * scale;
   ctx.shadowBlur = g.band * 0.3 * scale;
   ctx.drawImage(layer, 0, 0);
+  // Night: the berm (and only the berm: the canvas is clear around it) under the night's shade.
+  if (shade) {
+    ctx.shadowColor = 'transparent';
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, 0, n, n);
+    ctx.globalCompositeOperation = 'source-over';
+  }
 }
 
 /**

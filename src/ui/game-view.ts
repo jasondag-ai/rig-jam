@@ -3,6 +3,7 @@ import { seedFrom } from '../engine/rng.ts';
 import { BoardView } from './board-view.ts';
 import { sceneryHtml } from './scenery.ts';
 import { applyTheme, type Theme } from './themes.ts';
+import { NUDGE_LINE, isNight, nightRgba, nightSky } from './night.ts';
 import { hatsHtml } from './hats.ts';
 import { copyText } from './clipboard.ts';
 import { shareText, streak, zeroIncident } from './daily.ts';
@@ -40,6 +41,9 @@ const BANNER_TEXT =
   '<svg viewBox="0 0 220 44" aria-hidden="true"><defs><path id="banner-arc" d="M8 31.5 Q110 21.5 212 31.5"/></defs>' +
   ['lip', 'ink'].map((c) => `<text class="${c}"${c === 'lip' ? ' transform="translate(0 3)"' : ''}><textPath href="#banner-arc" startOffset="50%" text-anchor="middle">Pad cleared!</textPath></text>`).join('') +
   '</svg>';
+/** Night sky: about how far the tree tops rise above the horizon line, and the open sky the moon needs (px). */
+const TREE_RISE = 70;
+const MOON_ROOM = 40;
 /** The perfect-solve confetti: how long the whole burst lasts, and how many pieces. */
 const CONFETTI_MS = 1600;
 const CONFETTI_PIECES = 40;
@@ -99,6 +103,11 @@ export class GameView {
   private moose: MooseGag | null = null;
   /** When the player last made or started a move, or the last gag left: the idle gags count from here. */
   private lastMoveAt = performance.now();
+  /** The last thing the PLAYER did (gags leaving do not count): the night nudge's clock. */
+  private lastPlayAt = performance.now();
+  private night = false;
+  private nudged = false;
+  private nightShade: HTMLElement | null = null;
   /** The bottom-strip gags (strip-gags.ts): Near Miss, the landowner, Biffy A and B. Each null if it cannot play here. */
   private strips: Partial<Record<GagId, TimelineGag>> = {};
   /** The biffy: permanent scenery in the bottom strip of every level. */
@@ -149,7 +158,7 @@ export class GameView {
     const forced: Partial<Record<string, GagId>> = { magpie: 'magpie', worker: 'worker', nearmiss: 'nearMiss', landownerquad: 'landowner', biffya: 'biffyA', biffyb: 'biffyB', marshmallow: 'marshmallow', lostgoose: 'geese', bearhare: 'bear', bull: 'bull', ...(gagsOn() ? {} : { moose: 'moose' }) };
     this.eggForced = (f && forced[f]) || null;
     board.onGrab = (id) => {
-      this.lastMoveAt = performance.now();
+      this.lastMoveAt = this.lastPlayAt = performance.now();
       this.magpie?.grabbed(id);
       // Any move sends the worker running, pail in hand.
       this.worker?.cancel();
@@ -221,9 +230,13 @@ export class GameView {
     this.stage = this.el.querySelector('.stage')!;
     this.scenery = this.el.querySelector('.scenery')!;
     applyTheme(this.el, theme);
+    this.night = isNight(level);
+    this.el.classList.toggle('night', this.night);
+    if (this.night) this.el.style.setProperty('--night', nightRgba(theme.ground));
     this.stage.append(this.board.el);
     this.board.setLevel(level);
     this.board.setGround(theme.ground);
+    this.board.setNight(this.night);
     sound.setGround(theme.ground);
     this.gags?.setLevel(level);
     if (magpieOn() || this.eggForced === 'magpie') this.magpie = new MagpieGag({ screen: this.el, truckElement: (id) => board.truckElement(id), state: () => this.state, say: (anchor, text) => board.say(anchor, text) });
@@ -286,6 +299,24 @@ export class GameView {
       // By themselves (the other gags off), the eggs keep their own clock.
       this.eggTimer = window.setInterval(() => this.tickEggs(), 250);
     }
+    if (this.night) {
+      // The night's shade lies over the scenery and the strip's props, under the lease, HUD and buttons.
+      this.nightShade = document.createElement('div');
+      this.nightShade.className = 'scene-layer night-shade';
+      this.nightShade.setAttribute('aria-hidden', 'true');
+      this.el.append(this.nightShade);
+      // The nudge: this long with no move and a truck speaks up. Once per level; never a fail.
+      const timer = window.setInterval(() => {
+        if (!this.el.isConnected) return void window.clearInterval(timer);
+        if (this.nudged || isWon(this.state) || this.board.moving || document.hidden) return;
+        if (performance.now() - this.lastPlayAt < GAG_TRIGGERS.nightNudge.idleMs * this.idleScale) return;
+        const trucks = this.state.trucks;
+        const el = this.board.truckElement(trucks[Math.floor(Math.random() * trucks.length)].id);
+        if (!el) return;
+        this.nudged = true;
+        this.board.say(el.querySelector('.cab') ?? el, NUDGE_LINE).dataset.nudge = '1';
+      }, 500);
+    }
     // Any touch anywhere on the screen cancels an idle gag and restarts the idle clock.
     this.el.addEventListener('pointerdown', () => this.gags?.touch(), { capture: true });
     this.showLevelHint();
@@ -330,6 +361,11 @@ export class GameView {
     const hudBottom = this.el.querySelector('.hud')!.getBoundingClientRect().bottom - screen.top;
     const depth = Math.round(Math.max(8, Math.min(40, (box.y - hudBottom) * 0.3)));
     this.el.style.setProperty('--horizon', `${Math.round(box.y - 4 - depth)}px`);
+    if (this.nightShade) {
+      // Stars from the top of the screen down into the open sky; the moon only where there is sky for it above the trees.
+      const gap = box.y - 4 - depth - TREE_RISE - hudBottom;
+      this.nightShade.innerHTML = nightSky(screen.width, Math.round(hudBottom + Math.max(0, gap) * 0.5 + 22), gap >= MOON_ROOM);
+    }
     // Kept clear of trees: the sleepy worker's spot by the left edge, and the biffy's.
     const strip = { top: box.y + box.height, bottom: controlsTop };
     const clearings = [this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.bush ? bearBox(screen.width, strip) : null, this.cow ? cowBox(screen.width, strip) : null].filter((c) => c !== null);
@@ -353,7 +389,7 @@ export class GameView {
       return;
     }
     this.state = result.state;
-    this.lastMoveAt = performance.now();
+    this.lastMoveAt = this.lastPlayAt = performance.now();
     this.undos = 0;
     this.gags?.moved(id, delta);
     if (result.exited) this.gags?.exited();
@@ -392,7 +428,7 @@ export class GameView {
   private undo(): void {
     if (!canUndo(this.state) || isWon(this.state)) return;
     this.state = undo(this.state);
-    this.lastMoveAt = performance.now();
+    this.lastMoveAt = this.lastPlayAt = performance.now();
     if (++this.undos === GAG_TRIGGERS.geese.undosInARow) this.queueEgg('geese');
     this.board.removeLastTrack();
     this.resetHint();
@@ -411,7 +447,7 @@ export class GameView {
     this.gags?.setLevel(this.level);
     // A fresh pad: the splat went with the old trucks, and every egg may come again.
     this.resetEggs();
-    this.lastMoveAt = performance.now();
+    this.lastMoveAt = this.lastPlayAt = performance.now();
     if (!this.gags || this.eggForced) {
       window.clearInterval(this.eggTimer);
       this.eggTimer = window.setInterval(() => this.tickEggs(), 250);

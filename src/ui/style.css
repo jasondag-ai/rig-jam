@@ -3517,3 +3517,113 @@ img.hat { width: 100%; height: auto; }
 .puppet-layer .pup-feather { border: 1.5px solid #2b1e16; }
 .puppet-layer .pup-roll { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; }
 .log-card .art .egg-still { width: 84px; height: 84px; overflow: visible; }
+
+/* ---------- Night (night.ts): levels flagged `night` (every level with a flare stack). The ground,
+   berm and scenery lie under one cool shade at about half brightness; trucks, gates, symbols and
+   hints are dimmed far less so every colour reads; the HUD, buttons and win card are untouched.
+   A warm glow round each flare flickers with its flame; each cab has small headlight glows. ---------- */
+
+.screen.game.night {
+  /* --night (the shade, stronger on snow) is set per level from night.ts. */
+  --night: rgba(8, 16, 48, 0.55);
+  --night-solid: #081030;
+  /* Seen through the shade these come out a deep blue. */
+  --sky-top: #142460 !important;
+  --sky-bottom: #5874b8 !important;
+}
+/* Over the scenery, the vignette and the strip's props; under the lease, the HUD and the buttons. */
+.scene-layer.night-shade {
+  inset: 0;
+  width: auto;
+  height: auto;
+  z-index: 0;
+  background: var(--night);
+}
+.night-shade .night-sky { position: absolute; left: 0; top: 0; overflow: visible; }
+.night-sky .star { animation: star-twinkle 3.2s ease-in-out infinite; }
+.night-sky .star.s1 { animation-delay: -1.1s; }
+.night-sky .star.s2 { animation-delay: -2.2s; }
+@keyframes star-twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+/* The lease's own ground under the same shade (the berm's canvas is shaded as it is painted). */
+.night-pad { display: none; }
+.board.night .night-pad {
+  display: block;
+  position: absolute;
+  inset: 0;
+  background: var(--night);
+}
+.board.night .tracks { opacity: 0.6; }
+.board.night .equip .eq-patch { fill: color-mix(in srgb, var(--night-solid) 55%, color-mix(in srgb, var(--pad-light) 60%, var(--pad))); }
+/* Equipment is scenery: dimmed, but less than the ground so it still reads as steel. The flare keeps its light. */
+.board.night .obstacle:not(.flare) svg.equip { filter: brightness(0.7) saturate(0.85); }
+.board.night .obstacle.flare svg.equip { filter: brightness(0.92); }
+/* Trucks and gates: dimmed much less. Symbol badges, convoy tags and hints stay at full strength. */
+.board.night .truck .art { filter: brightness(0.9) saturate(0.97); }
+.board.night .gate .gw { filter: brightness(0.92); }
+.board.night .truck .ground-shadow { opacity: 0.5; }
+
+/* The flare's light: about 2.5 cells across, centred on the stack, over the ground and the trucks
+   near it. It flickers in step with the flame (same period and offset as `flare-flicker`). */
+.flare-glow { display: none; }
+.board.night .flare-glow {
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 28%;
+  width: calc(var(--cell) * 2.5);
+  height: calc(var(--cell) * 2.5);
+  margin: calc(var(--cell) * -1.25) 0 0 calc(var(--cell) * -1.25);
+  z-index: -1;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 190, 96, 0.5) 0, rgba(255, 160, 64, 0.3) 32%, rgba(255, 140, 50, 0.1) 58%, rgba(255, 130, 40, 0) 72%);
+  animation: flare-glow 0.9s steps(1, end) var(--eq-delay, 0s) infinite;
+  will-change: opacity, transform;
+}
+@keyframes flare-glow {
+  0% { opacity: 0.9; transform: scale(1); }
+  14% { opacity: 1; transform: scale(1.05); }
+  29% { opacity: 0.82; transform: scale(0.97); }
+  43% { opacity: 1; transform: scale(1.07); }
+  57% { opacity: 0.88; transform: scale(1); }
+  71% { opacity: 0.96; transform: scale(1.04); }
+  86% { opacity: 0.8; transform: scale(0.96); }
+}
+
+/* Headlights: two small soft glows at the front of the cab, spilling a little ahead of it. */
+.truck .lamps { display: none; }
+.board.night .truck .lamps {
+  display: block;
+  position: absolute;
+  pointer-events: none;
+  --lamp: radial-gradient(circle, rgba(255, 246, 200, 0.95) 0, rgba(255, 236, 170, 0.5) 30%, rgba(255, 230, 150, 0) 68%);
+  background: var(--lamp) 0 0 / 50% 100% no-repeat, var(--lamp) 100% 0 / 50% 100% no-repeat;
+}
+/* Sideways trucks: the lamps sit side by side across the cab's width (top and bottom of the truck's box). */
+.board.night .truck[data-cab='right'] .lamps,
+.board.night .truck[data-cab='left'] .lamps {
+  top: 6%;
+  height: 88%;
+  width: calc(var(--cell) * 0.4);
+  background: var(--lamp) 0 0 / 100% 46% no-repeat, var(--lamp) 0 100% / 100% 46% no-repeat;
+}
+.board.night .truck[data-cab='right'] .lamps { right: calc(var(--cell) * -0.14); }
+.board.night .truck[data-cab='left'] .lamps { left: calc(var(--cell) * -0.14); }
+.board.night .truck[data-cab='top'] .lamps,
+.board.night .truck[data-cab='bottom'] .lamps {
+  left: 6%;
+  width: 88%;
+  height: calc(var(--cell) * 0.4);
+  background: var(--lamp) 0 0 / 46% 100% no-repeat, var(--lamp) 100% 0 / 46% 100% no-repeat;
+}
+.board.night .truck[data-cab='top'] .lamps { top: calc(var(--cell) * -0.14); }
+.board.night .truck[data-cab='bottom'] .lamps { bottom: calc(var(--cell) * -0.14); }
+
+@media (prefers-reduced-motion: reduce) {
+  .board.night .flare-glow,
+  .night-sky .star { animation: none; }
+}

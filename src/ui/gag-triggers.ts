@@ -30,6 +30,8 @@ export const GAG_TRIGGERS = {
   bear: { region: 'duvernay', levels: [8, 9, 10], perfectSolve: true, chance: 1 / 3 },
   /** Gag 11, the bull and the cow: this many taps on the cow grazing in the bottom strip. */
   bull: { region: 'montney', cowTaps: 1 },
+  /** Not a gag: on a night level, this long with no move and a truck says "While we're young, Sonny...". Once per level. */
+  nightNudge: { idleMs: 25_000 },
 } as const;
 
 export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull';

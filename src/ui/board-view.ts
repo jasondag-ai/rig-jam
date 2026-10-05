@@ -6,6 +6,7 @@ import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
 import { Spray } from './spray.ts';
 import { coatSrc, gateArt, spriteImg, wireSprite } from './sprites.ts';
 import { BERM_OVER, paintBerm } from './berm.ts';
+import { nightRgba } from './night.ts';
 import { paintDetail, planDetail } from './lease-detail.ts';
 import { seedFrom } from '../engine/rng.ts';
 import { TrackLayer } from './track-layer.ts';
@@ -54,6 +55,7 @@ export class BoardView {
   private detail: HTMLCanvasElement;
   private ground: Ground = 'gravel';
   private bermKey = '';
+  private night = false;
   /** Stops the pumpjacks' ambient motion (obstacles.ts) when the level is rebuilt. */
   private stopPumpjacks: () => void = () => {};
   private lastLine: string | null = null;
@@ -81,7 +83,7 @@ export class BoardView {
     this.yard = document.createElement('div');
     this.yard.className = 'yard';
     // Under everything: the lease's one continuous ground (pad and berm band alike), then the berm.
-    this.el.insertAdjacentHTML('afterbegin', '<div class="lease-ground" aria-hidden="true"><canvas class="lease-detail"></canvas></div><canvas class="berm" aria-hidden="true"></canvas>');
+    this.el.insertAdjacentHTML('afterbegin', '<div class="lease-ground" aria-hidden="true"><canvas class="lease-detail"></canvas><i class="night-pad"></i></div><canvas class="berm" aria-hidden="true"></canvas>');
     this.berm = this.el.querySelector('canvas.berm')!;
     this.detail = this.el.querySelector('canvas.lease-detail')!;
     gateArt(this.el);
@@ -149,7 +151,8 @@ export class BoardView {
       ob.style.setProperty('--eq-s', String(clear.scale));
       ob.style.setProperty('--eq-delay', `${-(seed % 7) * 0.31}s`);
       if (kind === 'pumpjack') ob.dataset.phase = String(phaseFor(seed));
-      ob.innerHTML = equipmentSvg(kind, seed);
+      // At night a flare lights the ground and the trucks round it (style.css, "Night").
+      ob.innerHTML = (kind === 'flare' ? '<i class="flare-glow"></i>' : '') + equipmentSvg(kind, seed);
       this.equip.append(ob);
     }
     this.stopPumpjacks();
@@ -205,12 +208,12 @@ export class BoardView {
     const { cell, fence, ground } = this;
     const over = Math.round(fence * BERM_OVER);
     const scale = Math.min(3, window.devicePixelRatio || 1);
-    const key = [cell, fence, ground, scale, this.level.id, this.level.gates.map((g) => g.side + g.index).join()].join('|');
+    const key = [cell, fence, ground, scale, this.night, this.level.id, this.level.gates.map((g) => g.side + g.index).join()].join('|');
     if (key === this.bermKey) return;
     this.bermKey = key;
     const size = cell * SIZE + (fence + over) * 2;
     Object.assign(this.berm.style, { left: `${-over}px`, top: `${-over}px`, width: `${size}px`, height: `${size}px` });
-    paintBerm(this.berm, { cell, band: fence, over, gates: this.level.gates }, ground, seedFrom(this.level.id), scale);
+    paintBerm(this.berm, { cell, band: fence, over, gates: this.level.gates }, ground, seedFrom(this.level.id), scale, this.night ? nightRgba(ground) : '');
     paintDetail(this.detail, planDetail(this.level, ground, seedFrom(this.level.id)), cell, fence, scale);
   }
 
@@ -263,6 +266,7 @@ export class BoardView {
       `<div class="ground-shadow"></div>` +
       `<div class="body"><div class="art">${spriteImg(kind, t.color)}${VEHICLE_SVG[kind]}<i class="coat"></i></div>` +
       `<div class="bed"><span class="sym">${SYMBOL[t.color]}</span></div>` +
+      `<i class="lamps"></i>` +
       `<div class="cab"><span class="driver-arm"></span>${t.convoy ? `<span class="convoy-no" aria-label="convoy ${t.convoy}">${t.convoy}</span>` : ''}</div></div>`;
     wireSprite(el);
     el.addEventListener('pointerdown', (e) => this.onPointerDown(e, t.id, el));
@@ -444,6 +448,13 @@ export class BoardView {
   }
 
   /** The season's ground (gravel, mud, snow): sets the berm, the ground detail, the tracks and the spray. */
+  /** Night levels (night.ts): the lease under the night's shade, flare glow and headlights on. */
+  setNight(on: boolean): void {
+    this.night = on;
+    this.el.classList.toggle('night', on);
+    this.paintBerm();
+  }
+
   setGround(ground: Ground): void {
     this.tracks.setGround(ground);
     this.spray.setGround(ground);
