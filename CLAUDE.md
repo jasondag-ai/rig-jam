@@ -543,7 +543,7 @@ something, give exact clicks and one command at a time.
 - Near misses = bumps this attempt (reset on Restart, not on Undo). ZERO INCIDENT = at par, no bumps.
 - Share (Daily win screen) copies spoiler-free text: pad, hats, moves vs par, badge, streak, link.
 - All progress is in localStorage (`rush-hour-rigs:v2`); no accounts.
-- PWA: `public/manifest.webmanifest`, icons in `public/icons/` and `public/favicon.svg` (a square crop of the cover art, made by `python3 tools/app-icons.py`), and a
+- PWA: `public/manifest.webmanifest`, icons in `public/icons/` (Jay's chosen art, `tools/icon-art/roughneck_close.png`: the roughneck's face and white hard hat; made by `python3 tools/app-icons.py`; the maskable one is padded with the cover's sky; file names carry a version, `v2`, because phones cache icons hard: bump it for a new look; the favicon is the 48 px PNG, there is no favicon.svg), and a
   service worker generated at build time by the plugin in `vite.config.ts`
   (`tools/service-worker.ts`). It precaches every built file; pages load network-first. Not
   registered in dev.

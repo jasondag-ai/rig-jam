@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
-"""App icons from the cover's hero art: a square crop of the roughneck's face, hard hat and wrench,
-readable at 48 px. Writes public/icons/ (192, 512, maskable 512, apple-touch 180, favicon 48) and
-public/favicon.svg (the same crop with rounded corners). Run: python3 tools/app-icons.py"""
-import base64
-import io
+"""App icons from Jay's chosen art (tools/icon-art/roughneck_close.png: a tight crop of the cover,
+the roughneck's face and white hard hat). Writes public/icons/: apple-touch-icon (180), 192, 512,
+favicon (48) and a maskable 512 (the art inside the safe zone, padded with the cover's sky colour).
+The files carry a version in their names (V): phones and browsers cache icons hard, so a new look
+needs new names. Bump V, run this, and update index.html and manifest.webmanifest to match.
+Run: python3 tools/app-icons.py"""
 from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-# The crop's centre and half-size in the 1080x1920 cover. The maskable icon is cut wider, so the
-# same picture sits inside the middle 80% that a phone's icon mask always keeps.
-CX, CY, HALF = 630, 880, 300
-MASK_HALF = 375
-
-
-def crop(im: Image.Image, half: int, size: int) -> Image.Image:
-    return im.crop((CX - half, CY - half, CX + half, CY + half)).resize((size, size), Image.LANCZOS)
+V = 'v2'
+# The cover's sky, sampled from public/cover.webp: the maskable icon's padding.
+SKY = (75, 168, 253)
+# A phone's icon mask always keeps the middle 80%: the art is drawn that size.
+SAFE = 0.8
 
 
 def small(im: Image.Image) -> Image.Image:
@@ -24,20 +22,19 @@ def small(im: Image.Image) -> Image.Image:
 
 
 def main() -> None:
-    im = Image.open(ROOT / 'public/cover.webp').convert('RGB')
+    art = Image.open(ROOT / 'tools/icon-art/roughneck_close.png').convert('RGB')
     out = ROOT / 'public/icons'
-    crop(im, HALF, 192).save(out / 'icon-192.png', optimize=True)
-    small(crop(im, HALF, 512)).save(out / 'icon-512.png', optimize=True)
-    small(crop(im, MASK_HALF, 512)).save(out / 'icon-maskable-512.png', optimize=True)
-    crop(im, HALF, 180).save(out / 'apple-touch-icon.png', optimize=True)
-    crop(im, HALF, 48).save(out / 'favicon-48.png', optimize=True)
-    buf = io.BytesIO()
-    crop(im, HALF, 64).save(buf, 'PNG', optimize=True)
-    data = base64.b64encode(buf.getvalue()).decode()
-    (ROOT / 'public/favicon.svg').write_text(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><clipPath id="r"><rect width="64" height="64" rx="12"/></clipPath></defs>'
-        f'<image width="64" height="64" clip-path="url(#r)" href="data:image/png;base64,{data}"/></svg>\n'
-    )
+    for old in out.glob('*.png'):
+        old.unlink()
+    size = lambda n: art.resize((n, n), Image.LANCZOS)
+    size(180).save(out / f'apple-touch-icon-{V}.png', optimize=True)
+    size(192).save(out / f'icon-{V}-192.png', optimize=True)
+    small(size(512)).save(out / f'icon-{V}-512.png', optimize=True)
+    size(48).save(out / f'favicon-{V}-48.png', optimize=True)
+    inner = round(512 * SAFE)
+    mask = Image.new('RGB', (512, 512), SKY)
+    mask.paste(size(inner), ((512 - inner) // 2, (512 - inner) // 2))
+    small(mask).save(out / f'icon-{V}-maskable-512.png', optimize=True)
 
 
 if __name__ == '__main__':

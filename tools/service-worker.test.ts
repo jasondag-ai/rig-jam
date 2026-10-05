@@ -11,7 +11,9 @@ describe('PWA', () => {
     const sizes = m.icons.map((i: { sizes: string }) => i.sizes);
     expect(sizes).toEqual(expect.arrayContaining(['192x192', '512x512']));
     for (const icon of m.icons) expect(existsSync(pub(icon.src))).toBe(true);
-    expect(existsSync(pub('icons/apple-touch-icon.png'))).toBe(true);
+    expect(existsSync(pub('icons/apple-touch-icon-v2.png'))).toBe(true);
+    // Versioned names, so a phone that cached the old icons fetches the new ones.
+    for (const icon of m.icons) expect(icon.src).toMatch(/icon-v2-/);
   });
 
   it('links the manifest and iPhone home-screen icon from index.html', () => {
