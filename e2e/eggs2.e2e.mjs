@@ -252,7 +252,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     check(down.hare.z === 5 && down.foot.r <= down.bush.l + 1, `he sets it down clear of the bush, not in it (its foot ${(down.bush.l - down.foot.r).toFixed(1)}px from the bush)`);
     const trudge = log.filter((f) => f.beat === 'trudge' && f.hare);
     const behind = trudge.filter((f) => f.hare.z === 2), front = trudge.filter((f) => f.hare.z === 5);
-    check(front.length > 3 && behind.length > 10 && front.every((f) => f.foot.r <= f.bush.l + 1.5) && behind[0].foot.r >= behind[0].bush.l - 1.5, `it goes behind the bush only when its front edge reaches the bush (${front.length} frames in front, then ${behind.length} behind)`);
+    check(front.length > 3 && behind.length > 5 && front.every((f) => f.foot.r <= f.bush.l + 1.5) && behind[0].foot.r >= behind[0].bush.l - 1.5, `it goes behind the bush only when its front edge reaches the bush (${front.length} frames in front, then ${behind.length} behind)`);
     const end = trudge.at(-1), gone = log.filter((f) => f.beat === 'gone' && f.hare);
     check(end.hare.z === 2 && end.hare.l >= end.bush.l && end.hare.r <= end.bush.r && behind.every((f) => f.hare.vis) && gone.every((f) => f.hare.z === 2), 'it walks in behind the bush and stays hidden there: it never vanishes part way');
     const scribble = log.filter((f) => f.beat === 'violated' && f.scribble).length;

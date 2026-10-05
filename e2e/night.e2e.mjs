@@ -146,7 +146,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
         return { stars: document.querySelectorAll('.night-sky .star').length, moon: !!moon, moonClear: moon && moon.top >= R('.hud').bottom - 2 && moon.bottom <= Math.min(...tops, 9999) + 4, glow: glow.width / cell, on: Math.abs(glow.left + glow.width / 2 - (flare.left + flare.width / 2)) < 2, lamps, pe: getComputedStyle(document.querySelector('.night-shade')).pointerEvents, z: getComputedStyle(document.querySelector('.night-shade')).zIndex };
       });
       check(s.stars >= 10 && s.moon && s.moonClear, `a moon and ${s.stars} stars; the moon sits in open sky under the HUD's row`);
-      check(Math.abs(s.glow - 2.5) < 0.1 && s.on, `the flare's glow is ${s.glow.toFixed(2)} cells across, centred on the stack`);
+      check(Math.abs(s.glow - 2.5) < 0.2 && s.on, // its flicker scales it a few percent either way `the flare's glow is ${s.glow.toFixed(2)} cells across, centred on the stack`);
       check(s.lamps.every(Boolean), 'headlights sit at the front of each cab, facing its gate');
       check(s.pe === 'none' && s.z === '0', 'the shade takes no touches and lies under the lease, the HUD and the buttons');
       const flick = await page.evaluate(() => new Promise((res) => { const g = document.querySelector('.flare-glow'), seen = new Set(); const t0 = performance.now(); const tick = () => { seen.add(getComputedStyle(g).opacity); performance.now() - t0 > 1100 ? res([...seen]) : requestAnimationFrame(tick); }; tick(); }));

@@ -117,7 +117,7 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
       // The leaf art is 63px of rails inside a 73px box (its outline margin).
       const thin = ((Math.min(leaf.width, leaf.height) * 63) / 73) / (band * 2);
       const side = [...document.querySelectorAll('.scenery .sc')].filter((t) => { const r = t.getBoundingClientRect(); const b = board.getBoundingClientRect(); return r.bottom > b.top + 6 && r.top < b.bottom && r.right > b.left - 6 && r.left < b.right + 6; }).length;
-      return { side, bush: document.querySelectorAll('.scenery [data-anchor="bush"]').length, mound: document.querySelectorAll('.scenery [data-anchor="mound"]').length, grid: document.querySelectorAll('.pad-grid').length, painted, thin, badge: Math.min(badge.width, badge.height), trees: document.querySelectorAll('.scenery .sc').length, on: board.classList.contains('gate-art'), off, gatesOnTop, rails: board.querySelectorAll('.pf-rail, .pf-corner, .pipe-fence').length, padOver: alpha(pad.left + pad.width / 2, pad.top + pad.height / 2) };
+      return { side, bush: document.querySelectorAll('.scenery [data-anchor="bush"], .bush-layer svg.pup').length, mound: document.querySelectorAll('.scenery [data-anchor="mound"]').length, grid: document.querySelectorAll('.pad-grid').length, painted, thin, badge: Math.min(badge.width, badge.height), trees: document.querySelectorAll('.scenery .sc').length, on: board.classList.contains('gate-art'), off, gatesOnTop, rails: board.querySelectorAll('.pf-rail, .pf-corner, .pipe-fence').length, padOver: alpha(pad.left + pad.width / 2, pad.top + pad.height / 2) };
     });
     check(f.off === 0 && f.padOver === 0, `dirt berm all round the pad, a gap at every gate, nothing on the pad (${f.off} wrong)`);
     check(f.rails === 0, 'no pipe-rail fence or corner posts');
@@ -126,7 +126,7 @@ for (const [type, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
     check(f.thin > 0.5 && f.thin < 0.6 && f.badge >= 18, `gates about 30% thinner (${(f.thin * 100).toFixed(0)}% of the band), badge still ${f.badge.toFixed(0)}px`);
     check(f.trees > 20, `groves of trees round the lease (${f.trees})`);
     check(f.side === 0, `no tree touches the berm (${f.side})`);
-    check(f.bush === 1 && f.mound === (tab === 1 ? 1 : 0), 'gag anchors: the willow bush, and the gopher mound in Cardium only');
+    check(f.bush === 1 && f.mound === (tab === 1 ? 1 : 0), 'gag anchors: one willow bush (the scenery\'s, or the gag bush standing in for it), and the gopher mound in Cardium only');
     check(f.on && f.gatesOnTop, 'gates sit in the gaps, on top');
     const gates = await page.evaluate(() =>
       [...document.querySelectorAll('.gate')].map((g) => {
