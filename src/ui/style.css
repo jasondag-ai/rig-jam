@@ -3484,3 +3484,22 @@ img.hat { width: 100%; height: auto; }
 .truck .magpie-drip { z-index: auto; }
 /* The Wildlife Log card: the smug pose. */
 .log-card .art .magpie-still { width: 84px; height: 84px; overflow: visible; }
+
+/* ---------- The sleepy worker and the moose (egg-gags.ts) ----------
+   Like the magpie's, their layers cover the whole game screen and take no touches. The worker's is
+   above everything (he leaves past the screen's own edge). The moose's is UNDER the board and cut
+   off at the board's top line, so he rises from behind the top berm. */
+.puppet-layer {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  pointer-events: none;
+}
+.puppet-layer svg.pup { position: absolute; overflow: visible; pointer-events: none; }
+.worker-layer { z-index: 9; overflow: visible; }
+.worker-layer .pup-z { position: absolute; opacity: 0; font-weight: 700; color: #fff; letter-spacing: 1px; white-space: nowrap; text-shadow: -1.5px -1.5px 0 #2b1e16, 1.5px -1.5px 0 #2b1e16, -1.5px 1.5px 0 #2b1e16, 1.5px 1.5px 0 #2b1e16; }
+.moose-layer { z-index: 0; bottom: auto; overflow: hidden; }
+.moose-layer .pup-puff { position: absolute; opacity: 0; border: 1.5px solid #2b1e16; border-radius: 50%; background: #fff; }
+.log-card .art .worker-still,
+.log-card .art .moose-still { width: 84px; height: 84px; overflow: visible; }

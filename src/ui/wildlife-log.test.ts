@@ -4,7 +4,7 @@ import { DEMO_LOG_KEY, LOG_ENTRIES, LOG_KEY, camoOn, complete, parseLog, preview
 
 describe('Wildlife Log', () => {
   it('ten entries, each with a name, caption and hint', () => {
-    expect(LOG_ENTRIES.map((e) => e.name)).toEqual(['Magpie', 'Sleeping Spotter', 'Biffy Surprise', 'Angry Landowner', 'Bear', 'Moose', 'Hot Shot', 'Gopher', 'Canada Geese', 'The Pumper']);
+    expect(LOG_ENTRIES.map((e) => e.name)).toEqual(['Magpie', 'Sleepy Worker', 'Biffy Surprise', 'Angry Landowner', 'Bear', 'Moose', 'Hot Shot', 'Gopher', 'Canada Geese', 'The Pumper']);
     expect(LOG_ENTRIES.find((e) => e.id === 'gopher')!.hint).toBe('Seen in Cardium');
     expect(LOG_ENTRIES.find((e) => e.id === 'geese')!.hint).toBe('Look up');
     expect(LOG_ENTRIES.find((e) => e.id === 'pumper')!.hint).toBe('Making his rounds');

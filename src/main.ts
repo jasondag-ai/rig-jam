@@ -15,7 +15,9 @@ import { preloadSprites } from './ui/sprites.ts';
 import { biffySpot } from './ui/gags.ts';
 import { HOTSHOT } from './ui/cast.ts';
 import { WORKER_RIG } from './ui/rigs.ts';
-import { LOG_ENTRIES, applyCamo, complete, loadLog, saveLog, type Sighting } from './ui/wildlife-log.ts';
+import { LOG_ENTRIES, applyCamo, cardHint, complete, liveCount, liveEntries, loadLog, saveLog, type Sighting } from './ui/wildlife-log.ts';
+import { workerStill } from './ui/worker.ts';
+import { mooseStill } from './ui/moose.ts';
 import type { ForcedGag } from './ui/gag-layer.ts';
 import { sceneryHtml } from './ui/scenery.ts';
 import { gagsOn } from './ui/flags.ts';
@@ -35,11 +37,11 @@ const BINOCULARS = uiImg('icon_binoculars');
 const LOG_ART: Record<Sighting, () => string> = {
   // Batch C character art (a telling frame of each), except the hot shot (its art is being redone).
   magpie: () => magpieStill(),
-  spotter: () => animStill('spotter_sit_on_bucket', 84, 7).outerHTML,
+  spotter: () => workerStill(),
   biffy: () => `<div class="pair">${animStill('biffy_door_open', 84, 7).outerHTML}${WORKER_RIG}</div>`,
   landowner: () => animStill('landowner_finger_wag', 84, 4).outerHTML,
   bear: () => animStill('bear_sit', 84, 7).outerHTML,
-  moose: () => animStill('moose_stare', 84, 2).outerHTML,
+  moose: () => mooseStill(),
   hotshot: () => HOTSHOT,
   gopher: () => animStill('gopher_whistle', 84, 4).outerHTML,
   geese: () => `<div class="flock">${[0, 3, 5].map((f) => animStill('canada_goose_flap', 48, f).outerHTML).join('')}</div>`,
@@ -91,7 +93,7 @@ function showLevels(requested = savedRegion()): void {
   screen.innerHTML = `
     <div class="scenery" aria-hidden="true"></div>
     <header class="brand">
-      ${gagsOn() ? `<button class="binoculars" aria-label="Wildlife Log">${BINOCULARS}</button>` : ''}
+      <button class="binoculars" aria-label="Wildlife Log">${BINOCULARS}</button>
       <button class="gear" aria-label="Settings">${uiImg('icon_gear')}</button>
       <h1>Rush Hour Rigs</h1>
       ${Object.keys(progress.best).length ? '' : '<p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>'}
@@ -311,6 +313,10 @@ function showLog(regionIndex: number): void {
   // Demo mode shows its own log; the real one comes back when demo mode is switched off.
   const demo = loadProgress().demo;
   const log = loadLog(demo);
+  // The gags in the game right now (all ten with every gag switched on).
+  const all = gagsOn();
+  const entries = liveEntries(all);
+  const have = liveCount(log, all);
   const screen = document.createElement('div');
   screen.className = `screen log${demo ? ' demo-log' : ''}`;
   applyTheme(screen, themeFor(regionIndex));
@@ -319,28 +325,33 @@ function showLog(regionIndex: number): void {
     <header class="log-head">
       <button class="link back">${uiImg('icon_back', 'back-icon')}Levels</button>
       <h1>Wildlife Log${demo ? '<span class="demo-tag">DEMO</span>' : ''}</h1>
-      <span class="log-count" aria-label="${log.found.length} of ${LOG_ENTRIES.length} found">${log.found.length}/${LOG_ENTRIES.length}</span>
+      <span class="log-count" aria-label="${have} of ${entries.length} found">${have}/${entries.length}</span>
     </header>
     <ul class="log-cards"></ul>
     <p class="log-reward"></p>`;
   const list = screen.querySelector('.log-cards')!;
-  for (const e of LOG_ENTRIES) {
+  for (const e of entries) {
     const found = log.found.includes(e.id);
     const li = document.createElement('li');
     li.className = `log-card ${found ? 'found' : 'unfound'}${e.legendary ? ' legendary' : ''}`;
     li.dataset.id = e.id;
     li.innerHTML = `${e.legendary ? '<span class="legend-tag">LEGENDARY</span>' : ''}<div class="art art-${e.id}" aria-hidden="true">${LOG_ART[e.id]()}</div><h2></h2><p></p>`;
     li.querySelector('h2')!.textContent = found ? e.name : '???';
-    li.querySelector('p')!.textContent = found ? e.caption : e.hint;
+    // Easter eggs: demo mode shows how to find each one; the game keeps it a secret.
+    li.querySelector('p')!.textContent = found ? e.caption : cardHint(e, demo);
     list.append(li);
   }
   screen.querySelector('.log-reward')!.textContent = demo
-    ? `Demo log: ${log.found.length} of ${LOG_ENTRIES.length}. These sightings don't count toward your real log or camo.`
-    : complete(log)
-    ? `All ${LOG_ENTRIES.length} found! Camo pickups unlocked (switch them off in Settings).`
-    : log.camoEarned
-      ? `Camo pickups unlocked. ${LOG_ENTRIES.length - log.found.length} new sightings to find.`
-      : `Find all ${LOG_ENTRIES.length} to unlock camo pickups.`;
+    ? `Demo log: ${have} of ${entries.length}. These sightings don't count toward your real log${all ? ' or camo' : ''}.`
+    : !all
+      ? have === entries.length
+        ? 'All found, for now. More are on the way.'
+        : 'Easter eggs. Keep your eyes open.'
+      : complete(log)
+        ? `All ${LOG_ENTRIES.length} found! Camo pickups unlocked (switch them off in Settings).`
+        : log.camoEarned
+          ? `Camo pickups unlocked. ${LOG_ENTRIES.length - log.found.length} new sightings to find.`
+          : `Find all ${LOG_ENTRIES.length} to unlock camo pickups.`;
   onTap(screen.querySelector('.log-head')!, '.back', () => showLevels(regionIndex));
   app.replaceChildren(screen);
   // A tree line along the horizon under the title, as on the level list.
@@ -376,6 +387,7 @@ function forcedGag(): boolean {
   const gag = new URLSearchParams(location.search).get('gag');
   // The magpie: Cardium 6, as in the approved reference.
   if (gag === 'magpie') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, 'magpie');
+  else if (gag === 'worker') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, 'worker');
   else if (gag === 'bear') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 7, 'bear');
   else if (gag === 'gopher' || gag === 'geese' || gag === 'pumper' || gag === 'hotshot') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 0, gag);
   else if (gag === 'moose') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 0, 'moose');

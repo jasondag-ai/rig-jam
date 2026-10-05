@@ -91,7 +91,7 @@ await page.waitForSelector('.spotter.asleep', { timeout: 30000 }).catch(() => {}
 await wait(2600);
 let t = await toasts();
 check(t[0]?.text === 'New sighting! Magpie (1/10)', `toast: "${t[0]?.text}"`);
-check(t[1]?.text === 'New sighting! Sleeping Spotter (2/10)', `toast: "${t[1]?.text}"`);
+check(t[1]?.text === 'New sighting! Sleepy Worker (2/10)', `toast: "${t[1]?.text}"`);
 check(t.length >= 1 && t.every((x) => x.bottom <= x.boardTop), `toasts sit above the board (${t.map((x) => `${Math.round(x.bottom)}<=${Math.round(x.boardTop)}`).join(', ')})`);
 check(t.length >= 1 && t.every((x) => x.ms && x.ms >= 1900 && x.ms <= 2300), `each disappears after 2 seconds (${t.map((x) => Math.round(x.ms)).join(', ')}ms)`);
 await page.$eval('.hud [data-act="levels"]', (b) => b.click());

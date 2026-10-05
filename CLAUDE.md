@@ -92,12 +92,37 @@ something, give exact clicks and one command at a time.
 - Touch tests: `setPointerCapture` is wrapped in try/catch so synthetic/edge-case pointers can't
   kill a drag. Playwright iPhone emulation: Chromium with real touch events (CDP
   `Input.dispatchTouchEvent`); WebKit with touch-type PointerEvents (its build has no touch drag API).
-- GAGS ARE OFF except the magpie (`src/ui/flags.ts`: `GAGS_ON = false` is the one switch for the
-  rest: no spotter, biffy, landowner, wildlife, traffic, cords or reactions, no Wildlife Log button
-  or toasts; `GameView.gags` is null; `?gags=1` turns them on for one page load, for the gag and log
-  e2e suites). Gags come back ONE AT A TIME (GAME_BIBLE 9b), each behind its own flag: `MAGPIE_ON`
-  (`?magpie=0` turns him off for a page load). A sighting made while the log is hidden is still
-  saved, quietly.
+- GAGS: the old gag layer is OFF (`src/ui/flags.ts`: `GAGS_ON = false`: no biffy, landowner,
+  wildlife, traffic, cords or reactions; `GameView.gags` is null; `?gags=1` turns it on for one page
+  load, for the old gag and log e2e suites). Gags come back ONE AT A TIME as code puppets
+  (GAME_BIBLE 9b; `claude/GAG_STYLE_GUIDE.md` is the rulebook), each behind its own flag and each an
+  EASTER EGG set off by what the player does: `MAGPIE_ON`, `WORKER_ON`, `MOOSE_ON` (`?magpie=0`,
+  `?worker=0`, `?moose=0` turn one off for a page load).
+- EGG SCHEDULING (`GameView.tickEggs`): ONE gag at a time, none while a truck is moving or once
+  the level is won. The moose comes as soon as the stage is free after his trigger. The magpie comes
+  after `MAGPIE_IDLE_MS` (10 s) with no moves and the worker after `SPOTTER_IDLE_MS` (20 s), each
+  counted from the last move or the last gag leaving (the worker waits until the magpie has been),
+  each once per level; one that was scared off or cancelled may try again. `?gag=magpie|worker|moose`
+  plays one at once, again and again; `?idle=0.1` makes the idle times 10x shorter.
+- THE SLEEPY WORKER (gag 2; `src/ui/worker.ts` pure and tested, runner `WorkerGag` in
+  `src/ui/egg-gags.ts`; spec: `~/Desktop/RHR Art Inbox/worker_moose_puppet_reference.html`, ported as
+  written). He has a clearing in the bottom strip by the screen's LEFT edge (`workerSpot`; scenery
+  keeps trees out of it; a little smaller on a short strip, and he does not come if there is no
+  room). Beats (`W_BEATS`, `data-beat`): walks in from off screen with his pail > flips it over >
+  sits > yawn > dozes (Zs) > nod > jolt, hard hat pops > guilty glances > springs up, hop-turns and
+  bolts off the edge, forgetting the pail > the pail alone > he peeks back in, red-faced, his arm
+  grabs it > yank, both gone. `workerFrame(pose, edge)` measures the peek, arm and yank from the
+  screen's edge. ANY move (a truck picked up) cancels him (`cancelPose`): a jolt, then he runs off
+  the edge WITH the pail. The sighting counts once he has nodded off. About 62 px tall.
+- THE MOOSE (gag 3; `src/ui/moose.ts` pure and tested, runner `MooseGag`): Duvernay only, on the
+  second bump of a truck up into the top berm in one level (`isTopBermBump`, `MOOSE_BUMPS`). His
+  layer sits UNDER the board and is cut off at the board's top line, so he rises from BEHIND the top
+  berm (nothing else ever clips a gag). Beats (`M_BEATS`): antler tips > head rises > slow blink >
+  chews > deadpan stare, an ear flick > "Mmrrph" > a tiny lift, ducks; snow drops off an antler
+  behind the berm. He picks a top column with no gate (`mooseColumn`). About 45 px of antler span;
+  a little smaller where there is little room under the HUD.
+- Reduced motion, all three: a simple fade in of a still, then out. None of their layers takes a
+  touch. `npm run test:e2e:eggs` checks the worker and the moose in WebKit and saves clips.
 - THE MAGPIE (gag 1; `src/ui/magpie.ts` pure and tested, `src/ui/magpie-gag.ts` runner; spec: the
   approved reference `~/Desktop/RHR Art Inbox/magpie_puppet_reference.html`, ported as written: same
   parts, colours, outline, expressions, beats and timing). A code puppet, no sprites. After 10 s
@@ -370,6 +395,11 @@ something, give exact clicks and one command at a time.
 - Test hook: `?audiolog` exposes `window.__rhrAudio` (its `log` lists cues as they fire).
 
 ## Wildlife Log
+- LIVE NOW: the log's button is back on the level list and the page lists only the gags that are in
+  the game (`LIVE`: magpie, sleepy worker, moose; all ten with `?gags=1`), with card art from their
+  puppets (`magpieStill`, `workerStill`, `mooseStill`), the count and toasts out of that number.
+  An unfound card shows the gag's hint in DEMO mode only (`cardHint`); the game says "Not seen yet."
+  Camo still needs all ten, so it cannot be earned yet.
 - `src/ui/wildlife-log.ts` (pure + storage, tested): 10 entries (Magpie, Sleeping Spotter, Biffy
   Surprise, Angry Landowner, Bear, Moose, Hot Shot, Gopher, Canada Geese, The Pumper) with captions
   and hints. An entry unlocks the
@@ -518,6 +548,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:menus` – main page, level rows, win card fit and character motion, with screenshots (start the dev server first)
 - `npm run test:e2e:card` – win card frame, column, medal, confetti, with screenshots (start the dev server first)
 - `npm run test:e2e:magpie` – the magpie gag: beats, off-screen entry and exit, splat, startle, reduced motion, frame rate, clips (start the dev server first)
+- `npm run test:e2e:eggs` – the sleepy worker and the moose: beats, entry and exit, cancel, triggers, reduced motion, log, frame rate, clips (start the dev server first)
 - `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)

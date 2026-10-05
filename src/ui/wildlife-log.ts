@@ -16,17 +16,28 @@ export interface LogEntry {
 }
 
 export const LOG_ENTRIES: LogEntry[] = [
-  { id: 'magpie', name: 'Magpie', caption: 'Never park under a tree.', hint: 'Watch the roofs' },
-  { id: 'spotter', name: 'Sleeping Spotter', caption: 'On the clock. Allegedly.', hint: 'Try waiting' },
+  { id: 'magpie', name: 'Magpie', caption: 'Never park under a tree.', hint: 'Sit tight for 10 seconds.' },
+  { id: 'spotter', name: 'Sleepy Worker', caption: 'On the clock. Allegedly.', hint: 'Sit tight for 20 seconds.' },
   { id: 'biffy', name: 'Biffy Surprise', caption: 'Occupied.', hint: 'Back a truck up to the biffy' },
   { id: 'landowner', name: 'Angry Landowner', caption: 'Wants a word about the ruts.', hint: 'Seen in Montney. Mind the mud' },
   { id: 'bear', name: 'Bear', caption: 'Does what bears do in the woods.', hint: 'Only deep in the Duvernay.', legendary: true },
-  { id: 'moose', name: 'Moose', caption: 'Just checking in.', hint: 'Seen in Duvernay' },
+  { id: 'moose', name: 'Moose', caption: 'Just checking in.', hint: 'Bump a truck into the top berm twice in Duvernay.' },
   { id: 'hotshot', name: 'Hot Shot', caption: 'Late for something.', hint: "Seen everywhere. Don't blink" },
   { id: 'gopher', name: 'Gopher', caption: 'Owns the lease. Pays no rent.', hint: 'Seen in Cardium' },
   { id: 'geese', name: 'Canada Geese', caption: 'Heading south. One of them late.', hint: 'Look up' },
   { id: 'pumper', name: 'The Pumper', caption: 'Gauge says fine. Clipboard agrees.', hint: 'Making his rounds' },
 ];
+
+/**
+ * The gags that are in the game right now (they come back one at a time: GAME_BIBLE 9b). The log
+ * page, its count and the sighting toasts cover these; with every gag switched on (`all`) they
+ * cover all ten. Camo still needs all ten.
+ */
+export const LIVE: Sighting[] = ['magpie', 'spotter', 'moose'];
+export const liveEntries = (all: boolean): LogEntry[] => (all ? LOG_ENTRIES : LOG_ENTRIES.filter((e) => LIVE.includes(e.id)));
+export const liveCount = (log: WildlifeLog, all: boolean): number => liveEntries(all).filter((e) => log.found.includes(e.id)).length;
+/** What an unfound card says: the gag's hint in demo mode; nothing given away in the game. */
+export const cardHint = (e: LogEntry, demo: boolean): string => (demo ? e.hint : 'Not seen yet.');
 
 /** The first seven: a log that had all of these before 8 to 10 arrived keeps its camo. */
 const ORIGINAL: Sighting[] = ['magpie', 'spotter', 'biffy', 'landowner', 'bear', 'moose', 'hotshot'];
@@ -103,8 +114,8 @@ export function record(log: WildlifeLog, id: Sighting): { log: WildlifeLog; isNe
   return { log: next, isNew: true, count: found.length, completed: done };
 }
 
-export const sightingToast = (id: Sighting, count: number, demo = false) =>
-  `${demo ? 'Demo' : 'New'} sighting! ${LOG_ENTRIES.find((e) => e.id === id)!.name} (${count}/${LOG_ENTRIES.length})`;
+export const sightingToast = (id: Sighting, count: number, demo = false, all = true) =>
+  `${demo ? 'Demo' : 'New'} sighting! ${LOG_ENTRIES.find((e) => e.id === id)!.name} (${count}/${liveEntries(all).length})`;
 
 /** Every pickup in the game wears camo (a class on <body>; style.css draws it). */
 export function applyCamo(log: WildlifeLog = loadLog()): void {
