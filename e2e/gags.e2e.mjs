@@ -11,7 +11,8 @@ import { biffySpot, reverseDirection } from '../src/ui/gags.ts';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
 // The bear, moose and hot shot have their own section below; off here so they don't make the others wait.
-const BASE = ROOT + '?gags=1&idle=0.1&audiolog&wild=0';
+// The magpie has his own suite (magpie.e2e.mjs); here he is switched off so the others can be timed.
+const BASE = ROOT + '?gags=1&magpie=0&idle=0.1&audiolog&wild=0';
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;
 const check = (ok, text) => {
@@ -83,39 +84,11 @@ const play = async (page, touch, level) => {
   const { browser, page, touch } = await open('no-preference');
   console.log('\nchromium iPhone 13 (real touch events), idle x0.1');
 
-  // 1. Magpie after 10s (1s here): lands on a roof, poops, "Seriously?", flies off.
+  // 1. The magpie is not this suite's business: with him switched off, nothing lands on a roof.
   await enter(page, 1, 0);
   await wait(1350);
-  const birdMid = await rect(page, '.magpie').catch(() => null);
-  check(!!birdMid, 'magpie arrives after the idle time');
-  await page.waitForSelector('.dropping', { timeout: 4000 }).catch(() => {});
-  const drops = await page.$$eval('.dropping', (d) => ({ n: d.length, trucks: [...new Set(d.map((x) => x.closest('.truck')?.dataset.id))] }));
-  // The plops land first, then the driver's "Seriously?" a beat later.
-  await page.waitForSelector('.bubble', { timeout: 1500 }).catch(() => {});
-  const bubble = await page.$eval('.bubble', (b) => b.textContent).catch(() => null);
-  const splatTruck = drops.trucks[0];
-  check(drops.n >= 2 && drops.n <= 3 && drops.trucks.length === 1 && !!splatTruck, `${drops.n} droppings land on one truck roof (truck ${splatTruck})`);
-  check(bubble === 'Seriously?', `that driver yells "${bubble}"`);
-  const magpieLog = await heardSince(page);
-  check(hearAll(magpieLog, ['squawk', 'plop', 'grunt']) && magpieLog.filter((n) => n === 'plop').length === drops.n, `sounds: squawk, a plop per dropping, the grunt (${[...new Set(magpieLog)].join(' ')})`);
-  const onRoof = await page.evaluate(() => {
-    const bird = document.querySelector('.magpie');
-    if (!bird) return 'gone';
-    const r = bird.getBoundingClientRect();
-    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height * 0.8);
-    return hit?.closest('.truck') ? 'truck under it gets the touch' : hit?.className;
-  });
-  check(onRoof === 'truck under it gets the touch' || onRoof === 'gone', `the magpie never blocks a touch (${onRoof})`);
-  await wait(2500);
-  check(!(await page.$('.magpie')), 'magpie flies off');
-  check((await page.$$eval('.dropping', (d) => d.length)) === drops.n, 'the droppings stay on the roof');
-  const allOn = await page.$$eval('.dropping', (ds) => ds.every((d) => {
-    const r = d.getBoundingClientRect();
-    const t = d.closest('.truck').getBoundingClientRect();
-    return r.left >= t.left && r.right <= t.right && r.top >= t.top && r.bottom <= t.bottom;
-  }));
-  check(allOn, 'every dropping sits fully on the truck');
-  // Splat stays until that truck exits: solve the level and watch it go with the truck.
+  check(!(await page.$('.magpie-layer')) && !(await page.$('.dropping')), 'no magpie here (he has his own suite)');
+  await heardSince(page);
   // 2. Spotter after 20s (2s here): walks on below the fence, sits on his pail, dozes off.
   await page.waitForSelector('.spotter', { timeout: 3000 }).catch(() => {});
   const pad = await rect(page, '.pad');
@@ -144,20 +117,11 @@ const play = async (page, touch, level) => {
   await page.waitForSelector('.spotter.walking', { timeout: 4000 }).catch(() => {});
   const gap = Date.now() - touchedAt;
   check(gap >= 1900, `idle clock restarted: the next spotter came ${(gap / 1000).toFixed(1)}s after the touch`);
-  check(!(await page.$('.magpie')), 'magpie only comes once per level');
   // A touch while he is still walking on cancels him outright.
   const wasWalking = !!(await page.$('.spotter.walking'));
   await touch.tapAt(20, 400);
   await wait(60);
   check(wasWalking && !(await page.$('.spotter')), 'a touch before he sits cancels him instantly');
-
-  // Cancel the magpie mid-flight on a fresh level.
-  await enter(page, 1, 1);
-  await wait(1250);
-  const flying = !!(await page.$('.magpie'));
-  await touch.tapAt(20, 400);
-  await wait(60);
-  check(flying && !(await page.$('.magpie')) && !(await page.$('.roof-splat')), 'a touch cancels the magpie before it lands');
 
   // 4. Company Man by result, no repeats in a row.
   const level1 = REGIONS[0].levels[0];
@@ -394,7 +358,7 @@ const played = (w) => [...Object.keys(w.beats).filter((k) => w.beats[k].length),
   const cdp = await context.newCDPSession(page);
   console.log('\nchromium iPhone 13, each scene (?gag= links)');
   const scene = async (gag, sel, during = async () => {}) => {
-    await page.goto(`${ROOT}?gags=1&gag=${gag}&audiolog`, { waitUntil: 'networkidle' });
+    await page.goto(`${ROOT}?gags=1&magpie=0&gag=${gag}&audiolog`, { waitUntil: 'networkidle' });
     await page.evaluate(() => document.body.click()); // a tap starts the audio
     await page.waitForSelector(sel, { state: 'attached', timeout: 20000 });
     await page.waitForSelector(sel, { state: 'detached', timeout: 25000 });
@@ -479,7 +443,7 @@ const played = (w) => [...Object.keys(w.beats).filter((k) => w.beats[k].length),
 
 // Pacing rules in normal play (times x0.1, so the 30-45s perimeter gap is 3-4.5s here).
 {
-  const { browser, page, touch } = await open('no-preference', ROOT + '?gags=1&idle=0.1&audiolog');
+  const { browser, page, touch } = await open('no-preference', ROOT + '?gags=1&magpie=0&idle=0.1&audiolog');
   console.log('\nchromium iPhone 13, gag pacing (times x0.1)');
   const STAGES = { bear: '.bear-stage', moose: '.moose-peek', gopher: '.gopher-stage', geese: '.geese-stage', pumper: '.pumper-stage', hotshot: '.gag.hotshot' };
   /** Records every perimeter scene's start and end, and any moment two gags are on at once. */
@@ -568,7 +532,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }
   const page = await context.newPage();
   console.log(`\n${viewport.width}x${viewport.height}`);
   for (const [gag, sel] of [['bear', '.bear-stage'], ['moose', '.moose-peek'], ['gopher', '.gopher-stage'], ['geese', '.geese-stage'], ['pumper', '.pumper-stage']]) {
-    await page.goto(`${ROOT}?gags=1&gag=${gag}`, { waitUntil: 'networkidle' });
+    await page.goto(`${ROOT}?gags=1&magpie=0&gag=${gag}`, { waitUntil: 'networkidle' });
     await page.evaluate(watchStage);
     await page.waitForSelector(sel, { timeout: 3000 }).catch(() => {});
     await page.waitForSelector(sel, { state: 'detached', timeout: 25000 }).catch(() => {});
@@ -588,7 +552,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }
   console.log('\n?gag= links');
   for (const [gag, sel] of [['bear', '.bear-stage'], ['moose', '.moose-peek'], ['biffy', '.worker-bent'], ['gopher', '.gopher-stage'], ['geese', '.geese-stage'], ['pumper', '.pumper-stage'], ['hotshot', '.hotshot']]) {
     const t0 = Date.now();
-    await page.goto(`${ROOT}?gags=1&gag=${gag}`, { waitUntil: 'networkidle' });
+    await page.goto(`${ROOT}?gags=1&magpie=0&gag=${gag}`, { waitUntil: 'networkidle' });
     const ok = await page.waitForSelector(sel, { timeout: 3000 }).then(() => true).catch(() => false);
     check(ok, `?gag=${gag} starts at once (${((Date.now() - t0) / 1000).toFixed(1)}s after load)`);
     if (gag === 'geese') {
@@ -624,7 +588,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }
 
 // Reduced motion: none of them.
 {
-  const { browser, page } = await open('reduce', ROOT + '?gags=1&idle=0.1');
+  const { browser, page } = await open('reduce', ROOT + '?gags=1&magpie=0&idle=0.1');
   await enter(page, 1, 0);
   let any = 0;
   for (let i = 0; i < 16; i++) {
@@ -641,14 +605,6 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }
   console.log('\nchromium iPhone 13, reduced motion');
   await enter(page, 1, 0);
   await wait(1500);
-  const still = await page.evaluate(() => ({
-    bird: !!document.querySelector('.magpie'),
-    flapping: document.querySelector('.magpie')?.classList.contains('flying') ?? false,
-    anims: document.getAnimations().filter((a) => a.effect?.target?.closest?.('.gag')).length,
-  }));
-  check(still.bird && !still.flapping && still.anims === 0, `magpie shows without animation (${JSON.stringify(still)})`);
-  await page.waitForSelector('.dropping', { timeout: 3000 }).catch(() => {});
-  check((await page.$$eval('.dropping', (d) => d.length)) >= 2, 'droppings still land');
   await page.waitForSelector('.spotter.asleep', { timeout: 5000 }).catch(() => {});
   check(!!(await page.$('.spotter.asleep')) && (await page.evaluate(() => document.getAnimations().length)) === 0, 'spotter shows asleep on his pail, standing still');
   await browser.close();

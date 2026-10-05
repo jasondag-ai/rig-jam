@@ -86,7 +86,8 @@ check(!!(await page.$('.level-btn')), '"‹ Levels" goes back');
 await page.goto(ROOT + '?gags=1&idle=0.1&wild=0', { waitUntil: 'networkidle' });
 await page.$eval('.level-btn[data-index="0"]', (b) => b.click());
 await watchToasts();
-await page.waitForSelector('.spotter.asleep', { timeout: 12000 }).catch(() => {});
+// The magpie's gag runs about 12 s (it is not sped up); the spotter comes after it.
+await page.waitForSelector('.spotter.asleep', { timeout: 30000 }).catch(() => {});
 await wait(2600);
 let t = await toasts();
 check(t[0]?.text === 'New sighting! Magpie (1/10)', `toast: "${t[0]?.text}"`);
