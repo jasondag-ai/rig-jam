@@ -37,7 +37,7 @@ const topBumper = (level) => {
 const mooseLevel = REGIONS[duvernay].levels.findIndex((l) => topBumper(l)?.row === 0);
 const bumper = topBumper(REGIONS[duvernay].levels[mooseLevel]);
 
-async function open(browser, { width = 390, height = 844, query = '?cover=0&idle=0.1&magpie=0&cooldown=0&off=lunch,sam,tongue', reducedMotion = 'no-preference', video = null, level = [0, 5], progress = UNLOCKED, enter = true } = {}) {
+async function open(browser, { width = 390, height = 844, query = '?cover=0&idle=0.1&magpie=0&cooldown=0&off=lunch,sam,tongue&night=0', reducedMotion = 'no-preference', video = null, level = [0, 5], progress = UNLOCKED, enter = true } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, hasTouch: true, reducedMotion, ...(video ? { recordVideo: { dir: video, size: { width, height } } } : {}) });
   const page = await context.newPage();
   page.on('pageerror', (e) => console.log('ERR', e.message));
@@ -157,7 +157,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     // ---------- 2. The moose ----------
     console.log(`\n${engine}: moose peekaboo (Duvernay ${mooseLevel + 1}, truck ${bumper.id})`);
     {
-      const { context, page } = await open(browser, { query: '?cover=0&magpie=0&worker=0&cooldown=0&off=lunch,sam,tongue', level: [duvernay, mooseLevel] });
+      const { context, page } = await open(browser, { query: '?cover=0&magpie=0&worker=0&cooldown=0&off=lunch,sam,tongue&night=0', level: [duvernay, mooseLevel] });
       await bump(page, bumper.id);
       await wait(900);
       check(!(await page.$('.moose-layer')), 'one bump into the top berm: no moose');
@@ -197,7 +197,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       // Not in Montney: two bumps into the top berm bring nothing.
       const montney = REGIONS.findIndex((r) => r.id === 'montney');
       const li = REGIONS[montney].levels.findIndex((l) => topBumper(l)?.row === 0);
-      const { context, page } = await open(browser, { query: '?cover=0&magpie=0&worker=0&cooldown=0&off=lunch,sam,tongue', level: [montney, li] });
+      const { context, page } = await open(browser, { query: '?cover=0&magpie=0&worker=0&cooldown=0&off=lunch,sam,tongue&night=0', level: [montney, li] });
       const id = topBumper(REGIONS[montney].levels[li]).id;
       await bump(page, id);
       await bump(page, id);
@@ -221,7 +221,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       await context.close();
     }
     {
-      const { context, page } = await open(browser, { query: '?cover=0&magpie=0&worker=0&cooldown=0&off=lunch,sam,tongue', level: [duvernay, mooseLevel], reducedMotion: 'reduce' });
+      const { context, page } = await open(browser, { query: '?cover=0&magpie=0&worker=0&cooldown=0&off=lunch,sam,tongue&night=0', level: [duvernay, mooseLevel], reducedMotion: 'reduce' });
       await bump(page, bumper.id);
       await bump(page, bumper.id);
       await page.waitForSelector('.moose-layer', { state: 'attached', timeout: 4000 }).catch(() => {});

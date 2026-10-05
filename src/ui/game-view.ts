@@ -359,7 +359,8 @@ export class GameView {
         // Night falls after a quiet spell; the next thing the player does brings the day back (`played`).
         if (!this.night && !this.board.moving && now - this.lastPlayAt >= GAG_TRIGGERS.night.idleMs * this.idleScale) this.setNight(true);
         // The nudge: a while after night has fully fallen, a truck speaks up. Once per level; never a fail.
-        if (this.night && !this.nudged && now - this.nightAt >= GAG_TRIGGERS.night.fadeInMs + GAG_TRIGGERS.nightNudge.afterNightMs * this.idleScale) {
+        // (Not while a gag is on: its own line may be up, and the bubble is shared.)
+        if (this.night && !this.nudged && !this.eggsOn.size && now - this.nightAt >= GAG_TRIGGERS.night.fadeInMs + GAG_TRIGGERS.nightNudge.afterNightMs * this.idleScale) {
           const trucks = this.state.trucks;
           const el = this.board.truckElement(trucks[Math.floor(Math.random() * trucks.length)].id);
           if (!el) return;

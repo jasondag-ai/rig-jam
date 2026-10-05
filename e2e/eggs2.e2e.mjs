@@ -342,7 +342,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     check(x.eye > 7, `her eyes go huge (${x.eye})`);
     const cowOut = log.filter((f) => f.cow.vis).at(-1), bullOut = log.filter((f) => f.beat === 'charge' && f.bull.vis).at(-1);
     check(cowOut.cow.l >= W - 2, `she bolts until she is fully off screen (x ${Math.round(cowOut.cow.l)})`);
-    check(bullOut.bull.l >= W - 10 && x.trail >= 2, // the last frame caught before he is hidden `he charges after her, hearts trailing, until fully off screen (x ${Math.round(bullOut.bull.l)})`);
+    check(bullOut.bull.l >= W - 10 && x.trail >= 2, `he charges after her, hearts trailing, until fully off screen (x ${Math.round(bullOut.bull.l)})`);
     check(x.pop, 'a last heart floats up and pops');
     check(log.every((f) => f.others === 0), 'nothing else was on stage');
     await wait(300);
