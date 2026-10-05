@@ -16,7 +16,7 @@ import { uiImg } from './ui-art.ts';
 import { preloadSprites } from './sprites.ts';
 import { defaultKind } from './vehicles.ts';
 import { applyCamo, loadLog, record, saveLog, sightingToast, type Sighting } from './wildlife-log.ts';
-import { bearAlways, bearNever, cooldownScale, eggOff, magpieOn, mooseOn, workerOn } from './flags.ts';
+import { bearAlways, bearNever, cooldownScale, eggOff, gagTest, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
 import { BackAndForth, GAG_RULES, GAG_TRIGGERS, IDLE_GAGS, Wiggle, bearComes, bermBump, mustWait, wrongGateBump, type GagId } from './gag-triggers.ts';
 import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
@@ -298,8 +298,16 @@ export class GameView {
         },
         { capture: true },
       );
-      // By themselves (the other gags off), the eggs keep their own clock.
-      this.eggTimer = window.setInterval(() => this.tickEggs(), 250);
+      // Tests: `?gagtest=1` starts nothing; a strip gag can be held at any time of its run and let go.
+      if (gagTest()) {
+        const strips = this.strips;
+        (window as unknown as { __rhrGag: unknown }).__rhrGag = {
+          names: () => Object.keys(strips),
+          end: (id: GagId) => strips[id]?.end ?? 0,
+          hold: (id: GagId, t: number) => strips[id]?.hold(t) ?? false,
+          release: (id: GagId) => strips[id]?.release(),
+        };
+      } else this.eggTimer = window.setInterval(() => this.tickEggs(), 250);
     }
     // NIGHT (night.ts): its shade lies over the scenery, the strip's props and the strip's gags, under
     // the lease, HUD and buttons; the sky's own night sits behind the trees. Both are clear by day.

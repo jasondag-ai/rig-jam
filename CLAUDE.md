@@ -92,12 +92,11 @@ something, give exact clicks and one command at a time.
 - Touch tests: `setPointerCapture` is wrapped in try/catch so synthetic/edge-case pointers can't
   kill a drag. Playwright iPhone emulation: Chromium with real touch events (CDP
   `Input.dispatchTouchEvent`); WebKit with touch-type PointerEvents (its build has no touch drag API).
-- GAGS: the old gag layer is OFF (`src/ui/flags.ts`: `GAGS_ON = false`: no biffy, landowner,
-  wildlife, traffic, cords or reactions; `GameView.gags` is null; `?gags=1` turns it on for one page
-  load, for the old gag and log e2e suites). Gags come back ONE AT A TIME as code puppets
-  (GAME_BIBLE 9b; `claude/GAG_STYLE_GUIDE.md` is the rulebook), each behind its own flag and each an
-  EASTER EGG set off by what the player does: `MAGPIE_ON`, `WORKER_ON`, `MOOSE_ON` (`?magpie=0`,
-  `?worker=0`, `?moose=0` turn one off for a page load).
+- GAGS: every gag is a CODE PUPPET (GAME_BIBLE 9b; `claude/GAG_STYLE_GUIDE.md` is the rulebook),
+  ported from an approved reference page and set off by what the player does. The old sprite gag
+  system (the gag layer, its scenes, rigs, sprite sheets and the `?gags=1` switch) has been DELETED;
+  do not bring any of it back. ONE ART STYLE in play: the board's flat toy look and the puppets.
+  Switches for tests (`src/ui/flags.ts`): `?magpie=0`, `?worker=0`, `?moose=0`, `?off=...`.
 - TRIGGER SETTINGS: every gag's trigger lives in ONE file, `src/ui/gag-triggers.ts` (`GAG_TRIGGERS`),
   for Jay to tune after playing. Now: magpie 10 s idle; worker 20 s idle; moose = 2 bumps up into
   the top berm (Duvernay); Near Miss = two exits within 3.5 s (Cardium); landowner = the same truck
@@ -146,7 +145,7 @@ something, give exact clicks and one command at a time.
   - THE BIFFY is permanent scenery (`BiffyProp`, `.biffy-layer`, under the board): bottom strip of
     every level at `BIFFY_X`, about 80 px tall at 390 (smaller on a short strip), in its own
     clearing (scenery `clearings`), clear of the board, tip line and buttons. No biffy appears and
-    disappears any more (the old one lives only in `?gags=1`).
+    disappears any more. `npm run test:e2e:strip` checks there is exactly ONE on every level.
   - BIFFY A "Occupied": door bangs open, the occupant looks back wide-eyed, nods, reaches, pulls it
     shut; the indicator ends red. BIFFY B "The Runaway Roll": the roll rolls out and away, the arm
     gropes, he shuffles after it off screen with paper on his boot, the door creaks shut; green.
@@ -262,8 +261,7 @@ something, give exact clicks and one command at a time.
   and leaves no mark; he may try again after another idle stretch. Reduced motion: the bird fades in
   smug, the splat appears, the bird fades out. Wildlife Log card: the smug pose (`magpieStill`).
   `?gag=magpie` plays him at once on Cardium 6, again and again. `npm run test:e2e:magpie` checks all
-  of it in WebKit (frame rate in Chromium under 4x throttle) and saves clips. With `?gags=1` the gag
-  layer's pacing decides when he plays (`GagHost.playMagpie`).
+  of it in WebKit (frame rate in Chromium under 4x throttle) and saves clips.
 - Fit: `#app` is `100dvh`; `--safe-top/-bottom/-left/-right` (style.css `:root`) carry the safe-area
   insets and every screen pads with them. The game screen is HUD, stage (flex), note, controls; the
   lease is the largest square that fits the stage, so the sky band and bottom strip give way first.
@@ -362,11 +360,14 @@ something, give exact clicks and one command at a time.
 - Confetti (`GameView.confetti`): on a perfect solve, 40 small hard hats and orange/yellow scraps
   fall for about 1.5 s in a layer UNDER the card (never over its buttons), then the layer is
   removed. Not made under reduced motion.
-- Win card characters: ONE still image each (`animStill`), never sprite-frame cycles (the
-  frames don't line up and jitter), moved only by GSAP about a fixed origin: the roughneck (wrench-up
-  still on a perfect solve, else standing) does one squash-and-stretch bounce on a perfect solve and
-  then breathes; the Company Man (scowl still when well over, else his usual look) gives one slow
-  small nod, then holds still. Reduced motion: no movement. `npm run test:e2e:menus` checks this.
+- Win card characters (`src/ui/win-cast.ts`): flat puppet stills in the worker's build and outline,
+  never sprites, one expression per result (`Tier`: par, close, over; `data-tier`). The mascot is
+  the worker himself (`mascotStill`: arms up at par, a thumbs-up when close, sheepish with a bead
+  of sweat when over). The Company Man (`companyStill`, head and shoulders) is the same build in a
+  white hard hat, a light blue button shirt and khaki pants with a travel mug and no vest (pleased,
+  unmoved, scowling). Moved only by GSAP about a fixed origin: the mascot does one squash-and-stretch
+  bounce on a perfect solve and then breathes; the Company Man gives one slow small nod, then holds
+  still. Reduced motion: no movement. `npm run test:e2e:menus` checks this.
 - The Daily Pad button turns green once today's pad is cleared (a hue shift of the orange art); it
   must have no background fill of its own (a fill shows as a colored box round the button).
 - Scenery (`src/ui/scenery.ts`, tested; Batch A art in `public/sprites/world/`): spruce, aspen and
@@ -432,104 +433,16 @@ something, give exact clicks and one command at a time.
 - Settings → "Unlock everything (demo mode)": a flag in progress that opens everything without
   touching scores or streak. Off restores normal locks. Reset progress turns it off.
 
-## Characters and gags (M4)
-- `src/ui/gags.ts` (pure, tested): idle timing, Company Man line by tier, biffy spot, cord geometry.
-  `src/ui/cast.ts`: SVG art. `src/ui/gag-layer.ts`: runs them on the board. Lines in `lines.ts`.
-- Rules: gags never take touches (`pointer-events: none`) and stay outside the 6x6 grid or on truck
-  roofs (block heater cords lie on the ground in the truck's own lane, under the trucks). Reduced
-  motion: shown as still frames, no animation.
-- Magpie: see THE MAGPIE above (the code puppet replaced the old drawing and sprite sheets).
-- Spotter: 20s idle: walks on below the fence carrying a pail, sits on it and dozes ("Zzz"). A
-  touch while he's walking cancels him; a touch while he's asleep startles him: he falls off the
-  pail and scrambles off. Once per idle stretch.
-- Any touch cancels the magpie instantly and restarts the idle clock.
-- Company Man on the win card: line by tier (par / +1..+3 / worse), 3 per tier, no repeats in a row.
-- Biffy: just outside the fence directly behind one truck's tailgate, where that fence has no gate
-  (`biffySpot`: bottom preferred, then top, then the sides, sized to fit the screen margin). When
-  that truck reverses toward it (a move) or backs into the fence (a bump), the door bangs open and a
-  worker hops out and shuffles off screen with tiny quick steps. Strict side profile, one connected
-  body: shirt, a round bare cartoon cheek at the back (intended, no detail), coveralls bunched round
-  his knees, a toilet paper streamer trailing from his hand. Puppet rig (`WORKER_RIG`). He doesn't go
-  back in. Once per level.
-- Block heater cords (Duvernay): each truck plugged into a post on the berm's inner slope behind
-  it; the cord is a cable (thick dark jacket, lighter line along it, orange plug at the truck) with
-  a coil of slack on the ground, all inside the pad and berm. First move rips it out (whip +
-  sparks); the post keeps a dangling plug. Restart re-plugs.
-- Landowner (Montney): first time any lane wears to `WEAR_CAP`, he rides along below the board on
-  his quad, shakes his fist, "Who's paying for these ruts?", rides off. Once per level.
-- Character animation: GSAP on puppet rigs. `src/ui/rig.ts`: each part of a drawing is a group with
-  `data-j` (joint name) and `data-p` (pivot); GSAP tweens plain numbers on the joints and the rig
-  writes SVG transforms about each pivot every frame; `data-alt` groups swap (eyes open/shut/pop).
-  Drawings in `src/ui/rigs.ts` (bear, rabbit, worker, moose). Use anticipation, squash and stretch,
-  easing, overshoot, overlapping action and holds. Big scenes go on screen-level layers outside the
-  board (`sceneLayer`: the board's drop-shadow filter would force a redraw every frame); no CSS
-  filters on them (ground-shadow ellipses instead). Must hold 60fps (checked with 4x CPU throttle).
-- Batch C character animation (`src/ui/anim.ts`): `Sprite` plays sprite-sheet actions from
-  `public/sprites/anim/` (`anim-sprites.json`: frames, frame size, character box), origin at the
-  feet, GSAP-driven (abortable with the scene). Gags keep their timing, triggers and sizes; each
-  wraps its figure with `withSprite` and the old drawing stays inside for beats whose new art was
-  rejected (`.drawn` shows it): bear wipe/rabbit beats (rig), magpie hop/poop, moose chew, spotter
-  sleep/wake, pumper truck/get-in/out/write, hot shot (old). New art: gopher (all), moose rise/
-  stare/duck, magpie fly/land/take-off, spotter jog/sit, biffy door, landowner (now on foot: walk,
-  finger wag, head shake), bear walk/sit/walk-off, geese, pumper walk/check-gauge, gauge post.
-  Win card and log cards use stills (`animStill`); see "Win card" under Look.
-  When redone art arrives, add it to `inbox-sprites.py` (drop it from REJECTED) and swap the beat.
-- Wildlife and traffic. Touches never cancel them; each waits while another gag is on stage (and the
-  landowner or biffy wait for them; a sleeping spotter holds them up until he's woken). Reduced
-  motion: skipped entirely.
-- GAG PACING RULES (enforced in `GagLayer.tick`, pure logic in `gags.ts`, tested):
-  1. Only one gag plays at a time, anywhere on screen (`busy()` covers every gag and reaction).
-     Gags the player sets off (biffy, landowner) and reactions queue in `pending` and start when the
-     stage is free.
-  2. No gag starts while a truck is being dragged or moving (`host.moving()`: drag, snap, drive-out).
-  3. Perimeter gags (the scheduled scenes outside the fence: gopher, moose, bear, hot shot, geese,
-     pumper): at most one every 30 to 45 seconds (`PERIMETER_GAP_MS`, counted from the last one
-     ending; the first 30-45s into the level), random order, no repeats until every enabled one has
-     played (`perimeterBag`; unfound Wildlife Log entries are `UNFOUND_WEIGHT` 3x as likely to be
-     drawn earlier; a refill never starts with the one that just played). The biffy and landowner
-     also push the next one back 30-45s. The spotter (20s idle) and magpie (10s idle) are idle gags:
-     they obey rules 1 and 2, and the spotter doesn't return until a perimeter gag has played since.
-  4. In-lease reaction slots, reserved for upcoming art and EMPTY for now (`GagLayer.reactions`):
-     `great-move` (two trucks exit within `GREAT_MOVE_MS` 3.5s) and `stuck` (no move for `STUCK_MS`
-     20s). When due they only set `data-reaction` on the board. Register a player to fill one.
-  Demo mode and `?gag=` links keep their own faster schedules but obey rules 1 and 2.
-- The Bear is legendary: eligible only in Duvernay levels 8-10 (`bearEligible`), rolled once per
-  level visit at `BEAR_CHANCE` (1 in 3; restarts don't re-roll); when he comes he joins that
-  visit's perimeter bag. A bush stands in every eligible level whether he comes or not. Not in Montney any more.
-- Demo mode (Settings → Unlock everything): `tickDemo` plays a gag about 5s in, then about every
-  15s (`DEMO_FIRST_MS`, `DEMO_EVERY_MS`), unfound first (`demoNext`), from `demoPool` (magpie,
-  spotter, biffy, Montney's landowner, the Bear in ANY level, plus the level's pool). The spotter
-  wakes himself after a short doze. Demo sightings go to a separate demo log (see Wildlife Log).
-  E2E tests therefore use `e2e/progress.mjs` (`UNLOCKED`: all levels cleared, demo off).
-- The scenes:
-  - Bear (`bear-scene.ts`): a bush stands at
-    the bottom from level start (placed clear of the biffy). A background gag: 90% of the strip's
-    height at his tallest (sitting, ear tips to paws), never over the board or the buttons (checked
-    at 375px wide too). Beats (`data-beat`): walk (alternating
-    legs) > squat > strain (quiver, eyes shut, sweat) > rabbit hops in > sniff > notice (eyes pop,
-    slow head turn, hold) > windup > grab (jointed shoulder/elbow/wrist; rabbit squashed in his
-    paw, held by the scruff) > wipe (up into a half-squat, rump pushed back, tail showing; the arm
-    is redrawn over his thigh and stretched to his rump (`reachFor`); the rabbit is held flat under
-    the tail and given two short strokes along the rump's curve (`rumpPoint`), ears flopping; rabbit
-    deadpan, bear relieved) > setdown >
-    freeze > shake (wet dog) > bolt (rabbit right with flat ears and speed lines, bear left after a
-    satisfied hop). The hint line fades while he's on.
-  - Moose (Duvernay, `moose-scene.ts`). A small, quick peekaboo behind the board: only
-    his head and antlers pop up over the top fence (chin hidden behind it). Up > chew (blinks, chews
-    once) > stare (short, + groan) > down, under 3 seconds (`PEEK`).
-  - Hot shot (all regions). Pickup screams across the bottom in <1s in
-    dust/mud/snow.
-  - Gopher (Cardium, `visitor-scenes.ts`). A hole opens by
-    the bottom fence (clear of the biffy); he peeks, looks around, pops up, whistles twice, drops back.
-  - Canada geese and the pumper (any region):
-    Canada geese (a V of 7 across the sky above the board, behind the HUD, a straggler flapping hard
-    and honking to catch up) or the pumper (his pickup rolls up in the bottom strip, he checks a
-    gauge, writes on his clipboard, drives off). Mirror figures via their inner svg (GSAP owns the
-    element's transform and resets the CSS `scale` property).
-- Preview/test hooks: `?gag=bear` (opens Duvernay 8), `?gag=moose`, `?gag=biffy`, `?gag=gopher`,
-  `?gag=geese`, `?gag=pumper`, `?gag=hotshot` open a suitable level and play that
-  scene at once, then again 1.5s after it ends (nothing else plays). `?idle=0.1` makes idle gags
-  (and wildlife) come 10x sooner; `?wild=0` turns wildlife off. `npm run test:e2e:gags` tests them.
+## Characters and lines
+- The Company Man on the win card: a line by result (`src/ui/company.ts`: `tierFor`, `companyLine`;
+  lines in `lines.ts`), never the same twice in a row. His picture: `win-cast.ts`.
+- Driver bump lines: `lines.ts` and `bump.ts` (see Structure).
+- Every gag: see "Look" (GAGS, GAG RULES, and each gag's entry). SAME START, SAME END is tested by
+  pixels for every strip gag (`npm run test:e2e:frames`: held at t = 0 and at its end with
+  `?gagtest=1` / `window.__rhrGag`, the first frame must equal the level just before and the last
+  frame the level just after) and by pose for the magpie, the worker and the moose (unit tests).
+- `?gag=<name>` previews (`PREVIEWS` in gag-triggers.ts) open a suitable level and play that gag at
+  once, again and again. `?idle=0.1` makes idle times 10x shorter.
 
 ## Sound (M4)
 
@@ -544,33 +457,28 @@ something, give exact clicks and one command at a time.
 - Test hook: `?audiolog` exposes `window.__rhrAudio` (its `log` lists cues as they fire).
 
 ## Wildlife Log
-- LIVE NOW: the log's button is back on the level list and the page lists only the gags that are in
-  the game (`EGGS`: magpie, sleepy worker, moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll, Marshmallow, Lost Goose, Porcupine, Gopher Lunch, Safety Sam, Frozen Tongue, Bull and Cow, Bear (legendary);
-  the old ten with `?gags=1`), with card art from their puppets (`magpieStill`, `workerStill`,
-  `mooseStill`, `nearMissStill`, `landownerStill`, `biffyAStill`, `biffyBStill`), the count and toasts out of that number.
-  An unfound card shows the gag's hint in DEMO mode only (`cardHint`); the game says "Not seen yet."
-  Camo still needs all ten, so it cannot be earned yet.
-- `src/ui/wildlife-log.ts` (pure + storage, tested): 10 entries (Magpie, Sleeping Spotter, Biffy
-  Surprise, Angry Landowner, Bear, Moose, Hot Shot, Gopher, Canada Geese, The Pumper) with captions
-  and hints. An entry unlocks the
-  first time its gag fully plays (`GagLayer.onSeen`; the spotter counts once he's asleep). Saved in
-  `rush-hour-rigs:log`, so Reset progress clears it.
+- `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game (15:
+  Magpie, Sleepy Worker, Moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll,
+  Marshmallow, Lost Goose, Porcupine, Gopher Lunch, Safety Sam, Frozen Tongue, Bull and Cow, Bear),
+  each with a caption and a hint. No entries for gags that are gone (the pumper, the old hot shot
+  and gopher); their ids are dropped from a saved log on load. An entry unlocks the first time its
+  gag plays right through (`GameView.seen`; the worker counts once he is asleep). Saved in
+  `rush-hour-rigs:log` (`v: 3`), so Reset progress clears it.
+- Every card's art is a still of the gag's own PUPPET (`LOG_ART` in main.ts: `magpieStill`,
+  `workerStill`, `mooseStill`, `nearMissStill`, ...). No sprites. Found: in colour with its caption;
+  unfound: a dark silhouette (CSS brightness(0)) and, in DEMO mode only, the gag's hint
+  (`cardHint`); the game says "Not seen yet."
 - New sighting: a toast at the very top (`toast.ts`, 2s, one at a time, never over the board):
-  "New sighting! Bear (3/10)". The 10th adds a celebration toast and turns on camo pickups.
-- Camo is earned (`camoEarned`) by finding all 10; a log saved before entries 8-10 existed (no `v`)
-  that had all of the original 7 keeps its camo. Saved logs carry `v: 2`.
-- Log page: binoculars button beside the gear on the level list. Found cards: art + caption;
-  unfound: dark silhouette (CSS brightness(0)) + hint.
-- Camo pickups: `.v-camo` blotches in the pickup SVG over the truck's own paint (color stays
-  readable, badge on top), shown by `body.camo-pickups`. On once earned; switch in Settings
-  (locked until then).
-- The Bear's entry is `legendary`: gold frame and LEGENDARY tag on its card, found or not; hint
-  "Only deep in the Duvernay."
+  "New sighting! Bear (3/15)". The last one adds a celebration toast and turns on camo pickups.
+- Camo is earned (`camoEarned`) by finding every entry; camo earned under an earlier, shorter log is
+  kept. Camo pickups: `.v-camo` blotches in the pickup SVG over the truck's own paint, shown by
+  `body.camo-pickups`. On once earned; switch in Settings (locked until then).
+- The Bear's entry is `legendary`: gold frame and LEGENDARY tag on its card, found or not.
 - Demo log: with demo mode on, sightings are saved to `rush-hour-rigs:demo-log` instead, toasts say
   "Demo sighting!", and the log page shows the demo log (DEMO tag). It never counts toward the real
   log or camo. Demo off shows the real log again (the demo log is kept); Reset clears both.
 - `?log=all` previews a full log and camo without changing the saved log.
-  `npm run test:e2e:log` tests it all.
+  `npm run test:e2e:log` tests it all, on the puppet gags.
 
 ## Daily Pad (M3)
 - 60 pre-generated medium pads in `src/levels/daily.json` (generated like the regions; par 6-8, 5-6
@@ -693,7 +601,8 @@ something, give exact clicks and one command at a time.
 - `npm run gen-levels [-- c05 m08]` – regenerate levels (named slots are forced to rerun)
 - `npm run check-levels` – print levels and solutions
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
-- `npm run test:e2e:gags` – gags test (Playwright; start the dev server first)
+- `npm run test:e2e:gags` – every puppet gag suite in turn: magpie, eggs, strip, eggs2 (start the dev server first)
+- `npm run test:e2e:frames` – SAME START, SAME END: every strip gag's first and last frames show no character (start the dev server first)
 - `npm run test:e2e:fit` – every iPhone size, Safari and home-screen app, with screenshots (start the dev server first)
 - `npm run test:e2e:menus` – main page, level rows, win card fit and character motion, with screenshots (start the dev server first)
 - `npm run test:e2e:card` – win card frame, column, medal, confetti, with screenshots (start the dev server first)

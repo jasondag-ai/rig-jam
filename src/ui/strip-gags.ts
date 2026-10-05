@@ -315,6 +315,8 @@ export class TimelineGag {
   private def: TimelineDef;
   private run: { layers: HTMLElement[]; built: Built; frame: number; bubble: HTMLElement | null; timers: number[]; done: (r: EggResult) => void } | null = null;
 
+  private held: { layers: HTMLElement[]; built: Built } | null = null;
+
   constructor(host: EggHost, def: TimelineDef) {
     this.host = host;
     this.def = def;
@@ -379,6 +381,46 @@ export class TimelineGag {
 
   clear(): void {
     if (this.run) this.finish('none');
+    this.release();
+  }
+
+  /** How long the gag runs (s). */
+  get end(): number {
+    return this.def.end;
+  }
+
+  /**
+   * Tests (`?gagtest=1`): sets the gag's scene and holds it at time `t`, with no clock running, so
+   * a frame can be looked at. `release()` ends it the way a finished gag ends.
+   */
+  hold(t: number): boolean {
+    if (this.run) return false;
+    if (!this.held) {
+      const layers: HTMLElement[] = [];
+      const built = this.def.build((cls) => {
+        const el = document.createElement('div');
+        el.className = `scene-layer puppet-layer strip-layer ${cls}`;
+        el.setAttribute('aria-hidden', 'true');
+        el.dataset.gag = this.def.name;
+        (this.host.mount ?? ((x: HTMLElement) => this.host.screen.append(x)))(el);
+        layers.push(el);
+        return el;
+      }, this.host);
+      if (!built) {
+        layers.forEach((l) => l.remove());
+        return false;
+      }
+      this.held = { layers, built };
+    }
+    this.held.built.apply(t);
+    return true;
+  }
+
+  release(): void {
+    if (!this.held) return;
+    this.held.built.done?.('seen');
+    this.held.layers.forEach((l) => l.remove());
+    this.held = null;
   }
 
   private speak(layer: HTMLElement, b: Bubble): HTMLElement {
@@ -663,10 +705,16 @@ export const bullDef = (cow: CowProp): TimelineDef => ({
     const wB = BULL_FRAC * scale * screen.width, uB = wB / 170, xB = scene.bull.spot.x * screen.width;
     const wC = COW_FRAC * scale * screen.width, uC = wC / 170, xC = cow.pup.spot.x * screen.width;
     const from = -(xB + wB) / uB, charge = (screen.width - xB + wB) / uB, to = (screen.width - xC + wC) / uC;
+    // She is gone afterwards only if she was seen to bolt (not after a reduced-motion still).
+    let bolted = false;
     return {
-      apply: (t) => bullApply(scene, bullPose(t, from, to, charge), t),
+      apply: (t) => {
+        const pose = bullPose(t, from, to, charge);
+        if (!pose.c.show) bolted = true;
+        bullApply(scene, pose, t);
+      },
       done: (result) => {
-        cow.gone = result === 'seen' && !reducedMotion();
+        cow.gone = result === 'seen' && bolted;
         cow.rest();
       },
     };

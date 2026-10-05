@@ -23,15 +23,15 @@ const FUR='#c99e64', FUR2='#ad8350';
 /* ---------------- the hole's near lip ----------------
    The lower half of the hole, drawn in front so the arm looks like it comes out of the hole. It is
    the board mound's own hole (scenery.ts `mound`: ring at 33,17 with radii 11 x 6, throat at
-   33,18.4 with radii 8 x 3.6, in its 64 x 34 box), laid exactly over it. */
+   33,18.4 with radii 8 x 3.6, in its 64 x 34 box), laid exactly over it, just inside its outline,
+   so with nothing coming out of the hole it changes no pixel of the board's mound. */
 export const MOUND_BOX = { vw: 64, vh: 34 };
 /** In the board mound's box: the hole's centre, the line its base stands on, and how wide the heap is drawn. */
 export const MOUND_HOLE = { x: 33, y: 17 };
 export const MOUND_BASE = 29.5;
 export const MOUND_DRAWN = 59;
 export const LIP = `
-<path d="M22 17 A11 6 0 0 0 44 17 Z" fill="#3a2414"/>
-<path d="M22 17 A11 6 0 0 0 44 17" fill="none" stroke="#2a1a0c" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+<path d="M23.18 18.4 A10.2 5.2 0 0 0 42.82 18.4 Z" fill="#3a2414"/>
 <path d="M25 18.4 A8 3.6 0 0 0 41 18.4 Z" fill="#120a04"/>`;
 /** The reference's own mound is 92 units across its heap, in a box drawn at this share of the screen's width. */
 export const REF_MOUND = { drawn: 92, frac: 0.113 };

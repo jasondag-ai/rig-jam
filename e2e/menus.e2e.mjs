@@ -159,8 +159,8 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       const seen = await page.evaluate(
         () =>
           new Promise((res) => {
-            const m = document.querySelector('.win .mascot .anim-still');
-            const b = document.querySelector('.win .company-man .anim-still');
+            const m = document.querySelector('.win .mascot .win-still');
+            const b = document.querySelector('.win .company-man .win-still');
             const frames = [];
             const t0 = performance.now();
             const tick = () => {
@@ -178,13 +178,13 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
         const c = document.querySelector('.win .card');
         const r = c.getBoundingClientRect();
         const cs = getComputedStyle(c);
-        return { scrolls: o.scrollHeight > o.clientHeight + 1, h: r.height, w: r.width, bottom: r.bottom, vh: innerHeight, side: parseFloat(cs.borderLeftWidth), top: parseFloat(cs.borderTopWidth), sheets: document.querySelectorAll('.win .sprite-anim').length, stills: document.querySelectorAll('.win .anim-still').length };
+        return { scrolls: o.scrollHeight > o.clientHeight + 1, h: r.height, w: r.width, bottom: r.bottom, vh: innerHeight, side: parseFloat(cs.borderLeftWidth), top: parseFloat(cs.borderTopWidth), sheets: document.querySelectorAll('.win .sprite-anim').length, stills: document.querySelectorAll('.win .win-still').length };
       });
       // The roughneck: boots level with the hard hat row, and clear of the hats, the moves line and
       // the buttons. Measured at rest (transform cleared), on the part of the frame he fills.
       const stand = await page.evaluate(() => {
         const m = document.querySelector('.win .mascot');
-        const still = m.querySelector('.anim-still');
+        const still = m.querySelector('.win-still');
         const keep = still.style.transform;
         still.style.transform = 'none';
         const r = m.getBoundingClientRect();
@@ -197,7 +197,15 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       check(Math.abs(stand.feet - stand.row) <= 4, `the roughneck's boots are level with the hard hat row (${(stand.feet - stand.row).toFixed(1)}px off), ${stand.size}px tall`);
       check(stand.covers.length === 0 && stand.onScreen, `he covers nothing: hats, moves line, buttons (${stand.covers.join(', ') || 'clear'})`);
       check(!card.scrolls && card.bottom <= card.vh, `fits without scrolling (card ${Math.round(card.h)}px of ${card.vh}px)`);
-      check(card.sheets === 0 && card.stills === 2 && new Set(seen.map((f) => f.pos)).size === 1, 'roughneck and Company Man are one still image each: no sprite frames cycling');
+      check(card.sheets === 0 && card.stills === 2 && new Set(seen.map((f) => f.pos)).size === 1, 'the mascot and the Company Man are one still each: nothing cycling');
+      const cast = await page.evaluate(() => {
+        const m = document.querySelector('.win .mascot .win-still'), b = document.querySelector('.win .company-man .win-still');
+        const sprite = [...document.querySelectorAll('.win .mascot *, .win .company *')].some((e) => e.tagName === 'IMG' || /url\(/.test(getComputedStyle(e).backgroundImage));
+        return { svg: m?.tagName === 'svg' && b?.tagName === 'svg', sprite, mascot: m?.dataset.tier, boss: b?.dataset.tier, hat: !!b?.querySelector('.hat [fill="#f3f5f7"]'), shirt: !!b?.querySelector('.torso [fill="#a9cdea"]'), mug: !!b?.querySelector('.mug'), red: !!m?.querySelector('.torso [fill="#c8352b"]') };
+      });
+      const tier = kind === 'perfect' ? 'par' : cast.mascot;
+      check(cast.svg && !cast.sprite && cast.red && cast.hat && cast.shirt && cast.mug, 'both are flat puppet stills (no sprite): the worker, and the Company Man in a white hard hat and a light blue shirt with his travel mug');
+      check(cast.mascot === cast.boss && ['par', 'close', 'over'].includes(cast.mascot) && cast.mascot === tier, `one expression per result: both show "${cast.mascot}"`);
       // Smooth motion: he never moves sideways, and never faster than the bounce itself (a jump
       // between two poses would be many times that).
       const speed = Math.max(...seen.slice(1).map((f, i) => Math.abs(f.my - seen[i].my) / Math.max(1, f.t - seen[i].t)));
@@ -225,7 +233,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     await wait(400);
     await play(page, perfect);
     await wait(900);
-    const still = await page.evaluate(() => [...document.querySelectorAll('.win .anim-still')].map((e) => getComputedStyle(e).transform));
+    const still = await page.evaluate(() => [...document.querySelectorAll('.win .win-still')].map((e) => getComputedStyle(e).transform));
     console.log(`\n${engine} reduced motion`);
     check(still.length === 2 && still.every((t) => t === 'none' || t === 'matrix(1, 0, 0, 1, 0, 0)'), 'both characters stand still');
     await context.close();

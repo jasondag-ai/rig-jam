@@ -667,7 +667,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       if (mode === 'game') check(by.sam?.art && by.tongue?.art && by.sam.text === 'Not seen yet.', 'Safety Sam and Frozen Tongue have cards with puppet art');
       else check(by.sam.text === 'Bump three times in a row, or push a truck at a wrong-colour gate.' && by.tongue.text === 'Sit tight for 30 seconds on a winter level.', 'demo mode shows Sam\'s and the tongue\'s hints');
       if (mode === 'game') check(by.marshmallow?.art && by.geese?.art && by.marshmallow.text === 'Not seen yet.' && by.geese.text === 'Not seen yet.', `Marshmallow and Lost Goose have cards with puppet art; the game hides the hints (${cards.length} cards)`);
-      else check(by.marshmallow.text === 'Tap a flare stack three times.' && by.geese.text === 'Undo three times in a row.' && by.bear.text === 'Solve Duvernay 8, 9 or 10 at par. One time in three.' && by.bull.text === 'Tap the cow in Montney.', 'demo mode shows each gag\'s hint');
+      else check(by.marshmallow.text === 'Tap a flare stack three times.' && by.geese.text === 'Undo three times in a row.' && by.bear.text === 'Tap the snowy bush three times in Duvernay. One time in three.' && by.bull.text === 'Tap the cow in Montney.', 'demo mode shows each gag\'s hint');
       await context.close();
     }
   }

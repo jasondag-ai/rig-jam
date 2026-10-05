@@ -130,6 +130,35 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       }
     }
 
+    // ---------- Exactly one biffy on every level ----------
+    console.log(`\n${engine}: exactly one biffy on every level`);
+    {
+      const { context, page } = await open(browser, { enter: false });
+      const wrong = [];
+      let seen = 0;
+      const count = () => page.evaluate(() => ({ layers: document.querySelectorAll('.biffy-layer').length, biffies: document.querySelectorAll('.biffy-layer svg.pup').length, others: document.querySelectorAll('.gag.biffy, .strip-layer .door').length, shown: (() => { const s = document.querySelector('.biffy-layer svg.pup .root'); if (!s) return false; const r = s.getBoundingClientRect(); return r.width > 10 && r.left >= 0 && r.right <= innerWidth && getComputedStyle(s).visibility !== 'hidden'; })() }));
+      for (const [ri, region] of REGIONS.entries()) {
+        for (let li = 0; li < region.levels.length; li++) {
+          await page.locator('.region-tab').nth(ri).click();
+          await page.locator('.level-btn').nth(li).click();
+          await page.waitForSelector('.board .truck');
+          const c = await count();
+          seen++;
+          if (c.layers !== 1 || c.biffies !== 1 || c.others !== 0 || !c.shown) wrong.push(`${region.name} ${li + 1}: ${JSON.stringify(c)}`);
+          await page.locator('.hud [data-act="levels"]').click();
+          await page.waitForSelector('.level-btn');
+        }
+      }
+      // The Daily Pad too.
+      await page.locator('.daily-btn').click();
+      await page.waitForSelector('.board .truck');
+      const d = await count();
+      seen++;
+      if (d.layers !== 1 || d.biffies !== 1 || d.others !== 0 || !d.shown) wrong.push(`Daily Pad: ${JSON.stringify(d)}`);
+      check(seen === 31 && wrong.length === 0, `all ${seen} (30 levels and the Daily Pad): one biffy each, on screen, and no other${wrong.length ? ': ' + wrong.join(' | ') : ''}`);
+      await context.close();
+    }
+
     // ---------- Biffy A: one bump into the bottom berm ----------
     console.log(`\n${engine}: Biffy A, one bump into the bottom berm (Cardium ${bumpLevel + 1})`);
     {
@@ -246,7 +275,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       await page.waitForSelector('.log-card');
       const cards = await page.$$eval('.log-card', (cs) => cs.map((c) => ({ id: c.dataset.id, text: c.querySelector('p').textContent, art: !!c.querySelector('.art svg') })));
       if (mode === 'game') check(cards.map((c) => c.id).slice(0, 7).join() === 'magpie,spotter,moose,nearmiss,landowner,biffy,biffyB' && cards.every((c) => c.art && c.text === 'Not seen yet.'), `lists these four after the first three, with puppet card art; the game hides the hints (${cards.length})`);
-      else check(cards.slice(3, 7).map((c) => c.text).join('|') === 'Send two trucks out back to back in Cardium.|Drive the same truck back and forth four times.|Bump a truck into the bottom berm.|Bump the bottom berm twice, quickly.', 'demo mode shows each gag\'s hint');
+      else check(cards.slice(3, 7).map((c) => c.text).join('|') === 'Send two trucks out back to back in Cardium.|Drive one truck back and forth four times, or wiggle it fast.|Bump a truck into the bottom berm.|Bump the bottom berm twice, quickly.', 'demo mode shows each gag\'s hint');
       await context.close();
     }
   }

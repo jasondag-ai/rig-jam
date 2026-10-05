@@ -1,6 +1,5 @@
 // Screenshots for judging the board's look: two levels per region at 390x844 (full screen and a
-// lease close-up). Add CORDS=1 for one more of Duvernay with the block heater cords showing (they
-// belong to the gag layer, which is off, so that one opens with ?gags=1).
+// lease close-up).
 // Saved to OUT (default ~/Desktop/RHR Art Inbox/fit_check) as <PREFIX><name>.png (PREFIX default ground_).
 // Run: npm run dev -- --host   (in one terminal), then:  node e2e/board-shots.mjs
 import { UNLOCKED } from './progress.mjs';
@@ -20,7 +19,6 @@ const SHOTS = [
   ['montney_8', 1, 7, ''],
   ['duvernay_3', 2, 2, ''],
   ['duvernay_10', 2, 9, ''],
-  ...(process.env.CORDS ? [['duvernay_3_cords', 2, 2, '&gags=1&wild=0']] : []),
 ];
 // ONLY=cardium,montney keeps just those regions; MOUND=1 adds a close-up of the gopher mound.
 const only = process.env.ONLY?.split(',');

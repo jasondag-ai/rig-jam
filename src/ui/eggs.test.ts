@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { REGIONS } from '../levels/regions.ts';
-import { MOOSE, MOOSE_FRAC, M_BEATS, isTopBermBump, mBeatAt, mPose, mooseColumn, mooseStill, snowChunks } from './moose.ts';
+import { MOOSE, MOOSE_FRAC, M_BEATS, isTopBermBump, mBeatAt, mPose, mooseColumn, mooseStill, snowChunks, M_END } from './moose.ts';
 import { CANCEL, T_ASLEEP, WORKER, WORKER_FRAC, W_BEATS, W_END, cancelPose, wBeatAt, wPose, workerFrame, workerOff, workerSpot, workerStill } from './worker.ts';
 import { LOG_ENTRIES, cardHint } from './wildlife-log.ts';
 
@@ -136,6 +136,13 @@ describe('moose peekaboo: the reference, as approved', () => {
       if (top.length < 6) expect(top, l.id).not.toContain(col);
     }
     expect(mooseColumn([])).toBe(1);
+  });
+
+  it('SAME START, SAME END: on his first and last frames he is right down behind the berm, out of sight', () => {
+    // y is how far down he is, in his drawing's units: 0 is fully up, 100 or more is below the berm's line.
+    expect(mPose(0).y).toBeGreaterThanOrEqual(100);
+    expect(mPose(M_END).y).toBeGreaterThanOrEqual(100);
+    expect(mPose(2).y).toBe(0);
   });
 
   it('the log card is his stare', () => {

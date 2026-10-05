@@ -218,7 +218,9 @@ export function bearApply(sc: any, p: any, t: number): void {
   let hx = 0, hy = 0, hrot = 0, z = 2;
   const groundSpot = {x: B.spot.x*r.width + (128 - 80)*u, y: B.spot.y*r.height};   // fixed spot on the snow, never follows the bear
   const bx = sc.bushEl.spot.x*r.width + 4*u, by = sc.bushEl.spot.y*r.height - 10*u;
-  if (p.hare === 'bush'){ hx = bx; hy = by + (Math.sin(t*3) > .95 ? -2*u : 0); z = 2; }
+  // (SAME START, SAME END: on the very first frame it is down out of sight behind the bush, and it
+  // pops its ears up over the first half second, rather than being there by magic.)
+  if (p.hare === 'bush'){ hx = bx; hy = by + (Math.sin(t*3) > .95 ? -2*u : 0) + (1 - ease(seg(t,0,.5)))*16*u; z = 2; }
   else if (p.hare === 'paw'){ const pt = bearPt(p.near.x, p.near.y); hx = pt.x; hy = pt.y + 18*hu; hrot = p.hRot; z = 5; }
   else if (p.hare === 'ground'){ hx = groundSpot.x; hy = groundSpot.y; z = 5; }
   else if (p.hare === 'back'){ const k = ease(seg(p.hBack,0,.85));

@@ -20,6 +20,8 @@ export const cooldownScale = (search: string = location.search): number => {
 };
 /** `?off=lunch,porcupine`: gags left out for one page load (tests), by their `?gag=` names. */
 export const eggOff = (name: string, search: string = location.search): boolean => (new URLSearchParams(search).get('off') ?? '').split(',').includes(name);
+/** `?gagtest=1`: no gag starts by itself; `window.__rhrGag` can hold any strip gag at a time of its run (the first-and-last-frame test). */
+export const gagTest = (search: string = location.search): boolean => new URLSearchParams(search).get('gagtest') === '1';
 /** `?bear=1`: the bear comes every time his bush has been tapped enough (tests). */
 export const bearAlways = (search: string = location.search): boolean => new URLSearchParams(search).get('bear') === '1';
 /** `?bear=0`: he never comes (tests of the bush's shake). */
