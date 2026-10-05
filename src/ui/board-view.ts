@@ -64,6 +64,8 @@ export class BoardView {
   private onMove: (id: string, delta: number) => void;
   private onBump: (truckId: string, direction: 1 | -1, hit: BumpHit) => void;
   private movingUntil = 0;
+  /** Called when a truck is picked up (the start of a drag). */
+  onGrab: (truckId: string) => void = () => {};
 
   constructor(
     getState: () => GameState,
@@ -528,6 +530,7 @@ export class BoardView {
     const horizontal = truck.orient === 'h';
     this.drag = { id, el, pointerId: e.pointerId, start: horizontal ? e.clientX : e.clientY, range, horizontal, offset: 0, pressing: false };
     el.classList.add('dragging');
+    this.onGrab(id);
     sound.dragStart();
     this.tracks.begin(truck.orient, horizontal ? truck.row : truck.col, horizontal ? truck.col : truck.row, truck.length, el, () =>
       this.positionOf(el, horizontal),

@@ -13,9 +13,11 @@ import { toast } from './toast.ts';
 import { uiImg } from './ui-art.ts';
 import { preloadSprites } from './sprites.ts';
 import { defaultKind } from './vehicles.ts';
-import { applyCamo, loadLog, record, saveLog, sightingToast } from './wildlife-log.ts';
+import { applyCamo, loadLog, record, saveLog, sightingToast, type Sighting } from './wildlife-log.ts';
 import { GagLayer, type GagOptions } from './gag-layer.ts';
-import { gagsOn } from './flags.ts';
+import { gagsOn, magpieOn } from './flags.ts';
+import { MagpieGag } from './magpie-gag.ts';
+import { MAGPIE_IDLE_MS } from './gags.ts';
 import { companyLine, tierFor } from './gags.ts';
 import { animStill } from './anim.ts';
 import { gsap } from 'gsap';
@@ -84,6 +86,16 @@ export class GameView {
 
   /** Null while gags are switched off (flags.ts). */
   private gags: GagLayer | null;
+  /** The magpie (magpie-gag.ts): on by itself while the other gags are off. Null if switched off. */
+  private magpie: MagpieGag | null = null;
+  /** When the player last made or started a move: the magpie comes after MAGPIE_IDLE_MS of nothing. */
+  private lastMoveAt = performance.now();
+  /** He has left his mark this level (he only does once; a scared-off one may try again). */
+  private magpieDone = false;
+  private magpieTimer = 0;
+  /** ?gag=magpie: play him straight away, again and again. */
+  private magpieForced = false;
+  private idleScale = 1;
 
   constructor(
     level: Level,
@@ -106,6 +118,12 @@ export class GameView {
       (id, direction, hit) => this.onBump(id, direction, hit),
     );
     const board = this.board;
+    this.idleScale = idleScale();
+    this.magpieForced = gagOptions.force === 'magpie';
+    board.onGrab = (id) => {
+      this.lastMoveAt = performance.now();
+      this.magpie?.grabbed(id);
+    };
     const demo = loadProgress().demo;
     this.gags = !gagsOn() ? null : new GagLayer(
       {
@@ -121,6 +139,8 @@ export class GameView {
         addGround: (el) => board.addGround(el),
         state: () => this.state,
         moving: () => board.moving,
+        // With the other gags on, their pacing decides when the magpie plays.
+        playMagpie: () => this.magpie?.play() ?? Promise.resolve(false),
       },
       {
         ...gagOptions,
@@ -134,21 +154,7 @@ export class GameView {
     board.onWear = (lvl) => this.gags?.worn(lvl);
     // The Wildlife Log collects each gag the first time it plays all the way through.
     // In demo mode they go to the separate demo log, never the real one (and never earn camo).
-    if (this.gags) this.gags.onSeen = (id) => {
-      // A scene still finishing after you've left the level (or reset) doesn't count.
-      if (!this.el.isConnected) return;
-      const before = loadLog(demo);
-      const r = record(before, id);
-      if (!r.isNew) return;
-      saveLog(r.log, demo);
-      void toast(sightingToast(id, r.count, demo));
-      if (demo) {
-        if (r.completed) void toast('Demo log complete!', { sub: 'Your real log is unchanged', big: true, ms: 3200 });
-      } else if (r.completed) {
-        void toast('Wildlife Log complete!', { sub: before.camoEarned ? 'Every sighting found' : 'Camo pickups unlocked', big: true, ms: 3200 });
-        applyCamo(r.log);
-      }
-    };
+    if (this.gags) this.gags.onSeen = (id) => this.seen(id);
 
     this.el = document.createElement('div');
     this.el.className = 'screen game';
@@ -190,6 +196,11 @@ export class GameView {
     this.board.setGround(theme.ground);
     sound.setGround(theme.ground);
     this.gags?.setLevel(level);
+    if (magpieOn() || this.magpieForced) {
+      this.magpie = new MagpieGag({ screen: this.el, truckElement: (id) => board.truckElement(id), state: () => this.state, say: (anchor, text) => board.say(anchor, text) });
+      // By himself (the other gags off), he keeps his own idle clock.
+      if (!this.gags || this.magpieForced) this.magpieTimer = window.setInterval(() => this.tickMagpie(), 250);
+    }
     // Any touch anywhere on the screen cancels an idle gag and restarts the idle clock.
     this.el.addEventListener('pointerdown', () => this.gags?.touch(), { capture: true });
     this.showLevelHint();
@@ -251,6 +262,7 @@ export class GameView {
       return;
     }
     this.state = result.state;
+    this.lastMoveAt = performance.now();
     this.gags?.moved(id, delta);
     if (result.exited) this.gags?.exited();
     this.resetHint();
@@ -259,6 +271,8 @@ export class GameView {
     this.updateHud();
     if (isWon(this.state)) {
       this.gags?.stop();
+      window.clearInterval(this.magpieTimer);
+      this.magpie?.clear();
       setTimeout(() => this.showWin(), WIN_DELAY_MS);
     }
   }
@@ -266,6 +280,7 @@ export class GameView {
   private undo(): void {
     if (!canUndo(this.state) || isWon(this.state)) return;
     this.state = undo(this.state);
+    this.lastMoveAt = performance.now();
     this.board.removeLastTrack();
     this.resetHint();
     this.showLevelHint();
@@ -278,11 +293,62 @@ export class GameView {
     this.bumps = 0;
     this.showMisses();
     this.resetHint();
+    this.magpie?.clear();
     this.board.setLevel(this.level);
     this.gags?.setLevel(this.level);
+    // A fresh pad: the splat went with the old trucks, and the magpie may come again.
+    this.magpieDone = false;
+    this.lastMoveAt = performance.now();
+    if (this.magpie && (!this.gags || this.magpieForced)) {
+      window.clearInterval(this.magpieTimer);
+      this.magpieTimer = window.setInterval(() => this.tickMagpie(), 250);
+    }
     this.winEl.hidden = true;
     this.showLevelHint();
     this.updateHud();
+  }
+
+  /**
+   * A gag played all the way through: the Wildlife Log collects it the first time. In demo mode it
+   * goes to the separate demo log, never the real one (and never earns camo). While the Wildlife Log
+   * is hidden (gags off) the sighting is still saved, quietly, with no toast.
+   */
+  private seen(id: Sighting): void {
+    // A scene still finishing after you've left the level (or reset) doesn't count.
+    if (!this.el.isConnected) return;
+    const demo = loadProgress().demo;
+    const before = loadLog(demo);
+    const r = record(before, id);
+    if (!r.isNew) return;
+    saveLog(r.log, demo);
+    if (!gagsOn()) return;
+    void toast(sightingToast(id, r.count, demo));
+    if (demo) {
+      if (r.completed) void toast('Demo log complete!', { sub: 'Your real log is unchanged', big: true, ms: 3200 });
+    } else if (r.completed) {
+      void toast('Wildlife Log complete!', { sub: before.camoEarned ? 'Every sighting found' : 'Camo pickups unlocked', big: true, ms: 3200 });
+      applyCamo(r.log);
+    }
+  }
+
+  /**
+   * The magpie's own idle clock (used while the other gags are off): after MAGPIE_IDLE_MS with no
+   * moves, once per level, never while a truck is moving or the level is won. A magpie that was
+   * scared off before leaving his mark may come back after another idle stretch.
+   */
+  private tickMagpie(): void {
+    if (!this.el.isConnected) return void window.clearInterval(this.magpieTimer);
+    const m = this.magpie;
+    if (!m || m.playing || document.hidden || this.board.moving || isWon(this.state)) return;
+    const idle = performance.now() - this.lastMoveAt;
+    if (this.magpieForced ? idle < 600 : this.magpieDone || idle < MAGPIE_IDLE_MS * this.idleScale) return;
+    void m.play().then((splatted) => {
+      // The next idle stretch starts when he has gone (the forced preview replays 1.5 s later).
+      this.lastMoveAt = performance.now() + (this.magpieForced ? 900 : 0);
+      if (!splatted || !this.el.isConnected) return;
+      this.magpieDone = true;
+      this.seen('magpie');
+    });
   }
 
   /** A bump: count it and give the hazard counter a quick shake. */

@@ -7,7 +7,7 @@ import { treeSvg } from './trees.ts';
 import { sound } from '../audio/engine.ts';
 import { SIZE, type GameState, type Level, type Side } from '../engine/index.ts';
 import { gsap } from 'gsap';
-import { BIFFY, DROPPING, HOTSHOT, LANDOWNER, MAGPIE, PLUG_POST, SPOTTER_SIT, SPOTTER_WALK } from './cast.ts';
+import { BIFFY, HOTSHOT, LANDOWNER, PLUG_POST, SPOTTER_SIT, SPOTTER_WALK } from './cast.ts';
 import { Rig } from './rig.ts';
 import { Sprite } from './anim.ts';
 import { WORKER_RIG } from './rigs.ts';
@@ -24,7 +24,6 @@ import {
   perimeterDone,
   planWildlife,
   freshIdle,
-  magpieTarget,
   reverseDirection,
   touched,
   DEMO_EVERY_MS,
@@ -42,7 +41,7 @@ import {
   type IdleState,
   type WildState,
 } from './gags.ts';
-import { LANDOWNER_LINE, MAGPIE_LINE, type BumpHit } from './lines.ts';
+import { LANDOWNER_LINE, type BumpHit } from './lines.ts';
 import { WEAR_CAP } from './tracks.ts';
 import type { Sighting } from './wildlife-log.ts';
 
@@ -66,6 +65,8 @@ export interface GagHost {
   state(): GameState;
   /** A truck is being dragged, or is still snapping into place or driving out. */
   moving(): boolean;
+  /** Plays the magpie (magpie-gag.ts). Resolves true once he has left his mark and gone. */
+  playMagpie(): Promise<boolean>;
 }
 
 export interface GagOptions {
@@ -90,7 +91,7 @@ export interface GagOptions {
   force?: ForcedGag | null;
 }
 
-export type ForcedGag = 'bear' | 'biffy' | 'moose' | 'gopher' | 'geese' | 'pumper' | 'hotshot';
+export type ForcedGag = 'bear' | 'biffy' | 'moose' | 'gopher' | 'geese' | 'pumper' | 'hotshot' | 'magpie';
 
 /** Free space above and below the board, in px, for characters outside the fence. */
 export interface Bands {
@@ -130,6 +131,7 @@ export class GagLayer {
   /** The bear, moose or hot shot playing right now. Touches never cancel it; a new level does. */
   private wildGag: AbortController | null = null;
   private landownerPlaying = false;
+  private magpiePlaying = false;
   private biffyPlaying = false;
   /** Waiting for the wildlife to finish before they go. */
   /** Gags set off by the player (or a reaction) that are waiting for the stage to be free. */
@@ -288,7 +290,7 @@ export class GagLayer {
     const due = dueGag((performance.now() - this.lastActivity) / this.opts.idleScale, this.idle);
     if (due === 'magpie') {
       this.idle = { ...this.idle, magpieThisIdle: true };
-      this.runIdleGag((s) => this.magpie(s));
+      this.magpie();
     } else if (due === 'spotter' && (!this.spotterTurnTaken || !this.opts.wildlife)) {
       this.idle = { ...this.idle, spotterThisIdle: true };
       this.runIdleGag((s) => this.spotterWalksOn(s));
@@ -312,98 +314,20 @@ export class GagLayer {
     this.removeSpotter();
   }
 
-  private async magpie(signal: AbortSignal): Promise<void> {
-    const target = magpieTarget(this.host.state().trucks);
-    const truckEl = target && this.host.truckElement(target.id);
-    if (!target || !truckEl) return;
-    const { cellPx: cell } = this.host;
-    const s = cell * 0.82;
-    const bird = this.figure('gag magpie flying', MAGPIE, s, s * 0.69);
-    // The animated magpie (Batch C); the old drawing still does the hops and the poop until those are redone.
-    const pie = this.withSprite(bird, 'magpie', (s * 1.3) / 256, s / 2, s * 0.69);
-    signal.addEventListener('abort', () => (pie.destroy(), bird.remove()), { once: true });
-    const board = this.host.el.getBoundingClientRect();
-    const roof = truckEl.getBoundingClientRect();
-    const land = { x: roof.left + roof.width / 2 - board.left - s / 2, y: roof.top + roof.height / 2 - board.top - s * 0.62 };
-    const from = { x: -s * 1.5, y: -cell * 1.6 };
-    const away = { x: board.width + s, y: -cell * 2 };
-    const at = (p: { x: number; y: number }) => `translate(${p.x}px, ${p.y}px)`;
-
-    if (reducedMotion()) {
-      bird.classList.remove('flying');
-      bird.style.transform = at(land);
-      pie.show('magpie_land', 7);
-      sound.squawk();
-      await sleep(500, signal);
-      this.droppings(truckEl, s);
-      sound.grunt();
-      this.host.say(truckEl.querySelector('.cab') ?? truckEl, MAGPIE_LINE);
-      await sleep(1600, signal);
-      bird.remove();
-      this.onSeen('magpie');
-      return;
-    }
-    pie.play('magpie_fly', { fps: 14, loop: -1 });
-    const landing = gsap.delayedCall(0.6, () => pie.play('magpie_land', { fps: 16 }));
-    signal.addEventListener('abort', () => landing.kill(), { once: true });
-    await this.animate(bird, [{ transform: at(from) }, { transform: at(land) }], 1100, 'cubic-bezier(0.3, 0.6, 0.4, 1)', signal);
-    bird.classList.remove('flying');
-    sound.squawk();
-    bird.classList.add('drawn');
-    for (let i = 0; i < 2; i++) {
-      const hop = { x: land.x + s * 0.12, y: land.y - s * 0.3 };
-      const next = { x: land.x + s * 0.2, y: land.y };
-      await this.animate(bird, [{ transform: at(land) }, { transform: at(hop) }, { transform: at(next) }], 280, 'ease-out', signal);
-      land.x = next.x;
-    }
-    await sleep(350, signal);
-    this.droppings(truckEl, s);
-    await sleep(380, signal);
-    sound.grunt();
-    this.host.say(truckEl.querySelector('.cab') ?? truckEl, MAGPIE_LINE);
-    await sleep(500, signal);
-    bird.classList.remove('drawn');
-    bird.classList.add('flying');
-    pie.play('magpie_take_off', { fps: 16 }).eventCallback('onComplete', () => pie.play('magpie_fly', { fps: 14, loop: -1 }));
-    await this.animate(bird, [{ transform: at(land) }, { transform: at(away) }], 900, 'cubic-bezier(0.5, 0, 0.8, 0.6)', signal);
-    pie.destroy();
-    bird.remove();
-    this.onSeen('magpie');
-  }
-
-  /** Two or three small droppings clustered round the middle of the roof, every one fully on the truck. */
-  private droppings(truckEl: HTMLElement, s: number): void {
-    this.idle = { ...this.idle, magpieDone: true };
-    const body = truckEl.querySelector('.body');
-    const tw = truckEl.offsetWidth;
-    const th = truckEl.offsetHeight;
-    const count = 2 + Math.round(Math.random());
-    const spread = Math.min(tw, th) * 0.18;
-    const offsets = [
-      [-0.6, -0.4],
-      [0.7, 0.1],
-      [-0.1, 0.8],
-    ];
-    for (let i = 0; i < count; i++) {
-      const d = document.createElement('div');
-      d.className = 'dropping';
-      d.innerHTML = DROPPING;
-      const w = Math.min(s * (0.2 + Math.random() * 0.05), Math.min(tw, th) * 0.32);
-      const h = w * 1.2;
-      // Centre of the roof, nudged into a little cluster, then clamped inside the truck.
-      const m = Math.max(3, w * 0.2); // room for the slight rotation
-      const x = Math.max(m, Math.min(tw - w - m, tw / 2 + offsets[i][0] * spread - w / 2));
-      const y = Math.max(m, Math.min(th - h - m, th / 2 + offsets[i][1] * spread - h / 2));
-      Object.assign(d.style, {
-        width: `${w}px`,
-        height: `${h}px`,
-        left: `${x}px`,
-        top: `${y}px`,
-        transform: `rotate(${Math.round(Math.random() * 30 - 15)}deg)`,
-      });
-      body?.append(d);
-      sound.plop(i * 0.11);
-    }
+  /**
+   * The magpie is his own puppet (magpie-gag.ts) on a layer above the whole screen. Here he only
+   * takes his turn on stage: touches don't cancel him (grabbing his truck startles him instead).
+   */
+  private magpie(): void {
+    this.magpiePlaying = true;
+    void this.host
+      .playMagpie()
+      .then((splatted) => {
+        if (!splatted) return;
+        this.idle = { ...this.idle, magpieDone: true };
+        this.onSeen('magpie');
+      })
+      .finally(() => (this.magpiePlaying = false));
   }
 
   // ---------- Spotter: walks on below the fence, sits on his pail, dozes off ----------
@@ -817,7 +741,7 @@ export class GagLayer {
 
   /** Anything else on stage right now? The bear, moose and hot shot wait for it to finish. */
   private busy(): boolean {
-    return !!(this.idleGag || this.spotter || this.wildGag || this.landownerPlaying || this.biffyPlaying || this.reactionPlaying);
+    return !!(this.idleGag || this.magpiePlaying || this.spotter || this.wildGag || this.landownerPlaying || this.biffyPlaying || this.reactionPlaying);
   }
 
   /** The biffy's truck backed up: the gag is queued (once per level) and starts when the stage is free. */
@@ -888,7 +812,7 @@ export class GagLayer {
     if (!gag) return;
     this.demoTried.push(gag);
     this.demoAt = now + DEMO_EVERY_MS * scale;
-    if (gag === 'magpie') this.runIdleGag((s) => this.magpie(s));
+    if (gag === 'magpie') this.magpie();
     else if (gag === 'spotter') this.runIdleGag((s) => this.spotterWalksOn(s));
     else if (gag === 'landowner') void this.landowner();
     else if (gag === 'biffy') {
@@ -984,6 +908,7 @@ export class GagLayer {
 
   /** ?gag=…: play that scene now, and again 1.5s after it ends, with nothing else on stage. */
   private tickForced(gag: ForcedGag): void {
+    if (gag === 'magpie') return; // the game view plays him itself
     if (reducedMotion() || this.wildGag || this.biffyPlaying || performance.now() < this.forceAt) return;
     const ctl = new AbortController();
     this.wildGag = ctl;

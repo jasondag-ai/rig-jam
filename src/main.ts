@@ -1,3 +1,4 @@
+import { magpieStill } from './ui/magpie.ts';
 import './ui/style.css';
 import { DAILY_LEVELS, REGIONS, dailyTheme } from './levels/regions.ts';
 import { dayKey, padLevelIndex, padNumber, streak } from './ui/daily.ts';
@@ -33,7 +34,7 @@ const BINOCULARS = uiImg('icon_binoculars');
 /** Card art for each Wildlife Log entry (found: in color; not yet: a dark silhouette). */
 const LOG_ART: Record<Sighting, () => string> = {
   // Batch C character art (a telling frame of each), except the hot shot (its art is being redone).
-  magpie: () => animStill('magpie_land', 84, 7).outerHTML,
+  magpie: () => magpieStill(),
   spotter: () => animStill('spotter_sit_on_bucket', 84, 7).outerHTML,
   biffy: () => `<div class="pair">${animStill('biffy_door_open', 84, 7).outerHTML}${WORKER_RIG}</div>`,
   landowner: () => animStill('landowner_finger_wag', 84, 4).outerHTML,
@@ -373,7 +374,9 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
  */
 function forcedGag(): boolean {
   const gag = new URLSearchParams(location.search).get('gag');
-  if (gag === 'bear') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 7, 'bear');
+  // The magpie: Cardium 6, as in the approved reference.
+  if (gag === 'magpie') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, 'magpie');
+  else if (gag === 'bear') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 7, 'bear');
   else if (gag === 'gopher' || gag === 'geese' || gag === 'pumper' || gag === 'hotshot') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 0, gag);
   else if (gag === 'moose') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 0, 'moose');
   else if (gag === 'biffy') {
