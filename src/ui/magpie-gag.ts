@@ -189,16 +189,25 @@ export class MagpieGag {
   }
 
   /**
-   * The driver's "Seriously?": a bubble from that truck, beside the bird (never over him), on
+   * The driver's line (one of `MAGPIE_LINES`): a bubble from that truck, beside the bird (never over him), on
    * whichever side has more room, so it stays clear of the screen's edge.
    */
   private speak(run: Run, spot: { x: number; y: number }): void {
     const screenW = this.host.screen.getBoundingClientRect().width;
-    const side = spot.x + run.w * 2.2 < screenW ? 1 : -1;
+    const line = fromPool(MAGPIE_LINES);
     const anchor = document.createElement('i');
-    Object.assign(anchor.style, { position: 'absolute', left: `${spot.x + side * run.w * 1.35}px`, top: `${spot.y - run.w * 0.15}px`, width: '0', height: '0' });
+    Object.assign(anchor.style, { position: 'absolute', left: `${spot.x}px`, top: `${spot.y}px`, width: '0', height: '0' });
     run.layer.append(anchor);
-    const bubble = this.host.say(anchor, fromPool(MAGPIE_LINES));
+    // How wide this line's bubble is (the lines differ in length): said once to measure it, then
+    // again from where it stands clear of the bird.
+    const half = this.host.say(anchor, line).offsetWidth / 2;
+    // Beside him, on a side where the whole bubble fits.
+    const reach = run.w * 0.85 + half + 6; // his tail and beak reach well past his middle
+    const fitsRight = spot.x + reach + half + 8 < screenW, fitsLeft = spot.x - reach - half - 8 > 0;
+    // Where neither side has room for it (a long line, the bird mid-screen), it goes above him instead.
+    const at = fitsRight || fitsLeft ? { x: spot.x + (fitsRight ? 1 : -1) * reach, y: spot.y - run.w * 0.15 } : { x: spot.x, y: spot.y - run.w * 1.0 };
+    Object.assign(anchor.style, { left: `${at.x}px`, top: `${at.y}px` });
+    const bubble = this.host.say(anchor, line);
     bubble.dataset.speaker = run.truckId;
     bubble.dataset.magpie = 'true';
   }
