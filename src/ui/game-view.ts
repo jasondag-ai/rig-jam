@@ -13,9 +13,12 @@ import { toast } from './toast.ts';
 import { uiImg } from './ui-art.ts';
 import { preloadSprites } from './sprites.ts';
 import { defaultKind } from './vehicles.ts';
-import { applyCamo, loadLog, record, saveLog, sightingToast, type Sighting } from './wildlife-log.ts';
+import { applyCamo, liveCount, loadLog, record, saveLog, sightingToast, type Sighting } from './wildlife-log.ts';
 import { GagLayer, type GagOptions } from './gag-layer.ts';
-import { gagsOn, magpieOn } from './flags.ts';
+import { gagsOn, magpieOn, mooseOn, workerOn } from './flags.ts';
+import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
+import { MOOSE_BUMPS, isTopBermBump } from './moose.ts';
+import { SPOTTER_IDLE_MS } from './gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
 import { MAGPIE_IDLE_MS } from './gags.ts';
 import { companyLine, tierFor } from './gags.ts';
@@ -86,15 +89,26 @@ export class GameView {
 
   /** Null while gags are switched off (flags.ts). */
   private gags: GagLayer | null;
-  /** The magpie (magpie-gag.ts): on by itself while the other gags are off. Null if switched off. */
+  /**
+   * The Easter-egg gags that are live, each its own code puppet, each null if switched off:
+   * the magpie (10 s with no moves), the sleepy worker (20 s with no moves) and the moose (Duvernay:
+   * two bumps into the top berm). One at a time, none while a truck moves (`tickEggs`).
+   */
   private magpie: MagpieGag | null = null;
-  /** When the player last made or started a move: the magpie comes after MAGPIE_IDLE_MS of nothing. */
+  private worker: WorkerGag | null = null;
+  private moose: MooseGag | null = null;
+  /** When the player last made or started a move, or the last gag left: the idle gags count from here. */
   private lastMoveAt = performance.now();
-  /** He has left his mark this level (he only does once; a scared-off one may try again). */
+  /** Done this level (each plays once; one that was scared off or cancelled may try again). */
   private magpieDone = false;
-  private magpieTimer = 0;
-  /** ?gag=magpie: play him straight away, again and again. */
-  private magpieForced = false;
+  private workerDone = false;
+  private mooseDone = false;
+  /** Bumps into the top berm this level, and whether the moose is due. */
+  private topBumps = 0;
+  private mooseDue = false;
+  private eggTimer = 0;
+  /** ?gag=magpie|worker|moose: play that one straight away, again and again. */
+  private eggForced: 'magpie' | 'worker' | 'moose' | null = null;
   private idleScale = 1;
 
   constructor(
@@ -119,10 +133,13 @@ export class GameView {
     );
     const board = this.board;
     this.idleScale = idleScale();
-    this.magpieForced = gagOptions.force === 'magpie';
+    const f = gagOptions.force;
+    this.eggForced = f === 'magpie' || f === 'worker' || (f === 'moose' && !gagsOn()) ? f : null;
     board.onGrab = (id) => {
       this.lastMoveAt = performance.now();
       this.magpie?.grabbed(id);
+      // Any move sends the worker running, pail in hand.
+      this.worker?.cancel();
     };
     const demo = loadProgress().demo;
     this.gags = !gagsOn() ? null : new GagLayer(
@@ -196,10 +213,24 @@ export class GameView {
     this.board.setGround(theme.ground);
     sound.setGround(theme.ground);
     this.gags?.setLevel(level);
-    if (magpieOn() || this.magpieForced) {
-      this.magpie = new MagpieGag({ screen: this.el, truckElement: (id) => board.truckElement(id), state: () => this.state, say: (anchor, text) => board.say(anchor, text) });
-      // By himself (the other gags off), he keeps his own idle clock.
-      if (!this.gags || this.magpieForced) this.magpieTimer = window.setInterval(() => this.tickMagpie(), 250);
+    if (magpieOn() || this.eggForced === 'magpie') this.magpie = new MagpieGag({ screen: this.el, truckElement: (id) => board.truckElement(id), state: () => this.state, say: (anchor, text) => board.say(anchor, text) });
+    // The worker and the moose are the new puppets; with every gag switched on (?gags=1) the old
+    // spotter and moose scenes play instead, so these stay out of their way.
+    if (!this.gags || this.eggForced) {
+      const egg: EggHost = {
+        screen: this.el,
+        board: board.el,
+        cellPx: () => board.cellPx,
+        bandPx: () => board.fencePx,
+        strip: () => this.strip(),
+        above: () => Math.max(0, board.el.getBoundingClientRect().top - this.el.querySelector('.hud')!.getBoundingClientRect().bottom),
+        state: () => this.state,
+        say: (anchor, text) => board.say(anchor, text),
+      };
+      if (workerOn() || this.eggForced === 'worker') this.worker = new WorkerGag(egg);
+      if ((mooseOn() && this.regionId === 'duvernay') || this.eggForced === 'moose') this.moose = new MooseGag(egg);
+      // By themselves (the other gags off), the eggs keep their own clock.
+      this.eggTimer = window.setInterval(() => this.tickEggs(), 250);
     }
     // Any touch anywhere on the screen cancels an idle gag and restarts the idle clock.
     this.el.addEventListener('pointerdown', () => this.gags?.touch(), { capture: true });
@@ -245,7 +276,9 @@ export class GameView {
     const hudBottom = this.el.querySelector('.hud')!.getBoundingClientRect().bottom - screen.top;
     const depth = Math.round(Math.max(8, Math.min(40, (box.y - hudBottom) * 0.3)));
     this.el.style.setProperty('--horizon', `${Math.round(box.y - 4 - depth)}px`);
-    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, anchors: { bush: true, mound: this.regionId === 'cardium' } });
+    // The sleepy worker's clearing by the left edge: no trees there.
+    const clearing = this.worker ? workerClearing(screen.width, { top: box.y + box.height, bottom: controlsTop }) : null;
+    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, anchors: { bush: true, mound: this.regionId === 'cardium' }, clearing });
     // Room outside the fence for the characters: between the HUD and the board, and below it.
     const buttonsTop = this.el.querySelector('.controls')!.getBoundingClientRect().top - screen.top;
     this.gags?.layout({
@@ -271,8 +304,8 @@ export class GameView {
     this.updateHud();
     if (isWon(this.state)) {
       this.gags?.stop();
-      window.clearInterval(this.magpieTimer);
-      this.magpie?.clear();
+      window.clearInterval(this.eggTimer);
+      this.clearEggs();
       setTimeout(() => this.showWin(), WIN_DELAY_MS);
     }
   }
@@ -293,15 +326,16 @@ export class GameView {
     this.bumps = 0;
     this.showMisses();
     this.resetHint();
-    this.magpie?.clear();
+    this.clearEggs();
     this.board.setLevel(this.level);
     this.gags?.setLevel(this.level);
-    // A fresh pad: the splat went with the old trucks, and the magpie may come again.
-    this.magpieDone = false;
+    // A fresh pad: the splat went with the old trucks, and every egg may come again.
+    this.magpieDone = this.workerDone = this.mooseDone = this.mooseDue = false;
+    this.topBumps = 0;
     this.lastMoveAt = performance.now();
-    if (this.magpie && (!this.gags || this.magpieForced)) {
-      window.clearInterval(this.magpieTimer);
-      this.magpieTimer = window.setInterval(() => this.tickMagpie(), 250);
+    if (!this.gags || this.eggForced) {
+      window.clearInterval(this.eggTimer);
+      this.eggTimer = window.setInterval(() => this.tickEggs(), 250);
     }
     this.winEl.hidden = true;
     this.showLevelHint();
@@ -321,8 +355,7 @@ export class GameView {
     const r = record(before, id);
     if (!r.isNew) return;
     saveLog(r.log, demo);
-    if (!gagsOn()) return;
-    void toast(sightingToast(id, r.count, demo));
+    void toast(sightingToast(id, liveCount(r.log, gagsOn()), demo, gagsOn()));
     if (demo) {
       if (r.completed) void toast('Demo log complete!', { sub: 'Your real log is unchanged', big: true, ms: 3200 });
     } else if (r.completed) {
@@ -331,28 +364,70 @@ export class GameView {
     }
   }
 
+  /** The bottom strip, in this screen's px: from the berm's bottom edge down to the tip line. */
+  private strip(): { top: number; bottom: number } {
+    const screen = this.el.getBoundingClientRect();
+    return { top: this.board.el.getBoundingClientRect().bottom - screen.top, bottom: this.el.querySelector('.note')!.getBoundingClientRect().top - screen.top };
+  }
+
+  private clearEggs(): void {
+    this.magpie?.clear();
+    this.worker?.clear();
+    this.moose?.clear();
+  }
+
   /**
-   * The magpie's own idle clock (used while the other gags are off): after MAGPIE_IDLE_MS with no
-   * moves, once per level, never while a truck is moving or the level is won. A magpie that was
-   * scared off before leaving his mark may come back after another idle stretch.
+   * The eggs' clock (used while the other gags are off). ONE gag at a time, none while a truck is
+   * moving or once the level is won. The moose comes as soon as the stage is free after the second
+   * bump into the top berm. The magpie comes after MAGPIE_IDLE_MS with no moves and the worker
+   * after SPOTTER_IDLE_MS, each counted from the last move or the last gag leaving, each once per
+   * level (one that was scared off or cancelled may try again after another idle stretch).
    */
-  private tickMagpie(): void {
-    if (!this.el.isConnected) return void window.clearInterval(this.magpieTimer);
-    const m = this.magpie;
-    if (!m || m.playing || document.hidden || this.board.moving || isWon(this.state)) return;
+  private tickEggs(): void {
+    if (!this.el.isConnected) return void window.clearInterval(this.eggTimer);
+    if (this.magpie?.playing || this.worker?.playing || this.moose?.playing) return;
+    if (document.hidden || this.board.moving || isWon(this.state)) return;
     const idle = performance.now() - this.lastMoveAt;
-    if (this.magpieForced ? idle < 600 : this.magpieDone || idle < MAGPIE_IDLE_MS * this.idleScale) return;
-    void m.play().then((splatted) => {
-      // The next idle stretch starts when he has gone (the forced preview replays 1.5 s later).
-      this.lastMoveAt = performance.now() + (this.magpieForced ? 900 : 0);
-      if (!splatted || !this.el.isConnected) return;
-      this.magpieDone = true;
-      this.seen('magpie');
-    });
+    const rest = () => (this.lastMoveAt = performance.now() + (this.eggForced ? 900 : 0));
+    if (this.eggForced) {
+      if (idle < 600) return;
+      const gag = this.eggForced === 'magpie' ? this.magpie?.play().then((ok) => (ok ? 'seen' : 'none')) : this.eggForced === 'worker' ? this.worker?.play() : this.moose?.play();
+      return void gag?.then(rest);
+    }
+    if (this.moose && this.mooseDue && !this.mooseDone) {
+      this.mooseDue = false;
+      return void this.moose.play().then((r) => {
+        rest();
+        if (r !== 'seen') return;
+        this.mooseDone = true;
+        this.seen('moose');
+      });
+    }
+    if (this.magpie && !this.magpieDone && idle >= MAGPIE_IDLE_MS * this.idleScale) {
+      return void this.magpie.play().then((splatted) => {
+        rest();
+        if (!splatted) return;
+        this.magpieDone = true;
+        this.seen('magpie');
+      });
+    }
+    // The worker waits his turn: the magpie first if he is still to come.
+    const magpieFirst = this.magpie && !this.magpieDone;
+    if (this.worker && !this.workerDone && !magpieFirst && idle >= SPOTTER_IDLE_MS * this.idleScale && this.worker.canPlay()) {
+      return void this.worker.play().then((r) => {
+        rest();
+        if (r !== 'seen') return;
+        this.workerDone = true;
+        this.seen('spotter');
+      });
+    }
   }
 
   /** A bump: count it and give the hazard counter a quick shake. */
   private onBump(truckId: string, direction: 1 | -1, hit: BumpHit): void {
+    // Duvernay: the second bump into the top berm this level brings the moose up.
+    const bumped = this.state.trucks.find((t) => t.id === truckId);
+    if (this.moose && bumped && isTopBermBump(bumped.orient, direction, hit) && ++this.topBumps === MOOSE_BUMPS) this.mooseDue = true;
     this.gags?.bumped(truckId, direction, hit);
     this.bumps++;
     this.showMisses();

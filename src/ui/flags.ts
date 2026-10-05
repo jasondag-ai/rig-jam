@@ -17,3 +17,9 @@ export const gagsOn = (search: string = location.search): boolean => GAGS_ON || 
  */
 export const MAGPIE_ON = true;
 export const magpieOn = (search: string = location.search): boolean => MAGPIE_ON && new URLSearchParams(search).get('magpie') !== '0';
+
+/** Gag 2, the sleepy worker (worker.ts: 20 s with no moves), and gag 3, the moose (moose.ts: Duvernay, two bumps into the top berm). `?worker=0` / `?moose=0` turn one off for a page load. */
+export const WORKER_ON = true;
+export const MOOSE_ON = true;
+export const workerOn = (search: string = location.search): boolean => WORKER_ON && new URLSearchParams(search).get('worker') !== '0';
+export const mooseOn = (search: string = location.search): boolean => MOOSE_ON && new URLSearchParams(search).get('moose') !== '0';
