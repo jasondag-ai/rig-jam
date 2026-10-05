@@ -5,7 +5,7 @@
 import { SIZE } from '../engine/index.ts';
 import type { Motion } from './spray.ts';
 import type { Ground } from './themes.ts';
-import { DragPath, addWear, removeWear, sweepCells, sweepSegments, trackOpacity, wearLevel, type Sweep, type Wear } from './tracks.ts';
+import { DragPath, addWear, removeWear, sweepCells, sweepSegments, sweepVary, trackOpacity, wearLevel, type Sweep, type Wear } from './tracks.ts';
 
 const NS = 'http://www.w3.org/2000/svg';
 const PARTS = ['tt-edge', 'tt-mark', 'tt-tread'];
@@ -18,6 +18,8 @@ interface Entry {
   /** Cells each finished sweep wore, so undo can take the wear back off. */
   worn: number[][];
   move: boolean;
+  /** Seeds each of this drag's sweeps' small variation in offset and width (tracks.ts sweepVary). */
+  seed: number;
 }
 
 interface Active {
@@ -40,6 +42,8 @@ export class TrackLayer {
   private entries: Entry[] = [];
   private active: Active | null = null;
   private frame = 0;
+  /** Drags so far on this pad: seeds each one's small variation. */
+  private drags = 1;
   private onMotion: (m: Motion) => void;
   /** Told the deepest wear level reached so far whenever a sweep wears the lane. */
   onWear: (level: number) => void = () => {};
@@ -73,7 +77,7 @@ export class TrackLayer {
     const live = document.createElementNS(NS, 'g');
     g.append(live);
     this.svg.append(g);
-    const entry: Entry = { g, orient, lane, worn: [], move: false };
+    const entry: Entry = { g, orient, lane, worn: [], move: false, seed: (this.drags++ * 7919 + lane * 131 + (orient === 'h' ? 17 : 0)) | 0 };
     this.entries.push(entry);
     this.fade();
     const now = performance.now();
@@ -151,7 +155,7 @@ export class TrackLayer {
     const cells = sweepCells(s);
     // Draw with the wear as it was during the pass (+1), then record the pass.
     const g = document.createElementNS(NS, 'g');
-    this.lines(g, sweepSegments(entry.orient, entry.lane, s, this.wear, 1));
+    this.lines(g, sweepSegments(entry.orient, entry.lane, s, this.wear, 1, sweepVary(entry.seed + entry.worn.length * 101)));
     addWear(this.wear, entry.orient, entry.lane, cells);
     entry.worn.push(cells);
     if (cells.length) this.onWear(Math.max(...cells.map((c) => wearLevel(this.wear, entry.orient, entry.lane, c))));
@@ -161,7 +165,7 @@ export class TrackLayer {
   private drawLive(): void {
     const a = this.active!;
     const s = a.path.current;
-    this.lines(a.live, s ? sweepSegments(a.entry.orient, a.entry.lane, s, this.wear, 1) : []);
+    this.lines(a.live, s ? sweepSegments(a.entry.orient, a.entry.lane, s, this.wear, 1, sweepVary(a.entry.seed + a.entry.worn.length * 101)) : []);
   }
 
   /** Puts these segments into `g`, reusing its existing line elements. */
@@ -179,6 +183,7 @@ export class TrackLayer {
         line.setAttribute('y1', String(s.y1 * 100));
         line.setAttribute('x2', String(s.x2 * 100));
         line.setAttribute('y2', String(s.y2 * 100));
+        line.style.setProperty('--tw', s.width.toFixed(3));
       }
     }
   }

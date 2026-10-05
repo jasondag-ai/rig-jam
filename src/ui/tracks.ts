@@ -3,15 +3,17 @@
 // forth leaves marks and wears the lane on every pass. Lane cells driven again and again get wider,
 // darker marks, up to WEAR_CAP. Pure geometry and wear bookkeeping; track-layer.ts draws it.
 import { SIZE } from '../engine/index.ts';
+import { mulberry32 } from '../engine/rng.ts';
 
 /** Wheel marks sit this far either side of the truck's center line (in cells). */
 export const WHEEL_OFFSET = 0.27;
 /** Marks stop this far short of the truck's ends (not where they run to the fence). */
 export const END_INSET = 0.15;
-/** Newest tracks are fully drawn; each later drag fades older ones by this much... */
-export const FADE_STEP = 0.1;
-/** ...down to this floor, so the history never disappears. */
-export const FADE_FLOOR = 0.3;
+/** Newest tracks are fully drawn; each later drag fades older ones by this much (fast, so old
+ * lanes sink into the ground before a board fills with them)... */
+export const FADE_STEP = 0.24;
+/** ...down to this floor: a faint trace, so the history never quite disappears. */
+export const FADE_FLOOR = 0.1;
 /** Passes after which a lane cell stops getting deeper. */
 export const WEAR_CAP = 4;
 /** Backing up this far (cells) counts as reversing: small snap-backs on release don't. */
@@ -120,13 +122,39 @@ export interface Segment {
   y2: number;
   /** 1 (fresh) .. WEAR_CAP (deep rut). */
   wear: number;
+  /** This sweep's marks are this much wider or narrower than the standard (1 = standard). */
+  width: number;
+}
+
+/**
+ * How one sweep differs from the next, so that lanes worn again and again never line up into a
+ * grid: the wheel marks sit a little to one side of the lane's centre line, are a little wider or
+ * narrower, and their wear steps fall off the cell edges.
+ */
+export interface SweepVary {
+  /** Sideways shift of both wheel marks, in cells. */
+  offset: number;
+  width: number;
+  /** Where along the lane the wear steps fall, relative to the cell edges, in cells. */
+  shift: number;
+}
+export const NO_VARY: SweepVary = { offset: 0, width: 1, shift: 0 };
+/** How far a sweep's marks may sit off the lane's centre line (cells), and how much its width may vary. */
+export const VARY_OFFSET = 0.05;
+export const VARY_WIDTH = 0.2;
+export const VARY_SHIFT = 0.32;
+
+/** A sweep's variation from a seed: the same seed always gives the same marks. */
+export function sweepVary(seed: number): SweepVary {
+  const rng = mulberry32(seed);
+  return { offset: (rng() * 2 - 1) * VARY_OFFSET, width: 1 + (rng() * 2 - 1) * VARY_WIDTH, shift: (rng() * 2 - 1) * VARY_SHIFT };
 }
 
 /**
  * Wheel-mark segments for one sweep, in cell units. Neighbouring cells with the same wear merge,
  * so a sweep draws a handful of lines. Ends are inset, except where they run to the fence.
  */
-export function sweepSegments(orient: 'h' | 'v', lane: number, s: Sweep, wear: Wear, extra = 0): Segment[] {
+export function sweepSegments(orient: 'h' | 'v', lane: number, s: Sweep, wear: Wear, extra = 0, vary: SweepVary = NO_VARY): Segment[] {
   const start = s.lo + (s.lo <= 0 ? 0 : END_INSET);
   const end = s.hi - (s.hi >= SIZE ? 0 : END_INSET);
   if (end <= start) return [];
@@ -139,16 +167,18 @@ export function sweepSegments(orient: 'h' | 'v', lane: number, s: Sweep, wear: W
   }
   const out: Segment[] = [];
   for (const offset of [-WHEEL_OFFSET, WHEEL_OFFSET]) {
-    const across = lane + 0.5 + offset;
-    for (const r of runs) {
-      const a = Math.max(start, r.from);
-      const b = Math.min(end, r.to + 1);
+    const across = lane + 0.5 + offset + vary.offset;
+    runs.forEach((r, i) => {
+      // The sweep's own ends stay put; the steps between wear levels are shifted off the cell edges.
+      const a = i === 0 ? start : Math.max(start, Math.min(end, r.from + vary.shift));
+      const b = i === runs.length - 1 ? end : Math.max(start, Math.min(end, r.to + 1 + vary.shift));
+      if (b <= a) return;
       out.push(
         orient === 'h'
-          ? { x1: a, y1: across, x2: b, y2: across, wear: r.level }
-          : { x1: across, y1: a, x2: across, y2: b, wear: r.level },
+          ? { x1: a, y1: across, x2: b, y2: across, wear: r.level, width: vary.width }
+          : { x1: across, y1: a, x2: across, y2: b, wear: r.level, width: vary.width },
       );
-    }
+    });
   }
   return out;
 }

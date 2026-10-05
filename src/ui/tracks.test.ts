@@ -9,6 +9,9 @@ import {
   removeWear,
   sweepCells,
   sweepSegments,
+  sweepVary,
+  FADE_STEP,
+  VARY_OFFSET,
   trackOpacity,
   type Wear,
 } from './tracks.ts';
@@ -94,7 +97,49 @@ describe('wheel marks', () => {
 describe('fading', () => {
   it('fades older tracks, but never below the floor', () => {
     expect(trackOpacity(0)).toBe(1);
-    expect(trackOpacity(1)).toBeCloseTo(0.9);
+    expect(trackOpacity(1)).toBeCloseTo(1 - FADE_STEP);
+    // Old wear sinks fast: four drags on, a lane is at the floor, a faint trace.
+    expect(trackOpacity(4)).toBe(FADE_FLOOR);
+    expect(FADE_FLOOR).toBeLessThan(0.2);
     expect(trackOpacity(50)).toBe(FADE_FLOOR);
+  });
+});
+
+describe('no grid from worn lanes', () => {
+  const sweeps = Array.from({ length: 40 }, (_, i) => sweepVary(i * 101 + 7));
+
+  it('every sweep sits a little off the lane centre line, in its own width, the same every time', () => {
+    expect(sweepVary(5)).toEqual(sweepVary(5));
+    expect(new Set(sweeps.map((v) => v.offset.toFixed(3))).size).toBeGreaterThan(24);
+    expect(new Set(sweeps.map((v) => v.width.toFixed(2))).size).toBeGreaterThan(15);
+    for (const v of sweeps) {
+      expect(Math.abs(v.offset)).toBeLessThanOrEqual(VARY_OFFSET);
+      expect(v.width).toBeGreaterThan(0.75);
+      expect(v.width).toBeLessThan(1.25);
+    }
+  });
+
+  it('wheel marks of repeated passes do not stack on one line, and stay inside their lane', () => {
+    const wear = new Map<string, number>();
+    const ys = sweeps.map((v) => sweepSegments('h', 2, { lo: 0, hi: 6 }, wear, 1, v)[0].y1);
+    expect(new Set(ys.map((y) => y.toFixed(3))).size).toBeGreaterThan(24);
+    for (const y of ys) {
+      expect(y).toBeGreaterThan(2);
+      expect(y).toBeLessThan(3);
+    }
+  });
+
+  it('steps between wear levels fall off the cell edges', () => {
+    const wear = new Map<string, number>([['h2:0', 3], ['h2:1', 3], ['h2:2', 1], ['h2:3', 1]]);
+    const edges = sweeps.flatMap((v) => sweepSegments('h', 2, { lo: 0, hi: 4 }, wear, 0, v).map((s) => s.x2)).filter((x) => x > 0.2 && x < 3.8);
+    expect(edges.length).toBeGreaterThan(20);
+    // Hardly any land on a whole cell.
+    expect(edges.filter((x) => Math.abs(x - Math.round(x)) < 0.02).length).toBeLessThan(edges.length * 0.2);
+    // A sweep's own ends never move.
+    for (const v of sweeps) {
+      const segs = sweepSegments('h', 2, { lo: 0, hi: 4 }, wear, 0, v);
+      expect(Math.min(...segs.map((s) => s.x1))).toBe(0);
+      expect(Math.max(...segs.map((s) => s.x2))).toBeCloseTo(4 - 0.15, 9);
+    }
   });
 });
