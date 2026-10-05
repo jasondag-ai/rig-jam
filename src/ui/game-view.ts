@@ -420,13 +420,14 @@ export class GameView {
       </div>`;
     this.winEl.querySelector('.company-says')!.textContent = companyLine(moves, par);
     setBannerCap(this.winEl.querySelector<HTMLElement>('.card h2')!);
-    fitRibbon(this.winEl.querySelector<HTMLElement>('.zero-incident span'));
     // The characters are ONE still image each, moved only in code (cycling their sprite frames
     // jittered: the frames don't line up). Company Man: his usual look, or the scowl when it's well
     // over. Roughneck: wrench up on a perfect solve, otherwise standing.
     const tier = tierFor(moves, par);
     const perfect = moves <= par;
     this.winEl.hidden = false;
+    // Once the card is laid out: fit the medal's lettering to its ribbon.
+    fitRibbon(this.winEl.querySelector<HTMLElement>('.zero-incident span'));
     // Each still is sized to its box on the card (the boxes are smaller on short screens).
     const bossBox = this.winEl.querySelector<HTMLElement>('.company-man')!;
     const boss = animStill(tier === 'over' ? 'company_man_scowl' : 'company_man_idle', bossBox.clientHeight || 58, tier === 'over' ? 3 : 0);
@@ -535,12 +536,11 @@ function fitRibbon(span: HTMLElement | null): void {
     span.style.fontSize = '';
     const cs = getComputedStyle(span);
     const room = span.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    const probe = document.createElement('span');
-    probe.textContent = span.textContent;
-    probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;letter-spacing:inherit;font:inherit';
-    span.append(probe);
-    const wide = probe.offsetWidth;
-    probe.remove();
+    // Measured from the font itself (a probe element inside the ribbon would take the ribbon's own styles).
+    const ctx = document.createElement('canvas').getContext('2d');
+    if (!ctx) return;
+    ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const wide = ctx.measureText(span.textContent ?? '').width;
     if (wide > room && wide > 0) span.style.fontSize = `${((parseFloat(cs.fontSize) * room) / wide).toFixed(2)}px`;
   };
   fit();
