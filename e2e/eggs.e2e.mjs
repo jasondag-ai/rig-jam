@@ -95,6 +95,30 @@ const bump = (page, id) =>
     await new Promise((q) => setTimeout(q, 420));
   }, id);
 
+/** A truck on Cardium 6 that is parked nose (or tail) against ANOTHER TRUCK, and the way to push it: { id, dx, dy }. */
+const truckBumper = (() => {
+  const s = newGame(REGIONS[0].levels[5]);
+  const at = (row, col) => s.trucks.find((t) => (t.orient === 'h' ? t.row === row && col >= t.col && col < t.col + t.length : t.col === col && row >= t.row && row < t.row + t.length));
+  for (const t of s.trucks) for (const d of [1, -1]) {
+    const far = d === 1 ? t.length : -1;
+    const [row, col] = t.orient === 'h' ? [t.row, t.col + far] : [t.row + far, t.col];
+    if (row >= 0 && row < 6 && col >= 0 && col < 6 && at(row, col)) return { id: t.id, dx: t.orient === 'h' ? d : 0, dy: t.orient === 'v' ? d : 0 };
+  }
+  return null;
+})();
+/** Pushes a truck against whatever blocks it, that way (a bump). */
+const push = (page, { id, dx, dy }) =>
+  page.evaluate(async ([truckId, dx, dy]) => {
+    const el = document.querySelector(`.truck[data-id="${truckId}"]`);
+    const r = el.getBoundingClientRect();
+    let x = r.x + r.width / 2, y = r.y + r.height / 2;
+    const ev = (type) => el.dispatchEvent(new PointerEvent(type, { pointerId: 12, pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, bubbles: true, cancelable: true, buttons: 1 }));
+    ev('pointerdown');
+    for (let k = 0; k < 8; k++) { x += dx * 12; y += dy * 12; ev('pointermove'); await new Promise((q) => requestAnimationFrame(q)); }
+    ev('pointerup');
+    await new Promise((q) => setTimeout(q, 420));
+  }, [id, dx, dy]);
+
 for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
   const browser = await type.launch();
 
@@ -151,6 +175,21 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       check(c.length > 30 && (last.t - c[0].t) / 1000 < 2.2, `he jolts and runs (${((last.t - c[0].t) / 1000).toFixed(1)} s)`);
       check(last.off && last.pailR <= 0.5 && last.r <= 0.5, 'off the edge WITH the pail, both fully off screen');
       check(!(await page.$('.worker-layer')), 'and is gone');
+      await context.close();
+    }
+
+    // His other trigger: two bumps of a truck into another truck in one level (no idle wait).
+    console.log(`\n${engine}: sleepy worker on two truck-into-truck bumps (Cardium 6, truck ${truckBumper?.id})`);
+    {
+      const { context, page } = await open(browser, { query: '?cover=0&magpie=0&cooldown=0&off=lunch,sam,tongue&night=0' });
+      await push(page, truckBumper);
+      await wait(600);
+      check(!(await page.$('.worker-layer')), 'one bump into a truck: he does not come');
+      await push(page, truckBumper);
+      const came = await page.waitForSelector('.worker-layer', { state: 'attached', timeout: 3000 }).then(() => true).catch(() => false);
+      check(came, 'the second one brings him in, with no idle wait (idle times are the real 20 s here)');
+      const beat = await page.waitForFunction(() => document.querySelector('.worker-layer')?.dataset.beat === 'sit', null, { timeout: 12000 }).then(() => true).catch(() => false);
+      check(beat, 'he walks in and sits down as usual');
       await context.close();
     }
 
@@ -243,7 +282,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       if (mode === 'game') {
         check(cards.map((c) => c.id).slice(0, 3).join() === 'magpie,spotter,moose' && cards.every((c) => c.art), 'lists the live gags, each with card art from its puppet');
         check(cards.every((c) => c.text === 'Not seen yet.'), 'game mode hides the hints');
-      } else check(cards[1].text === 'Sit tight for 20 seconds.' && cards[2].text === 'Bump a truck into the top berm twice in Duvernay.', `demo mode shows each gag's hint ("${cards[1].text}" / "${cards[2].text}")`);
+      } else check(cards[1].text === 'Sit tight for 20 seconds, or bump two trucks together twice.' && cards[2].text === 'Bump a truck into the top berm twice in Duvernay.', `demo mode shows each gag's hint ("${cards[1].text}" / "${cards[2].text}")`);
       await context.close();
     }
   }

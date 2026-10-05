@@ -128,6 +128,7 @@ export class GameView {
   private nightAt = 0;
   /** Trigger bookkeeping (gag-triggers.ts): bumps into the top berm, the last exit, back-and-forth moves, a first bump into the bottom berm waiting to see if it becomes a double. */
   private topBumps = 0;
+  private truckBumps = 0;
   private lastExitAt = -Infinity;
   private undos = 0;
   private lastIdleGagAt = -Infinity;
@@ -517,6 +518,7 @@ export class GameView {
     this.witnessed.clear();
     this.bushTaps = 0;
     this.topBumps = 0;
+    this.truckBumps = 0;
     this.undos = 0;
     this.bumpRun = 0;
     this.flareTaps = 0;
@@ -628,6 +630,8 @@ export class GameView {
     // Safety Sam: blocked moves piling up, or a push at a wrong-colour gate.
     const wrongGate = GAG_TRIGGERS.sam.wrongGate && !!bumped && wrongGateBump(bumped, direction, hit, this.level.gates);
     if (++this.bumpRun >= GAG_TRIGGERS.sam.bumpsInARow || wrongGate) this.fire('sam');
+    // The sleepy worker: trucks bumping trucks (he also comes when the lease is idle, `tickEggs`).
+    if (hit === 'truck' && ++this.truckBumps >= GAG_TRIGGERS.worker.truckBumps) this.fire('worker');
     if (berm === 'top' && ++this.topBumps >= GAG_TRIGGERS.moose.topBermBumps) this.fire('moose');
     if (berm === 'bottom' && this.biffy) {
       if (this.biffyWait) {

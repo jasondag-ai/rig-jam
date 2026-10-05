@@ -4,8 +4,11 @@
 export const GAG_TRIGGERS = {
   /** Gag 1, the magpie: this long with no moves. Any region. */
   magpie: { idleMs: 10_000 },
-  /** Gag 2, the sleepy worker: this long with no moves (after the magpie has had his turn). Any region. */
-  worker: { idleMs: 20_000 },
+  /**
+   * Gag 2, the sleepy worker (any region). Either: this long with no moves (after the magpie has
+   * had his turn); or this many bumps of a truck into ANOTHER TRUCK in one level.
+   */
+  worker: { idleMs: 20_000, truckBumps: 2 },
   /** Gag 3, the moose: this many bumps of a truck up into the TOP berm in one level. */
   moose: { region: 'duvernay', topBermBumps: 2 },
   /** Gag 4, Near Miss (gopher and hotshot): two trucks driven out within this long of each other. */

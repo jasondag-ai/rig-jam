@@ -26,6 +26,7 @@ describe('gag triggers: one settings file for every gag', () => {
     expect(GAG_TRIGGERS.geese.undosInARow).toBe(3);
     expect(GAG_TRIGGERS.magpie.idleMs).toBe(10_000);
     expect(GAG_TRIGGERS.worker.idleMs).toBe(20_000);
+    expect(GAG_TRIGGERS.worker.truckBumps).toBe(2);
     expect(GAG_TRIGGERS.moose).toEqual({ region: 'duvernay', topBermBumps: 2 });
     expect(GAG_TRIGGERS.nearMiss.region).toBe('cardium');
     expect(GAG_TRIGGERS.landowner.backAndForth).toBe(4);

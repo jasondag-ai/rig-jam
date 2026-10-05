@@ -153,7 +153,7 @@ describe('moose peekaboo: the reference, as approved', () => {
 describe('Wildlife Log: hints', () => {
   it('demo mode shows each gag hint; the game keeps them secret', () => {
     const [, worker, moose] = LOG_ENTRIES;
-    expect(cardHint(worker, true)).toBe('Sit tight for 20 seconds.');
+    expect(cardHint(worker, true)).toBe('Sit tight for 20 seconds, or bump two trucks together twice.');
     expect(cardHint(moose, true)).toBe('Bump a truck into the top berm twice in Duvernay.');
     expect(cardHint(worker, false)).toBe('Not seen yet.');
     expect(cardHint(moose, false)).not.toContain('berm');
