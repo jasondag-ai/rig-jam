@@ -24,7 +24,7 @@ import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, BUSH_X, BushPro
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
 import { companyLine, tierFor } from './gags.ts';
-import { animStill } from './anim.ts';
+import { companyStill, mascotStill } from './win-cast.ts';
 import { gsap } from 'gsap';
 import { TAP_SLOP, onTap } from './tap.ts';
 import type { BumpHit } from './lines.ts';
@@ -805,20 +805,18 @@ export class GameView {
       </div>`;
     this.winEl.querySelector('.company-says')!.textContent = companyLine(moves, par);
     setBannerCap(this.winEl.querySelector<HTMLElement>('.card h2')!);
-    // The characters are ONE still image each, moved only in code (cycling their sprite frames
-    // jittered: the frames don't line up). Company Man: his usual look, or the scowl when it's well
-    // over. Roughneck: wrench up on a perfect solve, otherwise standing.
+    // The characters are flat puppet stills in the worker's build (win-cast.ts), one expression per
+    // result (par, close, over), moved only by the little GSAP motion below.
     const tier = tierFor(moves, par);
     const perfect = moves <= par;
     this.winEl.hidden = false;
     // Once the card is laid out: fit the medal's lettering to its ribbon.
     fitRibbon(this.winEl.querySelector<HTMLElement>('.zero-incident span'));
-    // Each still is sized to its box on the card (the boxes are smaller on short screens).
     const bossBox = this.winEl.querySelector<HTMLElement>('.company-man')!;
-    const boss = animStill(tier === 'over' ? 'company_man_scowl' : 'company_man_idle', bossBox.clientHeight || 58, tier === 'over' ? 3 : 0);
+    const boss = companyStill(tier);
     bossBox.append(boss);
     const mascotBox = this.winEl.querySelector<HTMLElement>('.mascot')!;
-    const mascot = animStill(perfect ? 'roughneck_mascot_celebrate' : 'roughneck_mascot_idle', mascotBox.clientHeight || 80, perfect ? 9 : 0);
+    const mascot = mascotStill(tier);
     mascotBox.append(mascot);
     if (perfect && !reducedMotion()) this.confetti();
     if (!reducedMotion()) {
