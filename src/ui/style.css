@@ -1761,34 +1761,34 @@ canvas.lease-detail {
 
 /* Summer gravel: faint pressed bands with a light tread; wear shows subtly. */
 .tracks[data-ground='gravel'] .tt-edge { display: none; }
-.tracks[data-ground='gravel'] .tt-mark { stroke: var(--pad-dark); stroke-width: 11; opacity: 0.38; }
-.tracks[data-ground='gravel'] .tt-mark.w2 { stroke-width: 13; opacity: 0.5; }
-.tracks[data-ground='gravel'] .tt-mark.w3 { stroke-width: 15; opacity: 0.6; }
-.tracks[data-ground='gravel'] .tt-mark.w4 { stroke-width: 17; opacity: 0.7; }
-.tracks[data-ground='gravel'] .tt-tread { stroke: var(--pad-light); stroke-width: 5; stroke-dasharray: 4 9; opacity: 0.55; }
+.tracks[data-ground='gravel'] .tt-mark { stroke: var(--pad-dark); stroke-width: calc(11px * var(--tw, 1)); opacity: 0.38; }
+.tracks[data-ground='gravel'] .tt-mark.w2 { stroke-width: calc(13px * var(--tw, 1)); opacity: 0.5; }
+.tracks[data-ground='gravel'] .tt-mark.w3 { stroke-width: calc(15px * var(--tw, 1)); opacity: 0.6; }
+.tracks[data-ground='gravel'] .tt-mark.w4 { stroke-width: calc(17px * var(--tw, 1)); opacity: 0.7; }
+.tracks[data-ground='gravel'] .tt-tread { stroke: var(--pad-light); stroke-width: calc(5px * var(--tw, 1)); stroke-dasharray: 4 9; opacity: 0.55; }
 
 /* Spring mud: ruts between pushed-up wet edges; heavy traffic digs deep, dark channels. */
-.tracks[data-ground='mud'] .tt-edge { stroke: var(--pad-light); stroke-width: 32; opacity: 0.32; }
-.tracks[data-ground='mud'] .tt-edge.w2 { stroke-width: 38; opacity: 0.4; }
-.tracks[data-ground='mud'] .tt-edge.w3 { stroke-width: 44; opacity: 0.46; }
-.tracks[data-ground='mud'] .tt-edge.w4 { stroke-width: 50; opacity: 0.5; }
-.tracks[data-ground='mud'] .tt-mark { stroke: var(--pad-dark); stroke-width: 20; opacity: 0.75; }
-.tracks[data-ground='mud'] .tt-mark.w2 { stroke-width: 26; opacity: 0.85; }
-.tracks[data-ground='mud'] .tt-mark.w3 { stroke: color-mix(in srgb, var(--pad-dark) 85%, #000); stroke-width: 30; opacity: 0.85; }
-.tracks[data-ground='mud'] .tt-mark.w4 { stroke: color-mix(in srgb, var(--pad-dark) 75%, #000); stroke-width: 34; opacity: 0.88; }
-.tracks[data-ground='mud'] .tt-tread { stroke: #fff; stroke-width: 4; opacity: 0.12; }
+.tracks[data-ground='mud'] .tt-edge { stroke: var(--pad-light); stroke-width: calc(32px * var(--tw, 1)); opacity: 0.32; }
+.tracks[data-ground='mud'] .tt-edge.w2 { stroke-width: calc(38px * var(--tw, 1)); opacity: 0.4; }
+.tracks[data-ground='mud'] .tt-edge.w3 { stroke-width: calc(44px * var(--tw, 1)); opacity: 0.46; }
+.tracks[data-ground='mud'] .tt-edge.w4 { stroke-width: calc(50px * var(--tw, 1)); opacity: 0.5; }
+.tracks[data-ground='mud'] .tt-mark { stroke: var(--pad-dark); stroke-width: calc(20px * var(--tw, 1)); opacity: 0.75; }
+.tracks[data-ground='mud'] .tt-mark.w2 { stroke-width: calc(26px * var(--tw, 1)); opacity: 0.85; }
+.tracks[data-ground='mud'] .tt-mark.w3 { stroke: color-mix(in srgb, var(--pad-dark) 85%, #000); stroke-width: calc(30px * var(--tw, 1)); opacity: 0.85; }
+.tracks[data-ground='mud'] .tt-mark.w4 { stroke: color-mix(in srgb, var(--pad-dark) 75%, #000); stroke-width: calc(34px * var(--tw, 1)); opacity: 0.88; }
+.tracks[data-ground='mud'] .tt-tread { stroke: #fff; stroke-width: calc(4px * var(--tw, 1)); opacity: 0.12; }
 .tracks[data-ground='mud'] .tt-tread.w3,
-.tracks[data-ground='mud'] .tt-tread.w4 { stroke-width: 5; opacity: 0.2; } /* water sits in deep ruts */
+.tracks[data-ground='mud'] .tt-tread.w4 { stroke-width: calc(5px * var(--tw, 1)); opacity: 0.2; } /* water sits in deep ruts */
 
 /* Winter snow: crisp blue impressions with a raised white lip; packed lanes get bluer and wider. */
-.tracks[data-ground='snow'] .tt-edge { stroke: #fff; stroke-width: 21; }
+.tracks[data-ground='snow'] .tt-edge { stroke: #fff; stroke-width: calc(21px * var(--tw, 1)); }
 .tracks[data-ground='snow'] .tt-edge.w3,
-.tracks[data-ground='snow'] .tt-edge.w4 { stroke-width: 26; }
-.tracks[data-ground='snow'] .tt-mark { stroke: var(--pad-dark); stroke-width: 14; opacity: 0.85; }
-.tracks[data-ground='snow'] .tt-mark.w2 { stroke-width: 16; opacity: 0.95; }
-.tracks[data-ground='snow'] .tt-mark.w3 { stroke: color-mix(in srgb, var(--pad-dark) 80%, #4a6f99); stroke-width: 18; }
-.tracks[data-ground='snow'] .tt-mark.w4 { stroke: color-mix(in srgb, var(--pad-dark) 60%, #4a6f99); stroke-width: 20; }
-.tracks[data-ground='snow'] .tt-tread { stroke: var(--pad); stroke-width: 9; stroke-dasharray: 3 7; }
+.tracks[data-ground='snow'] .tt-edge.w4 { stroke-width: calc(26px * var(--tw, 1)); }
+.tracks[data-ground='snow'] .tt-mark { stroke: var(--pad-dark); stroke-width: calc(14px * var(--tw, 1)); opacity: 0.85; }
+.tracks[data-ground='snow'] .tt-mark.w2 { stroke-width: calc(16px * var(--tw, 1)); opacity: 0.95; }
+.tracks[data-ground='snow'] .tt-mark.w3 { stroke: color-mix(in srgb, var(--pad-dark) 80%, #4a6f99); stroke-width: calc(18px * var(--tw, 1)); }
+.tracks[data-ground='snow'] .tt-mark.w4 { stroke: color-mix(in srgb, var(--pad-dark) 60%, #4a6f99); stroke-width: calc(20px * var(--tw, 1)); }
+.tracks[data-ground='snow'] .tt-tread { stroke: var(--pad); stroke-width: calc(9px * var(--tw, 1)); stroke-dasharray: 3 7; }
 /* ---------- Wheel spray (spray.ts): flicked from the rear wheels while a truck moves ---------- */
 
 .spray {
@@ -3402,3 +3402,71 @@ img.hat { width: 100%; height: auto; }
 
 /* Room for the tree line between the header and the sign. */
 .levels .daily-block { margin-top: 30px; }
+
+/* ---------- Review #1 shell fixes ---------- */
+
+/* HUD score: moves and par on one line; under it the near-miss counter says what it counts. */
+.hud .score-row { gap: 6px; align-items: baseline; }
+.hud .score-row .par { font-size: 14px; }
+.hud .misses {
+  padding: 1px 8px 1px 5px;
+  font-size: 13px;
+  box-shadow: 0 2px 0 var(--outline);
+}
+.hud .misses .hazard { width: 15px; height: 14px; }
+.hud .misses .lbl { font-weight: 600; margin-left: 2px; }
+.hud .score { gap: 3px; }
+
+/* Settings: Done is the main button; Reset progress is a quiet destructive one (outline, small). */
+.settings .btn.danger[data-act='reset'] {
+  --btn: transparent;
+  min-height: 44px;
+  border: 2px solid rgba(190, 48, 40, 0.55);
+  background: none;
+  box-shadow: none;
+  color: #b3261e;
+  font-size: 15px;
+  font-weight: 600;
+  text-shadow: none;
+  order: 2;
+}
+.settings .step:not(.confirm) { display: grid; }
+.settings .btn[data-act='close'] { --btn: #2fcf5f; order: 1; }
+
+/* Undo wears a neutral stone button (blue belongs to the blue trucks and gates). Disabled, it is
+   paler still. */
+.controls .btn[data-act='undo'] { border-image-source: var(--ui-btn-neutral); }
+.controls .btn[data-act='undo']:disabled { filter: grayscale(1) brightness(1.08) opacity(0.6); }
+
+/* The Zero Incident medal: its lettering is fitted to the ribbon's front panel (game-view.ts
+   fitRibbon), centred, with 4px to spare each side. */
+.win .card .zero-incident { width: 76px; right: calc(-118 * var(--f) - 12px); top: calc(-262 * var(--f) + 118 * var(--f)); }
+.win .card .zero-incident span {
+  left: 17%;
+  right: 17%;
+  top: 75%;
+  height: 14%;
+  display: grid;
+  place-items: center;
+  padding: 0 4px;
+  font-size: 6px;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: visible;
+}
+@media (max-height: 700px) {
+  .win .card .zero-incident { width: 66px; }
+}
+
+/* Equipment beside a gate keeps a visible gap from it (obstacles.ts gateClearance). */
+.obstacle svg.equip {
+  transform: translate(var(--eq-dx, 0%), var(--eq-dy, 0%)) scale(var(--eq-s, 1));
+  transform-origin: 50% 100%;
+}
+
+/* Mud's pale shoulder beside each rut is what drew a grid where lanes crossed: keep it narrow and faint. */
+.tracks[data-ground='mud'] .tt-edge { opacity: 0.16; }
+.tracks[data-ground='mud'] .tt-edge.w2 { opacity: 0.2; }
+.tracks[data-ground='mud'] .tt-edge.w3,
+.tracks[data-ground='mud'] .tt-edge.w4 { opacity: 0.24; }
+.ground-tex .tracks[data-ground='mud'] .tt-edge { opacity: 0.2; }

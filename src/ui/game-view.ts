@@ -160,10 +160,10 @@ export class GameView {
         <div class="title"><span class="num"></span><span class="name"></span></div>
         <div class="score">
           <span class="score-row">
-            <span class="misses" aria-label="Near misses"><svg class="hazard" viewBox="0 0 24 22" aria-hidden="true"><path d="M12 2 L22.5 20 H1.5 Z"/><rect x="11" y="8" width="2" height="6.5" rx="1"/><circle cx="12" cy="17" r="1.3"/></svg><b>0</b></span>
             <span class="moves">0</span>
+            <span class="par">par ${level.par}</span>
           </span>
-          <span class="par">par ${level.par}</span>
+          <span class="misses" aria-label="0 near misses"><svg class="hazard" viewBox="0 0 24 22" aria-hidden="true"><path d="M12 2 L22.5 20 H1.5 Z"/><rect x="11" y="8" width="2" height="6.5" rx="1"/><circle cx="12" cy="17" r="1.3"/></svg><b>0</b><span class="lbl">near misses</span></span>
         </div>
       </header>
       <main class="stage"></main>
@@ -297,6 +297,7 @@ export class GameView {
 
   private showMisses(): void {
     this.missesEl.querySelector('b')!.textContent = String(this.bumps);
+    this.missesEl.querySelector('.lbl')!.textContent = this.bumps === 1 ? 'near miss' : 'near misses';
     this.missesEl.classList.toggle('some', this.bumps > 0);
     this.missesEl.setAttribute('aria-label', `${this.bumps} near miss${this.bumps === 1 ? '' : 'es'}`);
   }
@@ -419,6 +420,7 @@ export class GameView {
       </div>`;
     this.winEl.querySelector('.company-says')!.textContent = companyLine(moves, par);
     setBannerCap(this.winEl.querySelector<HTMLElement>('.card h2')!);
+    fitRibbon(this.winEl.querySelector<HTMLElement>('.zero-incident span'));
     // The characters are ONE still image each, moved only in code (cycling their sprite frames
     // jittered: the frames don't line up). Company Man: his usual look, or the scowl when it's well
     // over. Roughneck: wrench up on a perfect solve, otherwise standing.
@@ -521,3 +523,26 @@ function setBannerCap(h2: HTMLElement): void {
 }
 /** The banner lettering's font size in its SVG's px (style.css `.win .card h2 text`). */
 const BANNER_FONT_PX = 21;
+
+/**
+ * Fits the medal's lettering to its ribbon: the text is stepped down until it is no wider than the
+ * field (which already keeps 4px clear each side), so no letter is ever cut off. Fitted again once
+ * the font has loaded.
+ */
+function fitRibbon(span: HTMLElement | null): void {
+  if (!span) return;
+  const fit = () => {
+    span.style.fontSize = '';
+    const cs = getComputedStyle(span);
+    const room = span.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const probe = document.createElement('span');
+    probe.textContent = span.textContent;
+    probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;letter-spacing:inherit;font:inherit';
+    span.append(probe);
+    const wide = probe.offsetWidth;
+    probe.remove();
+    if (wide > room && wide > 0) span.style.fontSize = `${((parseFloat(cs.fontSize) * room) / wide).toFixed(2)}px`;
+  };
+  fit();
+  void document.fonts?.ready.then(fit, () => {});
+}

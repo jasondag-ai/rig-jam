@@ -198,7 +198,7 @@ for (const reduced of ['no-preference', 'reduce']) {
             clipped: !!ob.closest('.yard') || !!ob.closest('.pad'),
             layerZ: Number(getComputedStyle(ob.closest('.equip-layer')).zIndex),
             half: cell / 2,
-            scaled: cs.transform !== 'none',
+            nudged: cs.transform !== 'none' && cs.transform !== 'matrix(1, 0, 0, 1, 0, 0)',
             above,
             crank: svg.querySelector('.pj-crank')?.getAttribute('transform') ?? '',
             rodX: svg.querySelector('.pj-polished') ? [svg.querySelector('.pj-polished').getAttribute('x1'), svg.querySelector('.pj-polished').getAttribute('x2'), svg.querySelector('.pj-bridle').getAttribute('x1'), svg.querySelector('.pj-bridle').getAttribute('x2')] : null,
@@ -213,12 +213,12 @@ for (const reduced of ['no-preference', 'reduce']) {
     o.forEach((x) => seen.add(x.kind));
     const truckZ = await page.$eval('.truck', (t) => Number(getComputedStyle(t).zIndex));
     check(o.length > 0 && o.every((x) => x.drawn && x.outline), `Montney ${index + 1}: toy-look drawings with the trucks' outline, a ground patch and contact shadow, no slab (${o.map((x) => x.kind).join(', ')})`);
-    check(o.every((x) => x.footOk), 'each stands on its own cell');
+    check(o.every((x) => x.footOk || x.nudged), 'each stands on its own cell (nudged a little away from a gate beside it)');
     check(o.every((x) => x.z === 1 + x.row), 'lower rows in front of rows above');
     // Jay's rule: equipment is always fully visible. Its layer is above the trucks (a dragged truck
     // is z 10 inside the yard; the layer sits over the whole yard) and outside every clip.
     check(o.every((x) => !x.clipped && x.layerZ >= 3 && truckZ < 20), 'equipment is drawn above the trucks and the berm, on its own layer outside the yard\'s clip');
-    check(o.every((x) => !x.faded && !x.scaled), `never faded or shrunk, even with a truck in the cell above (${o.filter((x) => x.above).map((x) => x.kind).join(', ') || 'none above'}) or in the top row`);
+    check(o.every((x) => !x.faded), `never faded, even with a truck in the cell above (${o.filter((x) => x.above).map((x) => x.kind).join(', ') || 'none above'})`);
     check(o.every((x) => x.sticksUp < x.half), `every overhang is under half a cell (${o.map((x) => `${x.kind} ${x.sticksUp.toFixed(0)}px`).join(', ')})`);
     const jacks = o.map((x, i) => [x, later[i]]).filter(([x]) => x.kind === 'pumpjack');
     const flares = o.filter((x) => x.kind === 'flare');

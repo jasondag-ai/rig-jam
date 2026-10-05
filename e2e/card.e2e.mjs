@@ -144,6 +144,19 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
         check(Math.abs(m.side - m.sideR) < 1 && Math.abs(m.side - m.bottom) <= 8, `even margins: ${m.side.toFixed(0)}px left, ${m.sideR.toFixed(0)}px right, ${m.bottom.toFixed(0)}px under the buttons`);
         check(Math.abs(m.groupOff) <= 4, `the roughneck and the hard hats are centered as one group (${m.groupOff.toFixed(1)}px off)`);
         if (kind === 'perfect') check(!!m.medal && m.medal.whole && m.medal.onTop, 'the Zero Incident medal is whole, on screen and drawn on top');
+        if (kind === 'perfect') {
+          // The ribbon reads ZERO INCIDENT in full: the lettering is no wider than its field, with
+          // about 4px to spare each side, and centred.
+          const rib = await page.evaluate(() => {
+            const span = document.querySelector('.win .zero-incident span');
+            const range = document.createRange();
+            range.selectNodeContents(span);
+            const cs = getComputedStyle(span);
+            const text = range.getBoundingClientRect().width;
+            return { text: span.textContent, wide: Number((text / Math.cos((4 * Math.PI) / 180)).toFixed(2)), field: span.clientWidth, pad: parseFloat(cs.paddingLeft), size: parseFloat(cs.fontSize), scroll: span.scrollWidth };
+          });
+          check(rib.text === 'ZERO INCIDENT' && rib.wide <= rib.field - rib.pad * 2 + 0.6 && rib.pad >= 4 && rib.scroll <= rib.field, `the ribbon reads ZERO INCIDENT in full: lettering ${rib.wide}px in a ${rib.field}px field with ${rib.pad}px each side (${rib.size}px type)`);
+        }
         else check(m.medal === null, 'no medal when over par');
         if (game === 'daily') check(m.hasSign && m.hasShare, 'Daily Pad: streak sign and Share are rows of the same column');
         check(m.fits, 'fits the screen with no scrolling');
