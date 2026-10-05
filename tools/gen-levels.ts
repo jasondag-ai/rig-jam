@@ -72,7 +72,7 @@ const REGIONS: RegionConfig[] = [
         hint: 'Sometimes a truck has to back away from its gate to let another one through.' },
       { name: 'Tight Hole', trucks: 5, pumpjacks: 0, minPar: 6, maxPar: 6, minExtra: 1, decoys: 1, seed: 105 },
       { name: 'Crew Change', trucks: 5, pumpjacks: 0, minPar: 7, maxPar: 7, minExtra: 2, decoys: 2, seed: 106 },
-      { name: 'Frac Spread', trucks: 6, pumpjacks: 0, minPar: 8, maxPar: 8, minExtra: 2, decoys: 2, seed: 107 },
+      { name: 'Pressure Test', trucks: 6, pumpjacks: 0, minPar: 8, maxPar: 8, minExtra: 2, decoys: 2, seed: 107 },
       { name: 'Night Shift', trucks: 6, pumpjacks: 0, minPar: 9, maxPar: 9, minExtra: 3, decoys: 2, seed: 108 },
       { name: 'Rig Move', trucks: 7, pumpjacks: 0, minPar: 10, maxPar: 10, minExtra: 3, decoys: 2, seed: 109, search: LATE },
       { name: 'Turnaround', trucks: 8, pumpjacks: 0, minPar: 11, maxPar: 12, minExtra: 3, decoys: 2, seed: 110, search: LATE },

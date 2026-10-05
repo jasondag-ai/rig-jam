@@ -103,7 +103,7 @@
     "obstacles": []
   },
   {
-    "id": "c07", "name": "Frac Spread", "par": 8,
+    "id": "c07", "name": "Pressure Test", "par": 8,
     "trucks": [
       {"id":"A","color":"red","row":3,"col":0,"length":3,"orient":"h","kind":"frac"},
       {"id":"B","color":"blue","row":4,"col":1,"length":2,"orient":"h","kind":"pickup"},
