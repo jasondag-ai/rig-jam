@@ -18,18 +18,13 @@ import { hardHats, loadProgress, resetProgress, saveProgress } from './ui/progre
 import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } from './ui/unlocks.ts';
 import { onTap } from './ui/tap.ts';
 import { shouldShowCover, showCover } from './ui/cover.ts';
-import { animStill } from './ui/anim.ts';
 import { applyUiArt, uiImg } from './ui/ui-art.ts';
 import { preloadSprites } from './ui/sprites.ts';
-import { biffySpot } from './ui/gags.ts';
-import { HOTSHOT } from './ui/cast.ts';
-import { WORKER_RIG } from './ui/rigs.ts';
-import { LOG_ENTRIES, applyCamo, cardHint, complete, liveCount, liveEntries, loadLog, saveLog, type Sighting } from './ui/wildlife-log.ts';
+import { LOG_ENTRIES, applyCamo, cardHint, complete, foundCount, loadLog, saveLog, type Sighting } from './ui/wildlife-log.ts';
+import { PREVIEWS, type GagId } from './ui/gag-triggers.ts';
 import { workerStill } from './ui/worker.ts';
 import { mooseStill } from './ui/moose.ts';
-import type { ForcedGag } from './ui/gag-layer.ts';
 import { sceneryHtml } from './ui/scenery.ts';
-import { gagsOn } from './ui/flags.ts';
 import { THEMES, applyTheme, themeOverride } from './ui/themes.ts';
 import { audio, sound } from './audio/engine.ts';
 import { MUSIC_STYLES, type MusicStyle } from './audio/settings.ts';
@@ -42,27 +37,23 @@ applyCamo();
 
 const BINOCULARS = uiImg('icon_binoculars');
 
-/** Card art for each Wildlife Log entry (found: in color; not yet: a dark silhouette). */
+/** Card art for each Wildlife Log entry: a still of the gag's own puppet (found: in color; not yet: a dark silhouette). */
 const LOG_ART: Record<Sighting, () => string> = {
+  magpie: () => magpieStill(),
+  spotter: () => workerStill(),
+  moose: () => mooseStill(),
   nearmiss: () => nearMissStill(),
+  landowner: () => landownerStill(),
+  biffy: () => biffyAStill(),
+  biffyB: () => biffyBStill(),
   marshmallow: () => marshmallowStill(),
+  geese: () => geeseStill(),
   porcupine: () => porcupineStill(),
   lunch: () => lunchStill(),
   sam: () => samStill(),
   tongue: () => tongueStill(),
   bull: () => bullStill(),
-  biffyB: () => biffyBStill(),
-  // Batch C character art (a telling frame of each), except the hot shot (its art is being redone).
-  magpie: () => magpieStill(),
-  spotter: () => workerStill(),
-  biffy: () => (gagsOn() ? `<div class="pair">${animStill('biffy_door_open', 84, 7).outerHTML}${WORKER_RIG}</div>` : biffyAStill()),
-  landowner: () => (gagsOn() ? animStill('landowner_finger_wag', 84, 4).outerHTML : landownerStill()),
-  bear: () => (gagsOn() ? animStill('bear_sit', 84, 7).outerHTML : bearStill()),
-  moose: () => mooseStill(),
-  hotshot: () => HOTSHOT,
-  gopher: () => animStill('gopher_whistle', 84, 4).outerHTML,
-  geese: () => (gagsOn() ? `<div class="flock">${[0, 3, 5].map((f) => animStill('canada_goose_flap', 48, f).outerHTML).join('')}</div>` : geeseStill()),
-  pumper: () => animStill('pumper_check_gauge', 84, 4).outerHTML,
+  bear: () => bearStill(),
 };
 
 /** The region's season, unless ?theme=… overrides it for previewing. */
@@ -221,7 +212,7 @@ function showLevels(requested = savedRegion()): void {
   }
 }
 
-function showGame(regionIndex: number, index: number, force: ForcedGag | null = null): void {
+function showGame(regionIndex: number, index: number, force: GagId | null = null): void {
   const region = REGIONS[regionIndex];
   const hasNext = index + 1 < region.levels.length;
   game = new GameView(
@@ -233,8 +224,7 @@ function showGame(regionIndex: number, index: number, force: ForcedGag | null = 
       onNext: hasNext ? () => showGame(regionIndex, index + 1) : null,
     },
     null,
-    // Block heater cords in Duvernay's cold; the landowner minds his Montney mud. Wildlife goes by region and level.
-    { cords: region.id === 'duvernay', landowner: region.id === 'montney', regionId: region.id, levelIndex: index, force },
+    { regionId: region.id, levelIndex: index, force },
   );
   app.replaceChildren(game.el);
   game.fit();
@@ -263,7 +253,7 @@ function showSettings(screen: HTMLElement): void {
             (m) => `<button class="btn style-pick" role="radio" data-style="${m.id}" aria-checked="${audio.settings.style === m.id}">${m.name}</button>`,
           ).join('')}
         </div>
-        <label class="switch${loadLog().camoEarned ? '' : ' locked'}"${gagsOn() || loadLog().camoEarned ? '' : ' hidden'}>
+        <label class="switch${loadLog().camoEarned ? '' : ' locked'}">
           <input type="checkbox" role="switch" data-act="camo" ${loadLog().camoEarned ? '' : 'disabled'} ${loadLog().camoEarned && loadLog().camo ? 'checked' : ''} />
           <span class="track" aria-hidden="true"><span class="knob"></span></span>
           <span class="switch-label">Camo pickups${loadLog().camoEarned ? '' : `<small>Find all ${LOG_ENTRIES.length} in the Wildlife Log</small>`}</span>
@@ -330,10 +320,8 @@ function showLog(regionIndex: number): void {
   // Demo mode shows its own log; the real one comes back when demo mode is switched off.
   const demo = loadProgress().demo;
   const log = loadLog(demo);
-  // The gags in the game right now (all ten with every gag switched on).
-  const all = gagsOn();
-  const entries = liveEntries(all);
-  const have = liveCount(log, all);
+  const entries = LOG_ENTRIES;
+  const have = foundCount(log);
   const screen = document.createElement('div');
   screen.className = `screen log${demo ? ' demo-log' : ''}`;
   applyTheme(screen, themeFor(regionIndex));
@@ -359,16 +347,12 @@ function showLog(regionIndex: number): void {
     list.append(li);
   }
   screen.querySelector('.log-reward')!.textContent = demo
-    ? `Demo log: ${have} of ${entries.length}. These sightings don't count toward your real log${all ? ' or camo' : ''}.`
-    : !all
-      ? have === entries.length
-        ? 'All found, for now. More are on the way.'
-        : 'Easter eggs. Keep your eyes open.'
-      : complete(log)
-        ? `All ${LOG_ENTRIES.length} found! Camo pickups unlocked (switch them off in Settings).`
-        : log.camoEarned
-          ? `Camo pickups unlocked. ${LOG_ENTRIES.length - log.found.length} new sightings to find.`
-          : `Find all ${LOG_ENTRIES.length} to unlock camo pickups.`;
+    ? `Demo log: ${have} of ${entries.length}. These sightings don't count toward your real log or camo.`
+    : complete(log)
+      ? `All ${entries.length} found! Camo pickups unlocked (switch them off in Settings).`
+      : log.camoEarned
+        ? `Camo pickups unlocked. ${entries.length - have} new sightings to find.`
+        : `Easter eggs. Find all ${entries.length} to unlock camo pickups.`;
   onTap(screen.querySelector('.log-head')!, '.back', () => showLevels(regionIndex));
   app.replaceChildren(screen);
   // A tree line along the horizon under the title, as on the level list.
@@ -400,37 +384,14 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
  * Test/preview links: ?gag=bear (Montney), ?gag=moose (Duvernay), ?gag=gopher|geese|pumper (Cardium)
  * or ?gag=biffy (a level with the biffy below the board) opens that level and plays the scene straight away, over and over.
  */
+/** `?gag=<name>` opens a suitable level and plays that gag at once, again and again (gag-triggers.ts `PREVIEWS`). */
 function forcedGag(): boolean {
-  const gag = new URLSearchParams(location.search).get('gag');
-  // The magpie: Cardium 6, as in the approved reference.
-  if (gag === 'magpie') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, 'magpie');
-  else if (gag === 'worker') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, 'worker');
-  // The bottom-strip gags: ?gag=nearmiss | landowner | biffya | biffyb.
-  else if (gag === 'nearmiss' || gag === 'biffya' || gag === 'biffyb') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, gag);
-  else if (gag === 'landowner' && !gagsOn()) showGame(REGIONS.findIndex((r) => r.id === 'montney'), 5, 'landownerquad');
-  else if (gag === 'porcupine' || gag === 'lunch') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, gag);
-  else if (gag === 'sam') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, 'sam');
-  else if (gag === 'tongue') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 1, 'tongue');
-  else if (gag === 'bull') showGame(REGIONS.findIndex((r) => r.id === 'montney'), 5, 'bull');
-  else if (gag === 'marshmallow') showGame(REGIONS.findIndex((r) => r.id === 'montney'), 1, 'marshmallow');
-  else if (gag === 'geese' && !gagsOn()) showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 5, 'lostgoose');
-  else if (gag === 'bear') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 7, gagsOn() ? 'bear' : 'bearhare');
-  else if (gag === 'gopher' || gag === 'geese' || gag === 'pumper' || gag === 'hotshot') showGame(REGIONS.findIndex((r) => r.id === 'cardium'), 0, gag);
-  else if (gag === 'moose') showGame(REGIONS.findIndex((r) => r.id === 'duvernay'), 0, 'moose');
-  else if (gag === 'biffy') {
-    for (const [ri, region] of REGIONS.entries()) {
-      const li = region.levels.findIndex((l) => biffySpot(l)?.side === 'bottom');
-      if (li >= 0) {
-        showGame(ri, li, 'biffy');
-        return true;
-      }
-    }
-    return false;
-  } else return false;
+  const preview = PREVIEWS[new URLSearchParams(location.search).get('gag') ?? ''];
+  if (!preview) return false;
+  showGame(REGIONS.findIndex((r) => r.id === preview.region), preview.level - 1, preview.gag);
   return true;
 }
 
-// Each open of the app starts on the cover (one tap gets you in); never between levels.
 if (!forcedGag()) {
   if (shouldShowCover(location.search, navigator.webdriver === true)) showCover(app, () => showLevels());
   else showLevels();

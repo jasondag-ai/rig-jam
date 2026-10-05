@@ -15,15 +15,14 @@ import { toast } from './toast.ts';
 import { uiImg } from './ui-art.ts';
 import { preloadSprites } from './sprites.ts';
 import { defaultKind } from './vehicles.ts';
-import { applyCamo, liveCount, loadLog, record, saveLog, sightingToast, type Sighting } from './wildlife-log.ts';
-import { GagLayer, type GagOptions } from './gag-layer.ts';
-import { bearAlways, bearNever, cooldownScale, eggOff, gagsOn, magpieOn, mooseOn, workerOn } from './flags.ts';
+import { applyCamo, loadLog, record, saveLog, sightingToast, type Sighting } from './wildlife-log.ts';
+import { bearAlways, bearNever, cooldownScale, eggOff, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
 import { BackAndForth, GAG_RULES, GAG_TRIGGERS, IDLE_GAGS, Wiggle, bearComes, bermBump, mustWait, wrongGateBump, type GagId } from './gag-triggers.ts';
 import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
-import { companyLine, tierFor } from './gags.ts';
+import { companyLine, tierFor } from './company.ts';
 import { companyStill, mascotStill } from './win-cast.ts';
 import { gsap } from 'gsap';
 import { TAP_SLOP, onTap } from './tap.ts';
@@ -93,7 +92,6 @@ export class GameView {
   private regionId: string;
 
   /** Null while gags are switched off (flags.ts). */
-  private gags: GagLayer | null;
   /**
    * The Easter-egg gags that are live, each its own code puppet, each null if switched off:
    * the magpie (10 s with no moves), the sleepy worker (20 s with no moves) and the moose (Duvernay:
@@ -150,10 +148,10 @@ export class GameView {
     theme: Theme,
     handlers: GameViewHandlers,
     daily: DailyInfo | null = null,
-    gagOptions: Omit<GagOptions, 'idleScale' | 'ground' | 'wildlife' | 'demo' | 'found'> = { cords: false, landowner: false, regionId: 'daily', levelIndex: 0 },
+    where: { regionId: string; levelIndex: number; force?: GagId | null } = { regionId: 'daily', levelIndex: 0 },
   ) {
     this.level = level;
-    this.regionId = gagOptions.regionId;
+    this.regionId = where.regionId;
     this.theme = theme;
     this.daily = daily;
     this.handlers = handlers;
@@ -166,9 +164,8 @@ export class GameView {
     );
     const board = this.board;
     this.idleScale = idleScale();
-    const f = gagOptions.force;
-    const forced: Partial<Record<string, GagId>> = { magpie: 'magpie', worker: 'worker', nearmiss: 'nearMiss', landownerquad: 'landowner', biffya: 'biffyA', biffyb: 'biffyB', marshmallow: 'marshmallow', lostgoose: 'geese', bearhare: 'bear', bull: 'bull', porcupine: 'porcupine', lunch: 'gopherLunch', sam: 'sam', tongue: 'tongue', ...(gagsOn() ? {} : { moose: 'moose' }) };
-    this.eggForced = (f && forced[f]) || null;
+    // A `?gag=` preview: that gag alone, again and again.
+    this.eggForced = where.force ?? null;
     board.onGrab = (id) => {
       this.played();
       this.wiggle.start();
@@ -180,38 +177,6 @@ export class GameView {
     board.onReverse = () => {
       if (this.wiggle.reversal(performance.now())) this.fire('landowner');
     };
-    const demo = loadProgress().demo;
-    this.gags = !gagsOn() ? null : new GagLayer(
-      {
-        el: board.el,
-        get cellPx() {
-          return board.cellPx;
-        },
-        get fencePx() {
-          return board.fencePx;
-        },
-        truckElement: (id) => board.truckElement(id),
-        say: (anchor, text) => board.say(anchor, text),
-        addGround: (el) => board.addGround(el),
-        state: () => this.state,
-        moving: () => board.moving,
-        // With the other gags on, their pacing decides when the magpie plays.
-        playMagpie: () => this.magpie?.play() ?? Promise.resolve(false),
-      },
-      {
-        ...gagOptions,
-        ground: theme.ground,
-        idleScale: idleScale(),
-        wildlife: new URLSearchParams(location.search).get('wild') !== '0',
-        demo,
-        found: () => new Set(loadLog(demo).found),
-      },
-    );
-    board.onWear = (lvl) => this.gags?.worn(lvl);
-    // The Wildlife Log collects each gag the first time it plays all the way through.
-    // In demo mode they go to the separate demo log, never the real one (and never earn camo).
-    if (this.gags) this.gags.onSeen = (id) => this.seen(id);
-
     this.el = document.createElement('div');
     this.el.className = 'screen game';
     this.el.innerHTML = `
@@ -254,11 +219,8 @@ export class GameView {
     this.board.setLevel(level);
     this.board.setGround(theme.ground);
     sound.setGround(theme.ground);
-    this.gags?.setLevel(level);
     if (magpieOn() || this.eggForced === 'magpie') this.magpie = new MagpieGag({ mount: (el) => this.mount(el), screen: this.el, truckElement: (id) => board.truckElement(id), state: () => this.state, say: (anchor, text) => board.say(anchor, text) });
-    // The worker and the moose are the new puppets; with every gag switched on (?gags=1) the old
-    // spotter and moose scenes play instead, so these stay out of their way.
-    if (!this.gags || this.eggForced) {
+    {
       const egg: EggHost = {
         screen: this.el,
         board: board.el,
@@ -369,8 +331,6 @@ export class GameView {
         }
       }, 250);
     }
-    // Any touch anywhere on the screen cancels an idle gag and restarts the idle clock.
-    this.el.addEventListener('pointerdown', () => this.gags?.touch(), { capture: true });
     this.showLevelHint();
 
     onTap(this.el, TAPPED, (el) => this.act(el));
@@ -426,13 +386,6 @@ export class GameView {
     this.bush?.layout();
     this.riser?.layout();
     if (!this.strips.bull?.playing) this.cow?.layout();
-    // Room outside the fence for the characters: between the HUD and the board, and below it.
-    const buttonsTop = this.el.querySelector('.controls')!.getBoundingClientRect().top - screen.top;
-    this.gags?.layout({
-      above: Math.max(0, box.y - hudBottom),
-      below: Math.max(0, controlsTop - (box.y + box.height)),
-      ground: Math.max(0, buttonsTop - (box.y + box.height)),
-    });
   }
 
   private move(id: string, delta: number): void {
@@ -445,8 +398,6 @@ export class GameView {
     this.played();
     this.undos = 0;
     this.bumpRun = 0;
-    this.gags?.moved(id, delta);
-    if (result.exited) this.gags?.exited();
     // Easter-egg triggers (gag-triggers.ts): the same truck back and forth; two exits back to back.
     if (this.backForth.moved(id, delta) >= GAG_TRIGGERS.landowner.backAndForth) this.fire('landowner');
     if (result.exited) {
@@ -459,7 +410,6 @@ export class GameView {
     this.board.sync(this.state, true, result.exited ? id : undefined);
     this.updateHud();
     if (isWon(this.state)) {
-      this.gags?.stop();
       window.clearInterval(this.eggTimer);
       this.clearEggs();
       setTimeout(() => this.showWin(), WIN_DELAY_MS);
@@ -485,14 +435,11 @@ export class GameView {
     this.resetHint();
     this.clearEggs();
     this.board.setLevel(this.level);
-    this.gags?.setLevel(this.level);
     // A fresh pad: the splat went with the old trucks, and every egg may come again.
     this.resetEggs();
     this.played();
-    if (!this.gags || this.eggForced) {
-      window.clearInterval(this.eggTimer);
-      this.eggTimer = window.setInterval(() => this.tickEggs(), 250);
-    }
+    window.clearInterval(this.eggTimer);
+    this.eggTimer = window.setInterval(() => this.tickEggs(), 250);
     this.winEl.hidden = true;
     this.showLevelHint();
     this.updateHud();
@@ -511,7 +458,7 @@ export class GameView {
     const r = record(before, id);
     if (!r.isNew) return;
     saveLog(r.log, demo);
-    void toast(sightingToast(id, liveCount(r.log, gagsOn()), demo, gagsOn()));
+    void toast(sightingToast(id, r.count, demo));
     if (demo) {
       if (r.completed) void toast('Demo log complete!', { sub: 'Your real log is unchanged', big: true, ms: 3200 });
     } else if (r.completed) {
@@ -664,7 +611,6 @@ export class GameView {
           this.fire(this.eggDone.has('biffyA') ? 'biffyB' : 'biffyA');
         }, GAG_TRIGGERS.biffyB.withinMs);
     }
-    this.gags?.bumped(truckId, direction, hit);
     this.bumps++;
     this.showMisses();
     this.missesEl.classList.remove('tick');

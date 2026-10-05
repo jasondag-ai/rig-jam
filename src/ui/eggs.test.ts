@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { REGIONS } from '../levels/regions.ts';
 import { MOOSE, MOOSE_FRAC, M_BEATS, isTopBermBump, mBeatAt, mPose, mooseColumn, mooseStill, snowChunks } from './moose.ts';
 import { CANCEL, T_ASLEEP, WORKER, WORKER_FRAC, W_BEATS, W_END, cancelPose, wBeatAt, wPose, workerFrame, workerOff, workerSpot, workerStill } from './worker.ts';
-import { LIVE, LOG_ENTRIES, cardHint, liveCount, liveEntries, sightingToast } from './wildlife-log.ts';
+import { LOG_ENTRIES, cardHint } from './wildlife-log.ts';
 
 const frames = (from: number, to: number, step = 1 / 60) => Array.from({ length: Math.round((to - from) / step) }, (_, i) => from + i * step);
 // The screen's left edge in puppet units, for his spot on a 390 px screen.
@@ -143,19 +143,9 @@ describe('moose peekaboo: the reference, as approved', () => {
   });
 });
 
-describe('Wildlife Log: the gags that are live', () => {
-  it('lists the live gags in order; the old ten with the old gag layer switched on', () => {
-    expect(LIVE.slice(0, 9)).toEqual(['magpie', 'spotter', 'moose', 'nearmiss', 'landowner', 'biffy', 'biffyB', 'marshmallow', 'geese']);
-    expect(liveEntries(false).map((e) => e.name).slice(0, 9)).toEqual(['Magpie', 'Sleepy Worker', 'Moose', 'Near Miss', 'Angry Landowner', 'Occupied', 'The Runaway Roll', 'Marshmallow', 'Lost Goose']);
-    expect(liveEntries(true)).toBe(LOG_ENTRIES);
-    expect(liveCount({ found: ['magpie', 'hotshot', 'biffyB'], camo: true, camoEarned: false }, false)).toBe(2);
-    expect(sightingToast('spotter', 2, false, false)).toBe(`New sighting! Sleepy Worker (2/${LIVE.length})`);
-    expect(sightingToast('biffyB', 3, false, false)).toBe(`New sighting! The Runaway Roll (3/${LIVE.length})`);
-    for (const e of liveEntries(false)) expect(e.hint.length).toBeGreaterThan(10);
-  });
-
+describe('Wildlife Log: hints', () => {
   it('demo mode shows each gag hint; the game keeps them secret', () => {
-    const [, worker, moose] = liveEntries(false);
+    const [, worker, moose] = LOG_ENTRIES;
     expect(cardHint(worker, true)).toBe('Sit tight for 20 seconds.');
     expect(cardHint(moose, true)).toBe('Bump a truck into the top berm twice in Duvernay.');
     expect(cardHint(worker, false)).toBe('Not seen yet.');

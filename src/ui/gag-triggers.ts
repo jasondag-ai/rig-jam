@@ -84,6 +84,25 @@ export const wrongGateBump = (
   return gates.some((g) => g.side === side && g.index === index && g.color !== truck.color);
 };
 
+/** `?gag=<name>` previews: the gag each name plays (again and again), and the level it opens on. */
+export const PREVIEWS: Record<string, { gag: GagId; region: string; level: number }> = {
+  magpie: { gag: 'magpie', region: 'cardium', level: 6 },
+  worker: { gag: 'worker', region: 'cardium', level: 6 },
+  moose: { gag: 'moose', region: 'duvernay', level: 1 },
+  nearmiss: { gag: 'nearMiss', region: 'cardium', level: 6 },
+  landowner: { gag: 'landowner', region: 'montney', level: 6 },
+  biffya: { gag: 'biffyA', region: 'cardium', level: 6 },
+  biffyb: { gag: 'biffyB', region: 'cardium', level: 6 },
+  marshmallow: { gag: 'marshmallow', region: 'montney', level: 2 },
+  geese: { gag: 'geese', region: 'cardium', level: 6 },
+  bear: { gag: 'bear', region: 'duvernay', level: 8 },
+  bull: { gag: 'bull', region: 'montney', level: 6 },
+  porcupine: { gag: 'porcupine', region: 'cardium', level: 6 },
+  lunch: { gag: 'gopherLunch', region: 'cardium', level: 6 },
+  sam: { gag: 'sam', region: 'cardium', level: 6 },
+  tongue: { gag: 'tongue', region: 'duvernay', level: 2 },
+};
+
 /** The gags that come by themselves after a quiet spell, in the order they take their turns. */
 export const IDLE_GAGS: GagId[] = ['magpie', 'worker', 'gopherLunch', 'tongue'];
 

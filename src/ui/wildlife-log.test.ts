@@ -1,35 +1,37 @@
 import { describe, expect, it } from 'vitest';
 import { STORAGE_PREFIX } from './progress.ts';
-import { DEMO_LOG_KEY, LOG_ENTRIES, LOG_KEY, camoOn, complete, parseLog, previewAll, record, sightingToast } from './wildlife-log.ts';
+import { DEMO_LOG_KEY, LOG_ENTRIES, LOG_KEY, camoOn, complete, foundCount, parseLog, previewAll, record, sightingToast } from './wildlife-log.ts';
 
 describe('Wildlife Log', () => {
-  it('ten entries, each with a name, caption and hint', () => {
-    expect(LOG_ENTRIES.map((e) => e.name)).toEqual(['Magpie', 'Sleepy Worker', 'Biffy Surprise', 'Angry Landowner', 'Bear', 'Moose', 'Hot Shot', 'Gopher', 'Canada Geese', 'The Pumper']);
-    expect(LOG_ENTRIES.find((e) => e.id === 'gopher')!.hint).toBe('Seen in Cardium');
-    expect(LOG_ENTRIES.find((e) => e.id === 'geese')!.hint).toBe('Look up');
-    expect(LOG_ENTRIES.find((e) => e.id === 'pumper')!.hint).toBe('Making his rounds');
+  it('one entry per gag in the game, each with a name, caption and hint; none for the retired sprite gags', () => {
+    expect(LOG_ENTRIES.map((e) => e.name)).toEqual(['Magpie', 'Sleepy Worker', 'Moose', 'Near Miss', 'Angry Landowner', 'Occupied', 'The Runaway Roll', 'Marshmallow', 'Lost Goose', 'Porcupine', 'Gopher Lunch', 'Safety Sam', 'Frozen Tongue', 'Bull and Cow', 'Bear']);
+    const ids = LOG_ENTRIES.map((e) => e.id as string);
+    for (const gone of ['pumper', 'hotshot', 'gopher']) expect(ids).not.toContain(gone);
     expect(LOG_ENTRIES.find((e) => e.id === 'bear')!.caption).toBe('Does what bears do in the woods.');
     expect(LOG_ENTRIES.find((e) => e.id === 'magpie')!.caption).toBe('Never park under a tree.');
-    for (const e of LOG_ENTRIES) expect(e.caption && e.hint).toBeTruthy();
+    for (const e of LOG_ENTRIES) expect(e.caption && e.hint.length > 10).toBeTruthy();
+    expect(foundCount({ found: ['magpie', 'biffyB'], camo: true, camoEarned: false })).toBe(2);
   });
 
   it('starts empty, and repairs odd saved data', () => {
     expect(parseLog(null)).toEqual({ found: [], camo: true, camoEarned: false });
     expect(parseLog('not json')).toEqual({ found: [], camo: true, camoEarned: false });
     expect(parseLog(JSON.stringify({ v: 2, found: ['bear', 'unicorn', 'bear'], camo: false }))).toEqual({ found: ['bear'], camo: false, camoEarned: false });
+    // Sightings of the retired sprite gags are dropped from a saved log.
+    expect(parseLog(JSON.stringify({ v: 2, found: ['pumper', 'magpie', 'hotshot', 'gopher'], camo: true })).found).toEqual(['magpie']);
   });
 
   it('a sighting counts once', () => {
     let r = record(parseLog(null), 'bear');
     expect(r.isNew).toBe(true);
     expect(r.count).toBe(1);
-    expect(sightingToast('bear', r.count)).toBe('New sighting! Bear (1/10)');
+    expect(sightingToast('bear', r.count)).toBe(`New sighting! Bear (1/${LOG_ENTRIES.length})`);
     r = record(r.log, 'bear');
     expect(r.isNew).toBe(false);
     expect(r.log.found).toEqual(['bear']);
   });
 
-  it('the tenth sighting completes the log and turns on camo pickups', () => {
+  it('the last sighting completes the log and turns on camo pickups', () => {
     let log = parseLog(null);
     const ids = LOG_ENTRIES.map((e) => e.id);
     for (const [i, id] of ids.entries()) {
@@ -42,26 +44,22 @@ describe('Wildlife Log', () => {
     expect(camoOn({ ...log, camo: false })).toBe(false);
   });
 
-  it('a log that had all seven before 8 to 10 arrived keeps its camo; a new one needs all ten', () => {
-    const seven = ['magpie', 'spotter', 'biffy', 'landowner', 'bear', 'moose', 'hotshot'];
-    const old = parseLog(JSON.stringify({ found: seven, camo: true }));
+  it('camo earned under an earlier, shorter log is kept; a new log needs every entry', () => {
+    const old = parseLog(JSON.stringify({ v: 2, found: ['magpie', 'spotter', 'biffy', 'landowner', 'bear', 'moose'], camo: true, camoEarned: true }));
     expect(old.camoEarned).toBe(true);
     expect(camoOn(old)).toBe(true);
     expect(complete(old)).toBe(false);
-    // Saved after the update with the same seven: not enough any more.
-    const now = parseLog(JSON.stringify({ v: 2, found: seven, camo: true, camoEarned: false }));
-    expect(camoOn(now)).toBe(false);
-    // And an old log with only six stays without.
-    expect(parseLog(JSON.stringify({ found: seven.slice(1), camo: true })).camoEarned).toBe(false);
+    const fresh = parseLog(JSON.stringify({ v: 3, found: ['magpie', 'spotter', 'biffy', 'landowner', 'bear', 'moose'], camo: true, camoEarned: false }));
+    expect(camoOn(fresh)).toBe(false);
   });
 
-  it('the Bear is the one legendary entry, only deep in the Duvernay', () => {
+  it('the Bear is the one legendary entry', () => {
     expect(LOG_ENTRIES.filter((e) => e.legendary).map((e) => e.id)).toEqual(['bear']);
-    expect(LOG_ENTRIES.find((e) => e.id === 'bear')!.hint).toBe('Only deep in the Duvernay.');
+    expect(LOG_ENTRIES.find((e) => e.id === 'bear')!.hint).toBe('Tap the snowy bush three times in Duvernay. One time in three.');
   });
 
   it('demo sightings are worded differently', () => {
-    expect(sightingToast('bear', 3, true)).toBe('Demo sighting! Bear (3/10)');
+    expect(sightingToast('bear', 3, true)).toBe(`Demo sighting! Bear (3/${LOG_ENTRIES.length})`);
   });
 
   it('both logs live under the progress prefix (separate keys), so Reset progress clears both', () => {

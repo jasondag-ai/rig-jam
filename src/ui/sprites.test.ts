@@ -90,14 +90,9 @@ describe('ground tiles', () => {
 });
 
 describe('art inbox sprites', () => {
-  it('every accepted animation has its sheet, and no rejected one slipped in', async () => {
-    const anim = (await import('./anim-sprites.json', { with: { type: 'json' } })).default as Record<string, { frames: number; w: number; h: number }>;
-    for (const [name, a] of Object.entries(anim)) {
-      expect(existsSync(`public/sprites/anim/${name}.webp`), name).toBe(true);
-      expect(a.frames, name).toBeGreaterThanOrEqual(4);
-    }
-    for (const rejected of ['bear_wipe', 'magpie_hop', 'moose_chew', 'spotter_sleep', 'hotshot_drive', 'pumper_truck_drive'])
-      expect(anim[rejected], rejected).toBeUndefined();
+  it('no character sprite sheets: every gag and the win card characters are code puppets', () => {
+    expect(existsSync('public/sprites/anim')).toBe(false);
+    expect(existsSync('src/ui/anim-sprites.json')).toBe(false);
   });
 
   it('batch B UI at 1x and 2x; scenery is drawn in code, so no world photo sprites', () => {

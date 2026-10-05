@@ -4,7 +4,7 @@
 //    sheepish look (and a bead of sweat) when well over.
 //  - The Company Man is the same build in a white hard hat, a light blue button shirt and khaki
 //    pants, a travel mug in his hand and no vest: pleased at par, unmoved when close, a scowl when over.
-import type { Tier } from './gags.ts';
+import type { Tier } from './company.ts';
 import { wApplyBasic } from './marshmallow.ts';
 import { makePup } from './puppet-stage.ts';
 import { WORKER } from './worker.ts';
