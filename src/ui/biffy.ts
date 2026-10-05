@@ -2,10 +2,13 @@
 // ported from the approved reference (~/Desktop/RHR Art Inbox/biffy_reference.html): the same
 // drawings, poses, beats and timing.
 //   Gag 6, Biffy A "Occupied": the door bangs open on a worker, back to us; the wide-eyed look over
-//   his shoulder; he reaches back and pulls the door shut; the indicator flips to red.
+//   his shoulder; he reaches back and pulls the door shut; the indicator flips to red, and a moment
+//   later clicks back to green.
 //   Gag 7, Biffy B "The runaway roll": the door bangs open, the roll tumbles out and rolls smoothly
 //   away; an arm gropes around out of the dark; he shuffles out after it, pants at his ankles, a
 //   strip of paper on his boot; the door creaks shut and the indicator flips to green.
+// SAME START, SAME END (Jay, Oct 5): the indicator is green at rest and is always back to green by
+// a gag's last frame (in B it goes red at the jolt: somebody is in there).
 // strip-gags.ts puts them on screen.
 /* eslint-disable */
 import { addEl, makePup, place, type Pup } from './puppet-stage.ts';
@@ -95,8 +98,9 @@ export const A_BEATS: [number, string, string][] = [
   [0, 'sits', 'Biffy sits there'], [0.3, 'jolt', 'Truck bump: it jolts'], [0.5, 'door-open', 'Door bangs open'], [0.75, 'oblivious', 'Back to us, bum out, swaying, oblivious'],
   [1.7, 'look-back', 'Freezes. Slowly looks over his shoulder'], [1.95, 'eye-pop', 'Eye pops wide, face goes red'], [2.3, 'nod', 'Awkward little nod'],
   [2.7, 'reach', 'Calmly reaches back for the door'], [3.1, 'pull-shut', 'Pulls it shut'], [3.55, 'occupied', 'Indicator flips to red. One last rock'], [4.5, 'done', 'Nothing to see here'],
+  [5.0, 'unlocked', 'A click: the indicator flips back to green, as it began'],
 ];
-export const A_END = 4.6;
+export const A_END = 5.4;
 export const B_BEATS: [number, string, string][] = [
   [0, 'sits', 'Biffy sits there'], [0.3, 'jolt', 'Truck bump: it jolts'], [0.5, 'door-open', 'Door bangs open'], [0.8, 'roll-out', 'The toilet paper roll tumbles out'],
   [1.1, 'roll-away', 'It rolls smoothly away and off screen'], [1.4, 'grope', 'His arm gropes around out of the dark, a few sweeps, nothing'],
@@ -126,7 +130,8 @@ export function aApply(sc: any, t: number): void {
   let door = 1, rock = 0, red = false;
   if (t > .5 && t < 3.1) door = doorOpen(t, .5);
   if (t >= 3.1 && t < 3.55){ const k = ease(seg(t,3.1,3.5)); door = lerp(-0.42, 1, k); }
-  if (t >= 3.55){ red = true; rock = t < 4.4 ? Math.sin((t-3.55)*14)*2.5*(1 - seg(t,3.55,4.4)) : 0; }
+  // SAME START, SAME END: red while he is flustered in there, then a click back to the green it began with.
+  if (t >= 3.55){ red = t < 5.0; rock = t < 4.4 ? Math.sin((t-3.55)*14)*2.5*(1 - seg(t,3.55,4.4)) : 0; }
   doorAndBody(pp, door, jolt(t,.3), rock, red);
   const turn = t > 1.7 && t < 3.3;
   q('.headBack').style.display = turn ? 'none' : ''; q('.headTurn').style.display = turn ? '' : 'none';
@@ -151,7 +156,8 @@ export function aApply(sc: any, t: number): void {
 
 export function bApply(sc: any, t: number): void {
   const pp = sc.p; const {r, u} = place(pp);
-  let door = 1, red = true;
+  // The indicator starts as it stood (green) and goes red at the jolt: somebody is in there after all.
+  let door = 1, red = t >= 0.3;
   if (t > .5 && t < 9.2) door = doorOpen(t, .5);
   if (t >= 9.2){ const k = seg(t,9.2,10.1); door = lerp(-0.42, 1, k*k); if (t > 10.1) red = false; }
   doorAndBody(pp, door, jolt(t,.3), 0, red);

@@ -283,13 +283,17 @@ export class GameView {
           const tap = down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < TAP_SLOP;
           down = null;
           if (!tap) return;
-          // The porcupine's trigger is TBD: in demo mode only, a tap on the bush plays it.
           const onBush = !!this.bush?.hit(e.clientX, e.clientY);
-          if (onBush && this.strips.porcupine && GAG_TRIGGERS.porcupine.demoTapBush && loadProgress().demo) this.fire('porcupine');
-          // The bear: every so many taps on his bush he may come; otherwise it shakes and drops a puff of snow.
+          // The bush: every so many taps and somebody may come out of it. In Duvernay the bear (he may
+          // not: then it shakes and drops a puff of snow); in Cardium the porcupine's gag. Once they
+          // have been, it only shakes.
           if (onBush && this.strips.bear && !this.eggsOn.has('bear') && ++this.bushTaps >= GAG_TRIGGERS.bear.bushTaps) {
             this.bushTaps = 0;
             if (!this.eggDone.has('bear') && !bearNever() && bearComes(loadProgress().demo || bearAlways())) this.fire('bear');
+            else this.bush!.shake();
+          } else if (onBush && this.strips.porcupine && !this.eggsOn.has('porcupine') && ++this.bushTaps >= GAG_TRIGGERS.porcupine.bushTaps) {
+            this.bushTaps = 0;
+            if (!this.eggDone.has('porcupine')) this.fire('porcupine');
             else this.bush!.shake();
           }
           if (this.cow?.hit(e.clientX, e.clientY) && ++this.cowTaps >= GAG_TRIGGERS.bull.cowTaps) this.fire('bull');

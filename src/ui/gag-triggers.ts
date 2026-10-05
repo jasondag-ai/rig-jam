@@ -35,11 +35,8 @@ export const GAG_TRIGGERS = {
   bear: { region: 'duvernay', bushTaps: 3, chance: 1 / 3 },
   /** Gag 11, the bull and the cow: this many taps on the cow grazing in the bottom strip. */
   bull: { region: 'montney', cowTaps: 1 },
-  /**
-   * Gag 12, the porcupine (Cardium, at the bush): its trigger is TBD until Jay has played it, so in
-   * the game nothing sets it off yet. In DEMO MODE only, a tap on the bush plays it.
-   */
-  porcupine: { region: 'cardium', trigger: 'TBD', demoTapBush: true },
+  /** Gag 12, the porcupine (Cardium, at the bush): tap the bush this many times (the same pattern as the bear's bush). */
+  porcupine: { region: 'cardium', bushTaps: 3 },
   /** Gag 13, gopher lunch (Cardium, at the gopher mound): this long with no moves (after the magpie and the worker have had their turns). */
   gopherLunch: { region: 'cardium', idleMs: 30_000 },
   /**

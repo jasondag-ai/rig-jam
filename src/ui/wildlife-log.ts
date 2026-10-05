@@ -28,7 +28,7 @@ export const LOG_ENTRIES: LogEntry[] = [
   { id: 'biffyB', name: 'The Runaway Roll', caption: 'It got away from him.', hint: 'Bump the bottom berm twice, quickly.' },
   { id: 'marshmallow', name: 'Marshmallow', caption: 'Mmm. Crispy.', hint: 'Tap a flare stack three times.' },
   { id: 'geese', name: 'Lost Goose', caption: 'Wrong way, buddy.', hint: 'Undo three times in a row.' },
-  { id: 'porcupine', name: 'Porcupine', caption: 'Check behind the bush first.', hint: 'Demo mode only for now: tap the bush in Cardium.' },
+  { id: 'porcupine', name: 'Porcupine', caption: 'Check behind the bush first.', hint: 'Tap the bush three times in Cardium.' },
   { id: 'lunch', name: 'Gopher Lunch', caption: 'He left you the crust.', hint: 'Sit tight for 30 seconds in Cardium.' },
   { id: 'sam', name: 'Safety Sam', caption: 'See me.', hint: 'Bump three times in a row, or push a truck at a wrong-colour gate.' },
   { id: 'tongue', name: 'Frozen Tongue', caption: 'HEWP!', hint: 'Sit tight for 30 seconds on a winter level.' },

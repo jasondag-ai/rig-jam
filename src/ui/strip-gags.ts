@@ -10,7 +10,7 @@ import { BUDDY_STOP, RISER_FRAC, TONGUE_BEATS, TONGUE_END, TONGUE_LINE, riserPup
 import { SAM_BEATS, SAM_END, SAM_X, samFrame, samPose, samScene } from './sam.ts';
 import { PC_BEATS, PC_END, PORC_FRAC, QUILL_SHUFFLER_FRAC, SHIFT, pcApply, pcPose, porcupineScene } from './porcupine.ts';
 import type { Season } from './trees.ts';
-import { BULL_BEATS, BULL_END, BULL_FRAC, BULL_GAP, COW_FRAC, COW_REST, PRIMP, bullApply, bullPose, bullScene, cowApply, cowPup } from './bull.ts';
+import { BULL_BEATS, BULL_END, BULL_FRAC, BULL_GAP, COW_FRAC, COW_REST, bullApply, bullPose, bullScene, cowApply, cowPup } from './bull.ts';
 import { A_BEATS, A_END, BIFFY_FRAC, B_BEATS, B_END, aApply, bApply, biffyPup, biffyRest, runawayScene } from './biffy.ts';
 import type { EggHost, EggResult } from './egg-gags.ts';
 import { GEESE_LINE, GOOSE_FRAC, G_BEATS, G_END, SKY, gApply, geeseScene } from './geese.ts';
@@ -43,8 +43,6 @@ export function biffyBox(screenW: number, strip: { top: number; bottom: number }
 export class BiffyProp {
   readonly layer: HTMLElement;
   pup: Pup;
-  /** The indicator: red once someone has shut himself in (Biffy A), green again when he has left (Biffy B). */
-  red = false;
   private host: EggHost;
 
   constructor(host: EggHost) {
@@ -68,12 +66,11 @@ export class BiffyProp {
   }
 
   rest(): void {
-    biffyRest(this.pup, this.red);
+    biffyRest(this.pup, false);
   }
 
   /** A fresh level: door shut, indicator green. */
   reset(): void {
-    this.red = false;
     this.rest();
   }
 }
@@ -237,12 +234,10 @@ export function cowBox(screenW: number, strip: { top: number; bottom: number }):
   return { x: left, y: ground - h, width: right - left, height: h };
 }
 
-/** The Holstein cow: permanent scenery in the Montney strip, grazing. She only moves during the gag. */
+/** The Holstein cow: permanent scenery in the Montney strip, grazing. She only moves during the gag, and ends it back in her spot. */
 export class CowProp {
   readonly layer: HTMLElement;
   pup: Pup;
-  /** She bolted: gone until the level is loaded again. */
-  gone = false;
   private host: EggHost;
 
   constructor(host: EggHost) {
@@ -269,19 +264,17 @@ export class CowProp {
   }
 
   rest(): void {
-    cowApply(this.pup, { ...COW_REST, show: !this.gone });
+    cowApply(this.pup, COW_REST);
   }
 
   /** Is this point (client px) on her? */
   hit(x: number, y: number): boolean {
-    if (this.gone) return false;
     const r = (this.pup.q('.root') as SVGGElement).getBoundingClientRect();
     return x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 4 && y <= r.bottom + 4;
   }
 
   /** Back to grazing. */
   reset(): void {
-    this.gone = false;
     this.rest();
   }
 }
@@ -500,7 +493,6 @@ export const biffyADef = (biffy: BiffyProp): TimelineDef => ({
     return {
       apply: (t) => aApply(scene, t),
       done: () => {
-        biffy.red = true;
         biffy.rest();
       },
     };
@@ -523,7 +515,6 @@ export const biffyBDef = (biffy: BiffyProp): TimelineDef => ({
     return {
       apply: (t) => bApply(scene, t),
       done: () => {
-        biffy.red = false;
         biffy.rest();
       },
     };
@@ -690,34 +681,21 @@ export const tongueDef = (riser: RiserProp): TimelineDef => ({
   },
 });
 
-/** Gag 11: the bull and the (permanent) cow. No speech, just hearts. She stays gone once she has bolted. */
+/** Gag 11: the bull and the (permanent) cow. No speech, just hearts. She bolts, and at the end wanders back to her spot. */
 export const bullDef = (cow: CowProp): TimelineDef => ({
   name: 'bull',
   beats: BULL_BEATS,
   end: BULL_END,
-  stillAt: 3.6 + PRIMP,
+  stillAt: 5.2,
   build(layer, host) {
-    if (cow.gone) return null;
     const screen = host.screen.getBoundingClientRect();
     const scale = cow.scale();
     const scene = bullScene(layer('bull-layer'), cow.pup, scale);
-    // The bull in from past the left edge; both of them out past the right one (each in its own units).
+    // The bull in from past the left edge; both of them out past the right one, and she back in from there (each in its own units).
     const wB = BULL_FRAC * scale * screen.width, uB = wB / 170, xB = scene.bull.spot.x * screen.width;
     const wC = COW_FRAC * scale * screen.width, uC = wC / 170, xC = cow.pup.spot.x * screen.width;
     const from = -(xB + wB) / uB, charge = (screen.width - xB + wB) / uB, to = (screen.width - xC + wC) / uC;
-    // She is gone afterwards only if she was seen to bolt (not after a reduced-motion still).
-    let bolted = false;
-    return {
-      apply: (t) => {
-        const pose = bullPose(t, from, to, charge);
-        if (!pose.c.show) bolted = true;
-        bullApply(scene, pose, t);
-      },
-      done: (result) => {
-        cow.gone = result === 'seen' && bolted;
-        cow.rest();
-      },
-    };
+    return { apply: (t) => bullApply(scene, bullPose(t, from, to, charge), t), done: () => cow.rest() };
   },
 });
 
