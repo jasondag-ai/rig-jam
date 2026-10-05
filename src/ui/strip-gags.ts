@@ -9,6 +9,7 @@ import { LUNCH_BEATS, LUNCH_END, LUNCH_GAP, lunchApply, lunchPose, lunchScene, m
 import { BUDDY_STOP, RISER_FRAC, TONGUE_BEATS, TONGUE_END, TONGUE_LINE, riserPup, tongueApply, tonguePose, tongueScene } from './frozen-tongue.ts';
 import { SAM_BEATS, SAM_END, SAM_X, samFrame, samPose, samScene } from './sam.ts';
 import { PC_BEATS, PC_END, PORC_FRAC, QUILL_SHUFFLER_FRAC, SHIFT, pcApply, pcPose, porcupineScene } from './porcupine.ts';
+import { DEER_BEATS, DEER_END, SIGN_FRAC, SURVEY_BEATS, SURVEY_END, SURVEY_LINES, TOUR_BEATS, TOUR_END, TOUR_LINE, VISITOR_FRAC, deerApply, deerPose, deerScene, signPup, surveyApply, surveyPose, surveyScene, tourApply, tourPose, tourScene } from './sign-gags.ts';
 import type { Season } from './trees.ts';
 import { BULL_BEATS, BULL_END, BULL_FRAC, BULL_GAP, COW_FRAC, COW_REST, bullApply, bullPose, bullScene, cowApply, cowPup } from './bull.ts';
 import { A_BEATS, A_END, BIFFY_FRAC, BIFFY_SIZE, B_BEATS, B_END, SHUFFLER_FRAC, aApply, bApply, biffyPup, biffyRest, runawayScene } from './biffy.ts';
@@ -306,6 +307,8 @@ interface Bubble {
 interface Built {
   apply: (t: number) => void;
   bubble?: Bubble;
+  /** More lines, said at their own times (one bubble at a time). */
+  lines?: Bubble[];
   /** Called when the gag ends, however it ends ('seen': it played right through). */
   done?: (result: EggResult) => void;
 }
@@ -323,7 +326,7 @@ export interface TimelineDef {
 export class TimelineGag {
   private host: EggHost;
   private def: TimelineDef;
-  private run: { layers: HTMLElement[]; built: Built; frame: number; bubble: HTMLElement | null; timers: number[]; done: (r: EggResult) => void } | null = null;
+  private run: { layers: HTMLElement[]; built: Built; frame: number; bubble: HTMLElement | null; said: Bubble | null; timers: number[]; done: (r: EggResult) => void } | null = null;
 
   private held: { layers: HTMLElement[]; built: Built } | null = null;
 
@@ -354,7 +357,7 @@ export class TimelineGag {
       return Promise.resolve('none');
     }
     return new Promise((resolve) => {
-      const run = { layers, built, frame: 0, bubble: null as HTMLElement | null, timers: [] as number[], done: resolve };
+      const run = { layers, built, frame: 0, bubble: null as HTMLElement | null, said: null as Bubble | null, timers: [] as number[], done: resolve };
       this.run = run;
       const mark = layers[layers.length - 1];
       if (reducedMotion()) {
@@ -365,7 +368,8 @@ export class TimelineGag {
         void mark.offsetWidth;
         layers.forEach((l) => (l.style.opacity = '1'));
         const later = (ms: number, f: () => void) => run.timers.push(window.setTimeout(() => this.run === run && f(), ms));
-        if (built.bubble) later(450, () => (run.bubble = this.speak(mark, built.bubble!)));
+        const line = built.bubble ?? built.lines?.find((x) => this.def.stillAt >= x.from - 0.6) ?? null;
+        if (line) later(450, () => (run.bubble = this.speak(mark, line)));
         later(2300, () => layers.forEach((l) => (l.style.opacity = '0')));
         later(2700, () => this.finish('seen'));
         return;
@@ -376,11 +380,11 @@ export class TimelineGag {
         const t = (performance.now() - start) / 1000;
         built.apply(t);
         mark.dataset.beat = beatAt(this.def.beats, t);
-        const b = built.bubble;
-        if (b && t >= b.from && t < b.to && !run.bubble) run.bubble = this.speak(mark, b);
-        if (b && t >= b.to && run.bubble) {
-          run.bubble.remove();
-          run.bubble = null;
+        const b = [...(built.bubble ? [built.bubble] : []), ...(built.lines ?? [])].find((x) => t >= x.from && t < x.to) ?? null;
+        if (b !== run.said) {
+          run.bubble?.remove();
+          run.bubble = b ? this.speak(mark, b) : null;
+          run.said = b;
         }
         if (t >= this.def.end) return this.finish('seen');
         run.frame = requestAnimationFrame(tick);
@@ -681,6 +685,134 @@ export const samDef: TimelineDef = {
     return { apply: (t) => samFrame(scene, samPose(t, from, from), t) };
   },
 };
+
+/**
+ * THE LEASE SIGN: permanent scenery at one fixed spot in the bottom strip of every level (not
+ * random any more). `SIGN_X`: right of the middle, in the open row up by the berm (the biffy's row,
+ * a little nearer the buttons so its visitors pass in front of the biffy), with a clear lane to the
+ * NEAR screen edge (the right), where its visitors come from.
+ */
+export const SIGN_X = 0.62;
+/** The line the sign and its visitors stand on (screen px), and the strip's scale. */
+export function signStand(screenW: number, strip: { top: number; bottom: number }): { ground: number; scale: number } {
+  const { ground, scale } = stripGeom(screenW, strip);
+  return { ground: Math.min(ground, biffyStand(screenW, strip).ground + 0.035 * screenW * scale), scale };
+}
+/** The lane kept clear of trees: from where the surveyor works (left of the sign) to the near screen edge. */
+export function signLane(screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
+  const { ground, scale } = signStand(screenW, strip);
+  const u = (VISITOR_FRAC * scale * screenW) / 120;
+  const left = SIGN_X * screenW - 112 * u;
+  return { x: left, y: ground - 60 * u, width: screenW - left, height: 60 * u + 2 };
+}
+export class SignProp {
+  readonly layer: HTMLElement;
+  pup: Pup;
+  private host: EggHost;
+
+  constructor(host: EggHost) {
+    this.host = host;
+    this.layer = document.createElement('div');
+    this.layer.className = 'scene-layer puppet-layer prop-layer sign-layer';
+    this.layer.setAttribute('aria-hidden', 'true');
+    (host.mount ?? ((el: HTMLElement) => host.screen.append(el)))(this.layer);
+    this.pup = signPup(this.layer, 1, { x: SIGN_X, y: 0.8 });
+    this.layout();
+  }
+
+  scale(): number {
+    return signStand(this.host.screen.getBoundingClientRect().width, this.host.strip()).scale;
+  }
+
+  layout(): void {
+    const screen = this.host.screen.getBoundingClientRect();
+    if (!screen.height) return;
+    const { ground, scale } = signStand(screen.width, this.host.strip());
+    this.pup.frac = SIGN_FRAC * scale;
+    this.pup.spot = { x: SIGN_X, y: ground / screen.height };
+    this.rest();
+  }
+
+  /** Standing where it always stands, upright. */
+  rest(): void {
+    place(this.pup);
+    this.pup.svg.style.transform = '';
+  }
+
+  /** Is this point (client px) on the sign? */
+  hit(x: number, y: number): boolean {
+    const r = (this.pup.q('.sg') as SVGGElement).getBoundingClientRect();
+    return x >= r.left - 6 && x <= r.right + 6 && y >= r.top - 6 && y <= r.bottom + 6;
+  }
+}
+
+/** A sign gag's stage: one layer; its visitors live in a holder mirrored about the sign, because they come from the right (the near edge) and the reference brings them from the left. */
+function signStage(layer: (cls: string) => HTMLElement, host: EggHost, cls: string) {
+  const screen = host.screen.getBoundingClientRect();
+  const { ground, scale } = signStand(screen.width, host.strip());
+  const frame = layer(cls);
+  const stage = document.createElement('div');
+  stage.className = 'sign-stage';
+  stage.style.transformOrigin = `${SIGN_X * screen.width}px 50%`;
+  stage.style.transform = 'scaleX(-1)';
+  frame.append(stage);
+  const u = (VISITOR_FRAC * scale * screen.width) / 120;
+  const spot = { x: SIGN_X, y: ground / screen.height };
+  // How far from the sign (their units) a visitor is fully off the near edge, and off the far one.
+  const near = ((1 - SIGN_X) * screen.width) / u + 72, far = (SIGN_X * screen.width) / u + 80;
+  return { screen, frame, stage, scale, spot, near, far, strip: host.strip() };
+}
+
+/** Gag 16: the surveyor moves the lease sign a metre, and moves it back. */
+export const surveyorDef = (sign: SignProp): TimelineDef => ({
+  name: 'surveyor',
+  beats: SURVEY_BEATS as [number, string, string][],
+  end: SURVEY_END,
+  stillAt: 3.4,
+  build(layer, host) {
+    const s = signStage(layer, host, 'surveyor-layer');
+    const scene: any = surveyScene(s.stage, s.frame, sign.pup, s.scale, s.spot, true);
+    const off = Math.max(330, s.near);
+    const who = () => scene.man.q('.head') as Element;
+    return {
+      apply: (t) => surveyApply(scene, surveyPose(t, off), t),
+      lines: SURVEY_LINES.map((l) => ({ ...l, who, at: () => ({ x: 0, y: 0 }) })),
+      done: () => sign.rest(),
+    };
+  },
+});
+
+/** Gag 17: the back scratcher. A mule deer rubs its cheek and neck on the sign's near post. Not on winter levels. */
+export const deerDef = (sign: SignProp): TimelineDef => ({
+  name: 'deer',
+  beats: DEER_BEATS as [number, string, string][],
+  end: DEER_END,
+  stillAt: 4.2,
+  build(layer, host) {
+    const s = signStage(layer, host, 'deer-layer');
+    const scene: any = deerScene(s.stage, s.frame, sign.pup, s.scale, s.spot, true);
+    const off = Math.max(330, s.near + 12), far = Math.max(460, s.far + 12);
+    return { apply: (t) => deerApply(scene, deerPose(t, off, far), t), done: () => sign.rest() };
+  },
+});
+
+/** Gag 18: the tourists. She photographs him posing by the sign; then the mosquitoes. Not on winter levels. */
+export const touristsDef = (sign: SignProp): TimelineDef => ({
+  name: 'tourists',
+  beats: TOUR_BEATS as [number, string, string][],
+  end: TOUR_END,
+  stillAt: 3.45,
+  build(layer, host) {
+    const s = signStage(layer, host, 'tourists-layer');
+    const scene: any = tourScene(s.stage, s.frame, sign.pup, s.scale, s.spot, true, { top: s.strip.top, height: Math.max(0, s.strip.bottom - s.strip.top) });
+    const off = Math.max(360, s.near + 10);
+    return {
+      apply: (t) => tourApply(scene, tourPose(t, off), t),
+      lines: [{ ...TOUR_LINE, who: () => scene.him.q('.head') as Element, at: () => ({ x: 0, y: 0 }) }],
+      done: () => sign.rest(),
+    };
+  },
+});
 
 /** Gag 15: the frozen tongue, at the (permanent) frosty riser. */
 export const tongueDef = (riser: RiserProp): TimelineDef => ({

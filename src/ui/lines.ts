@@ -199,4 +199,7 @@ export const WITNESS_LINES = {
   gopherLunch: 'Gopher eats better than we do.',
   sam: "Act natural. Sam's here.",
   tongue: 'Every winter. Every single winter.',
+  surveyor: 'It was fine where it was.',
+  deer: "Somebody's itchy.",
+  tourists: 'Should have brought the bug spray.',
 };

@@ -15,7 +15,7 @@ const ART = { spruce: aspect('spruce'), aspen: aspect('aspen'), willow: aspect('
 
 /** What stands in a season: spruce, aspen and willow all year (bare aspen and willow under snow in winter); cattails only when the sloughs are open. */
 export function seasonArt(id: string): { spruce: WorldArt; aspen: WorldArt | null; bush: WorldArt | null; accents: WorldArt[] } {
-  return { spruce: 'spruce', aspen: 'aspen', bush: 'willow', accents: id === 'winter' ? ['sign'] : ['cattails', 'sign'] };
+  return { spruce: 'spruce', aspen: 'aspen', bush: 'willow', accents: id === 'winter' ? [] : ['cattails'] };
 }
 
 export interface Item {
@@ -165,7 +165,7 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
       const size = h * (rows === 1 ? 0.85 : 0.5 + 0.42 * back);
       items.push(...groveRow(rng, -10, width + 20, baseY, size, Math.min(10, bandBelow * 0.06), 2.2 + back * 1.2, pick, art.bush));
     }
-    // Accents: a cattail clump and (now and then) the blank lease sign.
+    // Accents: a cattail clump. (The lease sign is permanent scenery now, at its own fixed spot: strip-gags.ts `SignProp`.)
     for (const a of art.accents) {
       if (rng() < (a === 'cattails' ? 0.8 : 0.5)) items.push({ x: width * (0.2 + rng() * 0.6), y: floor + bandBelow - 2, h: h * (a === 'cattails' ? 0.42 : 0.5), art: a, flip: a === 'cattails' && rng() < 0.5 });
     }

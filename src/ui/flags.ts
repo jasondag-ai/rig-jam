@@ -27,6 +27,11 @@ export const bearAlways = (search: string = location.search): boolean => new URL
 /** `?lunch=1`: a press of Hint always brings gopher lunch; `?lunch=0`: never (tests). */
 export const lunchAlways = (search: string = location.search): boolean => new URLSearchParams(search).get('lunch') === '1';
 export const lunchNever = (search: string = location.search): boolean => new URLSearchParams(search).get('lunch') === '0';
+/** `?surveyor=1`, `?tourists=1`: that roll always wins; `=0`: never (tests). Null: roll the dice. */
+export const rollPinned = (name: string, search: string = location.search): boolean | null => {
+  const v = new URLSearchParams(search).get(name);
+  return v === '1' ? true : v === '0' ? false : null;
+};
 /** `?bear=0`: he never comes (tests of the bush's shake). */
 export const bearNever = (search: string = location.search): boolean => new URLSearchParams(search).get('bear') === '0';
 export const mooseOn = (search: string = location.search): boolean => MOOSE_ON && new URLSearchParams(search).get('moose') !== '0';

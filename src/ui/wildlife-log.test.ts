@@ -4,7 +4,7 @@ import { DEMO_LOG_KEY, LOG_ENTRIES, LOG_KEY, camoOn, complete, foundCount, parse
 
 describe('Wildlife Log', () => {
   it('one entry per gag in the game, each with a name, caption and hint; none for the retired sprite gags', () => {
-    expect(LOG_ENTRIES.map((e) => e.name)).toEqual(['Magpie', 'Sleepy Worker', 'Moose', 'Near Miss', 'Angry Landowner', 'Occupied', 'The Runaway Roll', 'Marshmallow', 'Lost Goose', 'Porcupine', 'Gopher Lunch', 'Safety Sam', 'Frozen Tongue', 'Bull and Cow', 'Bear']);
+    expect(LOG_ENTRIES.map((e) => e.name)).toEqual(['Magpie', 'Sleepy Worker', 'Moose', 'Near Miss', 'Angry Landowner', 'Occupied', 'The Runaway Roll', 'Marshmallow', 'Lost Goose', 'Porcupine', 'Gopher Lunch', 'Safety Sam', 'Frozen Tongue', 'Surveyor', 'Back Scratcher', 'Tourists', 'Bull and Cow', 'Bear']);
     const ids = LOG_ENTRIES.map((e) => e.id as string);
     for (const gone of ['pumper', 'hotshot', 'gopher']) expect(ids).not.toContain(gone);
     expect(LOG_ENTRIES.find((e) => e.id === 'bear')!.caption).toBe('Does what bears do in the woods.');

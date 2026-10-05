@@ -12,6 +12,7 @@ import './ui/style.css';
 import { DAILY_LEVELS, REGIONS, dailyTheme } from './levels/regions.ts';
 import { STAND_DOWN_TOAST, dayKey, newlySaved, padLevelIndex, padNumber, streak } from './ui/daily.ts';
 import { showTutorial } from './ui/tutorial.ts';
+import { deerStill, surveyorStill, touristsStill } from './ui/sign-gags.ts';
 import { toast } from './ui/toast.ts';
 import { GameView } from './ui/game-view.ts';
 import { streakSignHtml } from './ui/sign.ts';
@@ -54,6 +55,9 @@ const LOG_ART: Record<Sighting, () => string> = {
   lunch: () => lunchStill(),
   sam: () => samStill(),
   tongue: () => tongueStill(),
+  surveyor: () => surveyorStill(),
+  deer: () => deerStill(),
+  tourists: () => touristsStill(),
   bull: () => bullStill(),
   bear: () => bearStill(),
 };

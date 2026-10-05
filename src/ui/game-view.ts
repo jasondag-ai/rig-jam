@@ -19,10 +19,10 @@ import { uiImg } from './ui-art.ts';
 import { preloadSprites } from './sprites.ts';
 import { defaultKind } from './vehicles.ts';
 import { applyCamo, loadLog, record, saveLog, sightingToast, type Sighting } from './wildlife-log.ts';
-import { bearAlways, bearNever, cooldownScale, eggOff, gagTest, lunchAlways, lunchNever, magpieOn, mooseOn, workerOn } from './flags.ts';
+import { bearAlways, bearNever, cooldownScale, eggOff, gagTest, lunchAlways, lunchNever, rollPinned, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
-import { BackAndForth, GAG_RULES, GAG_TRIGGERS, IDLE_GAGS, Wiggle, bearComes, bermBump, lunchComes, mustWait, wrongGateBump, type GagId } from './gag-triggers.ts';
-import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
+import { BackAndForth, GAG_RULES, GAG_TRIGGERS, IDLE_GAGS, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump, type GagId } from './gag-triggers.ts';
+import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, SignProp, deerDef, signLane, surveyorDef, touristsDef, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
 import { companyLine, tierFor } from './company.ts';
@@ -145,6 +145,13 @@ export class GameView {
   private bumpRun = 0;
   private cow: CowProp | null = null;
   private cowTaps = 0;
+  /** The lease sign: permanent scenery in the bottom strip of every level. */
+  private sign: SignProp | null = null;
+  private signTaps = 0;
+  /** The surveyor has been this visit (Restart starts everything else afresh, but not him). */
+  private surveyed = false;
+  /** The Daily Pad's first move has had its roll for the tourists. */
+  private toured = false;
   private won: { before: Progress; progress: Progress; earnedHint: boolean } | null = null;
   private flareTaps = 0;
   private backForth = new BackAndForth();
@@ -272,6 +279,13 @@ export class GameView {
         }
         if (!eggOff('lunch')) this.strips.gopherLunch = new TimelineGag(egg, lunchDef);
       }
+      // The lease sign: permanent scenery on every level, and three gags at it (the deer and the
+      // tourists keep away from winter levels).
+      this.sign = new SignProp(egg);
+      const signOn = (name: 'surveyor' | 'deer' | 'tourists') => !eggOff(name) && (this.eggForced === name || !(GAG_TRIGGERS[name] as { notThemes?: readonly string[] }).notThemes?.includes(theme.id));
+      if (signOn('surveyor')) this.strips.surveyor = new TimelineGag(egg, surveyorDef(this.sign));
+      if (signOn('deer')) this.strips.deer = new TimelineGag(egg, deerDef(this.sign));
+      if (signOn('tourists')) this.strips.tourists = new TimelineGag(egg, touristsDef(this.sign));
       // Montney has the cow grazing in the strip; tap her and the bull comes.
       if (this.regionId === GAG_TRIGGERS.bull.region || this.eggForced === 'bull') {
         this.cow = new CowProp(egg);
@@ -305,6 +319,8 @@ export class GameView {
             else this.bush!.shake();
           }
           if (this.cow?.hit(e.clientX, e.clientY) && ++this.cowTaps >= GAG_TRIGGERS.bull.cowTaps) this.fire('bull');
+          // The lease sign, tapped: the back scratcher.
+          if (this.sign?.hit(e.clientX, e.clientY) && ++this.signTaps >= GAG_TRIGGERS.deer.signTaps) this.fire('deer');
           if (!this.strips.marshmallow) return;
           const onFlare = [...board.el.querySelectorAll('.obstacle.flare')].some((ob) => {
             const r = (ob.querySelector('svg') ?? ob).getBoundingClientRect();
@@ -404,9 +420,10 @@ export class GameView {
     }
     // Kept clear of trees: the sleepy worker's spot by the left edge, and the biffy's.
     const strip = { top: box.y + box.height, bottom: controlsTop };
-    const clearings = [this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.biffy ? biffyLane(screen.width, strip) : null, this.bush ? (this.bush.x === BUSH_X ? bearBox(screen.width, strip) : bushBox(this.bush.x, screen.width, strip)) : null, this.cow ? cowBox(screen.width, strip) : null, this.riser ? riserBox(screen.width, strip) : null].filter((c) => c !== null);
+    const clearings = [this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.biffy ? biffyLane(screen.width, strip) : null, this.sign ? signLane(screen.width, strip) : null, this.bush ? (this.bush.x === BUSH_X ? bearBox(screen.width, strip) : bushBox(this.bush.x, screen.width, strip)) : null, this.cow ? cowBox(screen.width, strip) : null, this.riser ? riserBox(screen.width, strip) : null].filter((c) => c !== null);
     this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, anchors: { bush: !this.bush, mound: this.regionId === 'cardium' }, moundAt: this.strips.gopherLunch || this.strips.nearMiss ? moundSpot(screen.width, strip) : undefined, clearings });
     this.biffy?.layout();
+    if (!this.eggsOn.has('surveyor') && !this.eggsOn.has('deer') && !this.eggsOn.has('tourists')) this.sign?.layout();
     this.bush?.layout();
     this.riser?.layout();
     if (!this.strips.bull?.playing) this.cow?.layout();
@@ -423,6 +440,11 @@ export class GameView {
     this.played();
     this.undos = 0;
     this.bumpRun = 0;
+    // The tourists: the first move on the Daily Pad may bring them to the sign.
+    if (this.daily && !this.toured && this.strips.tourists) {
+      this.toured = true;
+      if (this.roll('tourists', GAG_TRIGGERS.tourists.chance)) this.fire('tourists');
+    }
     // Easter-egg triggers (gag-triggers.ts): the same truck back and forth; two exits back to back.
     if (this.backForth.moved(id, delta) >= GAG_TRIGGERS.landowner.backAndForth) this.fire('landowner');
     if (result.exited) {
@@ -484,6 +506,13 @@ export class GameView {
     this.winEl.hidden = true;
     this.showLevelHint();
     this.updateHud();
+    // The surveyor: the Restart button may bring him to check the sign (once a visit).
+    if (!this.surveyed && this.strips.surveyor && this.roll('surveyor', GAG_TRIGGERS.surveyor.chance)) this.fire('surveyor');
+  }
+
+  /** A roll for a gag that comes only some of the time: always in demo mode; `?<name>=1` / `=0` pin it (tests). */
+  private roll(name: string, chance: number): boolean {
+    return rollPinned(name) ?? rollComes(chance, loadProgress().demo);
   }
 
   /**
@@ -534,6 +563,7 @@ export class GameView {
     this.topBumps = 0;
     this.truckBumps = 0;
     this.undos = 0;
+    this.signTaps = 0;
     this.bumpRun = 0;
     this.flareTaps = 0;
     this.cowTaps = 0;
@@ -562,6 +592,7 @@ export class GameView {
       if (this.eggForced) this.lastMoveAt = performance.now() + 900;
       else if (r === 'seen') {
         this.eggDone.add(id);
+        if (id === 'surveyor') this.surveyed = true;
         this.seen(EGG_SIGHTING[id]);
       }
       // Whoever was waiting for this one's character or prop may come on now.
@@ -967,4 +998,4 @@ function fitRibbon(span: HTMLElement | null): void {
 }
 
 /** Which Wildlife Log entry each egg fills in. */
-const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull', porcupine: 'porcupine', gopherLunch: 'lunch', sam: 'sam', tongue: 'tongue' };
+const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull', porcupine: 'porcupine', gopherLunch: 'lunch', sam: 'sam', tongue: 'tongue', surveyor: 'surveyor', deer: 'deer', tourists: 'tourists' };

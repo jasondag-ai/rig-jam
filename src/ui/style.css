@@ -3533,3 +3533,6 @@ canvas.berm-night { opacity: 0; transition: opacity var(--night-out) ease-in-out
 @media (prefers-reduced-motion: reduce) {
   .ghost-finger { opacity: 0.95; }
 }
+
+/* The sign gags' stage (strip-gags.ts `signStage`): the visitors' holder, mirrored about the sign. */
+.puppet-layer .sign-stage { position: absolute; inset: 0; pointer-events: none; }

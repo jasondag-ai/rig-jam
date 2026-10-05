@@ -49,6 +49,12 @@ export const GAG_TRIGGERS = {
   sam: { bumpsInARow: 3, wrongGate: true },
   /** Gag 15, the frozen tongue (winter levels, at the frosty riser): this long with no moves (after the magpie and the worker). */
   tongue: { theme: 'winter', idleMs: 30_000 },
+  /** Gag 16, the surveyor (any region, at the lease sign): the Restart button, with this chance each press. Demo mode: every time. */
+  surveyor: { onRestart: true, chance: 1 / 2 },
+  /** Gag 17, the back scratcher (a mule deer at the lease sign): this many taps on the sign. Not on these themes' levels. */
+  deer: { signTaps: 1, notThemes: ['winter'] },
+  /** Gag 18, the tourists (at the lease sign): the first move on the Daily Pad, with this chance. Not on these themes' levels. Demo mode: every time. */
+  tourists: { firstDailyMove: true, chance: 1 / 3, notThemes: ['winter'] },
   /**
    * Not a gag. NIGHT: no level starts at night. After `idleMs` with no moves the lease fades to
    * night over `fadeInMs`; the next move brings the day back over `fadeOutMs`. Only where the
@@ -70,7 +76,7 @@ export const GAG_TRIGGERS = {
  */
 export const GAG_RULES = { idleCooldownMs: 60_000 } as const;
 
-export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue';
+export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists';
 
 /** Is a bump a push at a wrong-colour gate? (A truck in line with a gate that is not its own; `hit` is what it ran into.) */
 export const wrongGateBump = (
@@ -102,6 +108,9 @@ export const PREVIEWS: Record<string, { gag: GagId; region: string; level: numbe
   lunch: { gag: 'gopherLunch', region: 'cardium', level: 6 },
   sam: { gag: 'sam', region: 'cardium', level: 6 },
   tongue: { gag: 'tongue', region: 'duvernay', level: 2 },
+  surveyor: { gag: 'surveyor', region: 'cardium', level: 6 },
+  deer: { gag: 'deer', region: 'cardium', level: 6 },
+  tourists: { gag: 'tourists', region: 'cardium', level: 6 },
 };
 
 /** The gags that come by themselves after a quiet spell, in the order they take their turns. */
@@ -128,9 +137,16 @@ export const SHARES: Record<GagId, string[]> = {
   gopherLunch: ['gopher', 'worker'],
   sam: [],
   tongue: ['worker'],
+  // The three sign gags share the lease sign.
+  surveyor: ['sign'],
+  deer: ['sign'],
+  tourists: ['sign'],
 };
 /** Must this gag wait for one of those playing? */
 export const mustWait = (id: GagId, playing: Iterable<GagId>): boolean => [...playing].some((p) => p === id || SHARES[p].some((x) => SHARES[id].includes(x)));
+
+/** A roll for a gag that comes only some of the time (`chance`): always in demo mode. */
+export const rollComes = (chance: number, demo: boolean, random: () => number = Math.random): boolean => demo || random() < chance;
 
 /** Does the worker come for his lunch on this press of Hint? Always in demo mode. */
 export const lunchComes = (demo: boolean, random: () => number = Math.random): boolean => demo || random() < GAG_TRIGGERS.gopherLunch.chance;

@@ -5,7 +5,7 @@
 // `?log=all` previews a full log.
 import { STORAGE_PREFIX } from './progress.ts';
 
-export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'bull' | 'bear';
+export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'bull' | 'bear';
 
 export interface LogEntry {
   id: Sighting;
@@ -32,6 +32,9 @@ export const LOG_ENTRIES: LogEntry[] = [
   { id: 'lunch', name: 'Gopher Lunch', caption: 'He left you the crust.', hint: 'Press Hint in Cardium. One time in two.' },
   { id: 'sam', name: 'Safety Sam', caption: 'See me.', hint: 'Bump three times in a row, or push a truck at a wrong-colour gate.' },
   { id: 'tongue', name: 'Frozen Tongue', caption: 'HEWP!', hint: 'Sit tight for 30 seconds on a winter level.' },
+  { id: 'surveyor', name: 'Surveyor', caption: 'Off a metre. Or not.', hint: 'Press Restart. One time in two.' },
+  { id: 'deer', name: 'Back Scratcher', caption: "That's the spot.", hint: 'Tap the lease sign (not in winter).' },
+  { id: 'tourists', name: 'Tourists', caption: 'A real oil sign!', hint: 'Make your first move on the Daily Pad (not in winter). One time in three.' },
   { id: 'bull', name: 'Bull and Cow', caption: 'Spring in the Montney.', hint: 'Tap the cow in Montney.' },
   { id: 'bear', name: 'Bear', caption: 'Does what bears do in the woods.', hint: 'Tap the snowy bush three times in Duvernay. One time in three.', legendary: true },
 ];

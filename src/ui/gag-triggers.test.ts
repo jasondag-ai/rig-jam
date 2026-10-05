@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BackAndForth, GAG_RULES, GAG_TRIGGERS, IDLE_GAGS, SHARES, Wiggle, bearComes, bermBump, lunchComes, mustWait, wrongGateBump } from './gag-triggers.ts';
+import { BackAndForth, GAG_RULES, GAG_TRIGGERS, IDLE_GAGS, SHARES, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump } from './gag-triggers.ts';
 import { BEAR_BEATS, BEAR_END, bPose } from './bear.ts';
 import { BUSH_X, COW_X, PORC_BUSH_X, bearBox, bushBox, cowBox, moundSpot } from './strip-gags.ts';
 import { BUSH_BOX, BUSH_FRAC, bushMarkup } from './gag-bush.ts';
@@ -9,12 +9,13 @@ import { SAM, SAM_BEATS, SAM_END, backGlove, samPose } from './sam.ts';
 import { BUDDY, BUDDY_FAR, BUDDY_STOP, STAND, TONGUE_BEATS, TONGUE_END, tonguePose } from './frozen-tongue.ts';
 import { RISER_X, riserBox, riserHeight } from './strip-gags.ts';
 import { treeArt } from './trees.ts';
-import { cooldownScale, eggOff, lunchAlways, lunchNever } from './flags.ts';
+import { cooldownScale, eggOff, lunchAlways, lunchNever, rollPinned } from './flags.ts';
+import { DEER_BEATS, DEER_END, DEER_STOP, SURVEY_BEATS, SURVEY_END, SURVEY_LINES, TOUR_BEATS, TOUR_END, TOUR_HER, TOUR_HIM, deerPose, surveyPose, tourPose } from './sign-gags.ts';
 import { BULL_BEATS, BULL_END, COW_REST, SHIFT as PRIMP_SHIFT, T_BACK, T_GRAZE, T_HOME, bullPose } from './bull.ts';
 import { A_BEATS, A_END, A_SHAKE, BIFFY_SIZE, B_BEATS, B_END, B_OFF, B_ROLL_OFF, B_SHAKE, B_SHUT, biffy } from './biffy.ts';
 import { L_BEATS, L_END, lPose } from './landowner.ts';
 import { N_BEATS, N_END, nPose } from './near-miss.ts';
-import { BIFFY_GAP, BIFFY_X, biffyBox, biffyLane, biffyStand, stripGeom } from './strip-gags.ts';
+import { BIFFY_GAP, BIFFY_X, SIGN_X, biffyBox, biffyLane, biffyStand, signLane, signStand, stripGeom } from './strip-gags.ts';
 import { workerSpot } from './worker.ts';
 import { G_BEATS, G_END, leadX } from './geese.ts';
 import { MM_BEATS, MM_END, handPos, mmPose } from './marshmallow.ts';
@@ -301,7 +302,7 @@ describe('the bull and the cow', () => {
 describe('gag rules and the gag bush', () => {
   it('gags play at the same time; only gags that share a character or a prop wait for each other', () => {
     // Every gag has an entry.
-    expect(Object.keys(SHARES).sort()).toEqual(['bear', 'biffyA', 'biffyB', 'bull', 'geese', 'gopherLunch', 'landowner', 'magpie', 'marshmallow', 'moose', 'nearMiss', 'porcupine', 'sam', 'tongue', 'worker']);
+    expect(Object.keys(SHARES).sort()).toEqual(['bear', 'biffyA', 'biffyB', 'bull', 'deer', 'geese', 'gopherLunch', 'landowner', 'magpie', 'marshmallow', 'moose', 'nearMiss', 'porcupine', 'sam', 'surveyor', 'tongue', 'tourists', 'worker']);
     // The two biffy gags share the biffy; the two gopher gags share the gopher.
     expect(mustWait('biffyB', ['biffyA'])).toBe(true);
     expect(mustWait('biffyA', ['biffyB'])).toBe(true);
@@ -556,5 +557,94 @@ describe('the frozen tongue (gag 15)', () => {
       // About the worker's height, and inside a full strip.
       expect(riserHeight(w, strip)).toBeLessThan(strip.bottom - strip.top);
     }
+  });
+});
+
+describe('the sign gags (16 to 18)', () => {
+  it('triggers: the surveyor on Restart (1 in 2), the deer on a tap of the sign, the tourists on the first Daily Pad move (1 in 3); no deer or tourists in winter', () => {
+    expect(GAG_TRIGGERS.surveyor).toEqual({ onRestart: true, chance: 1 / 2 });
+    expect(GAG_TRIGGERS.deer).toEqual({ signTaps: 1, notThemes: ['winter'] });
+    expect(GAG_TRIGGERS.tourists).toEqual({ firstDailyMove: true, chance: 1 / 3, notThemes: ['winter'] });
+    expect(rollComes(1 / 2, false, () => 0.49)).toBe(true);
+    expect(rollComes(1 / 2, false, () => 0.5)).toBe(false);
+    expect(rollComes(1 / 3, false, () => 0.34)).toBe(false);
+    expect(rollComes(1 / 3, true, () => 0.99)).toBe(true); // demo mode: every time
+    expect(rollPinned('surveyor', '?surveyor=1')).toBe(true);
+    expect(rollPinned('tourists', '?tourists=0')).toBe(false);
+    expect(rollPinned('surveyor', '')).toBeNull();
+    // The three share the sign: one at a time.
+    expect(mustWait('deer', ['surveyor'])).toBe(true);
+    expect(mustWait('tourists', ['deer'])).toBe(true);
+    expect(mustWait('surveyor', ['biffyA', 'magpie'])).toBe(false);
+  });
+
+  it('the sign stands at one fixed spot on every level, right of the middle, clear of the biffy, with a lane to the near edge', () => {
+    for (const [w, strip] of [[390, { top: 548, bottom: 730 }], [430, { top: 612, bottom: 810 }], [375, { top: 428, bottom: 496 }]] as const) {
+      const biffy = biffyBox(w, strip), lane = signLane(w, strip), stand = signStand(w, strip);
+      expect(SIGN_X).toBe(0.62);
+      expect(lane.x).toBeGreaterThan(biffy.x + biffy.width);
+      expect(lane.x + lane.width).toBe(w);
+      expect(stand.ground).toBeLessThanOrEqual(stripGeom(w, strip).ground);
+      expect(stand.ground).toBeGreaterThanOrEqual(biffyStand(w, strip).ground);
+    }
+  });
+
+  it('the surveyor keeps the reference: three lines, the sign a metre over and back exactly where it was', () => {
+    expect(SURVEY_BEATS.map((b) => b[0])).toEqual([0, 0.3, 2.3, 2.9, 4.0, 4.6, 5.2, 6.4, 6.8, 7.9, 8.9, 9.6, 10.4, 11.3, 12.0, 12.8, 13.4, 14.9]);
+    expect(SURVEY_LINES.map((l) => l.text)).toEqual(['Off a metre.', 'Huh.', 'Perfect.']);
+    expect(surveyPose(0.2).w.show).toBe(false);
+    expect(surveyPose(0.3, 500).w.dx).toBe(-500);
+    expect(surveyPose(5).say).toBe('Off a metre.');
+    expect(surveyPose(8.5).sg.dx).toBe(-15);
+    expect(surveyPose(6.7).sg.lift).toBeGreaterThan(10);
+    expect(surveyPose(13).say).toBe('Perfect.');
+    // SAME START, SAME END: the sign is back where it was, standing, and he is gone with his tripod.
+    const end = surveyPose(SURVEY_END);
+    expect(end.sg).toMatchObject({ dx: 0, lift: 0 });
+    expect(end.w.show).toBe(false);
+    expect(end.tri.mode).toBe('hidden');
+    expect(surveyPose(16.89, 500).w.dx).toBeLessThan(-560);
+  });
+
+  it("the back scratcher (Jay's revision): cheek and neck on the near post, never its rump", () => {
+    // It stops SHORT of the sign, facing it (the reference walked past and backed its rump on).
+    expect(DEER_STOP).toBeLessThan(-22.5 - 30);
+    for (const t of [3.2, 4, 5, 6]) {
+      const d = deerPose(t).d;
+      expect(Math.abs(d.dx - DEER_STOP)).toBeLessThan(2);
+      expect(d.head).toBeGreaterThan(10); // head lowered onto the sign's corner
+    }
+    expect(deerPose(4).d.tongue).toBe(true);
+    expect(deerPose(4).d.lid).toBeGreaterThan(0.5);
+    expect(deerPose(5.2).d.thump).toBeGreaterThan(0);
+    expect(deerPose(4).rattle).not.toBe(0);
+    // It ambles off PAST the sign (the far side), and the sign is still again.
+    expect(deerPose(9.2, 330, 600).d.dx).toBeGreaterThan(560);
+    const end = deerPose(DEER_END);
+    expect(end.d.show).toBe(false);
+    expect(end.rattle).toBe(0);
+    expect(deerPose(0.2).d.show).toBe(false);
+    expect(DEER_BEATS.at(-1)![1]).toBe('ambles-off');
+  });
+
+  it("the tourists (Jay's revision): she photographs him posing by the sign, then the mosquitoes", () => {
+    // He stands by the sign, she a few steps back with the phone.
+    expect(TOUR_HIM).toBeGreaterThan(TOUR_HER + 60);
+    const pose = tourPose(3.45);
+    expect(pose.m).toMatchObject({ face: -1, thumb: true }); // turned round to face her, thumbs up
+    expect(pose.m.arB).toBeGreaterThan(60); // an elbow back on the sign
+    expect(pose.h.face).toBe(1); // she faces him
+    expect(pose.h.phone).toBe(true);
+    expect(tourPose(3.55).flash).toBeGreaterThan(0);
+    expect(tourPose(2.6).say).toBe('A real oil sign!');
+    expect(tourPose(4.8).swarm).toMatchObject({ phase: 'rise' });
+    expect(tourPose(6).swarm).toMatchObject({ phase: 'chase' });
+    expect(tourPose(6).m.face).toBe(-1);
+    expect(tourPose(6).h.face).toBe(-1);
+    const end = tourPose(TOUR_END);
+    expect(end.m.show || end.h.show).toBe(false);
+    expect(end.swarm).toBeNull();
+    expect(end.last).toBe(1);
+    expect(TOUR_BEATS.length).toBe(10);
   });
 });
