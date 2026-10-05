@@ -2,6 +2,7 @@
 // (not inside the board), so he is never clipped by the board, the berm or any container: he flies
 // in from fully off screen and out until he is fully off screen. The layer takes no touches. The
 // splat and its drip belong to the truck, so they stay on it and move with it.
+import type { BubbleSide } from './bubble.ts';
 import type { GameState, Side } from '../engine/index.ts';
 import { sound } from '../audio/engine.ts';
 import { BIRD, BIRD_FRAC, MARK_FRAC, DRIP, DRIP_FULL, END, FEATHER, GONE, MAGPIE_LINES, SPLAT, STARTLE, T_BUBBLE, T_LAND, T_SMUG, T_SPLAT, beatAt, dripTurn, fxAt, offScreen, pickTruck, pose, poseAttrs, roofSpot, startlePose, travelFor, type Pose, type Travel } from './magpie.ts';
@@ -15,7 +16,7 @@ export interface MagpieHost {
   truckElement(id: string): HTMLElement | undefined;
   state(): GameState;
   /** A driver's speech bubble (kept on screen by the board). */
-  say(anchor: Element, text: string): HTMLElement;
+  say(anchor: Element, text: string, prefer?: readonly BubbleSide[]): HTMLElement;
   /** Puts a gag's layer on the screen (under the night's shade). */
   mount?(el: HTMLElement): void;
 }
@@ -192,25 +193,15 @@ export class MagpieGag {
   }
 
   /**
-   * The driver's line (one of `MAGPIE_LINES`): a bubble from that truck, beside the bird (never over him), on
-   * whichever side has more room, so it stays clear of the screen's edge.
+   * The DRIVER's line (one of `MAGPIE_LINES`: "Not the windshield!"): a bubble whose tail is on the
+   * cab the bird is standing on, beside the cab (never over the bird), on whichever side has more
+   * room. It rides with the truck.
    */
   private speak(run: Run, spot: { x: number; y: number }): void {
     const screenW = this.host.screen.getBoundingClientRect().width;
-    const line = fromPool(MAGPIE_LINES);
-    const anchor = document.createElement('i');
-    Object.assign(anchor.style, { position: 'absolute', left: `${spot.x}px`, top: `${spot.y}px`, width: '0', height: '0' });
-    run.layer.append(anchor);
-    // How wide this line's bubble is (the lines differ in length): said once to measure it, then
-    // again from where it stands clear of the bird.
-    const half = this.host.say(anchor, line).offsetWidth / 2;
-    // Beside him, on a side where the whole bubble fits.
-    const reach = run.w * 0.85 + half + 6; // his tail and beak reach well past his middle
-    const fitsRight = spot.x + reach + half + 8 < screenW, fitsLeft = spot.x - reach - half - 8 > 0;
-    // Where neither side has room for it (a long line, the bird mid-screen), it goes above him instead.
-    const at = fitsRight || fitsLeft ? { x: spot.x + (fitsRight ? 1 : -1) * reach, y: spot.y - run.w * 0.15 } : { x: spot.x, y: spot.y - run.w * 1.0 };
-    Object.assign(anchor.style, { left: `${at.x}px`, top: `${at.y}px` });
-    const bubble = this.host.say(anchor, line);
+    const cab = run.truckEl.querySelector('.cab') ?? run.truckEl;
+    const sides: BubbleSide[] = spot.x < screenW / 2 ? ['right', 'left'] : ['left', 'right'];
+    const bubble = this.host.say(cab, fromPool(MAGPIE_LINES), [...sides, 'below']);
     bubble.dataset.speaker = run.truckId;
     bubble.dataset.magpie = 'true';
   }

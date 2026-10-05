@@ -4,6 +4,7 @@ import { BoardView } from './board-view.ts';
 import { sceneryHtml } from './scenery.ts';
 import { applyTheme, type Theme } from './themes.ts';
 import type { Season } from './trees.ts';
+import { WITNESS_REACH, nearestWitness } from './bubble.ts';
 import { NUDGE_LINE, nightComes, nightForced, nightRgba, nightSky } from './night.ts';
 import { WITNESS_LINES } from './lines.ts';
 import { hatsHtml } from './hats.ts';
@@ -224,7 +225,7 @@ export class GameView {
     this.board.setLevel(level);
     this.board.setGround(theme.ground);
     sound.setGround(theme.ground);
-    if (magpieOn() || this.eggForced === 'magpie') this.magpie = new MagpieGag({ mount: (el) => this.mount(el), screen: this.el, truckElement: (id) => board.truckElement(id), state: () => this.state, say: (anchor, text) => board.say(anchor, text) });
+    if (magpieOn() || this.eggForced === 'magpie') this.magpie = new MagpieGag({ mount: (el) => this.mount(el), screen: this.el, truckElement: (id) => board.truckElement(id), state: () => this.state, say: (anchor, text, prefer) => board.say(anchor, text, prefer) });
     {
       const egg: EggHost = {
         screen: this.el,
@@ -239,7 +240,7 @@ export class GameView {
           return { top, height: Math.max(0, board.el.getBoundingClientRect().top - screen.top - top) };
         },
         state: () => this.state,
-        say: (anchor, text) => board.say(anchor, text),
+        say: (anchor, text, prefer) => board.say(anchor, text, prefer),
         mount: (el) => this.mount(el),
       };
       if (workerOn() || this.eggForced === 'worker') this.worker = new WorkerGag(egg);
@@ -425,14 +426,20 @@ export class GameView {
     this.resetHint();
     this.showLevelHint();
     this.board.sync(this.state, true, result.exited ? id : undefined);
-    // A witness line: with a gag on screen, the driver of the truck just moved remarks on it. Once per gag per level.
+    // A witness line: with a gag on screen, the player's move makes a driver remark on it. Only
+    // the driver of the truck NEAREST the gag, and only if he is within reach of it (bubble.ts);
+    // otherwise nobody does. Once per gag per level.
     const watching = [...this.eggsOn].find((g) => !this.witnessed.has(g));
-    const mover = result.exited ? undefined : this.board.truckElement(id);
-    if (watching && mover && !this.eggForced) {
-      this.witnessed.add(watching);
-      // (Once the truck has settled where it was driven to.)
+    if (watching && !this.eggForced) {
+      // (Once the truck just driven has settled.)
       window.setTimeout(() => {
-        if (mover.isConnected && !isWon(this.state)) this.board.say(mover.querySelector('.cab') ?? mover, WITNESS_LINES[watching]).dataset.witness = watching;
+        if (!this.el.isConnected || isWon(this.state) || this.witnessed.has(watching) || !this.eggsOn.has(watching)) return;
+        const witness = this.witnessFor(watching);
+        if (!witness) return;
+        this.witnessed.add(watching);
+        const b = this.board.say(witness.querySelector('.cab') ?? witness, WITNESS_LINES[watching]);
+        b.dataset.witness = watching;
+        b.dataset.speaker = witness.dataset.id ?? '';
       }, 320);
     }
     this.updateHud();
@@ -570,6 +577,23 @@ export class GameView {
     this.nightAt = on ? performance.now() : 0;
     this.el.classList.toggle('night', on);
     this.board.setNight(on);
+  }
+
+  /** What is on screen of a gag right now: the boxes of its characters and props (screen px). */
+  private gagBoxes(id: GagId): DOMRect[] {
+    const where = id === 'magpie' ? '.magpie-layer svg.magpie' : id === 'worker' ? '.worker-layer svg.pup' : id === 'moose' ? '.moose-layer svg' : `.strip-layer[data-gag="${id}"] svg.pup${id === 'biffyA' || id === 'biffyB' ? ', .biffy-layer svg.pup' : ''}`;
+    const view = this.el.getBoundingClientRect();
+    return [...this.el.querySelectorAll<HTMLElement>(where)]
+      .filter((el) => getComputedStyle(el).visibility !== 'hidden')
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r.width > 2 && r.height > 2 && r.right > view.left && r.left < view.right && r.bottom > view.top && r.top < view.bottom);
+  }
+
+  /** The truck whose driver remarks on a gag: the one nearest it, if within reach; else none. */
+  private witnessFor(id: GagId): HTMLElement | null {
+    const trucks = this.state.trucks.map((t) => this.board.truckElement(t.id)).filter((el): el is HTMLElement => !!el && !el.classList.contains('exiting'));
+    const i = nearestWitness(trucks.map((el) => el.getBoundingClientRect()), this.gagBoxes(id), WITNESS_REACH * this.board.cellPx);
+    return i < 0 ? null : trucks[i];
   }
 
   /** Puts a gag's layer on the screen UNDER the night's shade, so the strip's gags dim exactly like the scenery. */

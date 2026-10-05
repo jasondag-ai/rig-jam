@@ -298,8 +298,10 @@ interface Bubble {
   from: number;
   to: number;
   text: string;
-  /** Where the speaker is, in screen px. */
+  /** Where the speaker is, in screen px (used if the speaker's own element is not to be found). */
   at: () => { x: number; y: number };
+  /** The speaker's head: the bubble's tail touches it and follows it. */
+  who?: () => Element | null;
 }
 interface Built {
   apply: (t: number) => void;
@@ -432,11 +434,15 @@ export class TimelineGag {
   }
 
   private speak(layer: HTMLElement, b: Bubble): HTMLElement {
-    const at = b.at();
-    const anchor = document.createElement('i');
-    Object.assign(anchor.style, { position: 'absolute', left: `${at.x}px`, top: `${at.y}px`, width: '0', height: '0' });
-    layer.append(anchor);
-    const bubble = this.host.say(anchor, b.text);
+    let anchor = b.who?.() ?? null;
+    if (!anchor) {
+      const at = b.at();
+      anchor = document.createElement('i');
+      Object.assign((anchor as HTMLElement).style, { position: 'absolute', left: `${at.x}px`, top: `${at.y}px`, width: '0', height: '0' });
+      layer.append(anchor);
+    }
+    // Over the speaker's head; beside it where there is no room above.
+    const bubble = this.host.say(anchor, b.text, ['above', 'right', 'left', 'below']);
     bubble.dataset.gag = this.def.name;
     return bubble;
   }
@@ -477,7 +483,7 @@ export const nearMissDef: TimelineDef = {
     const scene = nearMissScene(under, over, { x: hole.x / screen.width, y: 1 }, Math.min(hole.y + 12 * (screen.width / 390), stripGeom(screen.width, host.strip()).ground) / screen.height, scale);
     scene.holeY = hole.y;
     const w = GOPHER_FRAC * scale * screen.width;
-    return { apply: (t) => nApply(scene, nPose(t), t), bubble: { from: 6.0, to: 7.8, text: NEAR_MISS_LINE, at: () => ({ x: hole.x + (hole.x > screen.width * 0.6 ? -1 : 1) * w * 1.6, y: hole.y - w * 0.7 }) } };
+    return { apply: (t) => nApply(scene, nPose(t), t), bubble: { from: 6.0, to: 7.8, text: NEAR_MISS_LINE, who: () => scene.g.q('.head'), at: () => ({ x: hole.x + (hole.x > screen.width * 0.6 ? -1 : 1) * w * 1.6, y: hole.y - w * 0.7 }) } };
   },
 };
 
@@ -492,7 +498,7 @@ export const landownerDef: TimelineDef = {
     const { ground, scale } = stripGeom(screen.width, host.strip());
     const scene = landownerScene(layer('landowner-layer'), ground / screen.height, scale);
     const w = LANDOWNER_FRAC * scale * screen.width;
-    return { apply: (t) => lApply(scene, lPose(t), t), bubble: { from: 4.0, to: 6.1, text: fromPool(LANDOWNER_LINES), at: () => ({ x: screen.width / 2 + w * 0.05, y: ground - w * 0.74 }) } };
+    return { apply: (t) => lApply(scene, lPose(t), t), bubble: { from: 4.0, to: 6.1, text: fromPool(LANDOWNER_LINES), who: () => scene.p.q('.head'), at: () => ({ x: screen.width / 2 + w * 0.05, y: ground - w * 0.74 }) } };
   },
 };
 
@@ -567,7 +573,7 @@ export const marshmallowDef: TimelineDef = {
     const from = -(x + w) / u, to = (screen.width - x + w) / u;
     return {
       apply: (t) => mmApply(scene, mmPose(t, from, to), t),
-      bubble: { from: 7.27, to: 8.0, text: MM_LINE, at: () => ({ x: x + w * 0.3, y: ground - w * 0.8 }) },
+      bubble: { from: 7.27, to: 8.0, text: MM_LINE, who: () => scene.w.q('.head'), at: () => ({ x: x + w * 0.3, y: ground - w * 0.8 }) },
       done: () => (pick.f.style.scale = ''),
     };
   },
@@ -589,7 +595,7 @@ export const geeseDef: TimelineDef = {
     const height = SKY.height * scale;
     const top = sky.top + 6 + 3 * gw * 1.05 * 0.32 + gw * 0.25 - SKY.lead * height;
     const scene = geeseScene(layer('geese-layer'), { top, height }, scale);
-    return { apply: (t) => gApply(scene, t), bubble: { from: 3.7, to: 4.6, text: GEESE_LINE, at: () => ({ x: scene.at.x, y: scene.at.y - gw * 0.3 }) } };
+    return { apply: (t) => gApply(scene, t), bubble: { from: 3.7, to: 4.6, text: GEESE_LINE, who: () => scene.lost.q('.head'), at: () => ({ x: scene.at.x, y: scene.at.y - gw * 0.3 }) } };
   },
 };
 
@@ -692,7 +698,7 @@ export const tongueDef = (riser: RiserProp): TimelineDef => ({
     const w = WORKER_FRAC * scale * screen.width, u = w / 120, from = -(RISER_X * screen.width + w) / u, far = ((1 - RISER_X) * screen.width + w) / u;
     return {
       apply: (t) => tongueApply(scene, tonguePose(t, from, from, BUDDY_STOP, far, far), t),
-      bubble: { from: 5.0, to: 6.4, text: TONGUE_LINE, at: () => ({ x: scene.head.x, y: scene.head.y }) },
+      bubble: { from: 5.0, to: 6.4, text: TONGUE_LINE, who: () => scene.worker.q('.head'), at: () => ({ x: scene.head.x, y: scene.head.y }) },
     };
   },
 });

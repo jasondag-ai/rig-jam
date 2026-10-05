@@ -2,6 +2,7 @@
 // the magpie: each on a layer over the whole game screen that takes no touches. The worker walks in
 // from past the screen's left edge and leaves past it. The moose's layer sits UNDER the board and is
 // cut off at the board's top line, so he rises from behind the top berm and nothing else clips him.
+import type { BubbleSide } from './bubble.ts';
 import { SIZE, type GameState } from '../engine/index.ts';
 import { MOOSE, MOOSE_FRAC, MOOSE_LINE, M_END, T_STARE, mBeatAt, mPose, mooseColumn, mooseFrame, snowChunks } from './moose.ts';
 import { CANCEL, T_ASLEEP, T_DOZE, WORKER, W_END, cancelPose, wBeatAt, wPose, workerFrame, workerOff, workerSpot, type WorkerPose } from './worker.ts';
@@ -21,7 +22,8 @@ export interface EggHost {
   /** The sky band over the lease in screen px: from under the HUD's row down to the top berm. */
   sky(): { top: number; height: number };
   state(): GameState;
-  say(anchor: Element, text: string): HTMLElement;
+  /** A speech bubble whose tail touches `anchor` and follows it (bubble.ts); `prefer`: the sides to try first. */
+  say(anchor: Element, text: string, prefer?: readonly BubbleSide[]): HTMLElement;
   /** Puts a gag's layer on the screen, under the night's shade, so the strip's gags dim exactly like the scenery. */
   mount?(el: HTMLElement): void;
 }
@@ -257,15 +259,13 @@ export class MooseGag {
     later(2600, () => this.finish(run, 'seen'));
   }
 
-  /** His groan: a bubble beside his head, on the side with more room. */
+  /** His groan: a bubble at his mouth, its tail on his muzzle, on the side with more room (it follows him as he ducks). */
   private speak(run: MooseRun): HTMLElement {
-    const { x, y, w } = run.spot;
-    const side = x + w * 2 < this.host.screen.getBoundingClientRect().width ? 1 : -1;
-    const anchor = document.createElement('i');
-    // In its own full-height holder: the moose's layer is cut off at the berm.
-    Object.assign(anchor.style, { position: 'absolute', left: `${x + side * w * 1.15}px`, top: `${y - w * 0.3}px`, width: '0', height: '0' });
-    run.layer.append(anchor);
-    const bubble = this.host.say(anchor, MOOSE_LINE);
+    const muzzle = run.svg.querySelector('.muzzle')!;
+    const r = muzzle.getBoundingClientRect();
+    const screenW = this.host.screen.getBoundingClientRect().width;
+    const sides: BubbleSide[] = r.left + r.width / 2 < screenW / 2 ? ['right', 'left'] : ['left', 'right'];
+    const bubble = this.host.say(muzzle, MOOSE_LINE, [...sides, 'below']);
     bubble.dataset.moose = 'true';
     return bubble;
   }

@@ -1045,7 +1045,15 @@ canvas.lease-detail {
   animation: pop-bubble 200ms cubic-bezier(0.2, 1.5, 0.4, 1);
 }
 
-/* Tail pointing at the cab: dark outline triangle with a white one inside. */
+/* The tail: a dark outline triangle with a white one inside, its tip on the speaker (bubble.ts
+   places it; --tail is how far along the bubble's edge). By default the bubble is ABOVE its speaker
+   and the tail hangs from its bottom; .below, .beside-left and .beside-right turn it. The bubble
+   pops out of the tail's tip. */
+.bubble { transform-origin: var(--tail, 50%) calc(100% + 11px); }
+.bubble.below { transform-origin: var(--tail, 50%) -11px; }
+.bubble.beside-left { transform-origin: calc(100% + 11px) var(--tail, 50%); }
+.bubble.beside-right { transform-origin: -11px var(--tail, 50%); }
+
 .bubble::before,
 .bubble::after {
   content: '';
@@ -1076,6 +1084,20 @@ canvas.lease-detail {
 
 .bubble.below::before { border-bottom-color: var(--outline); }
 .bubble.below::after { border-bottom-color: #fff; }
+
+/* Beside its speaker: the tail on the bubble's near edge, pointing sideways. */
+.bubble.beside-left::before,
+.bubble.beside-right::before { top: calc(var(--tail, 50%) - 11px); border-top-color: transparent; }
+.bubble.beside-left::after,
+.bubble.beside-right::after { top: calc(var(--tail, 50%) - 7px); border-top-color: transparent; }
+.bubble.beside-left::before,
+.bubble.beside-left::after { left: 100%; }
+.bubble.beside-right::before,
+.bubble.beside-right::after { left: auto; right: 100%; }
+.bubble.beside-left::before { border-left-color: var(--outline); }
+.bubble.beside-left::after { border-left-color: #fff; }
+.bubble.beside-right::before { border-right-color: var(--outline); }
+.bubble.beside-right::after { border-right-color: #fff; }
 
 @keyframes pop-bubble {
   from { transform: scale(0.5); opacity: 0; }

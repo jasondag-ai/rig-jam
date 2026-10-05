@@ -1,5 +1,6 @@
 import { SIZE, cabSide, convoyWaitingFor, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
 import { bumpTarget, pickSpeaker } from './bump.ts';
+import { placeBubble, type BubbleSide } from './bubble.ts';
 import { bumpLine, type BumpHit } from './lines.ts';
 import { equipFit, equipmentSvg, gateClearance, phaseFor, runPumpjacks } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
@@ -402,35 +403,56 @@ export class BoardView {
   }
 
   /**
-   * A speech bubble pointing at `anchor` (a truck's cab, or a character beside the pad): above it if
-   * it fits on screen, otherwise below. Worked out in viewport space so it always stays on screen.
+   * A speech bubble for `anchor` (a truck's cab, a character's head beside the pad): its tail's tip
+   * touches the speaker and it FOLLOWS the speaker while it moves (bubble.ts). It stays below the
+   * HUD, above the buttons and inside the screen's side margins. `prefer`: the sides to try first
+   * (a truck: above its cab, else below). One bubble at a time.
    */
-  say(anchor: Element, text: string): HTMLElement {
+  say(anchor: Element, text: string, prefer: readonly BubbleSide[] = ['above', 'below']): HTMLElement {
     this.el.querySelector('.bubble')?.remove();
     const b = document.createElement('div');
     b.className = 'bubble';
     b.textContent = text;
     this.el.append(b);
-
     const margin = 8;
-    const gap = 10;
-    const board = this.el.getBoundingClientRect();
-    const cab = anchor.getBoundingClientRect();
-    const vw = document.documentElement.clientWidth;
-    const vh = window.innerHeight;
-    b.style.maxWidth = `${Math.min(vw - margin * 2, 240)}px`;
-    const bw = b.offsetWidth;
-    const bh = b.offsetHeight;
-    const cx = cab.left + cab.width / 2;
-    const left = Math.max(margin, Math.min(vw - bw - margin, cx - bw / 2));
-    const aboveTop = cab.top - bh - gap;
-    const belowTop = cab.bottom + gap;
-    const below = aboveTop < margin && belowTop + bh <= vh - margin;
-    const top = Math.max(margin, Math.min(vh - bh - margin, below ? belowTop : aboveTop));
-    b.classList.toggle('below', below);
-    b.style.left = `${left - board.left}px`;
-    b.style.top = `${top - board.top}px`;
-    b.style.setProperty('--tail', `${Math.max(14, Math.min(bw - 14, cx - left))}px`);
+    b.style.maxWidth = `${Math.min(document.documentElement.clientWidth - margin * 2, 240)}px`;
+    const size = { w: b.offsetWidth, h: b.offsetHeight };
+    let last = '';
+    let side: BubbleSide | null = null;
+    const put = () => {
+      const board = this.el.getBoundingClientRect();
+      const r = anchor.getBoundingClientRect();
+      const screen = this.el.closest('.screen');
+      const hud = screen?.querySelector('.hud')?.getBoundingClientRect().bottom ?? 0;
+      const controls = screen?.querySelector('.controls')?.getBoundingClientRect().top ?? window.innerHeight;
+      const bounds = { left: margin, top: Math.max(margin, hud + 4), right: document.documentElement.clientWidth - margin, bottom: Math.min(window.innerHeight - margin, controls - 4) };
+      const key = `${r.left.toFixed(1)},${r.top.toFixed(1)},${r.width.toFixed(1)},${r.height.toFixed(1)},${board.left.toFixed(1)},${board.top.toFixed(1)},${bounds.top},${bounds.bottom}`;
+      if (key === last) return;
+      last = key;
+      // It keeps the side it took while that still fits, so it does not hop about as the speaker moves.
+      const at = placeBubble(r, size, bounds, side ? [side, ...prefer] : prefer);
+      side = at.side;
+      b.dataset.side = at.side;
+      b.classList.toggle('below', at.side === 'below');
+      b.classList.toggle('beside-left', at.side === 'left');
+      b.classList.toggle('beside-right', at.side === 'right');
+      b.style.left = `${at.left - board.left}px`;
+      b.style.top = `${at.top - board.top}px`;
+      b.style.setProperty('--tail', `${at.tail}px`);
+      // (For the tests: where the tail's tip is, and whether it reached the speaker.)
+      b.dataset.tip = `${at.tip.x.toFixed(1)},${at.tip.y.toFixed(1)}`;
+      b.dataset.fits = String(at.fits);
+    };
+    put();
+    // Every frame, AFTER whatever moves the speaker has run this frame (so the tail is never a
+    // frame behind): the next frame is asked for once this frame's callbacks are all done.
+    const follow = () => {
+      if (!b.isConnected) return;
+      if (!anchor.isConnected) return void b.remove();
+      put();
+      setTimeout(() => requestAnimationFrame(follow), 0);
+    };
+    requestAnimationFrame(follow);
     setTimeout(() => b.remove(), BUBBLE_MS);
     return b;
   }
