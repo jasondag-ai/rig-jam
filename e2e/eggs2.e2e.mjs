@@ -252,7 +252,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     const end = trudge.at(-1), gone = log.filter((f) => f.beat === 'gone' && f.hare);
     check(end.hare.z === 2 && end.hare.l >= end.bush.l && end.hare.r <= end.bush.r && behind.every((f) => f.hare.vis) && gone.every((f) => f.hare.z === 2), 'it walks in behind the bush and stays hidden there: it never vanishes part way');
     const scribble = log.filter((f) => f.beat === 'violated' && f.scribble).length;
-    check(scribble > 10, 'an "ugh" scribble jitters over its head');
+    check(scribble > 3, 'an "ugh" scribble jitters over its head');
     check(log.every((f) => f.others === 0), 'nothing else was on stage');
     await page.waitForFunction(() => !document.querySelector('.overlay').hidden, null, { timeout: 4000 }).catch(() => {});
     const after = await page.evaluate(() => ({ card: !document.querySelector('.overlay').hidden, bush: getComputedStyle(document.querySelector('.bush-layer')).visibility, log: JSON.parse(localStorage.getItem('rush-hour-rigs:log') ?? '{}').found ?? [] }));

@@ -162,6 +162,16 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       await context.close();
     }
 
+    // ---------- Hints keep their daytime look ----------
+    {
+      const { context, page } = await open(browser, { level: [region('montney'), 1] });
+      await page.locator('[data-act="hint"]').click();
+      await page.waitForSelector('.truck.hinted');
+      const h = await page.evaluate(() => { const t = document.querySelector('.truck.hinted'); return { rim: getComputedStyle(t.querySelector('.art')).filter, shadow: getComputedStyle(t.querySelector('.ground-shadow')).opacity, other: getComputedStyle(document.querySelector('.truck:not(.hinted) .art')).filter }; });
+      check(h.rim.includes('drop-shadow') && !h.rim.includes('brightness') && h.shadow === '1' && h.other.includes('brightness(0.9)'), 'the hinted truck keeps its bright rim and strong shadow, undimmed');
+      await context.close();
+    }
+
     // ---------- The nudge ----------
     console.log(`\n${engine}: the nudge`);
     {

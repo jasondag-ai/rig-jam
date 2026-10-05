@@ -3562,9 +3562,10 @@ img.hat { width: 100%; height: auto; }
 .board.night .obstacle:not(.flare) svg.equip { filter: brightness(0.7) saturate(0.85); }
 .board.night .obstacle.flare svg.equip { filter: brightness(0.92); }
 /* Trucks and gates: dimmed much less. Symbol badges, convoy tags and hints stay at full strength. */
-.board.night .truck .art { filter: brightness(0.9) saturate(0.97); }
+/* (Not the hinted truck: its bright rim and stronger shadow are hint visuals and stay as by day.) */
+.board.night .truck:not(.hinted) .art { filter: brightness(0.9) saturate(0.97); }
 .board.night .gate .gw { filter: brightness(0.92); }
-.board.night .truck .ground-shadow { opacity: 0.5; }
+.board.night .truck:not(.hinted):not(.dragging) .ground-shadow { opacity: 0.5; }
 
 /* The flare's light: about 2.5 cells across, centred on the stack, over the ground and the trucks
    near it. It flickers in step with the flame (same period and offset as `flare-flicker`). */
