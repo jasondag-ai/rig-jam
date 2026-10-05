@@ -5,6 +5,7 @@ import { sceneryHtml } from './scenery.ts';
 import { applyTheme, type Theme } from './themes.ts';
 import type { Season } from './trees.ts';
 import { WITNESS_REACH, nearestWitness } from './bubble.ts';
+import { ghostFinger } from './tutorial.ts';
 import { NUDGE_LINE, nightComes, nightForced, nightRgba, nightSky } from './night.ts';
 import { WITNESS_LINES } from './lines.ts';
 import { hatsHtml } from './hats.ts';
@@ -31,6 +32,8 @@ import { TAP_SLOP, onTap } from './tap.ts';
 import type { BumpHit } from './lines.ts';
 
 /** Screen-changing buttons: act on the first tap, even on iOS (see tap.ts). */
+/** The level whose board shows the ghost finger until the first drag: Cardium 1. */
+const COACH_LEVEL = 'c01';
 const TAPPED = '.win [data-act], .hud [data-act="levels"]';
 
 const WIN_DELAY_MS = 900;
@@ -128,6 +131,9 @@ export class GameView {
   /** When night began to fall (0 by day). */
   private nightAt = 0;
   /** Trigger bookkeeping (gag-triggers.ts): bumps into the top berm, the last exit, back-and-forth moves, a first bump into the bottom berm waiting to see if it becomes a double. */
+  /** Level 1's ghost finger, until the first drag. */
+  private finger: HTMLElement | null = null;
+  private coached = false;
   private topBumps = 0;
   private truckBumps = 0;
   private lastExitAt = -Infinity;
@@ -404,6 +410,7 @@ export class GameView {
     this.bush?.layout();
     this.riser?.layout();
     if (!this.strips.bull?.playing) this.cow?.layout();
+    this.coach();
   }
 
   private move(id: string, delta: number): void {
@@ -564,8 +571,33 @@ export class GameView {
     });
   }
 
+  /**
+   * Level 1's ghost finger: it shows the first move of the solution (which truck, which way, how
+   * far) on the board until the player's first drag (re-placed on every refit).
+   */
+  private coach(): void {
+    this.finger?.remove();
+    this.finger = null;
+    if (this.level.id !== COACH_LEVEL || this.coached || isWon(this.state)) return;
+    let move: Move | null = null;
+    try {
+      move = nextMove(this.state);
+    } catch {
+      move = null;
+    }
+    const truck = move && this.state.trucks.find((t) => t.id === move.id);
+    const el = truck && this.board.truckElement(truck.id);
+    if (!move || !truck || !el) return;
+    const far = move.delta * this.board.cellPx;
+    this.finger = ghostFinger(this.board.el, el, truck.orient === 'h' ? far : 0, truck.orient === 'v' ? far : 0);
+  }
+
   /** Something the player did: the idle clocks start again, and if night had fallen the day comes back. */
   private played(): void {
+    if (this.finger) {
+      this.coached = true;
+      this.coach();
+    }
     this.lastMoveAt = this.lastPlayAt = performance.now();
     if (this.night && nightForced() !== true) this.setNight(false);
   }

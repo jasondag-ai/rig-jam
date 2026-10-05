@@ -11,6 +11,7 @@ import { magpieStill } from './ui/magpie.ts';
 import './ui/style.css';
 import { DAILY_LEVELS, REGIONS, dailyTheme } from './levels/regions.ts';
 import { STAND_DOWN_TOAST, dayKey, newlySaved, padLevelIndex, padNumber, streak } from './ui/daily.ts';
+import { showTutorial } from './ui/tutorial.ts';
 import { toast } from './ui/toast.ts';
 import { GameView } from './ui/game-view.ts';
 import { streakSignHtml } from './ui/sign.ts';
@@ -102,6 +103,7 @@ function showLevels(requested = savedRegion()): void {
   screen.innerHTML = `
     <div class="scenery" aria-hidden="true"></div>
     <header class="brand">
+      <button class="help" aria-label="How to play">?</button>
       <button class="binoculars" aria-label="Wildlife Log">${BINOCULARS}</button>
       <button class="gear" aria-label="Settings">${uiImg('icon_gear')}</button>
       <h1>Rush Hour Rigs</h1>
@@ -160,6 +162,7 @@ function showLevels(requested = savedRegion()): void {
     </button>`;
   block.querySelector('.daily-btn')!.addEventListener('click', () => showDaily());
   onTap(screen.querySelector('.brand')!, '.gear', () => showSettings(screen));
+  onTap(screen.querySelector('.brand')!, '.help', () => void showTutorial(screen));
   onTap(screen.querySelector('.brand')!, '.binoculars', () => showLog(regionIndex));
 
   const list = screen.querySelector('.level-list')!;

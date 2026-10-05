@@ -27,7 +27,8 @@
     "test:e2e:night": "node e2e/night.e2e.mjs",
     "test:e2e:frames": "node e2e/frames.e2e.mjs",
     "test:e2e:lines": "node e2e/lines.e2e.mjs",
-    "test:e2e:bubbles": "node e2e/bubbles.e2e.mjs"
+    "test:e2e:bubbles": "node e2e/bubbles.e2e.mjs",
+    "test:e2e:tutorial": "node e2e/tutorial.e2e.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",

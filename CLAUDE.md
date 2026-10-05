@@ -406,6 +406,35 @@ something, give exact clicks and one command at a time.
   the board, gates and buttons; trees give them room. (The side margins are only 16px, so "beside
   the berm" is below it.) When the bear and gopher come back, play them at these anchors.
 
+## Speech bubbles
+- ONE rule for every bubble (`src/ui/bubble.ts`, pure and tested; `BoardView.say(anchor, text,
+  prefer)` puts it on screen): its tail's TIP TOUCHES ITS SPEAKER, and the bubble FOLLOWS the
+  speaker every frame while it moves (asked for after the frame's other callbacks, so it is never
+  a frame behind). It stays below the HUD, above the buttons and inside the screen's side margins
+  (`placeBubble`: the first preferred side that fits, else the nearest fit). Four sides: above
+  (default), `.below`, `.beside-left`, `.beside-right`; `--tail` is the tail's place along the
+  edge; it pops out of the tail's tip. `data-side`, `data-tip`, `data-fits` are for tests.
+- Who the speaker is: a driver's line (bump, witness, nudge) = that truck's `.cab`, above it, else
+  below. The moose = his `.muzzle`, beside it. The magpie gag's line is the DRIVER's ("Not the
+  windshield!"), so its tail is on the cab the bird stands on, beside the cab, never over the bird.
+  Strip gags name the speaker's own element (`Bubble.who`: the `.head` of the gopher, landowner,
+  marshmallow worker, lost goose, frozen worker); the bubble sits over the head.
+- WITNESS LINES come only from the truck NEAREST the gag (`GameView.witnessFor`, `nearestWitness`;
+  the gag = the boxes of its characters on screen, `gagBoxes`), and only if it is within
+  `WITNESS_REACH` (2 cells); otherwise nobody speaks and the next move may try again.
+- `npm run test:e2e:bubbles` (WebKit) measures the laid-out tail tip against the speaker's box on
+  the first frame and while it moves, for every speaker.
+
+## Tutorial
+- `src/ui/tutorial.ts`: the "?" button in the HOME page's top bar (left of the binoculars and the
+  gear; the game's HUD has no room for it at 375 px) opens three how-to cards with a ghost finger
+  (`TUTORIAL_CARDS`: drag along the length; the matching gate; fewer moves, more hard hats). Next
+  or a swipe (`swipeTo`, pointer events, never a scroll) turns the card; Got it, Close or the X
+  leave. Buttons use `onTap`.
+- Level 1 (`COACH_LEVEL` c01) shows the ghost finger on the board (`ghostFinger`, `GameView.coach`):
+  the solution's first move, over and over, until the player's first drag. It takes no touches.
+  Reduced motion: stills. `npm run test:e2e:tutorial`.
+
 ## Night
 - NO level starts at night and no level carries a night flag. ONLY MONTNEY AND DUVERNAY GO DARK
   (`GAG_TRIGGERS.night.themes`: spring and winter; `nightComes`); Cardium (summer) never does,
@@ -508,7 +537,9 @@ something, give exact clicks and one command at a time.
   picked by the phone's local date and wraps after 60. Odd pads use summer, even pads spring mud.
 - Streak "DAYS WITHOUT INCIDENT" = Daily Pads cleared in an unbroken run. Today doesn't break it
   until the day is over. One Safety Stand-Down per Monday-Sunday week covers a missed day
-  automatically (only if there's an earlier cleared day to bridge to). Logic in `streak()`.
+  automatically (only if there's an earlier cleared day to bridge to). Logic in `streak()`. The
+  sign shows only the count: no stand-down line. When a stand-down saves a streak the home page
+  shows a toast once, "Safety Stand-Down saved your streak." (`newlySaved`, `progress.standDowns`).
 - Near misses = bumps this attempt (reset on Restart, not on Undo). ZERO INCIDENT = at par, no bumps.
 - Share (Daily win screen) copies spoiler-free text: pad, hats, moves vs par, badge, streak, link.
 - All progress is in localStorage (`rush-hour-rigs:v2`); no accounts.
@@ -585,8 +616,8 @@ something, give exact clicks and one command at a time.
     one level says the table's 2nd line, then its 3rd from then on (a wall: "It's still a wall.",
     then "..."). The board counts per truck and kind (`hitCounts`); a new level or Restart starts over.
   - Witness lines (`WITNESS_LINES`, one per gag id): while a gag is on screen, the player's next
-    move makes that truck's driver say the gag's line (`GameView.move`; bubble `data-witness`). Once
-    per gag per level; not for a truck driving out.
+    move makes the driver of the truck NEAREST the gag say the gag's line, if one is within reach
+    (see Speech bubbles; bubble `data-witness`). Once per gag per level.
   - Gag lines: the magpie and the landowner each have a pool (`MAGPIE_LINES`, `LANDOWNER_LINES`);
     `fromPool` never gives the same line twice in a row.
   - Company Man (`COMPANY_LINES`, 8 per result; `company.ts`): a line by result, never the same
@@ -641,6 +672,8 @@ something, give exact clicks and one command at a time.
 - `npm run check-levels` – print levels and solutions
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
 - `npm run test:e2e:gags` – every puppet gag suite in turn: magpie, eggs, strip, eggs2 (start the dev server first)
+- `npm run test:e2e:bubbles` – every speech bubble's tail on its speaker, following it, clear of the HUD and buttons; witness lines (start the dev server first)
+- `npm run test:e2e:tutorial` – the "?" button, the three how-to cards, level 1's ghost finger (start the dev server first)
 - `npm run test:e2e:lines` – bump lines by kind, escalation, witness lines, the Company Man (start the dev server first)
 - `npm run test:e2e:frames` – SAME START, SAME END: every strip gag's first and last frames show no character (start the dev server first)
 - `npm run test:e2e:fit` – every iPhone size, Safari and home-screen app, with screenshots (start the dev server first)
