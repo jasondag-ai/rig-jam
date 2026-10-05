@@ -8,7 +8,7 @@
 // strip-gags.ts puts them on screen.
 /* eslint-disable */
 import { addEl, makePup, place, type Pup } from './puppet-stage.ts';
-import { treeArt } from './trees.ts';
+import { BUSH_BOX, BUSH_FRAC, BUSH_HALF, behindBush, bushMarkup } from './gag-bush.ts';
 const O = '#2b1e16';
 const ease = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
 const clamp = (x: number, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -89,17 +89,8 @@ export const HARE = `
   <ellipse cx="22" cy="58" rx="3" ry="2.4" fill="#fbfbf8" stroke="${O}" stroke-width="1.6"/><ellipse cx="32" cy="59" rx="3" ry="2.4" fill="#fbfbf8" stroke="${O}" stroke-width="1.6"/>
 </g></g>`;
 
-/* ---------------- the bush ----------------
-   BUSH RULE (GAME_BIBLE, Oct 4): a gag prop matches the board art exactly. So this is the board's
-   own willow bush (trees.ts: olive green, light round blobs, darker underside, brown stems), with
-   a light dusting of snow on each blob like the board's winter trees. Drawn in the willow's 80 x 56 box. */
-const BUSH_LOBES: [number, number, number][] = [[18, 38, 16], [34, 28, 19], [52, 28, 18], [64, 39, 14]];
-export const BUSH =
-  `<ellipse cx="40" cy="53" rx="34" ry="3.6" fill="rgba(80,100,130,.18)"/>` +
-  treeArt('willow', 'summer', 2) +
-  BUSH_LOBES.map(([x, y, r]) => `<path d="M${x - r * 0.78} ${y - r * 0.5} Q${x - r * 0.5} ${y - r * 1.02} ${x} ${y - r * 0.9} Q${x + r * 0.55} ${y - r * 0.98} ${x + r * 0.74} ${y - r * 0.42} Q${x + r * 0.3} ${y - r * 0.62} ${x} ${y - r * 0.5} Q${x - r * 0.4} ${y - r * 0.66} ${x - r * 0.78} ${y - r * 0.5} Z" fill="#ffffff" stroke="${O}" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`).join('');
-/** The bush's box and where it stands in it. */
-export const BUSH_BOX = { vw: 80, vh: 56, ax: 40, ay: 53 };
+/* ---------------- the bush: the board's own, in leaf with a snow dusting (gag-bush.ts) ---------------- */
+export const BUSH = bushMarkup('winter');
 
 /** The pose at a time. `from` and `to`: where the bear walks in from and out to, in his own units (the reference's are -400 and 560). */
 export function bPose(t: number, from = -400, to = 560): any {
@@ -173,7 +164,7 @@ export const BEAR_BEATS: [number, string, string][] = [
   [12.4, 'bear-leaves', 'The bear drops to all fours and strolls off, happy'], [14.4, 'trudge', 'It trudges back behind the bush and stays hidden there'], [15.8, 'gone', 'Gone'],
 ];
 export const BEAR_END = 16.0;
-export const BEAR_FRAC = 0.27, HARE_FRAC = 0.07, BUSH_FRAC = 0.18;
+export const BEAR_FRAC = 0.27, HARE_FRAC = 0.07;
 /** How far left of the bush the bear sits, as a share of the screen's width (the reference: 0.38 and 0.6). */
 export const BEAR_GAP = 0.22;
 
@@ -234,15 +225,12 @@ export function bearApply(sc: any, p: any, t: number): void {
     const ex = sc.bushEl.spot.x*r.width, ey = sc.bushEl.spot.y*r.height;
     hx = lerp(groundSpot.x, ex, k); hy = lerp(groundSpot.y, ey, k) - Math.abs(Math.sin(k*Math.PI*2))*3*u;
     // Behind the bush only once its front edge (its leading foot; it trudges right) has reached the bush's own edge. It stays hidden there.
-    z = hx + 19*hu >= ex - 38*bu ? 2 : 5; }
+    z = hx + 19*hu >= ex - BUSH_HALF*bu ? 2 : 5; }
   H.svg.style.zIndex = String(z); H.svg.style.visibility = p.hareShow ? 'visible' : 'hidden';
   H.spot = {x: hx/r.width, y: hy/r.height}; place(H);
   // The board's bush stands on bare stems, so behind it the hare is cut off at the bottom of the
   // leaves (from the bush's edge inward): nothing of it shows between the stems.
-  if (z === 2){ const hw = H.frac*r.width, hh = hw*80/60, left = hx - 30*hu, top = hy - 76*hu;
-    const cutX = Math.max(0, Math.min(hw, sc.bushEl.spot.x*r.width - 38*bu - left)), cutY = Math.max(0, Math.min(hh, sc.bushEl.spot.y*r.height - 12*bu - top));
-    H.svg.style.clipPath = `polygon(0 -50%, 100% -50%, 100% ${cutY}px, ${cutX}px ${cutY}px, ${cutX}px 100%, 0 100%)`; }
-  else H.svg.style.clipPath = '';
+  behindBush(H.svg, z === 2 ? { x: sc.bushEl.spot.x*r.width, y: sc.bushEl.spot.y*r.height } : null, bu);
   hq('.flip').setAttribute('transform', '');
   hq('.root').setAttribute('transform', `rotate(${hrot} 30 50)`);
   const sh = p.hShock;
