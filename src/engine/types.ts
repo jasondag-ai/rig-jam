@@ -58,6 +58,8 @@ export interface Level {
   par: number;
   /** Optional one-line tip shown under the board. */
   hint?: string;
+  /** Cosmetic: the level plays at night. The engine and solver never read it. */
+  night?: boolean;
   trucks: Truck[];
   gates: Gate[];
   /** Pumpjacks. Empty when the level has none. */

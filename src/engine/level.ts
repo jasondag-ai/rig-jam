@@ -101,12 +101,13 @@ function parseCell(raw: unknown, where: string): Cell {
 /** Validates raw JSON and returns a Level, or throws LevelError explaining what is wrong. */
 export function parseLevel(raw: unknown): Level {
   if (!isObj(raw)) throw new LevelError('level must be an object');
-  const { id, name, par, hint, trucks, gates, obstacles = [] } = raw;
+  const { id, name, par, hint, night, trucks, gates, obstacles = [] } = raw;
   if (typeof id !== 'string' || id === '') throw new LevelError('level id must be a string');
   const where = `level ${id}`;
   if (typeof name !== 'string') throw new LevelError(`${where}: name must be a string`);
   if (!Number.isInteger(par) || (par as number) < 1) throw new LevelError(`${where}: par must be a positive integer`);
   if (hint !== undefined && typeof hint !== 'string') throw new LevelError(`${where}: hint must be a string`);
+  if (night !== undefined && typeof night !== 'boolean') throw new LevelError(`${where}: night must be true or false`);
   if (!Array.isArray(trucks) || trucks.length === 0) throw new LevelError(`${where}: needs at least one truck`);
   if (!Array.isArray(gates)) throw new LevelError(`${where}: gates must be an array`);
   if (!Array.isArray(obstacles)) throw new LevelError(`${where}: obstacles must be an array`);
@@ -116,6 +117,7 @@ export function parseLevel(raw: unknown): Level {
     name,
     par: par as number,
     ...(hint === undefined ? {} : { hint }),
+    ...(night === true ? { night: true } : {}),
     trucks: trucks.map((t) => parseTruck(t, where)),
     gates: gates.map((g) => parseGate(g, where)),
     obstacles: obstacles.map((o) => parseCell(o, where)),

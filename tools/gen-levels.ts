@@ -178,6 +178,7 @@ function format(levels: Level[]): string {
       '  {',
       `    "id": ${JSON.stringify(l.id)}, "name": ${JSON.stringify(l.name)}, "par": ${l.par},`,
       ...(l.hint ? [`    "hint": ${JSON.stringify(l.hint)},`] : []),
+      ...(l.night ? ['    "night": true,'] : []),
       `    "trucks": [\n${list(l.trucks)}\n    ],`,
       `    "gates": [\n${list(l.gates)}\n    ],`,
       l.obstacles.length ? `    "obstacles": [\n${list(l.obstacles)}\n    ]` : '    "obstacles": []',
@@ -237,13 +238,12 @@ async function main() {
   for (const region of REGIONS) {
     const levels = region.slots.map((_, i) => {
       const level = results.get(`${region.prefix}${String(i + 1).padStart(2, '0')}`);
-      return (
-        level && {
-          ...level,
-          trucks: assignTruckKinds(level.trucks, region.truckKindSeed + i),
-          obstacles: withFlares(assignKinds(level.obstacles, region.kindSeed + i), region.id, i),
-        }
-      );
+      if (!level) return level;
+      const obstacles = withFlares(assignKinds(level.obstacles, region.kindSeed + i), region.id, i);
+      // NIGHT LEVELS: a level with a flare stack plays at night (GAME_BIBLE, Oct 4). Any level can be
+      // flagged: `night` is a plain field in the level's JSON, read only by the UI.
+      const night = obstacles.some((o) => o.kind === 'flare');
+      return { ...level, trucks: assignTruckKinds(level.trucks, region.truckKindSeed + i), obstacles, ...(night ? { night } : {}) };
     });
     if (levels.some((l) => !l)) {
       failed = true;

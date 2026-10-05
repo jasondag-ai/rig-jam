@@ -56,6 +56,7 @@
   },
   {
     "id": "v04", "name": "Block Heater", "par": 9,
+    "night": true,
     "trucks": [
       {"id":"A","color":"blue","row":4,"col":4,"length":2,"orient":"h","kind":"pickup"},
       {"id":"B","color":"red","row":2,"col":1,"length":3,"orient":"h","convoy":2,"kind":"water"},
@@ -149,6 +150,7 @@
   },
   {
     "id": "v08", "name": "Hoarfrost", "par": 12,
+    "night": true,
     "trucks": [
       {"id":"A","color":"red","row":0,"col":3,"length":2,"orient":"h","convoy":1,"kind":"picker"},
       {"id":"B","color":"blue","row":0,"col":1,"length":3,"orient":"v","kind":"vac"},
@@ -204,6 +206,7 @@
   },
   {
     "id": "v10", "name": "Deep Freeze", "par": 15,
+    "night": true,
     "trucks": [
       {"id":"A","color":"red","row":3,"col":4,"length":3,"orient":"v","convoy":2,"kind":"water"},
       {"id":"B","color":"yellow","row":1,"col":3,"length":3,"orient":"h","kind":"frac"},
