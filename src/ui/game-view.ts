@@ -20,7 +20,7 @@ import { applyCamo, loadLog, record, saveLog, sightingToast, type Sighting } fro
 import { bearAlways, bearNever, cooldownScale, eggOff, gagTest, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
 import { BackAndForth, GAG_RULES, GAG_TRIGGERS, IDLE_GAGS, Wiggle, bearComes, bermBump, mustWait, wrongGateBump, type GagId } from './gag-triggers.ts';
-import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
+import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
 import { companyLine, tierFor } from './company.ts';
@@ -397,7 +397,7 @@ export class GameView {
     }
     // Kept clear of trees: the sleepy worker's spot by the left edge, and the biffy's.
     const strip = { top: box.y + box.height, bottom: controlsTop };
-    const clearings = [this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.bush ? (this.bush.x === BUSH_X ? bearBox(screen.width, strip) : bushBox(this.bush.x, screen.width, strip)) : null, this.cow ? cowBox(screen.width, strip) : null, this.riser ? riserBox(screen.width, strip) : null].filter((c) => c !== null);
+    const clearings = [this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.biffy ? biffyLane(screen.width, strip) : null, this.bush ? (this.bush.x === BUSH_X ? bearBox(screen.width, strip) : bushBox(this.bush.x, screen.width, strip)) : null, this.cow ? cowBox(screen.width, strip) : null, this.riser ? riserBox(screen.width, strip) : null].filter((c) => c !== null);
     this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, anchors: { bush: !this.bush, mound: this.regionId === 'cardium' }, moundAt: this.strips.gopherLunch || this.strips.nearMiss ? moundSpot(screen.width, strip) : undefined, clearings });
     this.biffy?.layout();
     this.bush?.layout();

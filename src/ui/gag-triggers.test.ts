@@ -11,10 +11,10 @@ import { RISER_X, riserBox, riserHeight } from './strip-gags.ts';
 import { treeArt } from './trees.ts';
 import { cooldownScale, eggOff } from './flags.ts';
 import { BULL_BEATS, BULL_END, COW_REST, SHIFT as PRIMP_SHIFT, T_BACK, T_GRAZE, T_HOME, bullPose } from './bull.ts';
-import { A_BEATS, A_END, BIFFY_FRAC, B_BEATS, B_END } from './biffy.ts';
+import { A_BEATS, A_END, A_SHAKE, BIFFY_SIZE, B_BEATS, B_END, B_OFF, B_ROLL_OFF, B_SHAKE, B_SHUT, biffy } from './biffy.ts';
 import { L_BEATS, L_END, lPose } from './landowner.ts';
 import { N_BEATS, N_END, nPose } from './near-miss.ts';
-import { BIFFY_X, biffyBox, stripGeom } from './strip-gags.ts';
+import { BIFFY_GAP, BIFFY_X, biffyBox, biffyLane, biffyStand, stripGeom } from './strip-gags.ts';
 import { workerSpot } from './worker.ts';
 import { G_BEATS, G_END, leadX } from './geese.ts';
 import { MM_BEATS, MM_END, handPos, mmPose } from './marshmallow.ts';
@@ -87,33 +87,49 @@ describe('Near Miss, landowner and biffy: the references, as approved', () => {
     expect(lPose(L_END).x).toBe(999);
   });
 
-  it('the biffy gags keep the reference timing', () => {
+  it("the biffy gags keep the reference timing, but for B's shorter way out by the near edge", () => {
     // (A's last beat is the game's: the indicator clicks back to the green it began with.)
     expect(A_BEATS.map((b) => b[0])).toEqual([0, 0.3, 0.5, 0.75, 1.7, 1.95, 2.3, 2.7, 3.1, 3.55, 4.5, 5.0]);
-    expect(B_BEATS.map((b) => b[0])).toEqual([0, 0.3, 0.5, 0.8, 1.1, 1.4, 2.9, 8.9, 9.2]);
+    // B: two bumps, so it shakes from the start; the shuffler leaves by the near edge at the
+    // reference's pace (about 57 px a second at 390), so he is off sooner and the door shuts sooner.
+    expect(B_BEATS.map((b) => b[0])).toEqual([0, 0.05, 0.5, 0.8, 1.1, 1.4, 2.9, B_OFF, B_SHUT]);
+    expect((BIFFY_X * 390 + 70) / (B_OFF - 2.9)).toBeCloseTo((0.7 * 390 + 70) / 6, -1);
+    expect(B_ROLL_OFF).toBeLessThan(B_OFF);
     expect(A_END).toBeGreaterThan(5.0);
-    expect(B_END).toBeGreaterThan(10.1);
+    expect(B_END).toBeGreaterThan(B_SHUT + 0.9);
+  });
+
+  it('the truck shakes the biffy before the door opens: a small shake for A, a bigger one for B', () => {
+    expect(B_SHAKE.px).toBeGreaterThan(A_SHAKE.px * 1.5);
+    expect(B_SHAKE.deg).toBeGreaterThan(A_SHAKE.deg * 1.5);
+  });
+
+  it("A's occupant has no cheek blush: his whole face flushes", () => {
+    const art = biffy(true);
+    expect(art).not.toContain('#f08c80');
+    expect(art.match(/class="skin"/g)?.length).toBe(3);
   });
 });
 
 describe('the bottom strip: the permanent biffy', () => {
-  it('is about 80 px tall at 390, clear of the berm above and the tip line below', () => {
+  it('is about 60 px tall at 390 (a fifth smaller than the reference) and stands up by the berm', () => {
     const strip = { top: 548, bottom: 730 };
-    const g = stripGeom(390, strip);
+    const g = biffyStand(390, strip);
     expect(g.scale).toBe(1);
-    const tall = BIFFY_FRAC * 390 * (126 / 100);
-    expect(tall).toBeGreaterThan(70);
-    expect(tall).toBeLessThan(86);
-    expect(g.ground).toBeLessThanOrEqual(strip.bottom);
-    expect(g.ground - tall).toBeGreaterThan(strip.top + 10);
+    expect(BIFFY_SIZE).toBe(0.8);
+    const tall = g.width * (126 / 100);
+    expect(tall).toBeGreaterThan(55);
+    expect(tall).toBeLessThan(66);
+    // Its roof is BIFFY_GAP below the berm's foot: close to the berm, never on it.
+    expect(g.ground - tall).toBeCloseTo(strip.top + BIFFY_GAP, 6);
+    expect(g.ground).toBeLessThan(stripGeom(390, strip).ground - 40);
   });
 
   it('is drawn smaller on a short strip (375 px), still off the lease and above the tip line', () => {
     const strip = { top: 428, bottom: 496 };
-    const g = stripGeom(375, strip);
+    const g = biffyStand(375, strip);
     expect(g.scale).toBeLessThan(1);
-    const tall = BIFFY_FRAC * 375 * g.scale * 1.26;
-    expect(g.ground - tall).toBeGreaterThanOrEqual(strip.top + 6);
+    expect(g.ground - g.width * 1.26).toBeGreaterThanOrEqual(strip.top + 6);
     expect(g.ground).toBeLessThanOrEqual(strip.bottom);
   });
 
@@ -124,6 +140,15 @@ describe('the bottom strip: the permanent biffy', () => {
       expect(Math.abs(box.x + box.width / 2 - BIFFY_X * w)).toBeLessThan(0.01);
       if (worker) expect(box.x).toBeGreaterThan(worker.x + worker.w * 0.3);
     }
+  });
+
+  it('keeps a lane clear of trees from the biffy to the screen edge nearest it, for the roll and the shuffler', () => {
+    const strip = { top: 548, bottom: 730 };
+    const lane = biffyLane(390, strip);
+    expect(lane.x).toBe(0);
+    expect(lane.x + lane.width).toBeCloseTo(BIFFY_X * 390, 6);
+    expect(lane.y + lane.height).toBeGreaterThanOrEqual(biffyStand(390, strip).ground);
+    expect(lane.height).toBeGreaterThan(36);
   });
 });
 

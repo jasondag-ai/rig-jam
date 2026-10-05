@@ -11,7 +11,7 @@ import { SAM_BEATS, SAM_END, SAM_X, samFrame, samPose, samScene } from './sam.ts
 import { PC_BEATS, PC_END, PORC_FRAC, QUILL_SHUFFLER_FRAC, SHIFT, pcApply, pcPose, porcupineScene } from './porcupine.ts';
 import type { Season } from './trees.ts';
 import { BULL_BEATS, BULL_END, BULL_FRAC, BULL_GAP, COW_FRAC, COW_REST, bullApply, bullPose, bullScene, cowApply, cowPup } from './bull.ts';
-import { A_BEATS, A_END, BIFFY_FRAC, B_BEATS, B_END, aApply, bApply, biffyPup, biffyRest, runawayScene } from './biffy.ts';
+import { A_BEATS, A_END, BIFFY_FRAC, BIFFY_SIZE, B_BEATS, B_END, SHUFFLER_FRAC, aApply, bApply, biffyPup, biffyRest, runawayScene } from './biffy.ts';
 import type { EggHost, EggResult } from './egg-gags.ts';
 import { GEESE_LINE, GOOSE_FRAC, G_BEATS, G_END, SKY, gApply, geeseScene } from './geese.ts';
 import { LANDOWNER_FRAC, L_BEATS, L_END, lApply, lPose, landownerScene } from './landowner.ts';
@@ -32,11 +32,26 @@ export function stripGeom(screenW: number, strip: { top: number; bottom: number 
 }
 /** Where the biffy stands across the screen (a share of its width): right of the worker's clearing. */
 export const BIFFY_X = 0.3;
+/** The biffy stands up by the berm: this much grass (px) between the berm's foot and its roof. */
+export const BIFFY_GAP = 12;
+/** How wide the biffy is drawn (px), and the line it stands on: up by the berm, never below the strip's own ground line. */
+export function biffyStand(screenW: number, strip: { top: number; bottom: number }): { ground: number; scale: number; width: number } {
+  const { ground, scale } = stripGeom(screenW, strip);
+  const width = BIFFY_FRAC * BIFFY_SIZE * screenW * scale;
+  return { ground: Math.min(ground, strip.top + BIFFY_GAP + width * 1.26), scale, width };
+}
 /** The patch of the strip the biffy stands on (scenery keeps trees off it). */
 export function biffyBox(screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
-  const { ground, scale } = stripGeom(screenW, strip);
-  const w = BIFFY_FRAC * screenW * scale;
+  const { ground, width: w } = biffyStand(screenW, strip);
   return { x: BIFFY_X * screenW - w * 0.5, y: ground - w * 1.3, width: w, height: w * 1.3 };
+}
+
+/** The lane from the biffy to the screen edge nearest it, where the roll and the shuffler leave (scenery keeps trees off it). */
+export function biffyLane(screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
+  const { ground, scale } = biffyStand(screenW, strip);
+  const h = SHUFFLER_FRAC * scale * screenW * 0.72;
+  const [left, right] = BIFFY_X < 0.5 ? [0, BIFFY_X * screenW] : [BIFFY_X * screenW, screenW];
+  return { x: left, y: ground - h, width: right - left, height: h + 2 };
 }
 
 /** The permanent biffy: always on screen in the bottom strip, door shut, until a gag opens it. */
@@ -59,8 +74,8 @@ export class BiffyProp {
   layout(): void {
     const screen = this.host.screen.getBoundingClientRect();
     if (!screen.height) return;
-    const { ground, scale } = stripGeom(screen.width, this.host.strip());
-    this.pup.frac = BIFFY_FRAC * scale;
+    const { ground, scale } = biffyStand(screen.width, this.host.strip());
+    this.pup.frac = BIFFY_FRAC * BIFFY_SIZE * scale;
     this.pup.spot = { x: BIFFY_X, y: ground / screen.height };
     this.rest();
   }
@@ -499,12 +514,12 @@ export const biffyADef = (biffy: BiffyProp): TimelineDef => ({
   },
 });
 
-/** Gag 7: "The runaway roll". The shuffler and the roll leave past the screen's right edge; the indicator ends green. */
+/** Gag 7: "The runaway roll". The shuffler and the roll leave past the screen edge nearest the biffy; the indicator ends green. */
 export const biffyBDef = (biffy: BiffyProp): TimelineDef => ({
   name: 'biffyB',
   beats: B_BEATS,
   end: B_END,
-  stillAt: 4.2,
+  stillAt: 3.6,
   build(layer, host) {
     const screen = host.screen.getBoundingClientRect();
     const { scale } = stripGeom(screen.width, host.strip());

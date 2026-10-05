@@ -103,6 +103,9 @@ const watch = (page, gag, parts = {}, ms = 22000) =>
       }),
     [gag, parts, ms],
   );
+/** How far the biffy's door travels side to side while it is being shaken (px). */
+const sway = (log) => { const xs = log.filter((f) => f.beat === 'jolt' && f.box).map((f) => f.box.l); return xs.length ? Math.max(...xs) - Math.min(...xs) : 0; };
+let shakeA = 0;
 const beatsOf = (log) => [...new Set(log.map((f) => f.beat).filter(Boolean))];
 const sameBeats = (log, name) => JSON.stringify(beatsOf(log)) === JSON.stringify(BEATS[name]);
 
@@ -122,11 +125,11 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
           const r = s.querySelector('.root').getBoundingClientRect();
           const R = (q) => document.querySelector(q).getBoundingClientRect();
           const trees = [...document.querySelectorAll('.scenery .sc, .scenery .mound')].filter((t) => { const q = t.getBoundingClientRect(); const m = q.width * 0.2; return q.left + m < r.right && q.right - m > r.left && q.top < r.bottom && q.bottom > r.top; }).length;
-          return { n: document.querySelectorAll('.biffy-layer').length, h: r.height, clearBoard: r.top >= R('.board').bottom, clearNote: r.bottom <= R('.note').top + 1, clearButtons: r.bottom <= R('.controls').top, onScreen: r.left >= 0 && r.right <= innerWidth, trees, touch: getComputedStyle(document.querySelector('.biffy-layer')).pointerEvents, old: document.querySelectorAll('.gag.biffy').length };
+          return { n: document.querySelectorAll('.biffy-layer').length, h: r.height, gap: r.top - R('.board').bottom, clearBoard: r.top >= R('.board').bottom, clearNote: r.bottom <= R('.note').top + 1, clearButtons: r.bottom <= R('.controls').top, onScreen: r.left >= 0 && r.right <= innerWidth, trees, touch: getComputedStyle(document.querySelector('.biffy-layer')).pointerEvents, old: document.querySelectorAll('.gag.biffy').length };
         });
         check(!!b && b.n === 1 && b.onScreen && b.old === 0, `${REGIONS[ri].name} ${li + 1}: one biffy, always on screen (no old one that comes and goes)`);
         check(b.clearBoard && b.clearNote && b.clearButtons && b.trees === 0 && b.touch === 'none', `clear of the lease, the tip line, the buttons and the trees; takes no touches (${Math.round(b.h)}px tall)`);
-        if (width === 390) check(b.h > 68 && b.h < 88, `about 80 px tall at 390 (${Math.round(b.h)}px)`);
+        if (width === 390) check(b.h > 52 && b.h < 68 && b.gap >= 6 && b.gap <= 24, `about 60 px tall at 390, a fifth smaller than the reference, and up by the berm (${Math.round(b.h)}px tall, ${Math.round(b.gap)}px of grass between)`);
         await context.close();
       }
     }
@@ -165,12 +168,17 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     {
       const id = bottomBumper(REGIONS[cardium].levels[bumpLevel]).id;
       const { context, page } = await open(browser, { level: [cardium, bumpLevel] });
-      const watching = watch(page, 'biffyA');
+      const watching = watch(page, 'biffyA', { box: '.biffy-layer svg.pup .door' });
       await drag(page, id, 2);
       check(!(await page.$('.strip-layer')), 'it waits a moment in case a second bump is coming');
+      const flush = page.waitForFunction(() => [...document.querySelectorAll('.strip-layer[data-gag="biffyA"]')].at(-1)?.dataset.beat === 'nod', null, { timeout: 12000 }).then(() => page.evaluate(() => ({ skin: [...document.querySelectorAll('.biffy-layer .headTurn .skin')].map((e) => e.getAttribute('fill')), blush: document.querySelectorAll('.biffy-layer .headTurn [fill="#f08c80"]').length }))).catch(() => null);
       const occupied = page.waitForFunction(() => [...document.querySelectorAll('.strip-layer[data-gag="biffyA"]')].at(-1)?.dataset.beat === 'occupied', null, { timeout: 12000 }).then(() => page.evaluate(() => document.querySelector('.biffy-layer .ind').getAttribute('fill'))).catch(() => null);
       const log = await watching;
       check((await occupied) === '#d9453a', 'the indicator flips to red when he pulls the door shut');
+      const fl = await flush;
+      check(!!fl && fl.skin.length === 3 && fl.skin.every((c) => c === '#e07a6c') && fl.blush === 0, `embarrassed, his WHOLE face is flushed dark pink, with no cheek blush (${fl?.skin.join(' ')})`);
+      shakeA = sway(log);
+      check(shakeA > 1.5 && shakeA < 6 && log.filter((f) => f.beat === 'sits').every((f) => Math.abs(f.box.l - log[0].box.l) < 0.3), `the bump gives the biffy a small shake before the door opens (${shakeA.toFixed(1)} px side to side)`);
       check(sameBeats(log, 'biffyA'), `the reference beats, in order (${beatsOf(log).length} of ${BEATS.biffyA.length})`);
       const after = await page.evaluate(() => ({ ind: document.querySelector('.biffy-layer .ind').getAttribute('fill'), door: document.querySelector('.biffy-layer .door').getAttribute('transform') }));
       check(after.ind === '#56b05a' && /scale\(1 1\)/.test(after.door), 'afterwards the door is shut and the indicator is back to the green it began with');
@@ -188,15 +196,29 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     {
       const id = bottomBumper(REGIONS[cardium].levels[bumpLevel]).id;
       const { context, page } = await open(browser, { level: [cardium, bumpLevel] });
-      const watching = watch(page, 'biffyB', { man: '.shuffler-layer svg.pup .head', roll: '.shuffler-layer .pup-roll' });
+      const watching = watch(page, 'biffyB', { man: '.shuffler-layer svg.pup .head', roll: '.shuffler-layer .pup-roll', box: '.biffy-layer svg.pup .door' });
       await drag(page, id, 2, 250);
       await drag(page, id, 2, 250);
       const log = await watching;
       check(sameBeats(log, 'biffyB'), `the reference beats, in order (${beatsOf(log).length} of ${BEATS.biffyB.length})`);
       const rollEnd = log.filter((f) => f.roll?.vis).at(-1);
       const manEnd = log.filter((f) => f.beat === 'shuffle' && f.man).at(-1);
-      check(rollEnd.roll.l >= 390 - 2, `the roll rolls away until it is fully off screen (x ${Math.round(rollEnd.roll.l)})`);
-      check(manEnd.man.l >= 390 - 2, `he shuffles after it until he is fully off screen (x ${Math.round(manEnd.man.l)})`);
+      const shakeB = sway(log);
+      check(shakeB > shakeA * 1.4, `two bumps: a bigger shake than Biffy A's (${shakeB.toFixed(1)} px against ${shakeA.toFixed(1)})`);
+      // The biffy stands left of the middle, so the near edge is the left one.
+      const rolling = log.filter((f) => f.roll?.vis);
+      // (Its middle: a turning square's box grows and shrinks as it turns.)
+      const mid = (f) => ({ x: (f.roll.l + f.roll.r) / 2, y: (f.roll.t + f.roll.b) / 2 });
+      const ys = rolling.map((f) => mid(f).y);
+      check(Math.max(...ys) - Math.min(...ys) < 0.6 && rolling.every((f, i) => i === 0 || mid(f).x <= mid(rolling[i - 1]).x + 0.01), `the roll glides along the ground, never up or down, never back (${(Math.max(...ys) - Math.min(...ys)).toFixed(2)} px of bounce over ${rolling.length} frames)`);
+      // Once it is rolling (the second half of its run) it keeps one speed: it stays on a straight line against time.
+      const cruise = rolling.slice(Math.floor(rolling.length * 0.5));
+      const [p0, p1] = [cruise[0], cruise.at(-1)];
+      const speed = (mid(p1).x - mid(p0).x) / (p1.t - p0.t);
+      const off = Math.max(...cruise.map((f) => Math.abs(mid(f).x - (mid(p0).x + speed * (f.t - p0.t)))));
+      check(off < 8 && speed < 0, `at one steady speed once it is rolling: no jumps (${(-speed * 1000).toFixed(0)} px a second, never more than ${off.toFixed(1)} px off the line)`);
+      check(rollEnd.roll.r <= 2, `the roll leaves by the near edge, the left one, until it is fully off screen (x ${Math.round(rollEnd.roll.r)})`);
+      check(manEnd.man.r <= 2, `he shuffles after it the same way until he is fully off screen (x ${Math.round(manEnd.man.r)})`);
       const after = await page.evaluate(() => document.querySelector('.biffy-layer .ind').getAttribute('fill'));
       check(after === '#56b05a', 'the door creaks shut and the indicator flips to green');
       await context.close();
