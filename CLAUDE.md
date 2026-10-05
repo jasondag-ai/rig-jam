@@ -99,25 +99,37 @@ something, give exact clicks and one command at a time.
   EASTER EGG set off by what the player does: `MAGPIE_ON`, `WORKER_ON`, `MOOSE_ON` (`?magpie=0`,
   `?worker=0`, `?moose=0` turn one off for a page load).
 - TRIGGER SETTINGS: every gag's trigger lives in ONE file, `src/ui/gag-triggers.ts` (`GAG_TRIGGERS`),
-  for Jay to tune after playing. Placeholders now: magpie 10 s idle; worker 20 s idle; moose = 2
-  bumps up into the top berm (Duvernay); Near Miss = two exits within 3.5 s (Cardium); landowner =
-  the same truck driven back and forth 4 times (`BackAndForth`: 4 direction changes in a row, any
-  other truck resets it); marshmallow = 3 taps on a flare; geese = Undo 3 times in a row; bear = a
-  perfect solve on Duvernay 8 to 10, 1 in 3; bull = tap the cow (Montney); night nudge 25 s; Biffy A = one bump down into the bottom berm; Biffy B = a second one
-  within 1.4 s (so A waits that long before it plays; once one of the two has played in a level, any
-  bottom bump brings the other). `bermBump` says which berm a bump hit.
-- GAG RULES (`GAG_RULES` in gag-triggers.ts, enforced in `GameView.tickEggs`/`queueEgg`): one gag
-  at a time; none while a truck is dragged or moving, or once the level is won; after one ends,
-  none starts for 60 s (`cooldownMs`). A trigger that fires while a gag is on or during the
-  cooldown is IGNORED, not queued (the player can set it off again; counters use `>=`). Demo mode
-  and `?gag=` previews have no cooldown. The bear (he comes at the win) is exempt. Tests:
-  `?cooldown=0` (or a scale), `?off=lunch,porcupine,sam,tongue` leaves gags out. Every gag enters and leaves
-  fully off screen and its layers take no touches.
-- EGG SCHEDULING (`GameView.tickEggs`): ONE gag at a time, none while a truck is moving or once
-  the level is won. A gag the player set off waits in `eggQueue` and plays as soon as the stage is
-  free. The magpie comes after his idle time with no moves and the worker after his, each
-  counted from the last move or the last gag leaving (the worker waits until the magpie has been),
-  each once per level; one that was scared off or cancelled may try again.
+  for Jay to tune after playing. Now: magpie 10 s idle; worker 20 s idle; moose = 2 bumps up into
+  the top berm (Duvernay); Near Miss = two exits within 3.5 s (Cardium); landowner = the same truck
+  driven back and forth 4 times (`BackAndForth`), OR a fast wiggle: 4 reversals of one truck inside
+  ONE drag within 2 s (`Wiggle`; the board reports each turn of the finger, `onReverse`, a quarter
+  cell back, so a boxed-in truck can be wiggled too); Biffy A = one bump down into the bottom berm;
+  Biffy B = a second one within 1.4 s; marshmallow = 3 taps on a flare; geese = Undo 3 times in a
+  row; bear = 3 taps on his bush on any Duvernay level, 1 in 3 (`bearComes`; else the bush shakes
+  and drops a snow puff, `BushProp.shake`; demo mode always); bull = tap the cow (Montney);
+  porcupine = TBD (demo: tap the bush); gopher lunch = 30 s idle (Cardium); Sam = 3 bumps in a row
+  or a wrong-colour gate; frozen tongue = 30 s idle (winter); night = 30 s idle, nudge 15 s after.
+- GAG RULES (GAME_BIBLE Oct 5; `GAG_RULES`, `SHARES`, `mustWait` in gag-triggers.ts; enforced in
+  `GameView.fire`/`startEgg`/`tickEggs`): gags play AT THE SAME TIME. A trigger plays its gag right
+  away, even during a drag and even if others are on; it waits (in `eggQueue`) only for a gag that
+  shares its character or prop (`SHARES`: the biffy, the gopher, the bush, the worker in red) and
+  then follows it on. Once per level; none once the level is won (a win clears them). The IDLE
+  gags (`IDLE_GAGS`: magpie, sleepy worker, gopher lunch, frozen tongue) still take turns, one at a
+  time, with `idleCooldownMs` (60 s) between them; none in demo mode. Tests: `?cooldown=0` (or a
+  scale), `?off=lunch,porcupine,sam,tongue` leaves gags out, `?bear=1` / `?bear=0`.
+- SAME START, SAME END (GAME_BIBLE Oct 5): a gag's last frame looks exactly like its first.
+  Characters walk in and out fully off screen; nothing appears or disappears by magic; any prop a
+  gag uses is permanent scenery. (Still to bring into line: the cow stays gone after the bull gag,
+  and the biffy's indicator changes colour.)
+- GAG LAYERS AND THE NIGHT: every gag layer is put on the screen with `host.mount`, which inserts
+  it UNDER the night's shade. Strip layers (`.strip-layer`, `.worker-layer`) are z 0, so at night
+  they dim exactly like the scenery and the props, with no filters. Only what must lie over the
+  lease itself stays above the board and undimmed, like the trucks: `.strip-layer.over-lease`
+  (the marshmallow stick; the worker himself is on an ordinary strip layer) and the magpie.
+- EGG SCHEDULING: `fire(id)` starts a player-triggered gag at once (see GAG RULES). `tickEggs`
+  only runs the idle gags: each after its own idle time with no moves, in `IDLE_GAGS` order, one
+  at a time with the idle cooldown between them, once per level (one that was scared off or
+  cancelled may try again).
   `?gag=magpie|worker|moose|nearmiss|landowner|biffya|biffyb|marshmallow|geese|bear|bull|porcupine|lunch|sam|tongue` plays one at once, again and again;
   `?idle=0.1` makes the idle times 10x shorter.
 - STRIP GAGS (gags 4 to 7; `src/ui/strip-gags.ts` runner `TimelineGag`, placement `stripGeom`;
@@ -154,17 +166,15 @@ something, give exact clicks and one command at a time.
     times in a row (`undosInARow`; a move starts the count again). On short screens there is little
     sky and they fly over the treetops, smaller.
   - THE BEAR AND THE SNOWSHOE HARE (gag 10, LEGENDARY; `bear.ts`, ported from
-    `bear_rabbit_reference.html`). Duvernay 8 to 10 have his bush as permanent scenery
-    (`BushProp`, `.bush-layer`, at `BUSH_X`, right of the biffy; the scenery's own willow anchor is
-    left out there and `bearBox` keeps trees off). Trigger (`GAG_TRIGGERS.bear`, `bearComesNow`): a
-    perfect solve (at par) on one of those levels, 1 time in 3 (every time in demo mode or with
-    `?bear=1`). The win is saved at once (`recordWinOnce`) and the win card waits until he has
-    gone. One layer holds hare (z 2 behind the bush, z 5 in his paw or on the snow), bush (3), bear
-    (4) and the overlay (sweat, speed lines, the hare's "ugh" scribble). The hare goes behind the
-    bush only when its leading foot reaches the bush's edge, and stays hidden there. BUSH RULE
-    (GAME_BIBLE): a gag prop matches the board art, so the bush is the board's own willow
-    with a snow dusting (see THE GAG BUSH), not the reference's drawing.
-    Log card: legendary gold frame.
+    `bear_rabbit_reference.html`). EVERY Duvernay level has his bush as permanent scenery
+    (`BushProp`, `.bush-layer`, at `BUSH_X`, right of the riser; the scenery's own willow anchor is
+    left out there and `bearBox` keeps trees off). Trigger (`GAG_TRIGGERS.bear`): 3 taps on the
+    bush; 1 time in 3 he comes, otherwise the bush shakes and drops a small puff of snow and the
+    count starts again; once he has been, it only shakes. No longer tied to solving the level. One
+    layer holds hare (z 2 behind the bush, z 5 in his paw or on the snow), bush (3), bear (4) and
+    the overlay (sweat, speed lines, the hare's "ugh" scribble). The hare goes behind the bush only
+    when its leading foot reaches the bush's edge, and stays hidden there. The bush is the board's
+    own with a snow dusting (see THE GAG BUSH). Log card: legendary gold frame.
   - THE BULL AND THE COW (gag 11, Montney; `bull.ts`, ported from `bull_cow_reference.html`). The
     Holstein cow is permanent scenery grazing in the Montney strip (`CowProp`, `.cow-layer`, at
     `COW_X`; quite still until the gag; `cowBox` keeps trees off). Trigger: tap the cow
@@ -192,8 +202,8 @@ something, give exact clicks and one command at a time.
     mound on the strip's ground line at the reference's size (`moundSpot`, scenery `moundAt`), the
     gopher's box ends at its hole line and `LIP` (the hole's near half) lies over it so the arm
     comes out of the hole. Every reference distance is in `um` (reference mound units). Trigger:
-    30 s idle, after the magpie and worker. THE EXIT IS NOT IN THE REFERENCE (it loops with him
-    sitting): from `T_UP` he gets up and walks off the way he came, crust in hand.
+    30 s idle. Ending (reference, Oct 5): he boils over (red face, steam), gets up, hurls the crust
+    down the hole and stomps off; the gopher pops up chewing it, burp, gone; the quiet mound again.
   - SAFETY SAM (gag 14, any region; `sam.ts`, ported from `safety_sam_reference.html`): the
     worker's build recoloured (white hat, navy, hi-vis vest, moustache) with a clipboard. Marches
     in from the left to the middle of the strip, looks up, slow head shake ("tsk" is drawn), scribbles,
@@ -203,13 +213,13 @@ something, give exact clicks and one command at a time.
     no move between (`bumpRun`), or one push at a wrong-colour gate (`wrongGateBump`). Once per level.
   - THE FROZEN TONGUE (gag 15, winter levels; `frozen-tongue.ts`, ported from
     `frozen_tongue_reference.html`). The frosty riser is permanent scenery on winter levels
-    (`RiserProp`, `.riser-layer`, at `RISER_X` by the right edge, clear of the bear's bush; left out
-    where a very short strip would put it on the berm: `fits`). The worker licks it and sticks, the
-    tongue stretches to the REAL riser, "HEWP!", his buddy (blue, orange hat) takes a photo (the
-    flash lights the bottom strip only), cracks up and leaves, a snowflake lands on his nose.
-    THE ENDING IS NOT IN THE REFERENCE (it loops with him stuck): from `T_HEAVE` he heaves, the
-    tongue snaps free (`T_POP`), and he trudges off left with a glove over his mouth. Trigger:
-    30 s idle on a winter level, after the magpie and worker.
+    (`RiserProp`, `.riser-layer`, at `RISER_X`, between the biffy and the bear's bush with room on
+    both sides; left out where a very short strip would put it on the berm: `fits`). The worker
+    licks it and sticks, the tongue stretches to the REAL riser, "HEWP!", his buddy (blue, orange
+    hat) takes a photo (the flash lights the bottom strip only), cracks up and leaves, a snowflake
+    lands on his nose. Ending (reference, Oct 5): the buddy comes back from the FAR side with a
+    steaming thermos, sighs, pours hot coffee on the pipe, THWIP, the tongue frees; both hop-turn
+    and walk off their own ways; the empty riser again. Trigger: 30 s idle on a winter level.
   - `npm run test:e2e:eggs2` checks gags 8 and up the same way and saves their clips.
   - `npm run test:e2e:strip` checks all of it in WebKit (beats, real triggers, off-screen entry and
     exit, hole clip, biffy placement, reduced motion, log), 60 fps at 4x throttle in Chromium, and
@@ -375,29 +385,34 @@ something, give exact clicks and one command at a time.
   the board, gates and buttons; trees give them room. (The side margins are only 16px, so "beside
   the berm" is below it.) When the bear and gopher come back, play them at these anchors.
 
-## Night levels
-- A level whose JSON has `"night": true` plays at night (`src/ui/night.ts`, pure and tested; look
-  in style.css "Night"). `gen-levels` sets the flag on every level with a flare stack (now Montney
-  2, 8, 10 and Duvernay 4, 8, 10); any level can carry it. The engine and solver never read it.
-  `?night=1` / `?night=0` force it for previews and screenshots.
-- ONE shade (`--night`, from `nightRgba(ground)`: deeper on mud, stronger on snow) over everything
-  that is ground or scenery: `.night-shade` on the screen (over the scenery, vignette and strip
-  props, under the lease, HUD and buttons; it also holds the stars and the moon, `nightSky`),
-  `.night-pad` inside `.lease-ground`, and the berm's canvas shaded as it is painted (`paintBerm`'s
-  `shade`). Sky colours are overridden so they come out deep blue through it. Equipment is dimmed
-  with a filter (0.7; the flare 0.92). Trucks keep 0.9 and gates 0.92 of their brightness; symbol
-  badges, convoy tags, hints, the HUD, buttons and win card are untouched. Gag puppets are not dimmed.
+## Night
+- NO level starts at night and no level carries a night flag. On ANY level, after
+  `GAG_TRIGGERS.night.idleMs` (30 s) with nothing done by the player (`lastPlayAt`; gags do not
+  count), the lease fades to night over `fadeInMs` (4 s); the next thing the player does (a truck
+  picked up, a move, Undo, Restart: `played`) fades it back to day over `fadeOutMs` (2 s).
+  `GameView.setNight` puts `.night` on the screen and the board; the board wears `.dawn` while the
+  day comes back. Rules in `src/ui/night.ts` (pure, tested); look and fades in style.css "Night".
+  `?night=1` pins night on, `?night=0` keeps it away (previews, screenshots, tests).
+- Everything night adds is always in the page and CLEAR by day, and fades by opacity (or a filter):
+  `.night-skyfill` (the sky's own night, the first thing on the screen, behind the trees),
+  `.night-shade` (`--night` from `nightRgba(ground)`: deeper on mud, stronger on snow; over the
+  scenery, vignette, strip props and strip gags, under the lease, HUD and buttons; it holds the
+  stars and the moon, `nightSky`), `.night-pad` inside `.lease-ground`, and `canvas.berm-night`
+  (the day's berm canvas copied under the shade, `paintNightBerm`). Equipment is dimmed with a
+  filter (0.7; the flare 0.92). Trucks keep 0.9 and gates 0.92; symbol badges, convoy tags, hints
+  (the hinted truck is left alone), the HUD, buttons and win card are untouched.
 - Flare glow: `.flare-glow` inside the flare's obstacle (behind its drawing, over the ground and the
-  trucks near it), 2.5 cells across, flickering in step with the flame (same period and
-  `--eq-delay`). Headlights: `.lamps` in every truck, two soft glows at the cab end (`data-cab`).
-  Reduced motion: no flicker, no twinkle.
-- The nudge: after `GAG_TRIGGERS.nightNudge.idleMs` (25 s) with nothing done by the PLAYER
-  (`lastPlayAt`; gags do not reset it), a random truck says `NUDGE_LINE`. Once per level visit. Never
-  a fail state.
-- Tests: `night.test.ts` (flags match flares, shade about half brightness and cooler, every truck
-  and gate colour clear of the night pad); `npm run test:e2e:night` (WebKit pixels against the same
-  level by day, glow, headlights, nudge, 60 fps at 4x throttle in Chromium);
-  `node e2e/night-shots.mjs` saves `night_*.png`.
+  trucks near it), 2.5 cells across; the element fades in with the night and its `::before`
+  flickers in step with the flame (same period and `--eq-delay`). Headlights: `.lamps` in every
+  truck, two soft glows at the cab end (`data-cab`). Reduced motion: night comes without the fade,
+  the flicker or the twinkle.
+- The nudge: `GAG_TRIGGERS.nightNudge.afterNightMs` (15 s) after night has fully fallen, a random
+  truck says `NUDGE_LINE`. Once per level visit. Never a fail state.
+- Tests: `night.test.ts` (no level has a night flag, settings, shade about half brightness and
+  cooler, every truck and gate colour clear of the night pad); `npm run test:e2e:night` (WebKit:
+  every level starts by day, the idle fade in and out, the nudge, pixels against the same level by
+  day, gag layers as dim as the scenery, glow, headlights; 60 fps at 4x throttle in Chromium,
+  the fade included); `node e2e/night-shots.mjs` saves `night_*.png`.
 
 ## Cover (title screen)
 - `src/ui/cover.ts`: shown on every app open (never between levels). Hero image `public/cover.webp`
@@ -649,13 +664,12 @@ something, give exact clicks and one command at a time.
 ## Level JSON format
 ```json
 {
-  "id": "01", "name": "First Load", "par": 2, "hint": "optional one-line tip", "night": true,
+  "id": "01", "name": "First Load", "par": 2, "hint": "optional one-line tip",
   "trucks": [{ "id": "A", "color": "red", "row": 2, "col": 0, "length": 2, "orient": "h", "kind": "pickup" }],
   "gates":  [{ "color": "red", "side": "right", "index": 2 }],
   "obstacles": [{ "row": 4, "col": 4, "kind": "tank" }]
 }
 ```
-- `night` is optional and cosmetic (see Night levels).
 - `row`/`col` are 0-5 and mark the truck's top-left cell. `orient` is `h` or `v`.
 - Gate `index` is the row for `left`/`right` gates and the column for `top`/`bottom` gates.
 - Colors: red, blue, yellow, green, orange, purple.
@@ -686,8 +700,8 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:magpie` – the magpie gag: beats, off-screen entry and exit, splat, startle, reduced motion, frame rate, clips (start the dev server first)
 - `npm run test:e2e:eggs` – the sleepy worker and the moose: beats, entry and exit, cancel, triggers, reduced motion, log, frame rate, clips (start the dev server first)
 - `npm run test:e2e:strip` – Near Miss, landowner, Biffy A and B and the permanent biffy (start the dev server first)
-- `npm run test:e2e:night` – night levels: look, glow, headlights, nudge, frame rate (start the dev server first)
-- `npm run test:e2e:eggs2` – gags 8 and up: marshmallow, geese, bear, bull and cow, porcupine, gopher lunch, Safety Sam, the riser and the frozen tongue, the cooldown (`ONLY=geese` runs one; start the dev server first)
+- `npm run test:e2e:night` – night: every level starts by day, the idle fade, nudge, look, gag dimming, glow, headlights, frame rate (start the dev server first)
+- `npm run test:e2e:eggs2` – gags 8 and up: marshmallow, geese, bear, bull and cow, porcupine, gopher lunch, Safety Sam, the riser and the frozen tongue, two gags at once, the landowner's wiggle (`ONLY=geese` runs one; start the dev server first)
 - `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)

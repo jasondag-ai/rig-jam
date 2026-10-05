@@ -1,10 +1,12 @@
-// Night levels (Playwright, WebKit as the judge; Chromium for the frame rate).
-//  - every flare level plays at night; others do not; ?night=0 / ?night=1 force it
-//  - the ground, berm and scenery drop to about half brightness; trucks and gates far less; the
-//    HUD and the buttons do not change at all (compared by pixels with the same level by day)
+// Night (Playwright, WebKit as the judge; Chromium for the frame rate).
+//  - NO level starts at night, flare levels included; ?night=1 pins night on, ?night=0 keeps it away
+//  - an idle level fades to night (30 s; 3 s here) over about 4 s, and the next move fades it back
+//    over about 2 s; the nudge comes 15 s (1.5 s here) after night has fully fallen, once per level
+//  - at night the ground, berm and scenery drop to about half brightness; trucks and gates far less;
+//    the HUD and the buttons do not change at all (compared by pixels with the same level by day)
+//  - the strip's gags lie under the same shade as the scenery (Biffy B's shuffler as dim as the biffy)
 //  - a warm glow round each flare, about 2.5 cells across, flickering; headlights on every cab
-//  - the nudge: one bubble from a truck after the idle time, once per level
-//  - gags still play; reduced motion: no flicker; 60 fps with the CPU slowed 4x
+//  - reduced motion: no fade, no flicker; 60 fps with the CPU slowed 4x, the fade included
 // Run with the dev server up: npm run test:e2e:night
 import { UNLOCKED } from './progress.mjs';
 import { chromium, webkit } from 'playwright';
@@ -74,19 +76,86 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
   const browser = await type.launch();
 
   if (engine === 'webkit') {
-    // ---------- Which levels ----------
-    console.log(`\n${engine}: which levels play at night`);
-    for (const [r, li, want] of [['montney', 1, true], ['montney', 7, true], ['montney', 9, true], ['duvernay', 3, true], ['duvernay', 7, true], ['duvernay', 9, true], ['montney', 0, false], ['cardium', 4, false]]) {
+    // ---------- No level starts at night ----------
+    console.log(`\n${engine}: every level starts by day`);
+    const state = (page) => page.evaluate(() => { const o = (q) => [...document.querySelectorAll(q)].map((e) => +getComputedStyle(e).opacity); return { night: document.querySelector('.screen.game').classList.contains('night'), board: document.querySelector('.board').classList.contains('night'), shade: o('.night-shade')[0], sky: o('.night-skyfill')[0], pad: o('.night-pad')[0], berm: o('canvas.berm-night')[0], glows: o('.flare-glow'), lamps: o('.truck .lamps'), flares: document.querySelectorAll('.obstacle.flare').length }; });
+    for (const [r, li] of [['montney', 1], ['montney', 7], ['montney', 9], ['duvernay', 3], ['duvernay', 7], ['duvernay', 9], ['montney', 0], ['cardium', 4]]) {
       const { context, page } = await open(browser, { level: [region(r), li] });
-      const s = await page.evaluate(() => ({ night: document.querySelector('.screen.game').classList.contains('night'), board: document.querySelector('.board').classList.contains('night'), shade: !!document.querySelector('.night-shade'), flares: document.querySelectorAll('.obstacle.flare').length, glows: [...document.querySelectorAll('.flare-glow')].filter((g) => getComputedStyle(g).display !== 'none').length, lamps: [...document.querySelectorAll('.truck .lamps')].filter((g) => getComputedStyle(g).display !== 'none').length, trucks: document.querySelectorAll('.truck').length }));
-      if (want) check(s.night && s.board && s.shade && s.flares > 0 && s.glows === s.flares && s.lamps === s.trucks, `${r} ${li + 1}: night, a glow on its flare, headlights on all ${s.trucks} trucks`);
-      else check(!s.night && !s.board && !s.shade && s.glows === 0 && s.lamps === 0, `${r} ${li + 1}: day`);
+      const s = await state(page);
+      check(!s.night && !s.board && s.shade === 0 && s.sky === 0 && s.pad === 0 && s.berm === 0 && s.glows.every((g) => g === 0) && s.lamps.every((l) => l === 0), `${r} ${li + 1} (${REGIONS[region(r)].levels[li].name}${s.flares ? ', a flare level' : ''}): daylight, no shade, no glow, no headlights`);
       await context.close();
     }
     {
-      const { context, page } = await open(browser, { query: QUIET + '&night=1', level: [region('cardium'), 4] });
-      check(await page.evaluate(() => document.querySelector('.screen.game').classList.contains('night')), 'any level can be made night (?night=1; in the data it is the level\'s `night` flag)');
+      const { context, page } = await open(browser, { query: QUIET + '&night=1', level: [region('cardium'), 4], reducedMotion: 'reduce' });
+      const s = await state(page);
+      check(s.night && s.shade === 1 && s.lamps.every((l) => l === 1), '?night=1 pins night on any level (previews and these tests)');
       await context.close();
+    }
+
+    // ---------- An idle level fades to night, and the next move brings the day back ----------
+    console.log(`\n${engine}: Duvernay 8 (Hoarfrost): idle, night falls; a move, day returns`);
+    {
+      const level = REGIONS[region('duvernay')].levels[7];
+      const { context, page } = await open(browser, { query: QUIET + '&idle=0.1', level: [region('duvernay'), 7] });
+      const first = await state(page);
+      check(!first.night && first.shade === 0, 'it starts in daylight');
+      await page.waitForFunction(() => document.querySelector('.screen.game').classList.contains('night'), null, { timeout: 6000 });
+      const fell = Date.now();
+      const dur = await page.evaluate(() => getComputedStyle(document.querySelector('.night-shade')).transitionDuration);
+      await wait(1800);
+      const mid = await state(page);
+      await wait(2700);
+      const full = await state(page);
+      check(dur === '4s' && mid.shade > 0.1 && mid.shade < 0.9 && mid.pad > 0.1 && mid.pad < 0.9 && mid.berm > 0.1 && mid.berm < 0.9, `after 30 s with no move (3 s here) it fades to night over about 4 s (shade ${mid.shade.toFixed(2)} part way)`);
+      check(full.shade === 1 && full.sky === 1 && full.pad === 1 && full.berm === 1 && full.glows.every((g) => g === 1) && full.lamps.every((l) => l === 1), 'then it is fully night: sky, shade, lease, berm, flare glow and headlights');
+      const nudge = await page.waitForSelector('.bubble[data-nudge]', { timeout: 4000 }).then(async (el) => ({ at: Date.now() - fell, text: await el.textContent(), box: await el.boundingBox() })).catch(() => null);
+      check(nudge?.text === "While we're young, Sonny, we don't have all day." && nudge.at > 5000 && nudge.box.x >= 4 && nudge.box.x + nudge.box.width <= 386, `the nudge comes 15 s after night has fallen (1.5 s here: ${nudge ? ((nudge.at - 4000) / 1000).toFixed(1) : '?'} s), on screen: "${nudge?.text}"`);
+      check(!(await page.evaluate(() => !document.querySelector('.overlay').hidden)), 'never a fail state: the level carries on');
+      // The next move: day comes back over about 2 s.
+      const st = newGame(level);
+      const mover = st.trucks.map((t) => ({ t, r: getMoveRange(st, t.id) })).find(({ r }) => r && (r.max > 0 || r.min < 0));
+      await drag(page, mover.t.id, mover.r.max > 0 ? 1 : -1, 60);
+      const back = await page.evaluate(() => ({ night: document.querySelector('.screen.game').classList.contains('night'), dur: getComputedStyle(document.querySelector('.night-shade')).transitionDuration }));
+      await wait(900);
+      const dawn = await state(page);
+      await wait(1500);
+      const day = await state(page);
+      check(!back.night && back.dur === '2s' && dawn.shade > 0.05 && dawn.shade < 0.95, `the next move fades it back to day over about 2 s (shade ${dawn.shade.toFixed(2)} part way)`);
+      check(day.shade === 0 && day.sky === 0 && day.pad === 0 && day.berm === 0 && day.lamps.every((l) => l === 0) && day.glows.every((g) => g === 0), 'then it is full daylight again');
+      // Idle again: night again, but the nudge is once per level.
+      await page.evaluate(() => document.querySelector('.bubble')?.remove());
+      await page.waitForFunction(() => document.querySelector('.screen.game').classList.contains('night'), null, { timeout: 6000 });
+      await wait(4000 + 1500 + 1500);
+      check(!(await page.$('.bubble[data-nudge]')), 'night falls again when idle again, but the nudge is once per level');
+      await context.close();
+    }
+    {
+      const { context, page } = await open(browser, { query: QUIET + '&idle=0.1&night=0', level: [region('duvernay'), 7] });
+      await wait(4500);
+      check(!(await state(page)).night, '?night=0 keeps night away');
+      await context.close();
+    }
+
+    // ---------- The strip's gags lie under the same shade as the scenery ----------
+    console.log(`\n${engine}: gag layers dim at night exactly like the scenery`);
+    {
+      const m = {};
+      for (const mode of ['night', 'day']) {
+        const { context, page } = await open(browser, { query: `?gag=biffyb&night=${mode === 'night' ? 1 : 0}`, reducedMotion: 'reduce' });
+        await page.waitForSelector('.shuffler-layer svg.pup', { state: 'attached', timeout: 8000 });
+        await wait(1100);
+        const order = await page.evaluate(() => {
+          const kids = [...document.querySelector('.screen.game').children], shade = kids.findIndex((k) => k.classList.contains('night-shade'));
+          const layers = kids.map((k, i) => ({ k, i })).filter(({ k }) => k.matches('.strip-layer:not(.over-lease), .worker-layer, .prop-layer, .biffy-layer'));
+          return layers.length > 1 && layers.every(({ k, i }) => i < shade && getComputedStyle(k).zIndex === '0');
+        });
+        if (mode === 'night') check(order, 'every strip gag layer and prop is put on the screen under the night\'s shade');
+        const box = (sel) => page.evaluate((q) => { const r = [...document.querySelectorAll(q)].at(-1).getBoundingClientRect(); return { x: r.x + r.width * 0.2, y: r.y + r.height * 0.2, width: r.width * 0.6, height: r.height * 0.6 }; }, sel);
+        m[mode] = { shuffler: await patch(page, await box('.shuffler-layer svg.pup .head')), biffy: await patch(page, await box('.biffy-layer svg.pup .door')), grass: await patch(page, { x: 4, y: (await box('.biffy-layer svg.pup .door')).y, width: 20, height: 10 }) };
+        await context.close();
+      }
+      const ratio = (k) => m.night[k] / m.day[k];
+      check(ratio('shuffler') < 0.65 && ratio('biffy') < 0.65 && Math.abs(ratio('shuffler') - ratio('biffy')) < 0.12 && Math.abs(ratio('shuffler') - ratio('grass')) < 0.15, `Biffy B at night: the shuffler ${ratio('shuffler').toFixed(2)}, the biffy ${ratio('biffy').toFixed(2)} and the grass ${ratio('grass').toFixed(2)} of their daytime brightness: equally dim`);
     }
 
     // ---------- The look, by pixels against the same level by day ----------
@@ -94,7 +163,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       console.log(`\n${engine}: ${r} ${li + 1} by night against by day`);
       const shots = {};
       for (const mode of ['night', 'day']) {
-        const { context, page } = await open(browser, { query: QUIET + (mode === 'day' ? '&night=0' : ''), level: [region(r), li], reducedMotion: 'reduce' });
+        const { context, page } = await open(browser, { query: QUIET + (mode === 'day' ? '&night=0' : '&night=1'), level: [region(r), li], reducedMotion: 'reduce' });
         const level = REGIONS[region(r)].levels[li];
         // An empty pad cell far from the flare, a patch of grass or snow below the lease, the berm, a truck, a gate, the Hint button, the HUD.
         const geo = await page.evaluate(([trucks, obstacles]) => {
@@ -136,7 +205,8 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     // ---------- Sky, glow, headlights ----------
     console.log(`\n${engine}: sky, flare glow, headlights`);
     {
-      const { context, page } = await open(browser, { level: [region('montney'), 1] });
+      const { context, page } = await open(browser, { query: QUIET + '&night=1', level: [region('montney'), 1] });
+      await wait(4400);
       const s = await page.evaluate(() => {
         const R = (q) => document.querySelector(q).getBoundingClientRect();
         const moon = [...document.querySelectorAll('.night-sky circle')].find((c) => c.getAttribute('fill') === '#f6efc8')?.getBoundingClientRect();
@@ -146,25 +216,27 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
         return { stars: document.querySelectorAll('.night-sky .star').length, moon: !!moon, moonClear: moon && moon.top >= R('.hud').bottom - 2 && moon.bottom <= Math.min(...tops, 9999) + 4, glow: glow.width / cell, on: Math.abs(glow.left + glow.width / 2 - (flare.left + flare.width / 2)) < 2, lamps, pe: getComputedStyle(document.querySelector('.night-shade')).pointerEvents, z: getComputedStyle(document.querySelector('.night-shade')).zIndex };
       });
       check(s.stars >= 10 && s.moon && s.moonClear, `a moon and ${s.stars} stars; the moon sits in open sky under the HUD's row`);
-      check(Math.abs(s.glow - 2.5) < 0.2 && s.on, // its flicker scales it a few percent either way `the flare's glow is ${s.glow.toFixed(2)} cells across, centred on the stack`);
+      check(Math.abs(s.glow - 2.5) < 0.05 && s.on, `the flare's glow is ${s.glow.toFixed(2)} cells across, centred on the stack`);
       check(s.lamps.every(Boolean), 'headlights sit at the front of each cab, facing its gate');
       check(s.pe === 'none' && s.z === '0', 'the shade takes no touches and lies under the lease, the HUD and the buttons');
-      const flick = await page.evaluate(() => new Promise((res) => { const g = document.querySelector('.flare-glow'), seen = new Set(); const t0 = performance.now(); const tick = () => { seen.add(getComputedStyle(g).opacity); performance.now() - t0 > 1100 ? res([...seen]) : requestAnimationFrame(tick); }; tick(); }));
+      const flick = await page.evaluate(() => new Promise((res) => { const g = document.querySelector('.flare-glow'), seen = new Set(); const t0 = performance.now(); const tick = () => { seen.add(getComputedStyle(g, '::before').opacity); performance.now() - t0 > 1100 ? res([...seen]) : requestAnimationFrame(tick); }; tick(); }));
       check(flick.length >= 4, `the glow flickers (${flick.length} levels of brightness in a second)`);
-      const same = await page.evaluate(() => { const a = getComputedStyle(document.querySelector('.flare-glow')), b = getComputedStyle(document.querySelector('.fl-flame')); return a.animationDuration === b.animationDuration && a.animationDelay === b.animationDelay; });
+      const same = await page.evaluate(() => { const a = getComputedStyle(document.querySelector('.flare-glow'), '::before'), b = getComputedStyle(document.querySelector('.fl-flame')); return a.animationDuration === b.animationDuration && a.animationDelay === b.animationDelay; });
       check(same, 'in step with the flame (same period and offset)');
       await context.close();
     }
     {
-      const { context, page } = await open(browser, { level: [region('montney'), 1], reducedMotion: 'reduce' });
-      const still = await page.evaluate(() => new Promise((res) => { const g = document.querySelector('.flare-glow'), seen = new Set(); const t0 = performance.now(); const tick = () => { seen.add(getComputedStyle(g).opacity); performance.now() - t0 > 1000 ? res(seen.size) : requestAnimationFrame(tick); }; tick(); }));
+      const { context, page } = await open(browser, { query: QUIET + '&night=1', level: [region('montney'), 1], reducedMotion: 'reduce' });
+      const instant = await state(page);
+      check(instant.shade === 1 && instant.pad === 1, 'reduced motion: night comes without the fade');
+      const still = await page.evaluate(() => new Promise((res) => { const g = document.querySelector('.flare-glow'), seen = new Set(); const t0 = performance.now(); const tick = () => { seen.add(getComputedStyle(g, '::before').opacity); performance.now() - t0 > 1000 ? res(seen.size) : requestAnimationFrame(tick); }; tick(); }));
       check(still === 1, 'reduced motion: no flicker');
       await context.close();
     }
 
     // ---------- Hints keep their daytime look ----------
     {
-      const { context, page } = await open(browser, { level: [region('montney'), 1] });
+      const { context, page } = await open(browser, { query: QUIET + '&night=1', level: [region('montney'), 1], reducedMotion: 'reduce' });
       await page.locator('[data-act="hint"]').click();
       await page.waitForSelector('.truck.hinted');
       const h = await page.evaluate(() => { const t = document.querySelector('.truck.hinted'); return { rim: getComputedStyle(t.querySelector('.art')).filter, shadow: getComputedStyle(t.querySelector('.ground-shadow')).opacity, other: getComputedStyle(document.querySelector('.truck:not(.hinted) .art')).filter }; });
@@ -172,39 +244,13 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       await context.close();
     }
 
-    // ---------- The nudge ----------
-    console.log(`\n${engine}: the nudge`);
-    {
-      const { context, page } = await open(browser, { query: QUIET + '&idle=0.1', level: [region('montney'), 7] });
-      await wait(700);
-      check(!(await page.$('.bubble')), 'nothing before the idle time is up (25 s; 2.5 s in this test)');
-      const b = await page.waitForSelector('.bubble[data-nudge]', { timeout: 4000 }).then(async (el) => ({ text: await el.textContent(), box: await el.boundingBox() })).catch(() => null);
-      check(b?.text === "While we're young, Sonny, we don't have all day." && b.box.x >= 4 && b.box.x + b.box.width <= 386, `a truck says "${b?.text}", on screen`);
-      const won = await page.evaluate(() => !document.querySelector('.overlay').hidden);
-      check(!won && (await page.$$('.truck')).length > 0, 'never a fail state: the level carries on');
-      const level = REGIONS[region('montney')].levels[7];
-      const st = newGame(level);
-      const mover = st.trucks.map((t) => ({ t, r: getMoveRange(st, t.id) })).find(({ r }) => r && (r.max > 0 || r.min < 0));
-      await drag(page, mover.t.id, mover.r.max > 0 ? 1 : -1);
-      await page.evaluate(() => document.querySelector('.bubble')?.remove());
-      await wait(4200);
-      check(!(await page.$('.bubble[data-nudge]')), 'once per level');
-      await context.close();
-    }
-    {
-      const { context, page } = await open(browser, { query: QUIET + '&idle=0.06', level: [region('montney'), 0] });
-      await wait(3000);
-      check(!(await page.$('.bubble')), 'no nudge on a day level');
-      await context.close();
-    }
-
     // ---------- Gags still play ----------
     console.log(`\n${engine}: gags at night`);
     {
-      const { context, page } = await open(browser, { query: '?gag=marshmallow' });
+      const { context, page } = await open(browser, { query: '?gag=marshmallow&night=1' });
       const night = await page.evaluate(() => document.querySelector('.screen.game').classList.contains('night'));
-      await page.waitForFunction(() => document.querySelector('.strip-layer[data-gag="marshmallow"]')?.dataset.beat === 'roast', null, { timeout: 15000 });
-      check(night, 'the marshmallow is roasted on a night level\'s flare');
+      await page.waitForFunction(() => [...document.querySelectorAll('.strip-layer[data-gag="marshmallow"]')].at(-1)?.dataset.beat === 'roast', null, { timeout: 15000 });
+      check(night, 'gags still play at night: the marshmallow is roasted on the flare');
       await context.close();
     }
   }
@@ -212,13 +258,16 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
   // ---------- 60 fps with the CPU slowed 4x (Chromium): standing, and while dragging ----------
   if (engine === 'chromium') {
     console.log(`\n${engine}: frame rate on a night level with a 4x slower CPU`);
-    const { context, page } = await open(browser, { level: [region('montney'), 7] });
+    const { context, page } = await open(browser, { query: QUIET + '&idle=0.1', level: [region('montney'), 7] });
     const cdp = await context.newCDPSession(page);
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
     const frames = (ms) => page.evaluate((limit) => new Promise((res) => { const g = []; let last = performance.now(); const t0 = last; const tick = (n) => { g.push(n - last); last = n; n - t0 > limit ? res(g.slice(3)) : requestAnimationFrame(tick); }; requestAnimationFrame(tick); }), ms);
     const p95 = (g) => g.sort((a, b) => a - b)[Math.floor(g.length * 0.95)];
+    await page.waitForFunction(() => document.querySelector('.screen.game').classList.contains('night'), null, { timeout: 8000 });
+    const fade = await frames(4200);
+    check(p95(fade) < 20, `while night falls (the 4 s fade): p95 frame ${p95(fade).toFixed(1)} ms`);
     const idle = await frames(2500);
-    check(p95(idle) < 20, `standing (glow flickering, pumpjack nodding): p95 frame ${p95(idle).toFixed(1)} ms`);
+    check(p95(idle) < 20, `standing at night (glow flickering, pumpjack nodding): p95 frame ${p95(idle).toFixed(1)} ms`);
     const level = REGIONS[region('montney')].levels[7];
     const st = newGame(level);
     const mover = st.trucks.map((t) => ({ t, r: getMoveRange(st, t.id) })).find(({ r }) => r && (r.max > 0 || r.min < 0));
@@ -226,7 +275,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     const measuring = frames(2600);
     for (let i = 0; i < 4; i++) await drag(page, mover.t.id, i % 2 ? -dir : dir, 120);
     const dragging = await measuring;
-    check(p95(dragging) < 20, `dragging a truck back and forth: p95 frame ${p95(dragging).toFixed(1)} ms`);
+    check(p95(dragging) < 20, `dragging a truck back and forth while the day comes back: p95 frame ${p95(dragging).toFixed(1)} ms`);
     await context.close();
   }
   await browser.close();

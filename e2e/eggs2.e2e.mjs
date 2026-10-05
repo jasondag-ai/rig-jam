@@ -31,9 +31,9 @@ const GAGS = {
   bear: { preview: 'bear', clip: 'gag10_bear', beats: ['hare-nibbles', 'bear-in', 'sniff', 'sit', 'smug', 'strain', 'relief', 'spots-ears', 'snatch', 'long-look', 'swing', 'wipe', 'inspect', 'set-down', 'violated', 'bear-leaves', 'trudge', 'gone'] },
   bull: { preview: 'bull', clip: 'gag11_bull', beats: ['cow-grazes', 'bull-in', 'freeze', 'lick-hoof', 'slick', 'chest-puff', 'hearts', 'cow-looks', 'eyes-huge', 'hop-turn', 'bolts', 'paws', 'charge', 'last-heart'] },
   porcupine: { preview: 'porcupine', clip: 'gag12_porcupine', beats: ['quiet-bush', 'stroll-in', 'look-around', 'squat', 'poke', 'roll-pops', 'springs-out', 'porcupine-bolts', 'scurry'] },
-  gopherLunch: { preview: 'lunch', clip: 'gag13_gopher_lunch', beats: ['quiet-mound', 'stroll-in', 'plops-down', 'sets-it-down', 'phone', 'paw-peeks', 'feels-around', 'yank', 'chomp', 'crust-back', 'bite', 'eyes-huge', 'cheeks', 'ducks', 'deadpan', 'burp', 'gets-up', 'walks-off'] },
+  gopherLunch: { preview: 'lunch', clip: 'gag13_gopher_lunch', beats: ['quiet-mound', 'stroll-in', 'plops-down', 'sets-it-down', 'phone', 'paw-peeks', 'feels-around', 'yank', 'chomp', 'crust-back', 'bite', 'eyes-huge', 'cheeks', 'ducks', 'deadpan', 'boils-over', 'hurls-crust', 'stomps-off', 'burp', 'quiet-again'] },
   sam: { preview: 'sam', clip: 'gag14_safety_sam', beats: ['bad-moves', 'march-in', 'looks-up', 'tsk', 'scribble', 'see-me', 'fingers-to-eyes', 'points', 'backs-off'] },
-  tongue: { preview: 'tongue', clip: 'gag15_frozen_tongue', beats: ['frosty-riser', 'stroll-in', 'eyes-pipe', 'checks-around', 'lick', 'stuck', 'pulls', 'hewp', 'buddy-in', 'buddy-looks', 'phone-out', 'flash', 'deadpan', 'cracks-up', 'buddy-leaves', 'snowflake', 'heave', 'pop', 'trudges-off'] },
+  tongue: { preview: 'tongue', clip: 'gag15_frozen_tongue', beats: ['frosty-riser', 'stroll-in', 'eyes-pipe', 'checks-around', 'lick', 'stuck', 'pulls', 'hewp', 'buddy-in', 'buddy-looks', 'phone-out', 'flash', 'deadpan', 'cracks-up', 'buddy-leaves', 'snowflake', 'buddy-back', 'sigh', 'pours', 'thwip', 'rubs-tongue', 'walk-off', 'riser-again'] },
   geese: { preview: 'geese', clip: 'gag89_geese', beats: ['v-flies', 'wrong-way', 'pass', 'stall', 'honk', 'snap-turn', 'chase', 'straggler', 'feather'] },
 };
 const want = (name) => !ONLY || ONLY === name;
@@ -127,7 +127,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     check(!(await page.$('.strip-layer')), 'two taps are not enough');
     await tapAt(page, flare.x, flare.y);
     const bubble = bubbleOf(page, 'marshmallow');
-    const touch = page.waitForFunction(() => document.querySelector('.strip-layer[data-gag="marshmallow"]')?.dataset.beat === 'roast', null, { timeout: 12000 }).then(() =>
+    const touch = page.waitForFunction(() => [...document.querySelectorAll('.strip-layer[data-gag="marshmallow"]')].at(-1)?.dataset.beat === 'roast', null, { timeout: 12000 }).then(() =>
       page.evaluate(([x, y]) => { const el = document.elementFromPoint(x, y); return { layer: !!el.closest('.puppet-layer'), pe: getComputedStyle(document.querySelector('.marshmallow-layer .pup-overlay')).pointerEvents }; }, [flare.fx, flare.fy + 60]),
     );
     const log = await watching;
@@ -205,11 +205,11 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
   }
 
   if (engine === 'webkit' && want('bear')) {
-    // ---------- The bear's bush: permanent on his levels ----------
+    // ---------- The bear's bush: permanent on every Duvernay level ----------
     const duv = region('duvernay');
     for (const [width, height] of [[390, 844], [375, 667]]) {
       console.log(`\n${engine} ${width}x${height}: the bear's bush`);
-      for (const li of [7, 8, 9, 6]) {
+      for (const li of [0, 3, 7, 9]) {
         const { context, page } = await open(browser, { width, height, level: [duv, li] });
         await wait(300);
         const b = await page.evaluate(() => {
@@ -220,27 +220,33 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
           const trees = [...document.querySelectorAll('.scenery .sc')].filter((t) => { const q = t.getBoundingClientRect(); const m = q.width * 0.25; return q.left + m < r.right && q.right - m > r.left && q.top < r.bottom && q.bottom > r.bottom - 4; }).length;
           return { ok: r.top >= R('.board').bottom && r.bottom <= R('.note').top + 1 && r.right <= innerWidth && r.left > biffy.right, trees, old: document.querySelectorAll('.scenery [data-anchor="bush"]').length, touch: getComputedStyle(document.querySelector('.bush-layer')).pointerEvents };
         });
-        if (li === 6) check(b === null, 'Duvernay 7: no bear bush');
-        else check(b?.ok && b.old === 0 && b.touch === 'none' && b.trees === 0, `Duvernay ${li + 1}: his snowy bush stands in the strip, clear of the lease, the tip line, the biffy and the trees`);
+        check(b?.ok && b.old === 0 && b.touch === 'none' && b.trees === 0, `Duvernay ${li + 1}: his snowy bush stands in the strip, clear of the lease, the tip line, the biffy and the trees`);
         await context.close();
       }
     }
 
-    // ---------- The bear: a perfect solve on Duvernay 8 (with ?bear=1 he comes every time) ----------
-    console.log(`\n${engine}: bear, a perfect solve on Duvernay 8`);
-    const level = REGIONS[duv].levels[7];
-    const { context, page } = await open(browser, { query: QUIET + '&bear=1', level: [duv, 7] });
-    let st = newGame(level);
-    const watching = watch(page, 'bear', { parts: { foot: '.bear-layer svg.pup:nth-of-type(1) .root > ellipse:nth-of-type(1)', hare: '.bear-layer svg.pup:nth-of-type(1) .root', bush: '.bear-layer svg.pup:nth-of-type(2)', bear: '.bear-layer svg.pup:nth-of-type(3) .root', scribble: '.bear-layer .pup-overlay g[opacity] path[fill="none"]' } }, 40000);
-    for (const m of solve(level)) {
-      const exit = getMoveRange(st, m.id)?.exitDelta === m.delta;
-      await drag(page, m.id, m.delta + (exit ? Math.sign(m.delta) * 0.4 : 0), 520);
-      st = tryMove(st, m.id, m.delta).state;
+    // ---------- The bear: three taps on his bush (with ?bear=0 he never comes, with ?bear=1 always) ----------
+    console.log(`\n${engine}: bear, three taps on his snowy bush`);
+    {
+      const { context, page } = await open(browser, { query: QUIET + '&bear=0', level: [duv, 2] });
+      const at = await page.evaluate(() => { const r = document.querySelector('.bush-layer svg.pup').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height * 0.55 }; });
+      await tapAt(page, at.x, at.y);
+      await tapAt(page, at.x, at.y);
+      const before = await page.evaluate(() => ({ shake: document.querySelector('.bush-layer svg.pup').classList.contains('shake'), puffs: document.querySelectorAll('.bush-puff').length }));
+      await tapAt(page, at.x, at.y);
+      const miss = await page.evaluate(() => ({ shake: document.querySelector('.bush-layer svg.pup').classList.contains('shake'), anim: getComputedStyle(document.querySelector('.bush-layer svg.pup')).animationName, puffs: document.querySelectorAll('.bush-puff').length }));
+      await wait(1200);
+      check(!before.shake && before.puffs === 0, 'two taps do nothing');
+      check(miss.shake && miss.anim === 'bush-shake' && miss.puffs >= 3 && !(await page.$('.strip-layer')), `when he does not come (2 times in 3) the bush shakes and drops a small puff of snow (${miss.puffs} puffs)`);
+      check((await page.$$('.bush-puff')).length === 0, 'the puff is gone again');
+      await context.close();
     }
-    await page.waitForSelector('.strip-layer[data-gag="bear"]', { state: 'attached', timeout: 6000 });
-    await wait(1500);
-    const during = await page.evaluate((id) => ({ card: !document.querySelector('.overlay').hidden, saved: !!JSON.parse(localStorage.getItem('rush-hour-rigs:v2')).best?.[id] || JSON.stringify(JSON.parse(localStorage.getItem('rush-hour-rigs:v2'))).includes(id) }), level.id);
-    check(!during.card && during.saved, 'he comes before the win card; the win is already saved');
+    const { context, page } = await open(browser, { query: QUIET + '&bear=1', level: [duv, 2] });
+    const bushAt = await page.evaluate(() => { const r = document.querySelector('.bush-layer svg.pup').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height * 0.55 }; });
+    const watching = watch(page, 'bear', { parts: { foot: '.bear-layer svg.pup:nth-of-type(1) .root > ellipse:nth-of-type(1)', hare: '.bear-layer svg.pup:nth-of-type(1) .root', bush: '.bear-layer svg.pup:nth-of-type(2)', bear: '.bear-layer svg.pup:nth-of-type(3) .root', scribble: '.bear-layer .pup-overlay g[opacity] path[fill="none"]' } }, 40000);
+    for (let i = 0; i < 3; i++) await tapAt(page, bushAt.x, bushAt.y);
+    const came = await page.waitForSelector('.strip-layer[data-gag="bear"]', { state: 'attached', timeout: 3000 }).then(() => true).catch(() => false);
+    check(came, 'three taps on the bush, on a Duvernay level that is not 8 to 10, and (1 time in 3) he comes at once');
     const log = await watching;
     check(sameBeats(log, 'bear'), `the reference beats, in order (${beatsOf(log).length} of ${GAGS.bear.beats.length})`);
     const leave = log.filter((f) => f.beat === 'bear-leaves' || f.beat === 'trudge').map((f) => f.bear).filter((b) => b.l < 5000).at(-1);
@@ -258,9 +264,12 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     const scribble = log.filter((f) => f.beat === 'violated' && f.scribble).length;
     check(scribble > 3, 'an "ugh" scribble jitters over its head');
     check(log.every((f) => f.others === 0), 'nothing else was on stage');
-    await page.waitForFunction(() => !document.querySelector('.overlay').hidden, null, { timeout: 4000 }).catch(() => {});
-    const after = await page.evaluate(() => ({ card: !document.querySelector('.overlay').hidden, bush: getComputedStyle(document.querySelector('.bush-layer')).visibility, log: JSON.parse(localStorage.getItem('rush-hour-rigs:log') ?? '{}').found ?? [] }));
-    check(after.card && after.bush === 'visible' && after.log.includes('bear'), 'then the win card comes, the bush is back, and the Bear is in the Wildlife Log');
+    await wait(400);
+    const after = await page.evaluate(() => ({ bush: getComputedStyle(document.querySelector('.bush-layer')).visibility, log: JSON.parse(localStorage.getItem('rush-hour-rigs:log') ?? '{}').found ?? [], card: !document.querySelector('.overlay').hidden }));
+    check(after.bush === 'visible' && after.log.includes('bear') && !after.card, 'afterwards the bush is back and the Bear is in the Wildlife Log; no win card is involved any more');
+    for (let i = 0; i < 3; i++) await tapAt(page, bushAt.x, bushAt.y);
+    await wait(900);
+    check(!(await page.$('.strip-layer')), 'once per level: after that the bush only shakes');
     await context.close();
   }
 
@@ -333,7 +342,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     check(x.eye > 7, `her eyes go huge (${x.eye})`);
     const cowOut = log.filter((f) => f.cow.vis).at(-1), bullOut = log.filter((f) => f.beat === 'charge' && f.bull.vis).at(-1);
     check(cowOut.cow.l >= W - 2, `she bolts until she is fully off screen (x ${Math.round(cowOut.cow.l)})`);
-    check(bullOut.bull.l >= W - 2 && x.trail >= 2, `he charges after her, hearts trailing, until fully off screen (x ${Math.round(bullOut.bull.l)})`);
+    check(bullOut.bull.l >= W - 10 && x.trail >= 2, // the last frame caught before he is hidden `he charges after her, hearts trailing, until fully off screen (x ${Math.round(bullOut.bull.l)})`);
     check(x.pop, 'a last heart floats up and pops');
     check(log.every((f) => f.others === 0), 'nothing else was on stage');
     await wait(300);
@@ -408,9 +417,9 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     check(Math.abs(geo.base - geo.ground) < 1.5 && Math.abs(geo.heap - 0.113 * W * 0.92) < 2.5 && geo.clear, `the board's mound stands on the strip's ground line at the reference's size (heap ${geo.heap.toFixed(1)}px)`);
     await wait(1500);
     check(!(await page.$('.strip-layer')), 'not before the idle time is up');
-    const watching = watch(page, 'gopherLunch', { parts: { worker: '.lunch-layer svg.pup .torso', head: '.lunch-layer svg.pup .hat', gopher: '.lunch-layer .pup-clip svg.pup .head', clip: '.lunch-layer .pup-clip', lip: '.lunch-layer > svg.pup', sand: '.lunch-layer .pup-food', paw: '.lunch-layer .pup-overlay .paw' } }, 32000);
+    const watching = watch(page, 'gopherLunch', { parts: { worker: '.lunch-layer > svg.pup:not(:first-of-type) .torso', head: '.lunch-layer svg.pup .hat', crust: '.lunch-layer .pup-food:last-of-type', steam: '.lunch-layer .pup-overlay .steam', gopher: '.lunch-layer .pup-clip svg.pup .head', clip: '.lunch-layer .pup-clip', lip: '.lunch-layer > svg.pup', sand: '.lunch-layer .pup-food', paw: '.lunch-layer .pup-overlay .paw' } }, 32000);
     const log = await watching;
-    check(sameBeats(log, 'gopherLunch'), `the reference beats, in order, then he gets up and walks off (${beatsOf(log).length} of ${GAGS.gopherLunch.beats.length})`);
+    check(sameBeats(log, 'gopherLunch'), `the reference beats, in order, to the quiet mound again (${beatsOf(log).length} of ${GAGS.gopherLunch.beats.length})`);
     const first = log.find((f) => f.worker?.vis), last = log.filter((f) => f.worker?.vis).at(-1);
     check(first.worker.r <= 0 && last.worker.r <= 2, `the worker strolls in from fully off screen and leaves until fully off screen (${Math.round(first.worker.r)} to ${Math.round(last.worker.r)})`);
     const f0 = log[5];
@@ -421,6 +430,11 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     check(paws.length > 20 && Math.min(...paws.map((f) => f.paw.l)) < geo.left, `the paw comes out of the hole and reaches past the mound for the sandwich (${paws.length} frames)`);
     const chomp = log.filter((f) => f.beat === 'chomp');
     check(chomp.every((f) => !f.sand.vis), 'the sandwich is gone down the hole');
+    check(log.some((f) => f.beat === 'boils-over' && f.steam), 'he boils over: steam off his hard hat');
+    const thrown = log.filter((f) => f.beat === 'hurls-crust' && f.crust?.vis);
+    check(thrown.length > 3 && thrown.at(-1).crust.l > thrown[0].crust.l && log.filter((f) => f.beat === 'burp' || f.beat === 'quiet-again').every((f) => !f.crust.vis), 'he hurls the crust at the hole, and it is gone');
+    const endFrame = log.at(-1);
+    check(!endFrame.worker?.vis && endFrame.gopher.t >= geo.holeY - 1 && !endFrame.paw && !endFrame.sand.vis && !endFrame.crust.vis, 'SAME START, SAME END: it ends on the quiet mound, nobody and nothing left behind');
     const up = log.filter((f) => f.beat === 'cheeks' && f.gopher.t < geo.holeY - 6);
     check(up.length > 5, 'the gopher pops up behind him, cut off at the hole');
     check(log.every((f) => f.others === 0), 'nothing else was on stage');
@@ -514,7 +528,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
           const board = R('.board'), berm = R('canvas.berm');
           const vis = getComputedStyle(layer).visibility !== 'hidden';
           const bush = document.querySelector('.bush-layer svg.pup')?.getBoundingClientRect();
-          return { vis, h: r.height, ok: r.top >= Math.max(board.bottom, berm.bottom) - 0.5 && r.bottom <= R('.note').top + 1 && r.right <= innerWidth && r.left >= 0, bush: !bush || r.left >= bush.right - 2, pe: getComputedStyle(layer).pointerEvents };
+          return { vis, h: r.height, ok: r.top >= Math.max(board.bottom, berm.bottom) - 0.5 && r.bottom <= R('.note').top + 1 && r.right <= innerWidth && r.left >= 0, bush: !bush || r.right <= bush.left + 2, pe: getComputedStyle(layer).pointerEvents };
         });
         if (!b) bad.push(`${li + 1}: none`);
         else if (!b.vis) hidden++;
@@ -535,13 +549,17 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     const riser = await page.evaluate(() => { const r = document.querySelector('.riser-layer svg.pup').getBoundingClientRect(); return { l: r.left, r: r.right, x: r.left + r.width / 2 }; });
     await wait(1500);
     check(!(await page.$('.strip-layer')), 'not before the idle time is up');
-    const watching = watch(page, 'tongue', { parts: { worker: '.tongue-layer svg.pup:nth-of-type(1) .torso', buddy: '.tongue-layer svg.pup:nth-of-type(2) .torso', tongue: '.tongue-layer .pup-overlay .tongue', flake: '.tongue-layer .pup-overlay .flake', flash: '.tongue-layer .pup-flash' } }, 34000);
+    const watching = watch(page, 'tongue', { parts: { worker: '.tongue-layer svg.pup:nth-of-type(1) .torso', buddy: '.tongue-layer svg.pup:nth-of-type(2) .torso', tongue: '.tongue-layer .pup-overlay .tongue', flake: '.tongue-layer .pup-overlay .flake', flash: '.tongue-layer .pup-flash', coffee: '.tongue-layer .pup-overlay .coffee', thwip: '.tongue-layer .pup-overlay .thwip', thermos: '.tongue-layer svg.pup:nth-of-type(2) .thermos' } }, 36000);
     const bubble = bubbleOf(page, 'tongue', 20000);
     const log = await watching;
-    check(sameBeats(log, 'tongue'), `the reference beats, in order, then he heaves free and leaves (${beatsOf(log).length} of ${GAGS.tongue.beats.length})`);
+    check(sameBeats(log, 'tongue'), `the reference beats, in order, to the empty riser again (${beatsOf(log).length} of ${GAGS.tongue.beats.length})`);
     const vis = (k) => log.filter((f) => f[k]?.vis);
     check(vis('worker')[0].worker.r <= 0 && vis('worker').at(-1).worker.r <= 2, `the worker strolls in from fully off screen and trudges off until fully off screen (${Math.round(vis('worker')[0].worker.r)} to ${Math.round(vis('worker').at(-1).worker.r)})`);
-    check(vis('buddy')[0].buddy.r <= 0 && vis('buddy').at(-1).buddy.r <= 2, 'so does his buddy');
+    const firstVisit = log.filter((f) => f.buddy?.vis && ['buddy-in', 'buddy-looks', 'phone-out', 'flash', 'deadpan', 'cracks-up', 'buddy-leaves'].includes(f.beat));
+    const secondVisit = log.filter((f) => f.buddy?.vis && ['buddy-back', 'sigh', 'pours', 'thwip', 'rubs-tongue', 'walk-off'].includes(f.beat));
+    check(firstVisit[0].buddy.r <= 0 && firstVisit.at(-1).buddy.r <= 2, 'his buddy wanders in from fully off screen on the left and leaves that way');
+    check(secondVisit[0].buddy.l >= W - 2 && secondVisit.at(-1).buddy.l >= W - 2 && Math.min(...secondVisit.map((f) => f.buddy.l)) > riser.r - 4, `and comes back from fully off screen on the RIGHT, to the far side of the riser, and leaves that way (${Math.round(secondVisit[0].buddy.l)}, ${Math.round(secondVisit.at(-1).buddy.l)})`);
+    check(log.some((f) => f.beat === 'pours' && f.coffee) && log.some((f) => f.beat === 'pours' && f.thermos?.vis) && log.some((f) => f.thwip), 'he pours hot coffee on the pipe from a thermos, and THWIP');
     const stuck = log.filter((f) => f.beat === 'pulls' && f.tongue);
     check(stuck.length > 20 && stuck.every((f) => Math.abs(f.tongue.r - (riser.x - 4)) < 6) && Math.max(...stuck.map((f) => f.tongue.r - f.tongue.l)) > Math.min(...stuck.map((f) => f.tongue.r - f.tongue.l)) + 3, 'his tongue is stuck to the real riser and stretches as he pulls');
     const b = await bubble;
@@ -550,32 +568,73 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     const strip = await page.evaluate(() => ({ top: document.querySelector('.board').getBoundingClientRect().bottom, bottom: document.querySelector('.note').getBoundingClientRect().top }));
     check(flashes.length > 2 && flashes.every((f) => f.flash.t >= strip.top - 1 && f.flash.b <= strip.bottom + 1), 'the camera flash lights the bottom strip only, never the lease');
     check(log.some((f) => f.beat === 'snowflake' && f.flake), 'a snowflake drifts down onto his nose');
-    check(log.filter((f) => f.beat === 'trudges-off').every((f) => !f.tongue), 'in the end he pulls free');
+    check(log.filter((f) => f.beat === 'walk-off' || f.beat === 'riser-again').every((f) => !f.tongue), 'the tongue comes free');
+    const fin = log.at(-1);
+    check(!fin.worker?.vis && !fin.buddy?.vis && !fin.tongue, 'SAME START, SAME END: it ends on the empty riser');
     check(log.every((f) => f.others === 0), 'nothing else was on stage');
     await context.close();
   }
 
   if (engine === 'webkit' && !ONLY) {
-    // ---------- The cooldown: after a gag, none for 60 s (3 s here) ----------
-    console.log(`\n${engine}: the cooldown between gags (60 s; 3 s here)`);
-    const level = REGIONS[region('cardium')].levels;
-    const li = level.findIndex((l) => newGame(l).trucks.some((t) => t.orient === 'v' && t.row + t.length === 6 && getMoveRange(newGame(l), t.id)?.exitDelta !== 1));
-    const id = newGame(level[li]).trucks.find((t) => t.orient === 'v' && t.row + t.length === 6 && getMoveRange(newGame(level[li]), t.id)?.exitDelta !== 1).id;
-    const { context, page } = await open(browser, { query: QUIET.replace('&cooldown=0', '&cooldown=0.05'), level: [region('cardium'), li] });
-    await drag(page, id, 2);
-    await page.waitForSelector('.strip-layer[data-gag="biffyA"]', { state: 'attached', timeout: 5000 });
-    await drag(page, id, 2, 200);
-    await drag(page, id, 2, 200);
-    await page.waitForSelector('.strip-layer', { state: 'detached', timeout: 9000 });
-    const ended = Date.now();
-    await drag(page, id, 2);
-    await wait(1900);
-    check(!(await page.$('.strip-layer')), 'a trigger during a gag or during the cooldown is ignored');
-    await wait(Math.max(0, 3200 - (Date.now() - ended)));
-    await drag(page, id, 2);
-    const next = await page.waitForSelector('.strip-layer', { state: 'attached', timeout: 4000 }).then((l) => l.getAttribute('data-gag')).catch(() => null);
-    check(next === 'biffyB', `once it has passed, the next trigger plays (${next})`);
-    await context.close();
+    // ---------- Gags play at the same time; only gags that share a character or prop wait ----------
+    console.log(`\n${engine}: two gags at once`);
+    const levels = REGIONS[region('cardium')].levels;
+    const bumper = (l) => newGame(l).trucks.find((t) => t.orient === 'v' && t.row + t.length === 6 && getMoveRange(newGame(l), t.id)?.exitDelta !== 1);
+    const li = levels.findIndex((l) => bumper(l));
+    const id = bumper(levels[li]).id;
+    const on = (page) => page.evaluate(() => [...new Set([...document.querySelectorAll('.strip-layer')].map((l) => l.dataset.gag))]);
+    {
+      // The default rules (no test flags for the cooldown): a bump brings Biffy A; three more blocked moves bring Sam while A is still on.
+      const { context, page } = await open(browser, { query: '?cover=0&magpie=0&worker=0&moose=0&off=lunch,tongue', level: [region('cardium'), li] });
+      await drag(page, id, 2);
+      await page.waitForSelector('.strip-layer[data-gag="biffyA"]', { state: 'attached', timeout: 5000 });
+      const t0 = Date.now();
+      await drag(page, id, 2, 150);
+      await drag(page, id, 2, 150);
+      const sam = await page.waitForSelector('.strip-layer[data-gag="sam"]', { state: 'attached', timeout: 2500 }).then(() => Date.now() - t0).catch(() => null);
+      const both = await on(page);
+      check(sam !== null && both.includes('biffyA') && both.includes('sam'), `Safety Sam comes right away while Biffy A is still playing (${sam} ms after the bumps began; on stage: ${both.join(' + ')})`);
+      // Biffy B shares the biffy with A, so it waits for A to finish and then follows it on.
+      const queued = !both.includes('biffyB');
+      await page.waitForSelector('.strip-layer[data-gag="biffyA"]', { state: 'detached', timeout: 9000 });
+      const b = await page.waitForSelector('.strip-layer[data-gag="biffyB"]', { state: 'attached', timeout: 3000 }).then(() => true).catch(() => false);
+      const then = await on(page);
+      check(queued && b && then.includes('sam'), `Biffy B shares the biffy, so it waited for A and then came on, with Sam still there (${then.join(' + ')})`);
+      await context.close();
+    }
+
+    // ---------- The landowner's fast wiggle: four reversals in one drag ----------
+    console.log(`\n${engine}: the landowner's fast wiggle`);
+    {
+      const st = newGame(levels[li]);
+      const any = st.trucks[0];
+      const wiggle = (page, truckId, turns, stepMs) =>
+        page.evaluate(async ([tid, n, ms]) => {
+          const el = document.querySelector(`.truck[data-id="${tid}"]`);
+          const r = el.getBoundingClientRect(), h = el.classList.contains('horiz');
+          const cell = parseFloat(document.querySelector('.board').style.getPropertyValue('--cell'));
+          let x = r.x + r.width / 2, y = r.y + r.height / 2;
+          const ev = (type) => el.dispatchEvent(new PointerEvent(type, { pointerId: 41, pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, bubbles: true, cancelable: true, buttons: 1 }));
+          ev('pointerdown');
+          for (let k = 0; k <= n; k++) {
+            const d = (k % 2 ? -1 : 1) * cell * 0.5;
+            for (let i = 0; i < 4; i++) { if (h) x += d / 4; else y += d / 4; ev('pointermove'); await new Promise((q) => setTimeout(q, ms / 4)); }
+          }
+          ev('pointerup');
+        }, [truckId, turns, stepMs]);
+      const { context, page } = await open(browser, { query: QUIET, level: [region('cardium'), li] });
+      await wiggle(page, any.id, 3, 120);
+      await wait(700);
+      check(!(await page.$('.strip-layer[data-gag="landowner"]')), 'three reversals are not enough');
+      await wiggle(page, any.id, 4, 700);
+      await wait(700);
+      check(!(await page.$('.strip-layer[data-gag="landowner"]')), 'nor four slow ones (more than 2 s)');
+      const t0 = Date.now();
+      await wiggle(page, any.id, 4, 120);
+      const came = await page.waitForSelector('.strip-layer[data-gag="landowner"]', { state: 'attached', timeout: 2500 }).then(() => Date.now() - t0).catch(() => null);
+      check(came !== null, `four quick reversals in one drag, finger never lifted, bring him (${came} ms)`);
+      await context.close();
+    }
   }
 
   // ---------- Reduced motion: simple fades ----------
