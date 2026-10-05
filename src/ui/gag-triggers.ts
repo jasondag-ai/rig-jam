@@ -10,8 +10,12 @@ export const GAG_TRIGGERS = {
   moose: { region: 'duvernay', topBermBumps: 2 },
   /** Gag 4, Near Miss (gopher and hotshot): two trucks driven out within this long of each other. */
   nearMiss: { region: 'cardium', backToBackMs: 3500 },
-  /** Gag 5, the landowner: the SAME truck moved this many times in a row, reversing each time. Any region. */
-  landowner: { backAndForth: 4 },
+  /**
+   * Gag 5, the landowner (any region). Either: the SAME truck moved this many times in a row,
+   * reversing each time (`backAndForth`); or a fast wiggle: this many direction reversals of one
+   * truck within ONE drag (the finger never lifted), all inside `withinMs`.
+   */
+  landowner: { backAndForth: 4, wiggle: { reversals: 4, withinMs: 2000 } },
   /** Gag 6, Biffy A ("Occupied"): one bump of a truck down into the BOTTOM berm (the biffy's side). Any region. */
   biffyA: { bottomBermBumps: 1 },
   /**
@@ -24,10 +28,11 @@ export const GAG_TRIGGERS = {
   /** Gag 9, the geese and the lost goose: Undo pressed this many times in a row (a move in between starts the count again). Any region. */
   geese: { undosInARow: 3 },
   /**
-   * Gag 10, the bear and the hare (LEGENDARY): a perfect solve (at par) on one of these levels of
-   * the region, with this chance. It plays before the win card. Demo mode: every time.
+   * Gag 10, the bear and the hare (LEGENDARY): tap the bear's snowy bush this many times, on any
+   * level of the region. Each time the count is reached there is this chance that he comes;
+   * otherwise the bush shakes and drops a puff of snow, and the count starts again. Demo mode: every time.
    */
-  bear: { region: 'duvernay', levels: [8, 9, 10], perfectSolve: true, chance: 1 / 3 },
+  bear: { region: 'duvernay', bushTaps: 3, chance: 1 / 3 },
   /** Gag 11, the bull and the cow: this many taps on the cow grazing in the bottom strip. */
   bull: { region: 'montney', cowTaps: 1 },
   /**
@@ -44,17 +49,25 @@ export const GAG_TRIGGERS = {
   sam: { bumpsInARow: 3, wrongGate: true },
   /** Gag 15, the frozen tongue (winter levels, at the frosty riser): this long with no moves (after the magpie and the worker). */
   tongue: { theme: 'winter', idleMs: 30_000 },
-  /** Not a gag: on a night level, this long with no move and a truck says "While we're young, Sonny...". Once per level. */
-  nightNudge: { idleMs: 25_000 },
+  /**
+   * Not a gag. NIGHT: no level starts at night. On any level, after `idleMs` with no moves the
+   * lease fades to night over `fadeInMs`; the next move brings the day back over `fadeOutMs`.
+   */
+  night: { idleMs: 30_000, fadeInMs: 4000, fadeOutMs: 2000 },
+  /** Not a gag: this long after night has fully fallen, a truck says "While we're young, Sonny...". Once per level. */
+  nightNudge: { afterNightMs: 15_000 },
 } as const;
 
 /**
- * RULES FOR EVERY GAG: one at a time; none while a truck is being dragged or moving, or once the
- * level is won; and after one ends, none starts for `cooldownMs`. A trigger that fires while a gag
- * is on or during the cooldown is ignored (the player can set it off again later). Demo mode and
- * `?gag=` previews have no cooldown; `?cooldown=0.1` scales it (tests).
+ * RULES FOR EVERY GAG (GAME_BIBLE, Oct 5): gags run AT THE SAME TIME. When a trigger fires its gag
+ * plays right away, even if another is playing; it waits only if it shares a character or a prop
+ * with one that is on (`SHARES`), and then it plays as soon as that one has left. None starts once
+ * the level is won. The gags that come by themselves when the player sits idle (the magpie, the
+ * sleepy worker, gopher lunch, the frozen tongue) still come one at a time, with `idleCooldownMs`
+ * between them, so an idle lease is not a parade. Demo mode and `?gag=` previews have no cooldown;
+ * `?cooldown=0.1` scales it (tests).
  */
-export const GAG_RULES = { cooldownMs: 60_000 } as const;
+export const GAG_RULES = { idleCooldownMs: 60_000 } as const;
 
 export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue';
 
@@ -71,11 +84,56 @@ export const wrongGateBump = (
   return gates.some((g) => g.side === side && g.index === index && g.color !== truck.color);
 };
 
-/** Is this one of the bear's levels (`level` counts from 1)? */
-export const bearLevel = (regionId: string, level: number): boolean => regionId === GAG_TRIGGERS.bear.region && (GAG_TRIGGERS.bear.levels as readonly number[]).includes(level);
-/** Does the bear come after this win? */
-export const bearComesNow = (moves: number, par: number, demo: boolean, random: () => number = Math.random): boolean =>
-  (!GAG_TRIGGERS.bear.perfectSolve || moves <= par) && (demo || random() < GAG_TRIGGERS.bear.chance);
+/** The gags that come by themselves after a quiet spell, in the order they take their turns. */
+export const IDLE_GAGS: GagId[] = ['magpie', 'worker', 'gopherLunch', 'tongue'];
+
+/**
+ * What each gag uses that another gag might also need: a character or a prop. Two gags that share
+ * one never play together. (The worker in red is one man: he cannot doze, roast a marshmallow and
+ * eat his lunch at once. Sam, the buddy and the biffy's occupant are other people.)
+ */
+export const SHARES: Record<GagId, string[]> = {
+  magpie: [],
+  worker: ['worker'],
+  moose: [],
+  nearMiss: ['gopher'],
+  landowner: [],
+  biffyA: ['biffy'],
+  biffyB: ['biffy'],
+  marshmallow: ['worker'],
+  geese: [],
+  bear: ['bush'],
+  bull: [],
+  porcupine: ['worker', 'bush'],
+  gopherLunch: ['gopher', 'worker'],
+  sam: [],
+  tongue: ['worker'],
+};
+/** Must this gag wait for one of those playing? */
+export const mustWait = (id: GagId, playing: Iterable<GagId>): boolean => [...playing].some((p) => p === id || SHARES[p].some((x) => SHARES[id].includes(x)));
+
+/** Does the bear come on this roll (the bush tapped enough times)? Always in demo mode. */
+export const bearComes = (demo: boolean, random: () => number = Math.random): boolean => demo || random() < GAG_TRIGGERS.bear.chance;
+
+/**
+ * Counts the landowner's fast wiggle: direction reversals of one truck inside ONE drag. `start()`
+ * when a truck is picked up; `reversal(now)` each time it turns back, which answers true once
+ * enough of them fall inside the time window.
+ */
+export class Wiggle {
+  private times: number[] = [];
+
+  start(): void {
+    this.times = [];
+  }
+
+  reversal(now: number): boolean {
+    const { reversals, withinMs } = GAG_TRIGGERS.landowner.wiggle;
+    this.times.push(now);
+    this.times = this.times.filter((t) => now - t <= withinMs);
+    return this.times.length >= reversals;
+  }
+}
 
 /** A bump of a truck up into the top berm, or down into the bottom one (not into a truck or equipment). */
 export const bermBump = (orient: 'h' | 'v', direction: 1 | -1, hit: string): 'top' | 'bottom' | null =>

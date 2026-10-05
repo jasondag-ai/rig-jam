@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { BackAndForth, GAG_RULES, GAG_TRIGGERS, wrongGateBump, bearComesNow, bearLevel, bermBump } from './gag-triggers.ts';
+import { BackAndForth, GAG_RULES, GAG_TRIGGERS, IDLE_GAGS, SHARES, Wiggle, bearComes, bermBump, mustWait, wrongGateBump } from './gag-triggers.ts';
 import { BEAR_BEATS, BEAR_END, bPose } from './bear.ts';
 import { BUSH_X, COW_X, PORC_BUSH_X, bearBox, bushBox, cowBox, moundSpot } from './strip-gags.ts';
 import { BUSH_BOX, BUSH_FRAC, bushMarkup } from './gag-bush.ts';
-import { LUNCH_BEATS, LUNCH_END, MOUND_DRAWN, T_UP, T_WALK, lunchPose, moundWidthFor } from './gopher-lunch.ts';
+import { LUNCH_BEATS, LUNCH_END, MOUND_DRAWN, lunchPose, moundWidthFor } from './gopher-lunch.ts';
 import { PC_BEATS, PC_END, SHIFT, pcPose } from './porcupine.ts';
 import { SAM, SAM_BEATS, SAM_END, backGlove, samPose } from './sam.ts';
-import { BUDDY, BUDDY_STOP, STAND, TONGUE_BEATS, TONGUE_END, T_HEAVE, T_POP, T_TURN, tonguePose } from './frozen-tongue.ts';
+import { BUDDY, BUDDY_FAR, BUDDY_STOP, STAND, TONGUE_BEATS, TONGUE_END, tonguePose } from './frozen-tongue.ts';
 import { RISER_X, riserBox, riserHeight } from './strip-gags.ts';
 import { treeArt } from './trees.ts';
 import { cooldownScale, eggOff } from './flags.ts';
@@ -167,17 +167,12 @@ describe('marshmallow and geese: the reference, as approved', () => {
 });
 
 describe('the bear and the hare (legendary)', () => {
-  it('comes only on a perfect solve of Duvernay 8 to 10, one time in three (every time in demo mode)', () => {
-    expect(GAG_TRIGGERS.bear).toEqual({ region: 'duvernay', levels: [8, 9, 10], perfectSolve: true, chance: 1 / 3 });
-    expect([7, 8, 9, 10].map((n) => bearLevel('duvernay', n))).toEqual([false, true, true, true]);
-    expect(bearLevel('montney', 9)).toBe(false);
-    expect(bearComesNow(12, 12, false, () => 0.2)).toBe(true);
-    expect(bearComesNow(12, 12, false, () => 0.5)).toBe(false);
-    expect(bearComesNow(13, 12, false, () => 0)).toBe(false);
-    expect(bearComesNow(12, 12, true, () => 0.99)).toBe(true);
-    expect(bearComesNow(13, 12, true, () => 0)).toBe(false);
+  it('is set off by three taps on his bush, on any Duvernay level: one time in three he comes (every time in demo mode)', () => {
+    expect(GAG_TRIGGERS.bear).toEqual({ region: 'duvernay', bushTaps: 3, chance: 1 / 3 });
+    expect(bearComes(false, () => 0.2)).toBe(true);
+    expect(bearComes(false, () => 0.5)).toBe(false);
+    expect(bearComes(true, () => 0.99)).toBe(true);
   });
-
   it('plays the reference beats: in on all fours, sits, strains, snatch, the long look, the wipe, set down, strolls off; the hare trudges back', () => {
     expect(BEAR_BEATS.map((b) => b[0])).toEqual([0, 0.2, 3.0, 3.5, 4.0, 4.8, 6.4, 6.9, 7.4, 7.9, 8.9, 9.15, 10.7, 11.3, 12.0, 12.4, 14.4, 15.8]);
     expect(BEAR_END).toBeGreaterThanOrEqual(15.8);
@@ -258,8 +253,30 @@ describe('the bull and the cow', () => {
 });
 
 describe('gag rules and the gag bush', () => {
-  it('a 60 s cooldown after every gag; tests can scale it and leave gags out', () => {
-    expect(GAG_RULES.cooldownMs).toBe(60_000);
+  it('gags play at the same time; only gags that share a character or a prop wait for each other', () => {
+    // Every gag has an entry.
+    expect(Object.keys(SHARES).sort()).toEqual(['bear', 'biffyA', 'biffyB', 'bull', 'geese', 'gopherLunch', 'landowner', 'magpie', 'marshmallow', 'moose', 'nearMiss', 'porcupine', 'sam', 'tongue', 'worker']);
+    // The two biffy gags share the biffy; the two gopher gags share the gopher.
+    expect(mustWait('biffyB', ['biffyA'])).toBe(true);
+    expect(mustWait('biffyA', ['biffyB'])).toBe(true);
+    expect(mustWait('gopherLunch', ['nearMiss'])).toBe(true);
+    expect(mustWait('nearMiss', ['gopherLunch'])).toBe(true);
+    // The worker in red is one man.
+    expect(mustWait('marshmallow', ['worker'])).toBe(true);
+    expect(mustWait('gopherLunch', ['porcupine'])).toBe(true);
+    // Everything else plays right away, whatever is on.
+    expect(mustWait('landowner', ['biffyA', 'geese', 'magpie'])).toBe(false);
+    expect(mustWait('geese', ['landowner'])).toBe(false);
+    expect(mustWait('sam', ['worker', 'biffyB', 'nearMiss'])).toBe(false);
+    expect(mustWait('biffyA', ['sam', 'geese', 'gopherLunch'])).toBe(false);
+    expect(mustWait('bear', [])).toBe(false);
+    // And never two of the same.
+    expect(mustWait('geese', ['geese'])).toBe(true);
+  });
+
+  it('the idle gags still take turns, with a cooldown between them; tests can scale it and leave gags out', () => {
+    expect(IDLE_GAGS).toEqual(['magpie', 'worker', 'gopherLunch', 'tongue']);
+    expect(GAG_RULES.idleCooldownMs).toBe(60_000);
     expect(cooldownScale('')).toBe(1);
     expect(cooldownScale('?cooldown=0')).toBe(0);
     expect(cooldownScale('?cooldown=0.05')).toBe(0.05);
@@ -268,6 +285,21 @@ describe('gag rules and the gag bush', () => {
     expect(eggOff('lunch', '')).toBe(false);
   });
 
+  it("the landowner's fast wiggle: four reversals inside one drag, all within two seconds", () => {
+    expect(GAG_TRIGGERS.landowner).toEqual({ backAndForth: 4, wiggle: { reversals: 4, withinMs: 2000 } });
+    const w = new Wiggle();
+    w.start();
+    expect([0, 300, 600].map((t) => w.reversal(t))).toEqual([false, false, false]);
+    expect(w.reversal(900)).toBe(true);
+    // Too slow: the early ones have dropped out of the window.
+    w.start();
+    expect([0, 900, 1800, 2700, 3600].map((t) => w.reversal(t))).toEqual([false, false, false, false, false]);
+    // Lifting the finger starts the count again.
+    w.start();
+    expect([0, 100, 200].map((t) => w.reversal(t))).toEqual([false, false, false]);
+    w.start();
+    expect(w.reversal(300)).toBe(false);
+  });
   it("BUSH RULE: the gag bush is the board's own willow drawing; in winter it keeps its leaves under a snow dusting", () => {
     const board = treeArt('willow', 'summer', 2);
     expect(bushMarkup('summer')).toContain(board);
@@ -322,10 +354,8 @@ describe('gopher lunch (gag 13)', () => {
     expect(GAG_TRIGGERS.gopherLunch).toEqual({ region: 'cardium', idleMs: 30_000 });
   });
 
-  it('plays the reference beats, then the exit the game adds: up, and off the way he came', () => {
-    expect(LUNCH_BEATS.map((b) => b[0]).slice(0, 16)).toEqual([0, 0.5, 3.0, 4.0, 4.8, 5.2, 5.7, 6.9, 7.2, 8.6, 9.6, 10.3, 10.8, 11.5, 12.0, 12.7]);
-    expect(LUNCH_BEATS.slice(16).map((b) => b[0])).toEqual([T_UP, T_WALK]);
-    expect(T_UP).toBeGreaterThan(13.5); // after the reference's last move (the gopher is down by 13.45)
+  it('plays the reference beats, ending as it began: he boils over, hurls the crust down the hole and stomps off; a last burp; the quiet mound', () => {
+    expect(LUNCH_BEATS.map((b) => b[0])).toEqual([0, 0.5, 3.0, 4.0, 4.8, 5.2, 5.7, 6.9, 7.2, 8.6, 9.6, 10.3, 10.8, 11.5, 12.0, 12.8, 13.6, 14.3, 15.0, 16.2]);
     expect(lunchPose(0.4).w.show).toBe(false);
     expect(lunchPose(0.5, -640).w.dx).toBe(-640);
     expect(lunchPose(3.5).w.face).toBe(-1);
@@ -339,16 +369,21 @@ describe('gopher lunch (gag 13)', () => {
     expect(lunchPose(10.5).food).toBe('crustHand');
     expect(lunchPose(11.2).g).toMatchObject({ dy: 24, cheeks: true });
     expect(lunchPose(11.8).g.dy).toBe(80);
-    expect(lunchPose(13.1).g.burp).toBe(true);
-    // The exit: sitting until T_UP, standing by T_WALK, off by the end, crust still in hand.
-    expect(lunchPose(13.5).w.y).toBe(24);
-    expect(Math.abs(lunchPose(T_WALK - 0.01).w.y)).toBeLessThan(1);
-    expect(lunchPose(15, -300, -500).w.dx).toBeLessThan(-100);
-    expect(lunchPose(LUNCH_END - 0.11, -300, -500).w.dx).toBeLessThan(-490);
-    expect(lunchPose(LUNCH_END).w.show).toBe(false);
-    expect(lunchPose(15).food).toBe('crustHand');
+    // Boils over (red face, steam), up on his feet, the crust goes down the hole, and he stomps off to wherever the edge is.
+    expect(lunchPose(13.2).w).toMatchObject({ steam: true, blush: 1 });
+    expect(Math.abs(lunchPose(13.59).w.y)).toBeLessThan(0.5);
+    expect(lunchPose(14).food).toBe('thrown');
+    expect(lunchPose(14.5).food).toBe('gone');
+    expect(lunchPose(16.59, -300, -700).w.dx).toBeLessThan(-690);
+    expect(lunchPose(16.6).w.show).toBe(false);
+    // The gopher's last word, then SAME START, SAME END: nobody there, the gopher down his hole, no food.
+    expect(lunchPose(15.6).g.burp).toBe(true);
+    const start = lunchPose(0.2), end = lunchPose(LUNCH_END);
+    expect(end.w.show).toBe(false);
+    expect(end.g.dy).toBe(start.g.dy);
+    expect(end.a.show).toBe(false);
+    expect(end.food).toBe('gone');
   });
-
   it("the board's mound is set on the strip's ground line with its heap the size of the reference's", () => {
     const strip = { top: 600, bottom: 700 };
     const spot = moundSpot(390, strip);
@@ -406,10 +441,8 @@ describe('the frozen tongue (gag 15)', () => {
     expect(GAG_TRIGGERS.tongue).toEqual({ theme: 'winter', idleMs: 30_000 });
   });
 
-  it('plays the reference beats, then the ending the game adds: a heave, the pop, and off the way he came', () => {
-    expect(TONGUE_BEATS.map((b) => b[0]).slice(0, 16)).toEqual([0, 0.3, 2.2, 2.7, 3.0, 3.3, 3.5, 5.0, 5.6, 7.0, 7.4, 7.9, 8.1, 8.6, 9.6, 11.0]);
-    expect(TONGUE_BEATS.slice(16).map((b) => b[0])).toEqual([T_HEAVE, T_POP, T_TURN]);
-    expect(T_HEAVE).toBeGreaterThan(12.0); // after the reference's blink
+  it('plays the reference beats, ending as it began: the buddy comes back with hot coffee, THWIP, and both walk off their own ways', () => {
+    expect(TONGUE_BEATS.map((b) => b[0])).toEqual([0, 0.3, 2.2, 2.7, 3.0, 3.3, 3.5, 5.0, 5.6, 7.0, 7.4, 7.9, 8.1, 8.6, 9.6, 11.0, 12.2, 13.4, 13.7, 14.6, 14.8, 15.4, 17.5]);
     const at = (t: number) => tonguePose(t);
     expect(at(0.2).w.show).toBe(false);
     expect(tonguePose(0.3, -640).w.dx).toBe(-640);
@@ -419,25 +452,31 @@ describe('the frozen tongue (gag 15)', () => {
     expect(at(4).w.arF).toBeLessThan(-70); // flailing
     expect(at(5.5).bubble).toBe(true);
     expect(at(6.5).bubble).toBe(false);
-    // The buddy: in, stops short of him, photo with a flash, cracks up, hop-turns and leaves.
+    // The buddy: in from the left, stops short of him, photo with a flash, cracks up, hop-turns and leaves.
     expect(at(5).b.show).toBe(false);
     expect(at(7.2).b.dx).toBe(BUDDY_STOP);
     expect(at(8).flash).toBeGreaterThan(0);
     expect(at(8).b.phone).toBe(true);
     expect(at(10.5).b.face).toBe(-1);
     expect(tonguePose(11.19, -300, -800).b.dx).toBeLessThan(-780);
-    expect(at(11.3).b.show).toBe(false);
     expect(at(11.5).flake).toBeGreaterThan(0);
-    // The ending: still stuck through the heave, free at the pop, then walking off left, glove at his mouth.
-    expect(at(T_POP - 0.05)).toMatchObject({ tongue: 1 });
-    expect(at(T_POP - 0.05).stretch).toBeGreaterThan(0.9);
-    expect(at(T_POP + 0.1)).toMatchObject({ tongue: 0 });
-    expect(at(T_POP + 0.1).pop).toBeGreaterThan(0);
-    expect(at(T_TURN + 0.3).w.face).toBe(-1);
-    expect(tonguePose(TONGUE_END - 0.11, -300, -800).w.dx).toBeLessThan(-780);
+    // He comes back from the FAR side with a thermos, pours, and the tongue comes free.
+    expect(tonguePose(12.2, -300, -330, BUDDY_STOP, 700).b).toMatchObject({ show: true, dx: 700, thermos: true, face: -1 });
+    expect(at(13.5).b.dx).toBe(BUDDY_FAR);
+    expect(at(14.2).pour).toBeGreaterThan(0.6);
+    expect(at(14.5).tongue).toBe(1);
+    expect(at(14.7).thwip).toBeGreaterThan(0);
+    expect(at(15).tongue).toBe(0);
+    // Both hop-turn and walk off their own ways: he to the left, the buddy to the right.
+    expect(at(16).w.face).toBe(-1);
+    expect(at(16).b.face).toBe(1);
+    expect(tonguePose(17.59, -300, -900).w.dx).toBeLessThan(-880);
+    expect(tonguePose(17.59, -300, -330, BUDDY_STOP, 330, 900).b.dx).toBeGreaterThan(880);
+    // SAME START, SAME END: the empty riser.
     expect(at(TONGUE_END).w.show).toBe(false);
+    expect(at(TONGUE_END).b.show).toBe(false);
+    expect(at(TONGUE_END).tongue).toBe(0);
   });
-
   it('his buddy is the same build in blue with an orange hat, clean shaven', () => {
     expect(BUDDY).toContain('#4f7fb0');
     expect(BUDDY).toContain('#f08a2a');
@@ -445,12 +484,14 @@ describe('the frozen tongue (gag 15)', () => {
     expect(BUDDY).not.toContain('M48 39 Q50 54 64 54'); // no beard
   });
 
-  it('the riser stands by the right edge, on screen, with clear ground for the two of them', () => {
+  it('the riser stands between the biffy and the bear\'s bush, with room on both sides for the two of them', () => {
     for (const [w, strip] of [[390, { top: 600, bottom: 700 }], [375, { top: 470, bottom: 538 }], [430, { top: 660, bottom: 780 }]] as const) {
-      const box = riserBox(w, strip), half = (riserHeight(w, strip) * 20) / 104;
-      expect(RISER_X * w + half).toBeLessThan(w);
-      expect(box.x + box.width).toBeLessThanOrEqual(w);
-      expect(box.x).toBeLessThan(RISER_X * w - 40 * stripGeom(w, strip).scale);
+      const sc = stripGeom(w, strip).scale, u = (0.19 * sc * w) / 120, x = RISER_X * w;
+      const biffy = biffyBox(w, strip);
+      // The stuck worker stands clear of the biffy; the buddy's far spot is short of the bush; the riser itself is between them.
+      expect(x + (STAND - 5 - 18) * u).toBeGreaterThan(biffy.x + biffy.width - 2);
+      expect(x + (BUDDY_FAR + 18) * u).toBeLessThan(BUSH_X * w - 0.09 * sc * w + 2);
+      expect(riserBox(w, strip).x).toBeLessThan(x - 40 * sc);
       // About the worker's height, and inside a full strip.
       expect(riserHeight(w, strip)).toBeLessThan(strip.bottom - strip.top);
     }

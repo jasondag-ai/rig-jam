@@ -1,9 +1,10 @@
-// NIGHT LEVELS (GAME_BIBLE, Oct 4): a level flagged `night` in its JSON (every level with a flare
-// stack) plays at night: the ground, berm and scenery dimmed and cooled to about half brightness
-// under a deep blue sky with a moon and stars; trucks, gates and symbols dimmed much less so every
-// colour reads; a warm glow round each flare that flickers with its flame; small headlight glows
-// on each cab. Pure numbers and rules here (tested); the look itself is in style.css ("Night").
-import type { Level } from '../engine/index.ts';
+// NIGHT (GAME_BIBLE, Oct 5): no level starts at night. On any level, when the player has made no
+// move for a while (gag-triggers.ts `night`), the lease slowly fades to night; the next move brings
+// the day back. At night the ground, berm, scenery and the strip's gags lie under one cool shade
+// at about half brightness under a deep blue sky with a moon and stars; trucks, gates and symbols
+// are dimmed much less so every colour reads; a warm glow round each flare flickers with its flame;
+// each cab has small headlight glows. Pure numbers and rules here (tested); the look and the fades
+// are in style.css ("Night").
 import type { Ground } from './themes.ts';
 
 export const NIGHT = {
@@ -25,10 +26,13 @@ export const nightRgba = (ground: Ground): string => `rgba(${NIGHT.shade[ground]
 /** After this long with no move on a night level, a truck speaks up (once per level; never a fail). */
 export const NUDGE_LINE = "While we're young, Sonny, we don't have all day.";
 
-/** Does this level play at night? `?night=1` and `?night=0` force it for previews and screenshots. */
-export function isNight(level: Pick<Level, 'night'>, search: string = typeof location === 'undefined' ? '' : location.search): boolean {
+/**
+ * `?night=1` keeps a level at night from the start and `?night=0` keeps night away (previews,
+ * screenshots, tests). Otherwise (null) night comes only when the player goes idle.
+ */
+export function nightForced(search: string = typeof location === 'undefined' ? '' : location.search): boolean | null {
   const forced = new URLSearchParams(search).get('night');
-  return forced === '1' ? true : forced === '0' ? false : level.night === true;
+  return forced === '1' ? true : forced === '0' ? false : null;
 }
 
 type Rgb = [number, number, number];

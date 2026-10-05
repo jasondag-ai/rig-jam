@@ -18,7 +18,6 @@
   },
   {
     "id": "m02", "name": "Horsehead Hill", "par": 5,
-    "night": true,
     "trucks": [
       {"id":"A","color":"red","row":1,"col":4,"length":2,"orient":"h","kind":"pickup"},
       {"id":"B","color":"blue","row":0,"col":3,"length":2,"orient":"v","kind":"picker"},
@@ -158,7 +157,6 @@
   },
   {
     "id": "m08", "name": "Swab Rig", "par": 11,
-    "night": true,
     "trucks": [
       {"id":"A","color":"red","row":1,"col":1,"length":2,"orient":"v","kind":"pickup"},
       {"id":"B","color":"blue","row":1,"col":4,"length":2,"orient":"h","kind":"picker"},
@@ -217,7 +215,6 @@
   },
   {
     "id": "m10", "name": "Last Call", "par": 14,
-    "night": true,
     "trucks": [
       {"id":"A","color":"red","row":2,"col":1,"length":3,"orient":"v","kind":"frac"},
       {"id":"B","color":"blue","row":0,"col":5,"length":3,"orient":"v","kind":"water"},

@@ -30,6 +30,8 @@ export const cooldownScale = (search: string = location.search): number => {
 };
 /** `?off=lunch,porcupine`: gags left out for one page load (tests), by their `?gag=` names. */
 export const eggOff = (name: string, search: string = location.search): boolean => (new URLSearchParams(search).get('off') ?? '').split(',').includes(name);
-/** `?bear=1`: the bear comes on every perfect solve of his levels (tests). */
+/** `?bear=1`: the bear comes every time his bush has been tapped enough (tests). */
 export const bearAlways = (search: string = location.search): boolean => new URLSearchParams(search).get('bear') === '1';
+/** `?bear=0`: he never comes (tests of the bush's shake). */
+export const bearNever = (search: string = location.search): boolean => new URLSearchParams(search).get('bear') === '0';
 export const mooseOn = (search: string = location.search): boolean => MOOSE_ON && new URLSearchParams(search).get('moose') !== '0';

@@ -3497,7 +3497,7 @@ img.hat { width: 100%; height: auto; }
   pointer-events: none;
 }
 .puppet-layer svg.pup { position: absolute; overflow: visible; pointer-events: none; }
-.worker-layer { z-index: 9; overflow: visible; }
+.worker-layer { z-index: 0; overflow: visible; }
 .worker-layer .pup-z { position: absolute; opacity: 0; font-weight: 700; color: #fff; letter-spacing: 1px; white-space: nowrap; text-shadow: -1.5px -1.5px 0 #2b1e16, 1.5px -1.5px 0 #2b1e16, -1.5px 1.5px 0 #2b1e16, 1.5px 1.5px 0 #2b1e16; }
 .moose-layer { z-index: 0; bottom: auto; overflow: hidden; }
 .moose-layer .pup-puff { position: absolute; opacity: 0; border: 1.5px solid #2b1e16; border-radius: 50%; background: #fff; }
@@ -3507,7 +3507,10 @@ img.hat { width: 100%; height: auto; }
 /* ---------- The bottom strip: the permanent biffy and its gags, the landowner, Near Miss (strip-gags.ts) ---------- */
 .puppet-layer.biffy-layer,
 .puppet-layer.prop-layer { z-index: 0; }
-.puppet-layer.strip-layer { z-index: 9; overflow: visible; }
+/* The strip's gags are put on the screen UNDER the night's shade (`mount`), so they dim exactly like
+   the scenery; only what must lie over the lease itself (the marshmallow stick) stays above the board. */
+.puppet-layer.strip-layer { z-index: 0; overflow: visible; }
+.puppet-layer.strip-layer.over-lease { z-index: 9; }
 /* The gopher comes up out of his hole: his layer ends at the hole line and sits just over the scenery. */
 .puppet-layer.gopher-layer { z-index: 0; bottom: auto; overflow: hidden; }
 .puppet-layer .pup-dust { position: absolute; opacity: 0; border-radius: 50%; background: #cfc6b4; pointer-events: none; }
@@ -3523,29 +3526,49 @@ img.hat { width: 100%; height: auto; }
 .puppet-layer .pup-roll { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; }
 .log-card .art .egg-still { width: 84px; height: 84px; overflow: visible; }
 
-/* ---------- Night (night.ts): levels flagged `night` (every level with a flare stack). The ground,
-   berm and scenery lie under one cool shade at about half brightness; trucks, gates, symbols and
-   hints are dimmed far less so every colour reads; the HUD, buttons and win card are untouched.
-   A warm glow round each flare flickers with its flame; each cab has small headlight glows. ---------- */
+/* ---------- Night (night.ts). No level starts at night: `.night` is put on the screen and the
+   board when the player has been idle a while, and taken off at the next move. Everything here is
+   clear by day and FADES: in over --night-in (about 4 s), back out over --night-out (about 2 s; the
+   board wears `.dawn` meanwhile). The ground, berm, scenery and the strip's gags lie under one cool
+   shade at about half brightness; trucks, gates, symbols and hints are dimmed far less so every
+   colour reads; the HUD, buttons and win card are untouched. A warm glow round each flare flickers
+   with its flame; each cab has small headlight glows. ---------- */
 
-.screen.game.night {
-  /* --night (the shade, stronger on snow) is set per level from night.ts. */
+.screen.game {
+  /* --night (the shade's colour, per ground), --night-in and --night-out are set per level from night.ts and gag-triggers.ts. */
   --night: rgba(8, 16, 48, 0.55);
   --night-solid: #081030;
-  /* Seen through the shade these come out a deep blue. */
-  --sky-top: #142460 !important;
-  --sky-bottom: #5874b8 !important;
+  --night-in: 4s;
+  --night-out: 2s;
 }
-/* Over the scenery, the vignette and the strip's props; under the lease, the HUD and the buttons. */
+/* The sky's own night: behind the trees (the first thing on the screen), from the top down to the horizon. */
+.scene-layer.night-skyfill {
+  left: 0;
+  right: 0;
+  top: 0;
+  width: auto;
+  height: var(--horizon);
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, #142460, #5874b8);
+  opacity: 0;
+  transition: opacity var(--night-out) ease-in-out;
+}
+/* The shade: over the scenery, the vignette, the strip's props and the strip's gags (their layers are
+   put on the screen under it: `mount`); under the lease, the HUD and the buttons. It holds the stars and the moon. */
 .scene-layer.night-shade {
   inset: 0;
   width: auto;
   height: auto;
   z-index: 0;
   background: var(--night);
+  opacity: 0;
+  transition: opacity var(--night-out) ease-in-out;
 }
+.screen.game.night .night-skyfill,
+.screen.game.night .night-shade { opacity: 1; transition-duration: var(--night-in); }
 .night-shade .night-sky { position: absolute; left: 0; top: 0; overflow: visible; }
-.night-sky .star { animation: star-twinkle 3.2s ease-in-out infinite; }
+.screen.game.night .night-sky .star { animation: star-twinkle 3.2s ease-in-out infinite; }
 .night-sky .star.s1 { animation-delay: -1.1s; }
 .night-sky .star.s2 { animation-delay: -2.2s; }
 @keyframes star-twinkle {
@@ -3553,30 +3576,42 @@ img.hat { width: 100%; height: auto; }
   50% { opacity: 0.45; }
 }
 
-/* The lease's own ground under the same shade (the berm's canvas is shaded as it is painted). */
-.night-pad { display: none; }
-.board.night .night-pad {
-  display: block;
+/* The lease's own ground under the same shade, and the berm as a second canvas painted under it. */
+.night-pad {
   position: absolute;
   inset: 0;
   background: var(--night);
+  opacity: 0;
+  transition: opacity var(--night-out) ease-in-out;
 }
-.board.night .tracks { opacity: 0.6; }
-.board.night .equip .eq-patch { fill: color-mix(in srgb, var(--night-solid) 55%, color-mix(in srgb, var(--pad-light) 60%, var(--pad))); }
+canvas.berm-night { opacity: 0; transition: opacity var(--night-out) ease-in-out; }
+.board.night .night-pad,
+.board.night canvas.berm-night { opacity: 1; transition-duration: var(--night-in); }
+.board .tracks { transition: opacity var(--night-out) ease-in-out; }
+.board.night .tracks { opacity: 0.6; transition-duration: var(--night-in); }
+.board.night .equip .eq-patch,
+.board.dawn .equip .eq-patch { transition: fill var(--night-out) ease-in-out; }
+.board.night .equip .eq-patch { fill: color-mix(in srgb, var(--night-solid) 55%, color-mix(in srgb, var(--pad-light) 60%, var(--pad))); transition-duration: var(--night-in); }
 /* Equipment is scenery: dimmed, but less than the ground so it still reads as steel. The flare keeps its light. */
-.board.night .obstacle:not(.flare) svg.equip { filter: brightness(0.7) saturate(0.85); }
-.board.night .obstacle.flare svg.equip { filter: brightness(0.92); }
-/* Trucks and gates: dimmed much less. Symbol badges, convoy tags and hints stay at full strength. */
-/* (Not the hinted truck: its bright rim and stronger shadow are hint visuals and stay as by day.) */
-.board.night .truck:not(.hinted) .art { filter: brightness(0.9) saturate(0.97); }
-.board.night .gate .gw { filter: brightness(0.92); }
-.board.night .truck:not(.hinted):not(.dragging) .ground-shadow { opacity: 0.5; }
+.board.night .obstacle svg.equip,
+.board.dawn .obstacle svg.equip { transition: filter var(--night-out) ease-in-out; }
+.board.night .obstacle:not(.flare) svg.equip { filter: brightness(0.7) saturate(0.85); transition-duration: var(--night-in); }
+.board.night .obstacle.flare svg.equip { filter: brightness(0.92); transition-duration: var(--night-in); }
+/* Trucks and gates: dimmed much less. Symbol badges, convoy tags and hints stay at full strength.
+   (Not the hinted truck: its bright rim and stronger shadow are hint visuals and stay as by day.) */
+.board.night .truck:not(.hinted) .art,
+.board.dawn .truck:not(.hinted) .art,
+.board.night .gate .gw,
+.board.dawn .gate .gw { transition: filter var(--night-out) ease-in-out; }
+.board.night .truck:not(.hinted) .art { filter: brightness(0.9) saturate(0.97); transition-duration: var(--night-in); }
+.board.night .gate .gw { filter: brightness(0.92); transition-duration: var(--night-in); }
+.board .truck:not(.hinted):not(.dragging) .ground-shadow { transition: opacity var(--night-out) ease-in-out; }
+.board.night .truck:not(.hinted):not(.dragging) .ground-shadow { opacity: 0.5; transition-duration: var(--night-in); }
 
 /* The flare's light: about 2.5 cells across, centred on the stack, over the ground and the trucks
-   near it. It flickers in step with the flame (same period and offset as `flare-flicker`). */
-.flare-glow { display: none; }
-.board.night .flare-glow {
-  display: block;
+   near it. The element fades in with the night; its inside flickers in step with the flame (same
+   period and offset as `flare-flicker`). */
+.flare-glow {
   position: absolute;
   left: 50%;
   top: 28%;
@@ -3584,12 +3619,20 @@ img.hat { width: 100%; height: auto; }
   height: calc(var(--cell) * 2.5);
   margin: calc(var(--cell) * -1.25) 0 0 calc(var(--cell) * -1.25);
   z-index: -1;
-  border-radius: 50%;
   pointer-events: none;
-  background: radial-gradient(circle, rgba(255, 190, 96, 0.5) 0, rgba(255, 160, 64, 0.3) 32%, rgba(255, 140, 50, 0.1) 58%, rgba(255, 130, 40, 0) 72%);
-  animation: flare-glow 0.9s steps(1, end) var(--eq-delay, 0s) infinite;
-  will-change: opacity, transform;
+  opacity: 0;
+  transition: opacity var(--night-out) ease-in-out;
 }
+.board.night .flare-glow { opacity: 1; transition-duration: var(--night-in); }
+.flare-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 190, 96, 0.5) 0, rgba(255, 160, 64, 0.3) 32%, rgba(255, 140, 50, 0.1) 58%, rgba(255, 130, 40, 0) 72%);
+}
+.board.night .flare-glow::before,
+.board.dawn .flare-glow::before { animation: flare-glow 0.9s steps(1, end) var(--eq-delay, 0s) infinite; }
 @keyframes flare-glow {
   0% { opacity: 0.9; transform: scale(1); }
   14% { opacity: 1; transform: scale(1.05); }
@@ -3601,35 +3644,60 @@ img.hat { width: 100%; height: auto; }
 }
 
 /* Headlights: two small soft glows at the front of the cab, spilling a little ahead of it. */
-.truck .lamps { display: none; }
-.board.night .truck .lamps {
-  display: block;
+.truck .lamps {
   position: absolute;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--night-out) ease-in-out;
   --lamp: radial-gradient(circle, rgba(255, 246, 200, 0.95) 0, rgba(255, 236, 170, 0.5) 30%, rgba(255, 230, 150, 0) 68%);
-  background: var(--lamp) 0 0 / 50% 100% no-repeat, var(--lamp) 100% 0 / 50% 100% no-repeat;
 }
+.board.night .truck .lamps { opacity: 1; transition-duration: var(--night-in); }
 /* Sideways trucks: the lamps sit side by side across the cab's width (top and bottom of the truck's box). */
-.board.night .truck[data-cab='right'] .lamps,
-.board.night .truck[data-cab='left'] .lamps {
+.truck[data-cab='right'] .lamps,
+.truck[data-cab='left'] .lamps {
   top: 6%;
   height: 88%;
   width: calc(var(--cell) * 0.4);
   background: var(--lamp) 0 0 / 100% 46% no-repeat, var(--lamp) 0 100% / 100% 46% no-repeat;
 }
-.board.night .truck[data-cab='right'] .lamps { right: calc(var(--cell) * -0.14); }
-.board.night .truck[data-cab='left'] .lamps { left: calc(var(--cell) * -0.14); }
-.board.night .truck[data-cab='top'] .lamps,
-.board.night .truck[data-cab='bottom'] .lamps {
+.truck[data-cab='right'] .lamps { right: calc(var(--cell) * -0.14); }
+.truck[data-cab='left'] .lamps { left: calc(var(--cell) * -0.14); }
+.truck[data-cab='top'] .lamps,
+.truck[data-cab='bottom'] .lamps {
   left: 6%;
   width: 88%;
   height: calc(var(--cell) * 0.4);
   background: var(--lamp) 0 0 / 46% 100% no-repeat, var(--lamp) 100% 0 / 46% 100% no-repeat;
 }
-.board.night .truck[data-cab='top'] .lamps { top: calc(var(--cell) * -0.14); }
-.board.night .truck[data-cab='bottom'] .lamps { bottom: calc(var(--cell) * -0.14); }
+.truck[data-cab='top'] .lamps { top: calc(var(--cell) * -0.14); }
+.truck[data-cab='bottom'] .lamps { bottom: calc(var(--cell) * -0.14); }
+
+/* The bear's bush, tapped when he is not coming: a shake, and in winter a small puff of snow. */
+.bush-layer svg.pup.shake { animation: bush-shake 0.5s ease-in-out; transform-origin: 50% 95%; }
+@keyframes bush-shake {
+  0%, 100% { transform: rotate(0); }
+  18% { transform: rotate(-5deg); }
+  38% { transform: rotate(4.5deg); }
+  58% { transform: rotate(-3deg); }
+  78% { transform: rotate(1.5deg); }
+}
+.bush-layer .bush-puff {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid #2b1e16;
+  opacity: 0;
+  pointer-events: none;
+  animation: bush-puff 0.7s ease-out forwards;
+}
+@keyframes bush-puff {
+  0% { opacity: 0.95; transform: translateY(0) scale(0.6); }
+  100% { opacity: 0; transform: translateY(16px) scale(1.25); }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .board.night .flare-glow,
-  .night-sky .star { animation: none; }
+  /* Night still comes, without the fade, the flicker or the twinkle. */
+  .night-skyfill, .scene-layer.night-shade, .night-pad, canvas.berm-night, .board .tracks, .flare-glow, .truck .lamps,
+  .board .equip .eq-patch, .board .obstacle svg.equip, .board .truck .art, .board .gate .gw, .board .truck .ground-shadow { transition: none !important; }
+  .board .flare-glow::before, .night-sky .star, .bush-layer svg.pup.shake, .bush-layer .bush-puff { animation: none !important; }
 }

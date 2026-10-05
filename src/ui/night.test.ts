@@ -4,7 +4,7 @@ import daily from '../levels/daily.json' with { type: 'json' };
 import manifest from './truck-sprites.json' with { type: 'json' };
 import { THEMES } from './themes.ts';
 import { GAG_TRIGGERS } from './gag-triggers.ts';
-import { NIGHT, NUDGE_LINE, STARS, contrast, dimmed, isNight, luminance, nightRgba, nightSky, rgb, shaded } from './night.ts';
+import { NIGHT, NUDGE_LINE, STARS, contrast, dimmed, nightForced, luminance, nightRgba, nightSky, rgb, shaded } from './night.ts';
 
 // Gate fills, kept in sync with :root in style.css (and tools/truck-sprites.py).
 const GATES: Record<string, string> = { red: '#ff4747', blue: '#2f8bff', yellow: '#ffd21f', green: '#22c55e', orange: '#ff8a00', purple: '#a55cff' };
@@ -13,23 +13,17 @@ const paint = manifest.paint as Record<string, Record<string, { mean: string }>>
 const NIGHT_THEMES = [THEMES.spring, THEMES.winter];
 
 describe('night levels', () => {
-  it('every level with a flare stack is flagged night in its JSON, and no other level is', () => {
-    const night: string[] = [];
-    for (const r of REGIONS)
-      for (const [i, l] of r.levels.entries()) {
-        const flare = l.obstacles.some((o) => o.kind === 'flare');
-        expect(l.night === true, `${r.id} ${i + 1}`).toBe(flare);
-        if (l.night) night.push(`${r.id} ${i + 1}`);
-      }
-    expect(night).toEqual(['montney 2', 'montney 8', 'montney 10', 'duvernay 4', 'duvernay 8', 'duvernay 10']);
-    expect((daily as { night?: boolean }[]).some((l) => l.night)).toBe(false);
+  it('no level starts at night: no level carries a night flag any more, flare levels included', () => {
+    for (const r of REGIONS) for (const l of r.levels) expect('night' in l, `${r.id} ${l.id}`).toBe(false);
+    for (const l of daily as object[]) expect('night' in l).toBe(false);
   });
 
-  it('is data driven: the flag decides, and ?night=1 / ?night=0 force it for previews', () => {
-    expect(isNight({ night: true }, '')).toBe(true);
-    expect(isNight({}, '')).toBe(false);
-    expect(isNight({}, '?night=1')).toBe(true);
-    expect(isNight({ night: true }, '?night=0')).toBe(false);
+  it('night comes when the player goes idle: 30 s, a 4 s fade in, a 2 s fade back at the next move', () => {
+    expect(GAG_TRIGGERS.night).toEqual({ idleMs: 30_000, fadeInMs: 4000, fadeOutMs: 2000 });
+    // ?night=1 pins it on and ?night=0 keeps it away (previews, screenshots, tests).
+    expect(nightForced('')).toBeNull();
+    expect(nightForced('?night=1')).toBe(true);
+    expect(nightForced('?night=0')).toBe(false);
   });
 
   it('the ground drops to about half brightness or less, with a blue tint', () => {
@@ -70,9 +64,9 @@ describe('night levels', () => {
     expect(without).not.toContain('#f6efc8');
   });
 
-  it('the nudge: 25 s with no move, in one settings file with the gag triggers', () => {
-    expect(GAG_TRIGGERS.nightNudge.idleMs).toBe(25_000);
+  it('the nudge: 15 s after night has fully fallen, in one settings file with the gag triggers', () => {
+    expect(GAG_TRIGGERS.nightNudge.afterNightMs).toBe(15_000);
     expect(NUDGE_LINE).toBe("While we're young, Sonny, we don't have all day.");
-    expect(NUDGE_LINE).not.toMatch(/[–—]/);
+    expect(NUDGE_LINE).not.toMatch(/[\u2013\u2014]/);
   });
 });

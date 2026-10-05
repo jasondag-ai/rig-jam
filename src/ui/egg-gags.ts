@@ -22,6 +22,8 @@ export interface EggHost {
   sky(): { top: number; height: number };
   state(): GameState;
   say(anchor: Element, text: string): HTMLElement;
+  /** Puts a gag's layer on the screen, under the night's shade, so the strip's gags dim exactly like the scenery. */
+  mount?(el: HTMLElement): void;
 }
 
 /** A played gag resolves 'seen' (it counts as a sighting), 'cancelled', or 'none' (it could not play). */
@@ -65,7 +67,7 @@ export class WorkerGag {
     layer.className = 'scene-layer puppet-layer worker-layer';
     layer.setAttribute('aria-hidden', 'true');
     layer.innerHTML = `<svg class="pup worker" viewBox="0 0 120 120">${WORKER}</svg><div class="pup-z">z Z z</div>`;
-    this.host.screen.append(layer);
+    (this.host.mount ?? ((el: HTMLElement) => this.host.screen.append(el)))(layer);
     const svg = layer.querySelector<SVGSVGElement>('svg.pup')!;
     Object.assign(svg.style, { width: `${spot.w}px`, height: `${spot.w}px`, left: `${spot.x - 0.5 * spot.w}px`, top: `${spot.y - 0.9 * spot.w}px` });
     return new Promise((resolve) => {
@@ -204,7 +206,7 @@ export class MooseGag {
     layer.setAttribute('aria-hidden', 'true');
     layer.style.height = `${spot.y}px`;
     layer.innerHTML = `<svg class="pup moose" viewBox="0 0 120 120">${MOOSE}</svg><i class="pup-puff"></i><i class="pup-puff"></i><i class="pup-puff"></i>`;
-    this.host.screen.append(layer);
+    (this.host.mount ?? ((el: HTMLElement) => this.host.screen.append(el)))(layer);
     const svg = layer.querySelector<SVGSVGElement>('svg.pup')!;
     Object.assign(svg.style, { width: `${w}px`, height: `${w}px`, left: `${spot.x - 0.5 * w}px`, top: `${spot.y - 0.9 * w}px` });
     return new Promise((resolve) => {

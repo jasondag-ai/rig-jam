@@ -15,6 +15,8 @@ export interface MagpieHost {
   state(): GameState;
   /** A driver's speech bubble (kept on screen by the board). */
   say(anchor: Element, text: string): HTMLElement;
+  /** Puts a gag's layer on the screen (under the night's shade). */
+  mount?(el: HTMLElement): void;
 }
 
 interface Run {
@@ -73,7 +75,7 @@ export class MagpieGag {
     layer.setAttribute('aria-hidden', 'true');
     layer.innerHTML =
       `<div class="mp-fx mp-drop"><div></div></div><div class="mp-fx mp-feather">${FEATHER}</div>` + `<svg class="magpie" viewBox="0 0 120 120">${BIRD}</svg>`;
-    this.host.screen.append(layer);
+    (this.host.mount ?? ((el: HTMLElement) => this.host.screen.append(el)))(layer);
     return new Promise((resolve) => {
       const run: Run = { layer, truckId: truck.id, truckEl, local, w, travel: travelFor(this.spotOf(truckEl, local), w, screen.width), start: performance.now(), frame: 0, startle: null, splat: null, drip: null, landed: false, spoke: false, done: resolve };
       this.run = run;

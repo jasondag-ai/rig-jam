@@ -52,7 +52,7 @@ export class BiffyProp {
     this.layer = document.createElement('div');
     this.layer.className = 'scene-layer puppet-layer biffy-layer';
     this.layer.setAttribute('aria-hidden', 'true');
-    host.screen.append(this.layer);
+    (host.mount ?? ((el: HTMLElement) => host.screen.append(el)))(this.layer);
     this.pup = biffyPup(this.layer, { x: BIFFY_X, y: 0.8 }, 1);
     this.layout();
   }
@@ -107,7 +107,7 @@ export class BushProp {
     this.layer = document.createElement('div');
     this.layer.className = 'scene-layer puppet-layer prop-layer bush-layer';
     this.layer.setAttribute('aria-hidden', 'true');
-    host.screen.append(this.layer);
+    (host.mount ?? ((el: HTMLElement) => host.screen.append(el)))(this.layer);
     this.pup = makePup(this.layer, bushMarkup(season), { ...BUSH_BOX, frac: BUSH_FRAC, spot: { x, y: 0.8 } });
     this.layout();
   }
@@ -133,6 +133,25 @@ export class BushProp {
     return x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 4 && y <= r.bottom + 4;
   }
 
+  /** A tap that brings nobody: the bush shakes and, in winter, drops a small puff of snow. */
+  shake(): void {
+    const svg = this.pup.svg;
+    svg.classList.remove('shake');
+    void svg.getBoundingClientRect();
+    svg.classList.add('shake');
+    this.layer.querySelectorAll('.bush-puff').forEach((p) => p.remove());
+    if (this.season !== 'winter') return;
+    const r = svg.getBoundingClientRect(), host = this.layer.getBoundingClientRect();
+    for (let i = 0; i < 5; i++) {
+      const puff = document.createElement('i');
+      puff.className = 'bush-puff';
+      const size = r.width * (0.1 + 0.05 * (i % 3));
+      Object.assign(puff.style, { left: `${r.left - host.left + r.width * (0.2 + 0.15 * i) - size / 2}px`, top: `${r.top - host.top + r.height * (0.25 + 0.08 * (i % 2))}px`, width: `${size}px`, height: `${size}px`, animationDelay: `${i * 40}ms` });
+      this.layer.append(puff);
+      puff.addEventListener('animationend', () => puff.remove());
+    }
+  }
+
   /** The gag draws its own bush in the same place (the hare goes behind it), so this one steps aside meanwhile. */
   show(on: boolean): void {
     this.layer.style.visibility = on ? '' : 'hidden';
@@ -154,8 +173,11 @@ export function moundSpot(screenW: number, strip: { top: number; bottom: number 
   return { baseY: ground, w: moundWidthFor(screenW, scale) };
 }
 
-/** Where the frosty riser stands on winter levels (a share of the screen's width): by the right edge, clear of the bear's bush. */
-export const RISER_X = 0.93;
+/**
+ * Where the frosty riser stands on winter levels (a share of the screen's width): between the biffy
+ * and the bear's bush, with room on both sides of it (the buddy comes back on its far side).
+ */
+export const RISER_X = 0.5;
 /** The patch of the strip the riser and the stuck worker stand on (scenery keeps trees off it). */
 export function riserBox(screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
   const { ground, scale } = stripGeom(screenW, strip);
@@ -177,7 +199,7 @@ export class RiserProp {
     this.layer = document.createElement('div');
     this.layer.className = 'scene-layer puppet-layer prop-layer riser-layer';
     this.layer.setAttribute('aria-hidden', 'true');
-    host.screen.append(this.layer);
+    (host.mount ?? ((el: HTMLElement) => host.screen.append(el)))(this.layer);
     this.pup = riserPup(this.layer, { x: RISER_X, y: 0.8 }, 1);
     this.layout();
   }
@@ -228,7 +250,7 @@ export class CowProp {
     this.layer = document.createElement('div');
     this.layer.className = 'scene-layer puppet-layer prop-layer cow-layer';
     this.layer.setAttribute('aria-hidden', 'true');
-    host.screen.append(this.layer);
+    (host.mount ?? ((el: HTMLElement) => host.screen.append(el)))(this.layer);
     this.pup = cowPup(this.layer, { x: COW_X, y: 0.8 }, 1);
     this.layout();
   }
@@ -310,7 +332,7 @@ export class TimelineGag {
       el.className = `scene-layer puppet-layer strip-layer ${cls}`;
       el.setAttribute('aria-hidden', 'true');
       el.dataset.gag = this.def.name;
-      this.host.screen.append(el);
+      (this.host.mount ?? ((x: HTMLElement) => this.host.screen.append(x)))(el);
       layers.push(el);
       return el;
     };
@@ -490,7 +512,8 @@ export const marshmallowDef: TimelineDef = {
     // The nearest flare: the one with the shortest reach from where he would stand for it.
     const pick = flames.map((f) => ({ f, tip: centre(f) })).sort((a, b) => Math.hypot(a.tip.x - stand(a.tip), a.tip.y - ground) - Math.hypot(b.tip.x - stand(b.tip), b.tip.y - ground))[0];
     const x = stand(pick.tip);
-    const scene = marshmallowScene(layer('marshmallow-layer'), { x: x / screen.width, y: ground / screen.height }, scale, pick.tip, pick.f);
+    // He stands in the strip (under the night's shade, like every strip gag); only his stick lies over the lease.
+    const scene = marshmallowScene(layer('marshmallow-layer'), layer('marshmallow-layer over-lease'), { x: x / screen.width, y: ground / screen.height }, scale, pick.tip, pick.f);
     // In from past the left edge, out past the right one (in his drawing's units).
     const u = w / 120;
     const from = -(x + w) / u, to = (screen.width - x + w) / u;
@@ -616,10 +639,10 @@ export const tongueDef = (riser: RiserProp): TimelineDef => ({
     const strip = host.strip();
     const scale = riser.scale();
     const scene = tongueScene(layer('tongue-layer'), riser.pup, scale, { top: strip.top, height: Math.max(0, strip.bottom - strip.top) });
-    // Both in from past the left edge and off past it again (in their drawing's units, from the riser).
-    const w = WORKER_FRAC * scale * screen.width, from = -(RISER_X * screen.width + w) / (w / 120);
+    // In from past the left edge; the worker leaves that way, his buddy comes back from past the right edge and leaves that way (their drawing's units, from the riser).
+    const w = WORKER_FRAC * scale * screen.width, u = w / 120, from = -(RISER_X * screen.width + w) / u, far = ((1 - RISER_X) * screen.width + w) / u;
     return {
-      apply: (t) => tongueApply(scene, tonguePose(t, from, from), t),
+      apply: (t) => tongueApply(scene, tonguePose(t, from, from, BUDDY_STOP, far, far), t),
       bubble: { from: 5.0, to: 6.4, text: TONGUE_LINE, at: () => ({ x: scene.head.x, y: scene.head.y }) },
     };
   },

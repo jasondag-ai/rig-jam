@@ -4,8 +4,10 @@
 // breath puffing, eyes the pipe, checks nobody is looking, licks it, sticks; the tongue stretches
 // as he pulls and flails; "HEWP!"; his buddy (blue coveralls, orange hat, clean shaven) wanders in,
 // takes it in, takes a photo (flash), cracks up typing, hop-turns and wanders off; a snowflake
-// lands on the stuck worker's nose; blink. The reference ends there, with him still stuck; in the
-// game he then heaves himself free and leaves (see tonguePose). strip-gags.ts puts it on screen.
+// lands on the stuck worker's nose; blink. Then (the Oct 5 revision) the buddy comes back from the
+// other side with a steaming thermos, sighs, pours hot coffee on the pipe, THWIP, the tongue frees;
+// the worker stumbles back rubbing it and both hop-turn and walk off their own ways. It ends on
+// the empty riser, exactly as it began. strip-gags.ts puts it on screen.
 /* eslint-disable */
 import { addEl, makePup, place, type Pup } from './puppet-stage.ts';
 import { WORKER, WORKER_FRAC } from './worker.ts';
@@ -22,6 +24,8 @@ const BUILD = WORKER.slice(WORKER.indexOf('<g class="flip">'));
 export const BUDDY = BUILD.replaceAll(RED2, '#3d6797').replaceAll(RED, '#4f7fb0').replaceAll(HAT2, '#ffc08a').replaceAll(HAT, '#f08a2a')
   .replace(/<path d="M48 39 Q50 54 64 54[^>]*>/, '<path d="M50 44 Q54 52 64 53 Q74 53 77 45" stroke="#d9a07a" stroke-width="2" fill="none" stroke-linecap="round"/>');
 const PHONE = `<g class="phone" style="display:none"><rect x="-2" y="4" width="10" height="15" rx="2" fill="#2f3440" stroke="${O}" stroke-width="1.6" transform="rotate(-20 3 11)"/><rect x="-.4" y="5.8" width="6.8" height="10.6" rx="1" fill="#8fd3f0" transform="rotate(-20 3 11)"/></g>`;
+
+const THERMOS = `<g class="thermos" style="display:none"><g class="tilt"><rect x="-4" y="4" width="8" height="17" rx="2" fill="#3f8f5a" stroke="${O}" stroke-width="1.8"/><rect x="-4" y="9" width="8" height="3" fill="#bfc6cd" stroke="${O}" stroke-width="1.1"/><rect x="-3.2" y="1" width="6.4" height="4" rx="1" fill="#bfc6cd" stroke="${O}" stroke-width="1.5"/></g></g>`;
 
 /* frosty pipeline riser with a handwheel valve */
 export const RISER = `
@@ -43,31 +47,36 @@ export const TONGUE_BEATS: [number, string, string][] = [
   [7.0, 'buddy-looks', 'Buddy stops and takes it in'], [7.4, 'phone-out', 'Pulls out his phone...'], [7.9, 'flash', 'FLASH. Photo taken'], [8.1, 'deadpan', 'The worker, deadpan'],
   [8.6, 'cracks-up', 'Buddy checks the photo, cracks up, starts typing'], [9.6, 'buddy-leaves', 'Wanders off, still giggling at his phone'],
   [11.0, 'snowflake', 'Alone again. A snowflake lands on his nose. Blink'],
-  [12.2, 'heave', 'He braces and heaves'], [12.9, 'pop', 'The tongue snaps free'], [13.8, 'trudges-off', 'Glove over his mouth, he trudges off the way he came'],
+  [12.2, 'buddy-back', 'His buddy comes back the other way, with a steaming thermos'], [13.4, 'sigh', 'Sighs. Fine'], [13.7, 'pours', 'Pours hot coffee on the pipe. Steam'],
+  [14.6, 'thwip', 'THWIP. The tongue snaps free, he stumbles back'], [14.8, 'rubs-tongue', 'Rubs his tongue. Buddy snickers'],
+  [15.4, 'walk-off', 'Both hop-turn and walk off their own ways, buddy sipping the coffee'], [17.5, 'riser-again', 'Just the frosty riser again, exactly like the start. A last wisp of steam'],
 ];
-/** The ending the game adds after the reference's last beat. */
-export const T_HEAVE = 12.2, T_POP = 12.9, T_TURN = 13.8, TONGUE_END = 16.4;
+/** SAME START, SAME END: it ends on the empty riser (both are off by 17.6; a last wisp of steam to 18.3). */
+export const TONGUE_END = 18.3;
 export const TONGUE_LINE = 'HEWP!';
 /** In worker units from the riser: where the worker stands, and where his buddy stops. */
 export const STAND = -36, BUDDY_STOP = -112;
+/** Where his buddy stands when he comes back from the far side with the thermos. */
+export const BUDDY_FAR = 46;
 /** The riser's box is the worker's drawing units at the same scale: a 40 x 120 box against his 120. */
 export const RISER_BOX = { vw: 40, vh: 120, ax: 20, ay: 118 };
 export const RISER_FRAC = (WORKER_FRAC * 40) / 120;
 
 /**
- * The pose at a time. `from`: where the two walk in from, `out`: where they walk off to, in their
- * own units from the riser (the reference's are -300 and -330).
+ * The pose at a time. `from`/`out`: where they walk in from and off to on the left, `fromR`/`outR`:
+ * where the buddy comes back from and leaves to on the right, all in their own units from the riser
+ * (the reference's are -300, -330, 330 and 376).
  */
-function base(from: number): any { return {dx:from, y:0, rot:0, face:1, thB:0,thF:0,shB:0,shF:0, arB:0,arF:0,foF:-10,foB:-10, head:0,hatY:0,
+function base(from: number): any { return {thermos:false, tilt:0, dx:from, y:0, rot:0, face:1, thB:0,thF:0,shB:0,shF:0, arB:0,arF:0,foF:-10,foB:-10, head:0,hatY:0,
   px:71.5,py:33.5, lid:'M65 28 L75 28 L75 29 L65 29 Z', brow:'M65 24.5 Q70 22.5 76 24.5', mouth:'M64 47 Q68 48.5 72 47', show:true, phone:false}; }
 const BIG = (o: any) => { o.lid = 'M65 23 L75 23 L75 24 L65 24 Z'; o.brow = 'M65 21.5 Q70 19 76 21.5'; };
 
-export function tonguePose(t: number, from = -300, out = -330, BS = BUDDY_STOP): any {
+export function tonguePose(t: number, from = -300, out = -330, BS = BUDDY_STOP, fromR = 330, outR = BUDDY_FAR + 330): any {
   const w = base(from), b = base(from); b.show = false;
   const walk = (o: any, speed: number, amp: number, phase = 0) => { const c = Math.sin((t+phase)*2*Math.PI*speed);
     o.thB = c*amp; o.thF = -c*amp; o.shB = Math.max(0,-c)*amp*.9; o.shF = Math.max(0,c)*amp*.9; o.arB = -c*amp*.8; o.arF = c*amp*.8; o.foB = -12; o.foF = -12;
     o.y = -Math.abs(Math.cos((t+phase)*2*Math.PI*speed))*2.2; o.hatY = -Math.abs(Math.cos((t+phase)*2*Math.PI*speed - .6))*1.2; };
-  let tongue = 0, breath = false, bubble = false, flash = 0, flake = -1;
+  let tongue = 0, breath = false, bubble = false, flash = 0, flake = -1, pour = 0, steam = 0, thwip = 0;
   // ----- worker -----
   if (t < .3) w.show = false;
   else if (t < 2.2){ const k = seg(t,.3,2.2); w.dx = lerp(from, STAND, 1 - Math.pow(1-k,1.6)); walk(w, 1.6, 26); breath = true; }
@@ -84,9 +93,16 @@ export function tonguePose(t: number, from = -300, out = -330, BS = BUDDY_STOP):
     if (t > 7.0){ w.brow = 'M65 22 Q70 19.5 76 22'; w.lid = 'M65 26 L75 26 L75 27 L65 27 Z'; } }                                  // relief, help has arrived
   else if (t < 11.0){ w.dx = STAND - 5; w.rot = 7; tongue = 1; w.mouth = 'M66 46 Q69 43.5 72 46 Q72 50 69 50 Q66 50 66 46 Z'; w.arB = 10; w.arF = 10;
     w.lid = 'M65 29 L75 29 L75 31.5 L65 31.5 Z'; w.brow = 'M65 25.5 L76 25.5'; w.px = 68; w.py = 33; if (t > 9.6){ w.px = 67; } }        // deadpan
-  else { w.dx = STAND - 5; w.rot = 7; tongue = 1; w.mouth = 'M66 46 Q69 43.5 72 46 Q72 50 69 50 Q66 50 66 46 Z'; w.arB = 10; w.arF = 10;
+  else if (t < 13.4){ w.dx = STAND - 5; w.rot = 7; tongue = 1; w.mouth = 'M66 46 Q69 43.5 72 46 Q72 50 69 50 Q66 50 66 46 Z'; w.arB = 10; w.arF = 10;
     w.px = 74.2; w.py = 34; w.brow = 'M65 23 Q70 23.5 76 25.5'; w.lid = 'M65 28 L75 28 L75 30 L65 30 Z';
-    flake = seg(t,11.0,11.8); if (t > 11.8 && t < 12.0) w.lid = 'M65 27 L75 27 L75 38 L65 38 Z'; }                                 // snowflake, blink
+    flake = t < 12.0 ? seg(t,11.0,11.8) : -1; if (t > 11.8 && t < 12.0) w.lid = 'M65 27 L75 27 L75 38 L65 38 Z'; if (t > 12.6){ w.px = 74.5; w.brow = 'M65 22 Q70 19.5 76 22'; } }
+  else if (t < 14.6){ w.dx = STAND - 5; w.rot = 7; tongue = 1; w.mouth = 'M66 46 Q69 43.5 72 46 Q72 50 69 50 Q66 50 66 46 Z'; w.arB = 10; w.arF = 10; w.px = 74.5; w.brow = 'M65 22 Q70 19.5 76 22'; w.lid = 'M65 26 L75 26 L75 27 L65 27 Z'; }   // hopeful
+  else if (t < 15.4){ const k = seg(t,14.6,14.9); tongue = 1 - clamp(k*3); thwip = seg(t,14.6,14.85); w.dx = STAND - 5 - 8*ease(k); w.rot = lerp(7, -10, ease(clamp(k*2))) + 10*seg(t,14.8,15.1);
+    BIG(w); w.mouth = 'M66 47 Q69 45 72 47 Q72 49.5 69 49.5 Q66 49.5 66 47 Z'; w.arB = -20; w.arF = lerp(10, -150, ease(seg(t,14.75,14.95))); w.foF = -80; w.px = 72.5;
+    if (t > 15.0){ w.brow = 'M65 25 Q70 23 76 26'; w.lid = 'M65 27 L75 27 L75 31 L65 31 Z'; } }                                                 // THWIP, stumbles back, rubs his tongue
+  else if (t < 15.65){ const k = seg(t,15.4,15.65); w.dx = STAND - 13; w.face = k < .5 ? 1 : -1; w.y = -Math.sin(k*Math.PI)*6; w.arF = -150; w.foF = -80; w.brow = 'M65 25 Q70 23 76 26'; w.lid = 'M65 27 L75 27 L75 31 L65 31 Z'; w.mouth = 'M65 47.5 Q68 46 71 47.5'; }   // hop-turn
+  else if (t < 17.6){ const k = seg(t,15.65,17.6); w.face = -1; w.dx = lerp(STAND - 13, out, k); walk(w, 1.4, 22); w.arF = -150; w.foF = -80; w.brow = 'M65 25 Q70 23 76 26'; w.lid = 'M65 27 L75 27 L75 31 L65 31 Z'; w.mouth = 'M65 47.5 Q68 46 71 47.5'; }   // trudges off, hand on his mouth
+  else w.show = false;                                 // snowflake, blink
 
   // ----- buddy -----
   if (t >= 5.6 && t < 7.0){ b.show = true; const k = seg(t,5.6,7.0); b.dx = lerp(from, BS, 1 - Math.pow(1-k,1.6)); walk(b, 1.5, 24, .3); }
@@ -97,23 +113,15 @@ export function tonguePose(t: number, from = -300, out = -330, BS = BUDDY_STOP):
     const c = Math.abs(Math.sin(t*15)); b.y = -c*1.6; b.mouth = 'M63 46 Q68 52 73 46 Z'; b.lid = 'M65 27 Q70 32 75 27 L75 33 L65 33 Z'; }   // cracks up, typing
   else if (t >= 9.6 && t < 11.2){ b.show = true; const k = seg(t,9.6,11.2); b.face = k < .08 ? 1 : -1; b.dx = lerp(BS, out, clamp((k-.08)/.92)); b.y = k < .08 ? -Math.sin(k/.08*Math.PI)*5 : 0;
     if (k >= .08) walk(b, 1.3, 20); b.arF = -40; b.foF = -75; b.phone = true; b.head = 12; b.px = 72.8; b.py = 36.2; b.mouth = 'M63 46 Q68 52 73 46 Z'; b.lid = 'M65 27 Q70 32 75 27 L75 33 L65 33 Z'; b.y -= Math.abs(Math.sin(t*15))*1.2; }
-  // ----- THE ENDING (not in the reference, which loops with him still stuck): the game needs him off
-  // screen. After the blink he braces and gives one mighty heave; the tongue stretches and snaps
-  // free with a pop; he staggers back, claps a glove over his mouth, hop-turns and trudges off the
-  // way he came. -----
-  let pop = -1, stretch = 0;
-  if (t >= T_HEAVE && t < T_POP){ const k = ease(seg(t,T_HEAVE,T_POP)); w.dx = STAND - 5 - 9*k; w.rot = 7 - 19*k; stretch = k; BIG(w); w.px = 72.5; w.py = 33.5;
-    w.arF = -30 - 40*k; w.arB = -30 - 40*k; w.thF = -14*k; w.thB = 12*k; w.brow = 'M65 26 Q70 22 76 23'; flake = -1; }
-  else if (t >= T_POP && t < T_TURN){ const k = seg(t,T_POP,T_POP + .45), back = Math.sin(clamp(k)*Math.PI*.5); tongue = 0; pop = seg(t,T_POP,T_POP + .4); flake = -1;
-    w.dx = STAND - 14 - 16*back; w.y = -Math.sin(clamp(k)*Math.PI)*6; w.rot = -12 + 12*clamp(k*1.4); BIG(w); w.px = 72.5; w.py = 33.5;
-    w.mouth = 'M66 46 Q69 44.5 72 46 Q72 48.5 69 48.5 Q66 48.5 66 46 Z';
-    const up = ease(seg(t,T_POP + .35,T_POP + .6)); w.arF = lerp(-70, -66, up); w.foF = lerp(-10, -98, up); w.arB = 10;        // glove over his mouth
-    if (t > T_POP + .7){ w.lid = 'M65 28 L75 28 L75 31 L65 31 Z'; w.brow = 'M65 25.5 L76 26.5'; } }
-  else if (t >= T_TURN){ const k = seg(t,T_TURN,TONGUE_END - .1), hop = seg(t,T_TURN,T_TURN + .25); tongue = 0; flake = -1;
-    w.face = hop < .5 ? 1 : -1; w.rot = 0; w.arF = -66; w.foF = -98; w.lid = 'M65 28 L75 28 L75 31 L65 31 Z'; w.brow = 'M65 25.5 L76 26.5'; w.mouth = 'M65 47.5 L71 47.5';
-    if (hop < 1){ w.dx = STAND - 30; w.y = -Math.sin(hop*Math.PI)*6; }
-    else { const k2 = seg(t,T_TURN + .25,TONGUE_END - .1); w.dx = lerp(STAND - 30, out, k2*k2*.3 + k2*.7); walk(w, 1.5, 22); w.arF = -66; w.foF = -98; if (k >= 1) w.show = false; } }
-  return {w, b, tongue, breath, bubble, flash, flake, pop, stretch};
+  const BR = BUDDY_FAR;                                      // buddy's spot on the far side of the riser
+  if (t >= 12.2 && t < 13.4){ b.show = true; b.face = -1; const k = seg(t,12.2,13.4); b.dx = lerp(fromR, BR, 1 - Math.pow(1-k,1.6)); walk(b, 1.5, 24); b.thermos = true; b.arF = -40; b.foF = -50; }
+  else if (t >= 13.4 && t < 13.7){ b.show = true; b.face = -1; b.dx = BR; b.thermos = true; b.arF = -40; b.foF = -50; const k = seg(t,13.4,13.7); b.y = Math.sin(k*Math.PI)*2; b.lid = 'M65 27 L75 27 L75 31 L65 31 Z'; b.mouth = 'M64 47.5 Q68 46.5 72 47.5'; }   // sigh
+  else if (t >= 13.7 && t < 14.6){ b.show = true; b.face = -1; b.dx = BR; b.thermos = true; const k = ease(seg(t,13.7,13.95)); b.arF = lerp(-40, -100, k); b.foF = lerp(-50, -40, k); b.tilt = 70*k; pour = t < 14.5 ? k : 0; steam = 1; b.px = 74.5; b.py = 35; }
+  else if (t >= 14.6 && t < 15.4){ b.show = true; b.face = -1; b.dx = BR; b.thermos = true; b.arF = -40; b.foF = -50; b.mouth = 'M63 46 Q68 52 73 46 Z'; b.lid = 'M65 27 Q70 32 75 27 L75 33 L65 33 Z'; b.y = -Math.abs(Math.sin(t*15))*1.4; steam = 1 - seg(t,14.6,15.4)*.5; }
+  else if (t >= 15.4 && t < 15.65){ b.show = true; b.dx = BR; const k = seg(t,15.4,15.65); b.face = k < .5 ? -1 : 1; b.y = -Math.sin(k*Math.PI)*6; b.thermos = true; b.arF = -40; b.foF = -50; steam = .5; }
+  else if (t >= 15.65 && t < 17.6){ b.show = true; b.face = 1; const k = seg(t,15.65,17.6); b.dx = lerp(BR, outR, k); walk(b, 1.3, 22); b.thermos = true; b.arF = -55; b.foF = -100; b.head = -6; b.mouth = 'M63 46.5 Q68 50 73 46.5'; steam = .5 - k*.5; }   // sips the coffee on his way
+  if (t >= 17.6) steam = Math.max(0, .35 - seg(t,17.6,18.3)*.35);
+  return {w, b, tongue, breath, bubble, flash, flake, pour, steam, thwip};
 }
 
 function pupApply(B: Pup, p: any): void {
@@ -137,6 +145,7 @@ function pupApply(B: Pup, p: any): void {
   q('.lid').setAttribute('d', p.lid); q('.brow').setAttribute('d', p.brow);
   q('.mouth').setAttribute('d', p.mouth); q('.mouth').setAttribute('fill', p.mouth.includes('Z') ? '#7a2a22' : 'none');
   const ph = q('.phone'); if (ph) ph.style.display = p.phone ? '' : 'none';
+  const th = q('.thermos'); if (th){ th.style.display = p.thermos ? '' : 'none'; q('.thermos .tilt').setAttribute('transform', `rotate(${p.tilt || 0} 0 12)`); }
 }
 // a point in a part's own coordinates, in host pixels
 function pt(B: Pup, sel: string, x: number, y: number): { x: number; y: number } { const el = B.q(sel), m = el.getScreenCTM(), r = B.host.getBoundingClientRect(); return {x: m.a*x + m.c*y + m.e - r.left, y: m.b*x + m.d*y + m.f - r.top}; }
@@ -150,7 +159,7 @@ export function tongueScene(layer: HTMLElement, riser: Pup, scale: number, flash
   const sc: any = { riser };
   sc.worker = z(makePup(layer, BUILD, { vw: 120, vh: 120, ax: 60, ay: 108, frac: WORKER_FRAC * scale, spot: { ...riser.spot } }), 5);
   sc.buddy = z(makePup(layer, BUDDY, { vw: 120, vh: 120, ax: 60, ay: 108, frac: WORKER_FRAC * scale, spot: { ...riser.spot } }), 6);
-  sc.buddy.q('.armF .fore').insertAdjacentHTML('afterbegin', PHONE);
+  sc.buddy.q('.armF .fore').insertAdjacentHTML('afterbegin', PHONE + THERMOS);
   sc.ov = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   sc.ov.setAttribute('class', 'pup-overlay');
   sc.ov.style.zIndex = '7';
@@ -174,19 +183,23 @@ export function tongueApply(sc: any, P: any, t: number): void {
     if (t < 3.3) sc.stuckY = m.y;
     const ty = sc.stuckY ?? m.y, tx = lerp(m.x, pipeX, P.tongue);
     const d = `M${m.x} ${m.y} Q${(m.x + tx)/2} ${(m.y + ty)/2 + 1.5*u} ${tx} ${ty}`;
-    // (the heave thins it as it stretches)
-    html += `<path class="tongue" d="${d}" stroke="${O}" stroke-width="${(5.2 - 1.6*(P.stretch ?? 0))*u}" fill="none" stroke-linecap="round"/><path d="${d}" stroke="#ef7f86" stroke-width="${(3 - 1.2*(P.stretch ?? 0))*u}" fill="none" stroke-linecap="round"/>`;
+    html += `<path class="tongue" d="${d}" stroke="${O}" stroke-width="${5.2*u}" fill="none" stroke-linecap="round"/><path d="${d}" stroke="#ef7f86" stroke-width="${3*u}" fill="none" stroke-linecap="round"/>`;
     if (t >= 3.3 && t < 3.9){ const k = seg(t,3.3,3.9); for (let i = 0; i < 5; i++){ const a = -Math.PI*(.15 + i*.17), L = 7*u*(1 + k);
       html += `<path d="M${pipeX + Math.cos(a)*L} ${ty + Math.sin(a)*L*.9} l${Math.cos(a)*3*u} ${Math.sin(a)*3*u}" stroke="#bfe6ff" stroke-width="${Math.max(1.2, 1.4*u)}" stroke-linecap="round" opacity="${1-k}"/>`; } }   // frosty sparkle at the stick
   }
-  // the pop as it snaps free: the same frosty sparkle, at the pipe
-  if (P.pop >= 0 && P.pop < 1){ const k = P.pop, ty = sc.stuckY ?? m.y; for (let i = 0; i < 6; i++){ const a = -Math.PI*(.1 + i*.16), L = 6*u*(1 + k*1.6);
-    html += `<path d="M${pipeX + Math.cos(a)*L} ${ty + Math.sin(a)*L*.9} l${Math.cos(a)*3.4*u} ${Math.sin(a)*3.4*u}" stroke="#bfe6ff" stroke-width="${Math.max(1.2, 1.4*u)}" stroke-linecap="round" opacity="${1-k}"/>`; } }
   // cold breath puffs
   if (P.breath){ for (let i = 0; i < 2; i++){ const k = ((t*1.1 + i*.5) % 1); html += `<circle cx="${m.x + (4 + k*10)*u}" cy="${m.y - k*5*u}" r="${(1.6 + k*3)*u}" fill="#ffffff" stroke="#c7d3de" stroke-width="${.8*u}" opacity="${(1-k)*.85}"/>`; } }
   // snowflake onto his nose
   if (P.flake >= 0){ const n = pt(sc.worker, '.head', 79, 38), k = P.flake, fx = n.x + Math.sin(k*9)*6*u*(1-k), fy = lerp(n.y - 70*u, n.y - 3*u, k), s = Math.max(2, 2.2*u);
     html += `<g class="flake" stroke="#ffffff" stroke-width="${Math.max(1, .9*u)}" stroke-linecap="round" transform="translate(${fx} ${fy}) rotate(${k*200})"><path d="M${-s} 0 L${s} 0 M0 ${-s} L0 ${s} M${-s*.7} ${-s*.7} L${s*.7} ${s*.7} M${-s*.7} ${s*.7} L${s*.7} ${-s*.7}"/></g>`; }
+  // the hot coffee poured on the pipe, steam, and THWIP
+  const cy = sc.stuckY ?? m.y;
+  if (P.pour > .6 || P.steam > 0){ const tp = pt(sc.buddy, '.armF .fore', -6, 4);
+    if (P.pour > .6){ const d = `M${tp.x} ${tp.y} Q${pipeX + 8*u} ${tp.y - 2*u} ${pipeX + 3*u} ${cy - 2*u}`; html += `<path class="coffee" d="${d}" stroke="${O}" stroke-width="${4.6*u}" fill="none" stroke-linecap="round"/><path d="${d}" stroke="#a8743f" stroke-width="${2.8*u}" fill="none" stroke-linecap="round"/>`;
+      for (let i = 0; i < 4; i++){ const k = ((t*2 + i/4) % 1); html += `<circle cx="${pipeX + (Math.sin(i*2.1)*5)*u}" cy="${cy - k*18*u}" r="${(2 + k*3.5)*u}" fill="#ffffff" stroke="#c7d3de" stroke-width="${.7*u}" opacity="${(1-k)*.9}"/>`; } }
+    const src = P.pour > .6 ? null : (sc.buddy.q('.flip').style.visibility === 'hidden' ? {x: pipeX + 4*u, y: cy} : tp);
+    if (src) for (let i = 0; i < 2; i++){ const k = ((t*1.2 + i/2) % 1); html += `<circle cx="${src.x + Math.sin(k*5 + i)*2*u}" cy="${src.y - 3*u - k*12*u}" r="${(1.3 + k*2.4)*u}" fill="#ffffff" stroke="#c7d3de" stroke-width="${.6*u}" opacity="${(1-k)*.8*P.steam}"/>`; } }
+  if (P.thwip > 0 && P.thwip < 1){ const k = P.thwip, s2 = Math.max(11, 9*u); html += `<text class="thwip" x="${pipeX - 8*u}" y="${cy - 12*u - k*5*u}" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="${s2}" fill="#fff" stroke="${O}" stroke-width="${s2*.22}" paint-order="stroke" opacity="${1 - k*.4}">THWIP</text>`; }
   if (sc.ovHtml !== html) sc.ov.innerHTML = sc.ovHtml = html;
   // where his head is, for the "HEWP!" bubble
   sc.head = pt(sc.worker, '.head', 46, 6);

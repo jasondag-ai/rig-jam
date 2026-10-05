@@ -137,15 +137,15 @@ export function mmApply(sc: any, p: any, t: number): void {
   else pf.style.display = 'none';
 }
 
-/** Sets the scene on a full-screen layer: the worker at `spot` (shares of the layer) and the stick's overlay. */
-export function marshmallowScene(layer: HTMLElement, spot: { x: number; y: number }, scale: number, tip: { x: number; y: number }, flame: SVGElement | null): any {
+/** Sets the scene: the worker at `spot` (shares of his layer), and the stick's overlay on `over`, the layer that lies over the lease. */
+export function marshmallowScene(layer: HTMLElement, over: HTMLElement, spot: { x: number; y: number }, scale: number, tip: { x: number; y: number }, flame: SVGElement | null): any {
   const w = makePup(layer, WORKER, { vw: 120, vh: 120, ax: 60, ay: 108, frac: WORKER_FRAC * scale, spot });
   // This worker has no pail and no long reach.
   for (const part of ['.pail', '.reach']) (w.q(part) as SVGElement).style.display = 'none';
   const ov = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   ov.setAttribute('class', 'pup-overlay');
   ov.innerHTML = STICK;
-  layer.appendChild(ov);
+  over.appendChild(ov);
   return { w, ov, tip, flame };
 }
 

@@ -18,6 +18,8 @@ const FENCE_RATIO = 0.42;
 const GAP = 3; // px between a truck and its cell edge
 const WAVE_MS = 260; // gate arm lifts and the driver waves before pulling out
 const DRIVE_MS = 460;
+/** How far back (cells) the finger must turn for a reversal to count toward a wiggle. */
+const WIGGLE_TURN = 0.25;
 const BUMP_PUSH = 0.25; // cells of push past a blocker before it counts as a bump
 const BUBBLE_MS = 2200;
 const RADIO_MS = 140; // radio squelch, then the driver speaks
@@ -35,6 +37,8 @@ interface Drag {
   offset: number;
   /** True while the truck is pushed against something; resets when it eases off. */
   pressing: boolean;
+  /** The finger's wiggle: which way it is going and how far it has got (px along the lane). */
+  wig: { dir: number; ext: number };
 }
 
 /** Renders the pad, gates, obstacles and trucks, and turns drags into (truckId, delta) move requests. */
@@ -56,6 +60,8 @@ export class BoardView {
   private ground: Ground = 'gravel';
   private bermKey = '';
   private night = false;
+  private bermNight!: HTMLCanvasElement;
+  private dawnTimer = 0;
   /** Stops the pumpjacks' ambient motion (obstacles.ts) when the level is rebuilt. */
   private stopPumpjacks: () => void = () => {};
   private lastLine: string | null = null;
@@ -68,6 +74,8 @@ export class BoardView {
   private movingUntil = 0;
   /** Called when a truck is picked up (the start of a drag). */
   onGrab: (truckId: string) => void = () => {};
+  /** The finger turned back during a drag (a wiggle): called at each reversal. */
+  onReverse: (truckId: string) => void = () => {};
 
   constructor(
     getState: () => GameState,
@@ -83,8 +91,9 @@ export class BoardView {
     this.yard = document.createElement('div');
     this.yard.className = 'yard';
     // Under everything: the lease's one continuous ground (pad and berm band alike), then the berm.
-    this.el.insertAdjacentHTML('afterbegin', '<div class="lease-ground" aria-hidden="true"><canvas class="lease-detail"></canvas><i class="night-pad"></i></div><canvas class="berm" aria-hidden="true"></canvas>');
+    this.el.insertAdjacentHTML('afterbegin', '<div class="lease-ground" aria-hidden="true"><canvas class="lease-detail"></canvas><i class="night-pad"></i></div><canvas class="berm" aria-hidden="true"></canvas><canvas class="berm berm-night" aria-hidden="true"></canvas>');
     this.berm = this.el.querySelector('canvas.berm')!;
+    this.bermNight = this.el.querySelector('canvas.berm-night')!;
     this.detail = this.el.querySelector('canvas.lease-detail')!;
     gateArt(this.el);
     this.pad = document.createElement('div');
@@ -208,12 +217,13 @@ export class BoardView {
     const { cell, fence, ground } = this;
     const over = Math.round(fence * BERM_OVER);
     const scale = Math.min(3, window.devicePixelRatio || 1);
-    const key = [cell, fence, ground, scale, this.night, this.level.id, this.level.gates.map((g) => g.side + g.index).join()].join('|');
+    const key = [cell, fence, ground, scale, this.level.id, this.level.gates.map((g) => g.side + g.index).join()].join('|');
     if (key === this.bermKey) return;
     this.bermKey = key;
     const size = cell * SIZE + (fence + over) * 2;
     Object.assign(this.berm.style, { left: `${-over}px`, top: `${-over}px`, width: `${size}px`, height: `${size}px` });
-    paintBerm(this.berm, { cell, band: fence, over, gates: this.level.gates }, ground, seedFrom(this.level.id), scale, this.night ? nightRgba(ground) : '');
+    paintBerm(this.berm, { cell, band: fence, over, gates: this.level.gates }, ground, seedFrom(this.level.id), scale);
+    if (this.night) this.paintNightBerm();
     paintDetail(this.detail, planDetail(this.level, ground, seedFrom(this.level.id)), cell, fence, scale);
   }
 
@@ -451,8 +461,28 @@ export class BoardView {
   /** Night levels (night.ts): the lease under the night's shade, flare glow and headlights on. */
   setNight(on: boolean): void {
     this.night = on;
+    if (on) this.paintNightBerm();
     this.el.classList.toggle('night', on);
-    this.paintBerm();
+    // Coming back to day is a quicker fade than nightfall (style.css "Night").
+    this.el.classList.toggle('dawn', !on);
+    window.clearTimeout(this.dawnTimer);
+    if (!on) this.dawnTimer = window.setTimeout(() => this.el.classList.remove('dawn'), 2600);
+  }
+
+  /** The berm as it looks at night: the day's own canvas under the night's shade, on a canvas that fades in over it. */
+  private paintNightBerm(): void {
+    const day = this.berm, night = this.bermNight;
+    if (!day.width) return;
+    for (const k of ['left', 'top', 'width', 'height'] as const) night.style[k] = day.style[k];
+    night.width = day.width;
+    night.height = day.height;
+    const ctx = night.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(day, 0, 0);
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.fillStyle = nightRgba(this.ground);
+    ctx.fillRect(0, 0, night.width, night.height);
+    ctx.globalCompositeOperation = 'source-over';
   }
 
   setGround(ground: Ground): void {
@@ -539,7 +569,7 @@ export class BoardView {
       // Capture can fail (e.g. the pointer is already gone); the drag still works without it.
     }
     const horizontal = truck.orient === 'h';
-    this.drag = { id, el, pointerId: e.pointerId, start: horizontal ? e.clientX : e.clientY, range, horizontal, offset: 0, pressing: false };
+    this.drag = { id, el, pointerId: e.pointerId, start: horizontal ? e.clientX : e.clientY, range, horizontal, offset: 0, pressing: false, wig: { dir: 0, ext: 0 } };
     el.classList.add('dragging');
     this.onGrab(id);
     sound.dragStart();
@@ -558,6 +588,15 @@ export class BoardView {
     // Axis lock: only the truck's own axis counts. Allow a little overshoot toward an open gate.
     const lo = min * this.cell - (exitLo ? this.cell * 0.6 : 0);
     const hi = max * this.cell + (exitHi ? this.cell * 0.6 : 0);
+    // Reversals of the finger itself (so a boxed-in truck can be wiggled too): a turn back of a quarter cell.
+    const turn = this.cell * WIGGLE_TURN, w = d.wig;
+    if (w.dir === 0) {
+      if (Math.abs(raw - w.ext) > turn) d.wig = { dir: Math.sign(raw - w.ext), ext: raw };
+    } else if ((raw - w.ext) * w.dir > 0) w.ext = raw;
+    else if ((w.ext - raw) * w.dir > turn) {
+      d.wig = { dir: -w.dir, ext: raw };
+      this.onReverse(d.id);
+    }
     const before = d.offset;
     d.offset = Math.max(lo, Math.min(hi, raw));
     const truck = this.truckById(d.id);
