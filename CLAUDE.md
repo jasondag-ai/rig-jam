@@ -146,7 +146,7 @@ something, give exact clicks and one command at a time.
     "Who's paying for these ruts?", wheelie, hat blows off and is caught, out the far side.
   - THE BIFFY is permanent scenery (`BiffyProp`, `.biffy-layer`, under the board): bottom strip of
     every level at `BIFFY_X`, about 60 px tall at 390 (`BIFFY_SIZE` 0.8 of the reference, after
-    playing on a phone; the shuffler keeps his size; smaller on a short strip), standing up by the
+    playing on a phone; the shuffler is the WORKER'S size, `SHUFFLER_FRAC` 0.243, as in the porcupine gag; smaller on a short strip), standing up by the
     berm (`biffyStand`: `BIFFY_GAP` 12 px of grass under the berm's foot), in its own clearing
     (scenery `clearings`, plus `biffyLane`, a tree-free lane to the near screen edge), clear of
     the board, tip line and buttons. No biffy appears and
@@ -219,9 +219,10 @@ something, give exact clicks and one command at a time.
     where his hand sets it (`dropX`); his whole face flushes when he boils over (no blush spot);
     he hurls the crust down the hole, hop-turns and stomps off the way he came, glaring down at
     the hole; the gopher pops up chewing it, burp, gone; the quiet mound again (`LUNCH_END` 17.9).
-    STILL OWED: Jay asked for a thicker arm and a triangle-cut sandwich "from the reference", but
-    the file saved Oct 5 11:50 still has the round sandwich and the same arm. Port them when a
-    newer file arrives.
+    The arm is 1.5x thicker with a bigger paw (`ARM`) and the sandwich is TRIANGLE-CUT (`FOOD`
+    makes it a little bigger): both built from Jay's description, because the "12:10" reference
+    never reached the Desktop (the file there is still Oct 5 11:50, round sandwich). If it
+    arrives, port its drawings over these.
   - SAFETY SAM (gag 14, any region; `sam.ts`, ported from `safety_sam_reference.html`): the
     worker's build recoloured (white hat, navy, hi-vis vest, moustache) with a clipboard. Marches
     in from the left to the middle of the strip, looks up, slow head shake ("tsk" is drawn), scribbles,
@@ -238,6 +239,26 @@ something, give exact clicks and one command at a time.
     lands on his nose. Ending (reference, Oct 5): the buddy comes back from the FAR side with a
     steaming thermos, sighs, pours hot coffee on the pipe, THWIP, the tongue frees; both hop-turn
     and walk off their own ways; the empty riser again. Trigger: 30 s idle on a winter level.
+  - THE LEASE SIGN AND ITS THREE GAGS (16 to 18; `sign-gags.ts`, ported from
+    `sign_gags_reference.html`, saved Oct 5 13:22). The blank lease sign is PERMANENT scenery at
+    one fixed spot on every level (`SignProp`, `.sign-layer`, `SIGN_X` 0.62, in the open row up by
+    the berm, a little nearer the buttons than the biffy: `signStand`; `signLane` keeps trees off
+    its visitors' way; the scenery no longer scatters a sign). The reference brings visitors from
+    the left; in the game the near edge is the right, so their stage (`.sign-stage`) is MIRRORED
+    about the sign (`signStage`); the sign itself is the prop's own puppet, and BZZZZ is turned back.
+    16 SURVEYOR (approved as it is): sights the sign, "Off a metre.", yanks it up, moves it a
+    metre, sights again, "Huh.", carries it back exactly, stamps it in, "Perfect.", folds the
+    tripod, leaves. Trigger: the Restart button, 1 in 2, once a visit. Any region.
+    17 BACK SCRATCHER (mule deer) and 18 TOURISTS were REVISED by Jay (bible, Oct 5) after the file
+    was saved and no newer file has arrived, so their revised beats are AUTHORED from his words on
+    the reference's drawings and clock: the deer rubs its CHEEK AND NECK on the sign's near corner
+    and post (never its rump), eyes roll back, tongue out, a hind leg thumps, and it ambles off
+    PAST the sign; SHE PHOTOGRAPHS HIM posing by the sign (he spins round, elbow on the sign,
+    thumbs up), flash, one mosquito, slap, the swarm, both run off, a straggler lands on the sign.
+    If a newer reference arrives, port it over those two. Triggers: deer = tap the sign; tourists
+    = the first move on the Daily Pad, 1 in 3 (`rollComes`; `?surveyor=1/0`, `?tourists=1/0` pin a
+    roll, `rollPinned`). No deer or tourists on winter levels. A gag may say several lines
+    (`Built.lines`). `npm run test:e2e:signs` checks all of it and saves `gag16..18_*.webm`.
   - `npm run test:e2e:eggs2` checks gags 8 and up the same way and saves their clips.
   - `npm run test:e2e:strip` checks all of it in WebKit (beats, real triggers, off-screen entry and
     exit, hole clip, biffy placement, reduced motion, log), 60 fps at 4x throttle in Chromium, and
@@ -508,9 +529,10 @@ something, give exact clicks and one command at a time.
 - Test hook: `?audiolog` exposes `window.__rhrAudio` (its `log` lists cues as they fire).
 
 ## Wildlife Log
-- `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game (15:
+- `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game (18:
   Magpie, Sleepy Worker, Moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll,
-  Marshmallow, Lost Goose, Porcupine, Gopher Lunch, Safety Sam, Frozen Tongue, Bull and Cow, Bear),
+  Marshmallow, Lost Goose, Porcupine, Gopher Lunch, Safety Sam, Frozen Tongue, Surveyor, Back
+  Scratcher, Tourists, Bull and Cow, Bear),
   each with a caption and a hint. No entries for gags that are gone (the pumper, the old hot shot
   and gopher); their ids are dropped from a saved log on load. An entry unlocks the first time its
   gag plays right through (`GameView.seen`; the worker counts once he is asleep). Saved in
@@ -673,6 +695,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
 - `npm run test:e2e:gags` – every puppet gag suite in turn: magpie, eggs, strip, eggs2 (start the dev server first)
 - `npm run test:e2e:bubbles` – every speech bubble's tail on its speaker, following it, clear of the HUD and buttons; witness lines (start the dev server first)
+- `npm run test:e2e:signs` – the permanent lease sign and gags 16 to 18: surveyor, back scratcher, tourists (start the dev server first)
 - `npm run test:e2e:tutorial` – the "?" button, the three how-to cards, level 1's ghost finger (start the dev server first)
 - `npm run test:e2e:lines` – bump lines by kind, escalation, witness lines, the Company Man (start the dev server first)
 - `npm run test:e2e:frames` – SAME START, SAME END: every strip gag's first and last frames show no character (start the dev server first)
