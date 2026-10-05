@@ -106,7 +106,7 @@ something, give exact clicks and one command at a time.
   Biffy B = a second one within 1.4 s; marshmallow = 3 taps on a flare; geese = Undo 3 times in a
   row; bear = 3 taps on his bush on any Duvernay level, 1 in 3 (`bearComes`; else the bush shakes
   and drops a snow puff, `BushProp.shake`; demo mode always); bull = tap the cow (Montney);
-  porcupine = TBD (demo: tap the bush); gopher lunch = 30 s idle (Cardium); Sam = 3 bumps in a row
+  porcupine = 3 taps on the Cardium bush (the bear's pattern, every time); gopher lunch = 30 s idle (Cardium); Sam = 3 bumps in a row
   or a wrong-colour gate; frozen tongue = 30 s idle (winter); night = 30 s idle, nudge 15 s after.
 - GAG RULES (GAME_BIBLE Oct 5; `GAG_RULES`, `SHARES`, `mustWait` in gag-triggers.ts; enforced in
   `GameView.fire`/`startEgg`/`tickEggs`): gags play AT THE SAME TIME. A trigger plays its gag right
@@ -118,8 +118,8 @@ something, give exact clicks and one command at a time.
   scale), `?off=lunch,porcupine,sam,tongue` leaves gags out, `?bear=1` / `?bear=0`.
 - SAME START, SAME END (GAME_BIBLE Oct 5): a gag's last frame looks exactly like its first.
   Characters walk in and out fully off screen; nothing appears or disappears by magic; any prop a
-  gag uses is permanent scenery. (Still to bring into line: the cow stays gone after the bull gag,
-  and the biffy's indicator changes colour.)
+  gag uses is permanent scenery, and every prop is back as it began (the cow grazing in her spot,
+  the biffy's indicator its starting green).
 - GAG LAYERS AND THE NIGHT: every gag layer is put on the screen with `host.mount`, which inserts
   it UNDER the night's shade. Strip layers (`.strip-layer`, `.worker-layer`) are z 0, so at night
   they dim exactly like the scenery and the props, with no filters. Only what must lie over the
@@ -147,8 +147,10 @@ something, give exact clicks and one command at a time.
     clearing (scenery `clearings`), clear of the board, tip line and buttons. No biffy appears and
     disappears any more. `npm run test:e2e:strip` checks there is exactly ONE on every level.
   - BIFFY A "Occupied": door bangs open, the occupant looks back wide-eyed, nods, reaches, pulls it
-    shut; the indicator ends red. BIFFY B "The Runaway Roll": the roll rolls out and away, the arm
-    gropes, he shuffles after it off screen with paper on his boot, the door creaks shut; green.
+    shut; the indicator is red while he is caught (3.55 to 5.0 s), then clicks back to green
+    (`unlocked`). BIFFY B "The Runaway Roll": the roll rolls out and away, the arm gropes, he
+    shuffles after it off screen with paper on his boot, the door creaks shut; red from the jolt
+    until the door is shut, then green. The indicator always starts and ends green.
   - MARSHMALLOW (gag 8, levels with a flare stack; `marshmallow.ts`, ported from
     `marshmallow_geese_reference.html`): the sleepy worker's drawing walks in from off the left,
     telescopes a stick in three clicks from his glove to the nearest REAL flare's pilot flame
@@ -181,10 +183,11 @@ something, give exact clicks and one command at a time.
     hoof, a rubber-stretched leg slicks his curly forelock back and it stays slicked, chest puff
     with a sparkle), dreamy eyes and floating red hearts (NO speech bubble); her eyes go huge,
     hop-turn, she bolts off the right; eyebrow waggle, snort, paws the ground, charges after her
-    trailing hearts; a last heart pops. She stays gone until the level is loaded again. THE PRIMP
-    IS NOT IN THE REFERENCE FILE: it was built from the GAME_BIBLE's description and takes `PRIMP`
-    (1.8 s) after the freeze; every later reference beat is that much later. If a newer reference
-    with the primp arrives, port its primp over this one.
+    trailing hearts; a last heart pops. The primp is the reference's own (re-sent Oct 5; it
+    takes `SHIFT` 1.6 s, the later beats are that much later). THE COW COMES BACK (authored, not in
+    the reference): from `T_BACK` she wanders in from the right edge, the one she left by, a little
+    out of breath (puffs at her muzzle), and from `T_GRAZE` grazes in her spot exactly as at the
+    start (`COW_REST`). The bull stays gone.
   - THE GAG BUSH (`gag-bush.ts`): BUSH RULE, every gag bush is the board's own willow drawing
     (`treeArt('willow', …)`), never a reference page's blob; in winter in leaf with a snow dusting.
     `BushProp(host, x, season)` is the permanent one (bear levels at `BUSH_X`; all of Cardium at
@@ -195,7 +198,7 @@ something, give exact clicks and one command at a time.
     the bush from the first frame. The worker strolls in from the left with a roll, looks about,
     squats behind the bush, POKE (hat pops, the roll pops up over the bush and drops back), springs
     out and scurries off left with quills in his bum; the porcupine bolts off the right, quills up.
-    Trigger: TBD (`GAG_TRIGGERS.porcupine`); in DEMO MODE only, a tap on the bush plays it.
+    Trigger: tap the Cardium bush 3 times (`GAG_TRIGGERS.porcupine`), in the game and in demo mode.
   - GOPHER LUNCH (gag 13, Cardium; `gopher-lunch.ts`, ported from `gopher_lunch_reference.html`):
     played at the BOARD'S OWN mound, not a second drawing: with these gags the scenery stands the
     mound on the strip's ground line at the reference's size (`moundSpot`, scenery `moundAt`), the
