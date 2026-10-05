@@ -29,6 +29,7 @@ const W = 390;
 const GAGS = {
   marshmallow: { preview: 'marshmallow', clip: 'gag89_marshmallow', beats: ['walk-in', 'eyes-flare', 'telescope', 'roast', 'fwoomp', 'eyes-pop', 'yank', 'blow', 'sniff-shrug', 'crispy', 'ear-smoke', 'gone'] },
   bear: { preview: 'bear', clip: 'gag10_bear', beats: ['hare-nibbles', 'bear-in', 'sniff', 'sit', 'smug', 'strain', 'relief', 'spots-ears', 'snatch', 'long-look', 'swing', 'wipe', 'inspect', 'set-down', 'violated', 'bear-leaves', 'trudge', 'gone'] },
+  bull: { preview: 'bull', clip: 'gag11_bull', beats: ['cow-grazes', 'bull-in', 'freeze', 'lick-hoof', 'slick', 'chest-puff', 'hearts', 'cow-looks', 'eyes-huge', 'hop-turn', 'bolts', 'paws', 'charge', 'last-heart'] },
   geese: { preview: 'geese', clip: 'gag89_geese', beats: ['v-flies', 'wrong-way', 'pass', 'stall', 'honk', 'snap-turn', 'chase', 'straggler', 'feather'] },
 };
 const want = (name) => !ONLY || ONLY === name;
@@ -256,6 +257,90 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     await context.close();
   }
 
+  if (engine === 'webkit' && want('bull')) {
+    // ---------- The cow: permanent scenery in Montney ----------
+    const mon = region('montney');
+    for (const [width, height] of [[390, 844], [375, 667]]) {
+      console.log(`\n${engine} ${width}x${height}: the cow grazes in the Montney strip`);
+      for (const li of [0, 5, 9]) {
+        const { context, page } = await open(browser, { width, height, level: [mon, li] });
+        await wait(300);
+        const look = () => page.evaluate(() => {
+          const s = document.querySelector('.cow-layer svg.pup .root');
+          const r = s.getBoundingClientRect(), R = (q) => document.querySelector(q).getBoundingClientRect();
+          const biffy = R('.biffy-layer svg.pup .root');
+          const trees = [...document.querySelectorAll('.scenery .sc')].filter((t) => { const q = t.getBoundingClientRect(); const m = q.width * 0.25; return q.left + m < r.right && q.right - m > r.left && q.top < r.bottom && q.bottom > r.bottom - 4; }).length;
+          return { ok: r.top >= R('.board').bottom && r.bottom <= R('.note').top + 1 && r.bottom <= R('.controls').top && r.right <= innerWidth && r.left > biffy.right, trees, touch: getComputedStyle(document.querySelector('.cow-layer')).pointerEvents, html: document.querySelector('.cow-layer').innerHTML, w: r.width };
+        });
+        const a = await look();
+        await wait(700);
+        const b = await look();
+        check(a.ok && a.touch === 'none' && a.trees === 0, `Montney ${li + 1}: clear of the lease, the tip line, the buttons, the biffy and the trees (${Math.round(a.w)}px long)`);
+        if (li === 0) check(a.html === b.html, 'she stands quite still until the gag');
+        await context.close();
+      }
+    }
+    {
+      const { context, page } = await open(browser, { level: [region('cardium'), 5] });
+      check(!(await page.$('.cow-layer')), 'no cow outside Montney');
+      await context.close();
+    }
+
+    // ---------- The bull: tap the cow ----------
+    console.log(`\n${engine}: bull and cow, tap the cow (Montney 6)`);
+    const { context, page } = await open(browser, { level: [mon, 5] });
+    const cow = await page.evaluate(() => { const r = document.querySelector('.cow-layer svg.pup .root').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    const watching = watch(page, 'bull', { parts: { bull: '.bull-layer svg.pup .root', cow: '.cow-layer svg.pup .root' } }, 30000);
+    const extras = page.evaluate(
+      () =>
+        new Promise((res) => {
+          const out = { bubbles: 0, hearts: 0, trail: 0, eye: 0, curly: '', slick: '', leg: 0, sparkle: false, pop: false };
+          const tick = () => {
+            const l = document.querySelector('.strip-layer[data-gag="bull"]');
+            if (!l && out.curly) return res(out);
+            if (l) {
+              const beat = l.dataset.beat, hearts = l.querySelectorAll('.pup-overlay path[fill="#e3364b"]').length;
+              out.bubbles = Math.max(out.bubbles, document.querySelectorAll('.bubble').length);
+              if (beat === 'hearts') out.hearts = Math.max(out.hearts, hearts);
+              if (beat === 'charge') out.trail = Math.max(out.trail, hearts);
+              if (beat === 'last-heart') out.pop ||= l.querySelectorAll('.pup-overlay path[stroke="#e3364b"]').length === 6;
+              out.eye = Math.max(out.eye, +document.querySelector('.cow-layer .eye').getAttribute('r'));
+              const f = l.querySelector('.forelock').getAttribute('d');
+              if (beat === 'bull-in') out.curly = f;
+              if (beat === 'hearts' || beat === 'charge') out.slick = f;
+              if (beat === 'slick') out.leg = Math.max(out.leg, +(/scale\(1 ([\d.]+)\)/.exec(l.querySelector('.primpLeg').getAttribute('transform') ?? '')?.[1] ?? 0));
+              if (beat === 'chest-puff') out.sparkle ||= !!l.querySelector('.pup-overlay path[fill="#fff7c2"]');
+            }
+            requestAnimationFrame(tick);
+          };
+          tick();
+        }),
+    );
+    await tapAt(page, cow.x, cow.y);
+    const log = await watching;
+    const x = await extras;
+    check(sameBeats(log, 'bull'), `the beats, in order (${beatsOf(log).length} of ${GAGS.bull.beats.length})`);
+    check(log[0].bull.r <= 0, `the bull enters from fully off screen (${Math.round(log[0].bull.r)})`);
+    check(x.curly !== x.slick && x.leg > 2 && x.sparkle, `he primps: a stretched leg (${x.leg.toFixed(1)}x) slicks his curly forelock back, it stays slicked, and a sparkle on the chest puff`);
+    check(x.hearts >= 4 && x.bubbles === 0, `dreamy: ${x.hearts} red hearts float up, and no speech bubble at any point`);
+    check(x.eye > 7, `her eyes go huge (${x.eye})`);
+    const cowOut = log.filter((f) => f.cow.vis).at(-1), bullOut = log.filter((f) => f.beat === 'charge' && f.bull.vis).at(-1);
+    check(cowOut.cow.l >= W - 2, `she bolts until she is fully off screen (x ${Math.round(cowOut.cow.l)})`);
+    check(bullOut.bull.l >= W - 2 && x.trail >= 2, `he charges after her, hearts trailing, until fully off screen (x ${Math.round(bullOut.bull.l)})`);
+    check(x.pop, 'a last heart floats up and pops');
+    check(log.every((f) => f.others === 0), 'nothing else was on stage');
+    await wait(300);
+    const gone = await page.evaluate(() => getComputedStyle(document.querySelector('.cow-layer svg.pup')).visibility);
+    await tapAt(page, cow.x, cow.y);
+    await wait(900);
+    check(gone === 'hidden' && !(await page.$('.strip-layer')), 'she stays gone for the rest of the level');
+    await page.locator('[data-act="levels"]').first().click();
+    await page.locator('.level-btn').nth(5).click();
+    await page.waitForSelector('.board .truck.sprite-on');
+    check((await page.evaluate(() => getComputedStyle(document.querySelector('.cow-layer svg.pup')).visibility)) === 'visible', 'and is back grazing on the next level load');
+    await context.close();
+  }
+
   // ---------- Reduced motion: simple fades ----------
   if (engine === 'webkit') {
     console.log(`\n${engine}: reduced motion`);
@@ -280,8 +365,9 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       const cards = await page.$$eval('.log-card', (cs) => cs.map((c) => ({ id: c.dataset.id, text: c.querySelector('p').textContent, art: !!c.querySelector('.art svg.egg-still'), legendary: c.classList.contains('legendary') })));
       const by = Object.fromEntries(cards.map((c) => [c.id, c]));
       if (mode === 'game') check(by.bear?.art && by.bear.legendary && !!(await page.$('.log-card[data-id="bear"] .legend-tag')), 'the Bear has a LEGENDARY card with a gold frame and puppet art');
+      if (mode === 'game') check(by.bull?.art && by.bull.text === 'Not seen yet.', 'Bull and Cow has a card with puppet art');
       if (mode === 'game') check(by.marshmallow?.art && by.geese?.art && by.marshmallow.text === 'Not seen yet.' && by.geese.text === 'Not seen yet.', `Marshmallow and Lost Goose have cards with puppet art; the game hides the hints (${cards.length} cards)`);
-      else check(by.marshmallow.text === 'Tap a flare stack three times.' && by.geese.text === 'Undo three times in a row.' && by.bear.text === 'Solve Duvernay 8, 9 or 10 at par. One time in three.', 'demo mode shows each gag\'s hint');
+      else check(by.marshmallow.text === 'Tap a flare stack three times.' && by.geese.text === 'Undo three times in a row.' && by.bear.text === 'Solve Duvernay 8, 9 or 10 at par. One time in three.' && by.bull.text === 'Tap the cow in Montney.', 'demo mode shows each gag\'s hint');
       await context.close();
     }
   }

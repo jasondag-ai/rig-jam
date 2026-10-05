@@ -28,9 +28,11 @@ export const GAG_TRIGGERS = {
    * the region, with this chance. It plays before the win card. Demo mode: every time.
    */
   bear: { region: 'duvernay', levels: [8, 9, 10], perfectSolve: true, chance: 1 / 3 },
+  /** Gag 11, the bull and the cow: this many taps on the cow grazing in the bottom strip. */
+  bull: { region: 'montney', cowTaps: 1 },
 } as const;
 
-export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear';
+export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull';
 
 /** Is this one of the bear's levels (`level` counts from 1)? */
 export const bearLevel = (regionId: string, level: number): boolean => regionId === GAG_TRIGGERS.bear.region && (GAG_TRIGGERS.bear.levels as readonly number[]).includes(level);

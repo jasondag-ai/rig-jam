@@ -4,6 +4,7 @@
 // cover the whole game screen and take no touches, so characters enter from fully off screen and
 // leave until fully off screen, never clipped (the gopher alone is cut off at his hole).
 import { BEAR_BEATS, BEAR_END, BEAR_FRAC, BEAR_GAP, BUSH, BUSH_FRAC, bPose, bearApply, bearScene } from './bear.ts';
+import { BULL_BEATS, BULL_END, BULL_FRAC, BULL_GAP, COW_FRAC, COW_REST, PRIMP, bullApply, bullPose, bullScene, cowApply, cowPup } from './bull.ts';
 import { A_BEATS, A_END, BIFFY_FRAC, B_BEATS, B_END, aApply, bApply, biffyPup, biffyRest, runawayScene } from './biffy.ts';
 import type { EggHost, EggResult } from './egg-gags.ts';
 import { GEESE_LINE, GOOSE_FRAC, G_BEATS, G_END, SKY, gApply, geeseScene } from './geese.ts';
@@ -118,6 +119,65 @@ export class BushProp {
   }
 }
 
+/** Where the cow grazes across the screen (a share of its width): the right of the strip, the bull stopping between her and the biffy. */
+export const COW_X = 0.79;
+/** The patch of the strip kept clear of trees for the cow and the bull's stop. */
+export function cowBox(screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
+  const { ground, scale } = stripGeom(screenW, strip);
+  const left = (COW_X - BULL_GAP * scale - BULL_FRAC * scale * 0.2) * screenW, right = Math.min(screenW, (COW_X + COW_FRAC * scale * 0.5) * screenW);
+  const h = COW_FRAC * scale * screenW * 0.5;
+  return { x: left, y: ground - h, width: right - left, height: h };
+}
+
+/** The Holstein cow: permanent scenery in the Montney strip, grazing. She only moves during the gag. */
+export class CowProp {
+  readonly layer: HTMLElement;
+  pup: Pup;
+  /** She bolted: gone until the level is loaded again. */
+  gone = false;
+  private host: EggHost;
+
+  constructor(host: EggHost) {
+    this.host = host;
+    this.layer = document.createElement('div');
+    this.layer.className = 'scene-layer puppet-layer biffy-layer cow-layer';
+    this.layer.setAttribute('aria-hidden', 'true');
+    host.screen.append(this.layer);
+    this.pup = cowPup(this.layer, { x: COW_X, y: 0.8 }, 1);
+    this.layout();
+  }
+
+  scale(): number {
+    return stripGeom(this.host.screen.getBoundingClientRect().width, this.host.strip()).scale;
+  }
+
+  layout(): void {
+    const screen = this.host.screen.getBoundingClientRect();
+    if (!screen.height) return;
+    const { ground, scale } = stripGeom(screen.width, this.host.strip());
+    this.pup.frac = COW_FRAC * scale;
+    this.pup.spot = { x: COW_X, y: ground / screen.height };
+    this.rest();
+  }
+
+  rest(): void {
+    cowApply(this.pup, { ...COW_REST, show: !this.gone });
+  }
+
+  /** Is this point (client px) on her? */
+  hit(x: number, y: number): boolean {
+    if (this.gone) return false;
+    const r = (this.pup.q('.root') as SVGGElement).getBoundingClientRect();
+    return x >= r.left - 4 && x <= r.right + 4 && y >= r.top - 4 && y <= r.bottom + 4;
+  }
+
+  /** Back to grazing. */
+  reset(): void {
+    this.gone = false;
+    this.rest();
+  }
+}
+
 interface Bubble {
   from: number;
   to: number;
@@ -128,8 +188,8 @@ interface Bubble {
 interface Built {
   apply: (t: number) => void;
   bubble?: Bubble;
-  /** Called when the gag ends, however it ends. */
-  done?: () => void;
+  /** Called when the gag ends, however it ends ('seen': it played right through). */
+  done?: (result: EggResult) => void;
 }
 export interface TimelineDef {
   name: string;
@@ -230,7 +290,7 @@ export class TimelineGag {
     cancelAnimationFrame(run.frame);
     run.timers.forEach((t) => window.clearTimeout(t));
     run.bubble?.remove();
-    run.built.done?.();
+    run.built.done?.(result);
     run.layers.forEach((l) => l.remove());
     run.done(result);
   }
@@ -395,6 +455,31 @@ export const bearDef = (bush: BushProp): TimelineDef => ({
     const w = BEAR_FRAC * scale * screen.width, u = w / 160, at = (x - BEAR_GAP * scale) * screen.width;
     const from = -(at + w) / u, to = (screen.width - at + w) / u;
     return { apply: (t) => bearApply(scene, bPose(t, from, to), t), done: () => bush.show(true) };
+  },
+});
+
+/** Gag 11: the bull and the (permanent) cow. No speech, just hearts. She stays gone once she has bolted. */
+export const bullDef = (cow: CowProp): TimelineDef => ({
+  name: 'bull',
+  beats: BULL_BEATS,
+  end: BULL_END,
+  stillAt: 3.6 + PRIMP,
+  build(layer, host) {
+    if (cow.gone) return null;
+    const screen = host.screen.getBoundingClientRect();
+    const scale = cow.scale();
+    const scene = bullScene(layer('bull-layer'), cow.pup, scale);
+    // The bull in from past the left edge; both of them out past the right one (each in its own units).
+    const wB = BULL_FRAC * scale * screen.width, uB = wB / 170, xB = scene.bull.spot.x * screen.width;
+    const wC = COW_FRAC * scale * screen.width, uC = wC / 170, xC = cow.pup.spot.x * screen.width;
+    const from = -(xB + wB) / uB, charge = (screen.width - xB + wB) / uB, to = (screen.width - xC + wC) / uC;
+    return {
+      apply: (t) => bullApply(scene, bullPose(t, from, to, charge), t),
+      done: (result) => {
+        cow.gone = result === 'seen' && !reducedMotion();
+        cow.rest();
+      },
+    };
   },
 });
 

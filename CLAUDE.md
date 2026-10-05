@@ -110,7 +110,7 @@ something, give exact clicks and one command at a time.
   free. The magpie comes after his idle time with no moves and the worker after his, each
   counted from the last move or the last gag leaving (the worker waits until the magpie has been),
   each once per level; one that was scared off or cancelled may try again.
-  `?gag=magpie|worker|moose|nearmiss|landowner|biffya|biffyb|marshmallow|geese|bear` plays one at once, again and again;
+  `?gag=magpie|worker|moose|nearmiss|landowner|biffya|biffyb|marshmallow|geese|bear|bull` plays one at once, again and again;
   `?idle=0.1` makes the idle times 10x shorter.
 - STRIP GAGS (gags 4 to 7; `src/ui/strip-gags.ts` runner `TimelineGag`, placement `stripGeom`;
   puppets and timelines ported as written from `near_miss_landowner_reference.html` and
@@ -155,6 +155,17 @@ something, give exact clicks and one command at a time.
     (4) and the overlay (sweat, speed lines, the hare's storm cloud). The hare goes behind the bush
     only when its leading foot reaches the bush's edge, sinks, and is hidden only once covered.
     Log card: legendary gold frame.
+  - THE BULL AND THE COW (gag 11, Montney; `bull.ts`, ported from `bull_cow_reference.html`). The
+    Holstein cow is permanent scenery grazing in the Montney strip (`CowProp`, `.cow-layer`, at
+    `COW_X`; quite still until the gag; `cowBox` keeps trees off). Trigger: tap the cow
+    (`GAG_TRIGGERS.bull`). The Hereford bull walks in from off the left, freezes, PRIMPS (licks a
+    hoof, a rubber-stretched leg slicks his curly forelock back and it stays slicked, chest puff
+    with a sparkle), dreamy eyes and floating red hearts (NO speech bubble); her eyes go huge,
+    hop-turn, she bolts off the right; eyebrow waggle, snort, paws the ground, charges after her
+    trailing hearts; a last heart pops. She stays gone until the level is loaded again. THE PRIMP
+    IS NOT IN THE REFERENCE FILE: it was built from the GAME_BIBLE's description and takes `PRIMP`
+    (1.8 s) after the freeze; every later reference beat is that much later. If a newer reference
+    with the primp arrives, port its primp over this one.
   - `npm run test:e2e:eggs2` checks gags 8 and up the same way and saves their clips.
   - `npm run test:e2e:strip` checks all of it in WebKit (beats, real triggers, off-screen entry and
     exit, hole clip, biffy placement, reduced motion, log), 60 fps at 4x throttle in Chromium, and
@@ -451,7 +462,7 @@ something, give exact clicks and one command at a time.
 
 ## Wildlife Log
 - LIVE NOW: the log's button is back on the level list and the page lists only the gags that are in
-  the game (`EGGS`: magpie, sleepy worker, moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll, Marshmallow, Lost Goose, Bear (legendary);
+  the game (`EGGS`: magpie, sleepy worker, moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll, Marshmallow, Lost Goose, Bull and Cow, Bear (legendary);
   the old ten with `?gags=1`), with card art from their puppets (`magpieStill`, `workerStill`,
   `mooseStill`, `nearMissStill`, `landownerStill`, `biffyAStill`, `biffyBStill`), the count and toasts out of that number.
   An unfound card shows the gag's hint in DEMO mode only (`cardHint`); the game says "Not seen yet."
@@ -606,7 +617,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:magpie` – the magpie gag: beats, off-screen entry and exit, splat, startle, reduced motion, frame rate, clips (start the dev server first)
 - `npm run test:e2e:eggs` – the sleepy worker and the moose: beats, entry and exit, cancel, triggers, reduced motion, log, frame rate, clips (start the dev server first)
 - `npm run test:e2e:strip` – Near Miss, landowner, Biffy A and B and the permanent biffy (start the dev server first)
-- `npm run test:e2e:eggs2` – gags 8 and up: marshmallow, geese, bear (`ONLY=geese` runs one; start the dev server first)
+- `npm run test:e2e:eggs2` – gags 8 and up: marshmallow, geese, bear, bull and cow (`ONLY=geese` runs one; start the dev server first)
 - `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)

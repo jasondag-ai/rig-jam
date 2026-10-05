@@ -3,7 +3,7 @@
 // `rush-hour-rigs:` key, so "Reset progress" clears it too. `?log=all` previews a full log.
 import { STORAGE_PREFIX } from './progress.ts';
 
-export type Sighting = 'magpie' | 'spotter' | 'biffy' | 'landowner' | 'bear' | 'moose' | 'hotshot' | 'gopher' | 'geese' | 'pumper' | 'nearmiss' | 'biffyB' | 'marshmallow';
+export type Sighting = 'magpie' | 'spotter' | 'biffy' | 'landowner' | 'bear' | 'moose' | 'hotshot' | 'gopher' | 'geese' | 'pumper' | 'nearmiss' | 'biffyB' | 'marshmallow' | 'bull';
 
 export interface LogEntry {
   id: Sighting;
@@ -44,6 +44,7 @@ export const EGGS: LogEntry[] = [
   { id: 'biffyB', name: 'The Runaway Roll', caption: 'It got away from him.', hint: 'Bump the bottom berm twice, quickly.' },
   { id: 'marshmallow', name: 'Marshmallow', caption: 'Mmm. Crispy.', hint: 'Tap a flare stack three times.' },
   { id: 'geese', name: 'Lost Goose', caption: 'Wrong way, buddy.', hint: 'Undo three times in a row.' },
+  { id: 'bull', name: 'Bull and Cow', caption: 'Spring in the Montney.', hint: 'Tap the cow in Montney.' },
   { id: 'bear', name: 'Bear', caption: 'Does what bears do in the woods.', hint: 'Solve Duvernay 8, 9 or 10 at par. One time in three.', legendary: true },
 ];
 export const LIVE: Sighting[] = EGGS.map((e) => e.id);

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { BackAndForth, GAG_TRIGGERS, bearComesNow, bearLevel, bermBump } from './gag-triggers.ts';
 import { BEAR_BEATS, BEAR_END, bPose } from './bear.ts';
-import { BUSH_X, bearBox } from './strip-gags.ts';
+import { BUSH_X, COW_X, bearBox, cowBox } from './strip-gags.ts';
+import { BULL_BEATS, BULL_END, PRIMP, bullPose, forelock } from './bull.ts';
 import { A_BEATS, A_END, BIFFY_FRAC, B_BEATS, B_END } from './biffy.ts';
 import { L_BEATS, L_END, lPose } from './landowner.ts';
 import { N_BEATS, N_END, nPose } from './near-miss.ts';
@@ -194,6 +195,56 @@ describe('the bear and the hare (legendary)', () => {
       expect(bear.x).toBeGreaterThan(biffy.x + biffy.width);
       expect(bear.x + bear.width).toBeLessThan(w);
       expect(BUSH_X * w).toBeLessThan(bear.x + bear.width);
+    }
+  });
+});
+
+describe('the bull and the cow', () => {
+  it('is set off by one tap on the cow, in Montney', () => {
+    expect(GAG_TRIGGERS.bull).toEqual({ region: 'montney', cowTaps: 1 });
+  });
+
+  it('plays the reference with the primp slotted in after the freeze: every later beat is PRIMP seconds later', () => {
+    const at = Object.fromEntries(BULL_BEATS.map((b) => [b[1], b[0]]));
+    expect(at).toMatchObject({ 'bull-in': 0.3, freeze: 2.4, 'lick-hoof': 2.8, slick: 3.35, 'chest-puff': 4.0 });
+    // The reference's own times for what follows: 2.8, 4.4, 4.9, 5.3, 5.6, 6.6, 6.9, 9.0.
+    expect(['hearts', 'cow-looks', 'eyes-huge', 'hop-turn', 'bolts', 'paws', 'charge', 'last-heart'].map((n) => +(at[n] - PRIMP).toFixed(2))).toEqual([2.8, 4.4, 4.9, 5.3, 5.6, 6.6, 6.9, 9.0]);
+    expect(BULL_END).toBeGreaterThan(9.9 + PRIMP);
+  });
+
+  it('the bull: in from off screen, primps (lick, a rubber leg to the forelock, chest out with a sparkle), hearts, waggle, snort, paws, charges', () => {
+    expect(bullPose(0).b.x).toBe(-420);
+    expect(bullPose(0, -900).b.x).toBe(-900);
+    expect(bullPose(2.6).b).toMatchObject({ x: 0, hearts: 0, slick: 0 });
+    expect(bullPose(3.2).b.primp.s).toBeGreaterThan(1.1);
+    expect(bullPose(3.8).b.primp.s).toBeGreaterThan(2);
+    expect(bullPose(4.35).b.sx).toBeGreaterThan(1.03);
+    expect(bullPose(4.35).b.sparkle).toBeGreaterThan(0);
+    // The forelock is curly until he slicks it, and stays slicked.
+    for (const t of [4.5, 6, 9, 10.5]) expect(bullPose(t).b.slick).toBe(1);
+    expect(forelock(0)).not.toBe(forelock(1));
+    expect(bullPose(3.6 + PRIMP).b.hearts).toBe(1);
+    expect(bullPose(6.3 + PRIMP).b.snort).toBeGreaterThan(0);
+    expect(bullPose(6.75 + PRIMP).b.scrape).not.toBe(0);
+    expect(bullPose(8 + PRIMP).b).toMatchObject({ gallop: true, hearts: 2 });
+    expect(bullPose(9.19 + PRIMP, -420, 520, 800).b.x).toBeGreaterThan(790);
+    expect(bullPose(9.3 + PRIMP).b.show).toBe(false);
+  });
+
+  it('the cow: grazes through the primp, looks up, eyes huge, hop-turns (never paper-thin) and bolts', () => {
+    expect(bullPose(4).c).toMatchObject({ head: -32, face: -1, x: 0 });
+    expect(bullPose(5.2 + PRIMP).c.eye).toBeCloseTo(7.6);
+    for (let t = 5.3; t < 5.6; t += 0.02) expect(Math.abs(bullPose(t + PRIMP).c.face)).toBeGreaterThanOrEqual(0.8);
+    expect(bullPose(7 + PRIMP).c).toMatchObject({ gallop: true, face: 1 });
+    expect(bullPose(7.79 + PRIMP, -420, 700).c.x).toBeGreaterThan(690);
+    expect(bullPose(7.9 + PRIMP).c.show).toBe(false);
+  });
+
+  it('she grazes right of the biffy, with room for the bull to stop between them', () => {
+    for (const [w, strip] of [[390, { top: 600, bottom: 700 }], [375, { top: 470, bottom: 538 }]] as const) {
+      const cow = cowBox(w, strip), biffy = biffyBox(w, strip);
+      expect(cow.x + cow.width).toBeLessThanOrEqual(w);
+      expect(COW_X * w).toBeGreaterThan(biffy.x + biffy.width + 60);
     }
   });
 });

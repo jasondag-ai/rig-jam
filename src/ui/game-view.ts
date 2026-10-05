@@ -18,7 +18,7 @@ import { GagLayer, type GagOptions } from './gag-layer.ts';
 import { bearAlways, gagsOn, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
 import { BackAndForth, GAG_TRIGGERS, bearComesNow, bearLevel, bermBump, type GagId } from './gag-triggers.ts';
-import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, BushProp, bearBox, bearDef, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
+import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, BushProp, CowProp, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
 import { companyLine, tierFor } from './gags.ts';
@@ -112,6 +112,8 @@ export class GameView {
   private lastExitAt = -Infinity;
   private undos = 0;
   private bush: BushProp | null = null;
+  private cow: CowProp | null = null;
+  private cowTaps = 0;
   private won: { before: Progress; progress: Progress; earnedHint: boolean } | null = null;
   private flareTaps = 0;
   private backForth = new BackAndForth();
@@ -144,7 +146,7 @@ export class GameView {
     const board = this.board;
     this.idleScale = idleScale();
     const f = gagOptions.force;
-    const forced: Partial<Record<string, GagId>> = { magpie: 'magpie', worker: 'worker', nearmiss: 'nearMiss', landownerquad: 'landowner', biffya: 'biffyA', biffyb: 'biffyB', marshmallow: 'marshmallow', lostgoose: 'geese', bearhare: 'bear', ...(gagsOn() ? {} : { moose: 'moose' }) };
+    const forced: Partial<Record<string, GagId>> = { magpie: 'magpie', worker: 'worker', nearmiss: 'nearMiss', landownerquad: 'landowner', biffya: 'biffyA', biffyb: 'biffyB', marshmallow: 'marshmallow', lostgoose: 'geese', bearhare: 'bear', bull: 'bull', ...(gagsOn() ? {} : { moose: 'moose' }) };
     this.eggForced = (f && forced[f]) || null;
     board.onGrab = (id) => {
       this.lastMoveAt = performance.now();
@@ -252,6 +254,11 @@ export class GameView {
       // The marshmallow needs a flare stack to roast it on; the geese only need sky.
       if (level.obstacles.some((o) => o.kind === 'flare')) this.strips.marshmallow = new TimelineGag(egg, marshmallowDef);
       this.strips.geese = new TimelineGag(egg, geeseDef);
+      // Montney has the cow grazing in the strip; tap her and the bull comes.
+      if (this.regionId === GAG_TRIGGERS.bull.region || this.eggForced === 'bull') {
+        this.cow = new CowProp(egg);
+        this.strips.bull = new TimelineGag(egg, bullDef(this.cow));
+      }
       // The bear's levels have his bush, and the hare behind it.
       if (bearLevel(this.regionId, gagOptions.levelIndex + 1) || this.eggForced === 'bear') {
         this.bush = new BushProp(egg);
@@ -265,7 +272,9 @@ export class GameView {
         (e) => {
           const tap = down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < TAP_SLOP;
           down = null;
-          if (!tap || !this.strips.marshmallow) return;
+          if (!tap) return;
+          if (this.cow?.hit(e.clientX, e.clientY) && ++this.cowTaps === GAG_TRIGGERS.bull.cowTaps) this.queueEgg('bull');
+          if (!this.strips.marshmallow) return;
           const onFlare = [...board.el.querySelectorAll('.obstacle.flare')].some((ob) => {
             const r = (ob.querySelector('svg') ?? ob).getBoundingClientRect();
             return e.clientX >= r.left - 6 && e.clientX <= r.right + 6 && e.clientY >= r.top - 6 && e.clientY <= r.bottom + 6;
@@ -323,10 +332,11 @@ export class GameView {
     this.el.style.setProperty('--horizon', `${Math.round(box.y - 4 - depth)}px`);
     // Kept clear of trees: the sleepy worker's spot by the left edge, and the biffy's.
     const strip = { top: box.y + box.height, bottom: controlsTop };
-    const clearings = [this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.bush ? bearBox(screen.width, strip) : null].filter((c) => c !== null);
+    const clearings = [this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.bush ? bearBox(screen.width, strip) : null, this.cow ? cowBox(screen.width, strip) : null].filter((c) => c !== null);
     this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, anchors: { bush: !this.bush, mound: this.regionId === 'cardium' }, clearings });
     this.biffy?.layout();
     this.bush?.layout();
+    if (!this.strips.bull?.playing) this.cow?.layout();
     // Room outside the fence for the characters: between the HUD and the board, and below it.
     const buttonsTop = this.el.querySelector('.controls')!.getBoundingClientRect().top - screen.top;
     this.gags?.layout({
@@ -455,6 +465,7 @@ export class GameView {
     this.topBumps = 0;
     this.undos = 0;
     this.flareTaps = 0;
+    this.cowTaps = 0;
     this.lastExitAt = -Infinity;
     this.backForth.reset();
     this.biffy?.reset();
@@ -497,7 +508,12 @@ export class GameView {
         this.eggDone.add(id);
         this.seen(EGG_SIGHTING[id]);
       });
-    if (this.eggForced) return idle < 600 ? undefined : run(this.eggForced);
+    if (this.eggForced) {
+      if (idle < 600) return;
+      // A preview plays again and again: the cow comes back for each one.
+      if (this.eggForced === 'bull') this.cow?.reset();
+      return run(this.eggForced);
+    }
     const next = this.eggQueue.shift();
     if (next) return run(next);
     const T = GAG_TRIGGERS;
@@ -794,4 +810,4 @@ function fitRibbon(span: HTMLElement | null): void {
 }
 
 /** Which Wildlife Log entry each egg fills in. */
-const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear' };
+const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull' };
