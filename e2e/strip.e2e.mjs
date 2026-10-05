@@ -27,7 +27,7 @@ const check = (ok, text) => {
 const BEATS = {
   nearMiss: ['sniff', 'stretch', 'look', 'double-take', 'eyes-huge', 'duck', 'hotshot', 'dust-settles', 'dusty', 'near-miss', 'cough', 'gone'],
   landowner: ['ride-in', 'skid', 'head-shake', 'turn', 'fist', 'rev', 'wheelie', 'hat-off', 'hat-catch', 'gone'],
-  biffyA: ['sits', 'jolt', 'door-open', 'oblivious', 'look-back', 'eye-pop', 'nod', 'reach', 'pull-shut', 'occupied', 'done'],
+  biffyA: ['sits', 'jolt', 'door-open', 'oblivious', 'look-back', 'eye-pop', 'nod', 'reach', 'pull-shut', 'occupied', 'done', 'unlocked'],
   biffyB: ['sits', 'jolt', 'door-open', 'roll-out', 'roll-away', 'grope', 'shuffle', 'off-screen', 'door-shut'],
 };
 const QUIET = '?cover=0&magpie=0&worker=0&moose=0&cooldown=0&off=lunch,sam,tongue';
@@ -168,10 +168,12 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       const watching = watch(page, 'biffyA');
       await drag(page, id, 2);
       check(!(await page.$('.strip-layer')), 'it waits a moment in case a second bump is coming');
+      const occupied = page.waitForFunction(() => [...document.querySelectorAll('.strip-layer[data-gag="biffyA"]')].at(-1)?.dataset.beat === 'occupied', null, { timeout: 12000 }).then(() => page.evaluate(() => document.querySelector('.biffy-layer .ind').getAttribute('fill'))).catch(() => null);
       const log = await watching;
+      check((await occupied) === '#d9453a', 'the indicator flips to red when he pulls the door shut');
       check(sameBeats(log, 'biffyA'), `the reference beats, in order (${beatsOf(log).length} of ${BEATS.biffyA.length})`);
       const after = await page.evaluate(() => ({ ind: document.querySelector('.biffy-layer .ind').getAttribute('fill'), door: document.querySelector('.biffy-layer .door').getAttribute('transform') }));
-      check(after.ind === '#d9453a' && /scale\(1 1\)/.test(after.door), 'the door is shut again and the indicator has flipped to red');
+      check(after.ind === '#56b05a' && /scale\(1 1\)/.test(after.door), 'afterwards the door is shut and the indicator is back to the green it began with');
       check(log.every((f) => f.n === 0), 'nothing else was on stage');
       await drag(page, id, 2);
       await wait(2200);

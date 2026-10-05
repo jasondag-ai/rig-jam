@@ -3,6 +3,8 @@
 // is held at t = 0 and at the end of its run (`?gagtest=1`, `window.__rhrGag`), and
 //   - the first frame must look exactly like the level just before the gag (nobody appears by magic)
 //   - the last frame must look exactly like the level just after it (nobody vanishes by magic)
+//   - and the last frame must look exactly like the level BEFORE the gag: every prop is back as it
+//     began (the biffy's door indicator its starting colour, the cow grazing in her spot)
 //   - and, to be sure the test sees the gag at all, the middle of its run must look different.
 // (The magpie, the sleepy worker and the moose run on their own clocks; their first and last
 // poses are checked in the unit tests.) Run with the dev server up: npm run test:e2e:frames
@@ -25,24 +27,30 @@ const page = await context.newPage();
 page.on('pageerror', (e) => console.log('ERR', e.message));
 
 /** How many pixels differ between two screenshots (any channel by more than 18), and where. */
-const diff = (a, b) =>
+let diff = (a, b) =>
   page.evaluate(async ([x, y]) => {
-    // The biffy's door indicator is a prop's light, not a character: Biffy B begins with it red (somebody is in there).
-    const ind = document.querySelector('.biffy-layer .ind')?.getBoundingClientRect();
-    const light = (px, py) => !!ind && px >= ind.left - 3 && px <= ind.right + 3 && py >= ind.top - 3 && py <= ind.bottom + 3;
     const load = async (b64) => { const img = new Image(); img.src = `data:image/png;base64,${b64}`; await img.decode(); const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0); return ctx.getImageData(0, 0, c.width, c.height); };
     const [p, q] = [await load(x), await load(y)];
     let n = 0, x0 = 1e9, x1 = -1, y0 = 1e9, y1 = -1;
     for (let i = 0; i < p.data.length; i += 4) {
       if (Math.abs(p.data[i] - q.data[i]) > 18 || Math.abs(p.data[i + 1] - q.data[i + 1]) > 18 || Math.abs(p.data[i + 2] - q.data[i + 2]) > 18) {
         const px = (i / 4) % p.width, py = Math.floor(i / 4 / p.width);
-        if (light(px, py)) continue;
         n++;
         x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
       }
     }
     return { n, box: n ? `${x0},${y0} to ${x1},${y1}` : '' };
   }, [a.toString('base64'), b.toString('base64')]);
+
+/** A frame, as two shots in a row: WebKit draws a one pixel sliver at a gate badge's edge in every
+ *  other screenshot, so two frames are compared by their best matching pair. */
+const shot = async () => [await page.screenshot(), await page.screenshot()];
+const pair = diff;
+diff = async (a, b) => {
+  let best = null;
+  for (const x of a) for (const y of b) { const d = await pair(x, y); if (!best || d.n < best.n) best = d; }
+  return best;
+};
 
 console.log('\nwebkit 390x844: every strip gag starts and ends on an empty stage');
 for (const [name, { gag, region, level }] of Object.entries(PREVIEWS)) {
@@ -57,24 +65,25 @@ for (const [name, { gag, region, level }] of Object.entries(PREVIEWS)) {
   await page.waitForLoadState('networkidle');
   await page.evaluate(() => Promise.all([...document.images].filter((i) => !i.complete).map((i) => new Promise((r) => { i.onload = i.onerror = r; }))));
   await wait(1500);
-  const before = await page.screenshot();
+  const before = await shot();
   const end = await page.evaluate((g) => window.__rhrGag.end(g), gag);
   const held = await page.evaluate((g) => window.__rhrGag.hold(g, 0), gag);
   if (!held) { check(false, `${name}: could not be set on this level`); continue; }
   await wait(60);
-  const first = await page.screenshot();
+  const first = await shot();
   await page.evaluate(([g, t]) => window.__rhrGag.hold(g, t), [gag, end * 0.5]);
   await wait(60);
-  const middle = await page.screenshot();
+  const middle = await shot();
   await page.evaluate(([g, t]) => window.__rhrGag.hold(g, t), [gag, end]);
   await wait(60);
-  const last = await page.screenshot();
+  const last = await shot();
   await page.evaluate((g) => window.__rhrGag.release(g), gag);
   await wait(60);
-  const after = await page.screenshot();
-  const [a, m, z] = [await diff(before, first), await diff(before, middle), await diff(last, after)];
+  const after = await shot();
+  const [a, m, z, same] = [await diff(before, first), await diff(before, middle), await diff(last, after), await diff(before, last)];
   check(m.n > 150, `${name}: the gag is on screen in the middle of its run (${m.n} px differ)`);
   check(a.n <= 6, `${name}: its first frame is the level as it stood: no character on screen (${a.n} px differ${a.box ? ` at ${a.box}` : ''})`);
+  check(same.n <= 6, `${name}: SAME START, SAME END: its last frame looks exactly like the level before it began, props and all (${same.n} px differ${same.box ? ` at ${same.box}` : ''})`);
   check(z.n <= 6, `${name}: its last frame is the level as it is left: no character on screen (${z.n} px differ${z.box ? ` at ${z.box}` : ''})`);
 }
 await browser.close();

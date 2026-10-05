@@ -29,7 +29,7 @@ const W = 390;
 const GAGS = {
   marshmallow: { preview: 'marshmallow', clip: 'gag89_marshmallow', beats: ['walk-in', 'eyes-flare', 'telescope', 'roast', 'fwoomp', 'eyes-pop', 'yank', 'blow', 'sniff-shrug', 'crispy', 'ear-smoke', 'gone'] },
   bear: { preview: 'bear', clip: 'gag10_bear', beats: ['hare-nibbles', 'bear-in', 'sniff', 'sit', 'smug', 'strain', 'relief', 'spots-ears', 'snatch', 'long-look', 'swing', 'wipe', 'inspect', 'set-down', 'violated', 'bear-leaves', 'trudge', 'gone'] },
-  bull: { preview: 'bull', clip: 'gag11_bull', beats: ['cow-grazes', 'bull-in', 'freeze', 'lick-hoof', 'slick', 'chest-puff', 'hearts', 'cow-looks', 'eyes-huge', 'hop-turn', 'bolts', 'paws', 'charge', 'last-heart'] },
+  bull: { preview: 'bull', clip: 'gag11_bull', beats: ['cow-grazes', 'bull-in', 'freeze', 'lick-hoof', 'slick', 'chest-puff', 'hearts', 'cow-looks', 'eyes-huge', 'hop-turn', 'bolts', 'paws', 'charge', 'last-heart', 'cow-back', 'catches-breath', 'grazes-again'] },
   porcupine: { preview: 'porcupine', clip: 'gag12_porcupine', beats: ['quiet-bush', 'stroll-in', 'look-around', 'squat', 'poke', 'roll-pops', 'springs-out', 'porcupine-bolts', 'scurry'] },
   gopherLunch: { preview: 'lunch', clip: 'gag13_gopher_lunch', beats: ['quiet-mound', 'stroll-in', 'plops-down', 'sets-it-down', 'phone', 'paw-peeks', 'feels-around', 'yank', 'chomp', 'crust-back', 'bite', 'eyes-huge', 'cheeks', 'ducks', 'deadpan', 'boils-over', 'hurls-crust', 'stomps-off', 'burp', 'quiet-again'] },
   sam: { preview: 'sam', clip: 'gag14_safety_sam', beats: ['bad-moves', 'march-in', 'looks-up', 'tsk', 'scribble', 'see-me', 'fingers-to-eyes', 'points', 'backs-off'] },
@@ -308,14 +308,15 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     console.log(`\n${engine}: bull and cow, tap the cow (Montney 6)`);
     const { context, page } = await open(browser, { level: [mon, 5] });
     const cow = await page.evaluate(() => { const r = document.querySelector('.cow-layer svg.pup .root').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
-    const watching = watch(page, 'bull', { parts: { bull: '.bull-layer svg.pup .root', cow: '.cow-layer svg.pup .root' } }, 30000);
+    const watching = watch(page, 'bull', { parts: { bull: '.bull-layer svg.pup .root', cow: '.cow-layer svg.pup .root', breath: '.bull-layer .pup-overlay .breath' } }, 36000);
     const extras = page.evaluate(
       () =>
         new Promise((res) => {
-          const out = { bubbles: 0, hearts: 0, trail: 0, eye: 0, curly: '', slick: '', leg: 0, sparkle: false, pop: false };
+          const out = { bubbles: 0, hearts: 0, trail: 0, eye: 0, curly: false, slick: true, lick: false, leg: 0, sparkle: false, pop: false };
           const tick = () => {
             const l = document.querySelector('.strip-layer[data-gag="bull"]');
             if (!l && out.curly) return res(out);
+            const shown = (q) => !!l && l.querySelector(q).style.display !== 'none';
             if (l) {
               const beat = l.dataset.beat, hearts = l.querySelectorAll('.pup-overlay path[fill="#e3364b"]').length;
               out.bubbles = Math.max(out.bubbles, document.querySelectorAll('.bubble').length);
@@ -323,11 +324,12 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
               if (beat === 'charge') out.trail = Math.max(out.trail, hearts);
               if (beat === 'last-heart') out.pop ||= l.querySelectorAll('.pup-overlay path[stroke="#e3364b"]').length === 6;
               out.eye = Math.max(out.eye, +document.querySelector('.cow-layer .eye').getAttribute('r'));
-              const f = l.querySelector('.forelock').getAttribute('d');
-              if (beat === 'bull-in') out.curly = f;
-              if (beat === 'hearts' || beat === 'charge') out.slick = f;
-              if (beat === 'slick') out.leg = Math.max(out.leg, +(/scale\(1 ([\d.]+)\)/.exec(l.querySelector('.primpLeg').getAttribute('transform') ?? '')?.[1] ?? 0));
-              if (beat === 'chest-puff') out.sparkle ||= !!l.querySelector('.pup-overlay path[fill="#fff7c2"]');
+              // His forelock: curly until he slicks it back, slicked from then on.
+              if (beat === 'bull-in' || beat === 'freeze') out.curly ||= shown('.lockCurl') && !shown('.lockSlick');
+              if (['hearts', 'cow-looks', 'bolts', 'paws', 'charge'].includes(beat)) out.slick &&= shown('.lockSlick') && !shown('.lockCurl');
+              if (beat === 'lick-hoof') out.lick ||= shown('.tongue');
+              if (beat === 'slick') out.leg = Math.max(out.leg, +(/scale\(1 ([\d.]+)\)/.exec(l.querySelector('.lFN').getAttribute('transform') ?? '')?.[1] ?? 0));
+              if (beat === 'chest-puff') out.sparkle ||= shown('.shine');
             }
             requestAnimationFrame(tick);
           };
@@ -339,23 +341,25 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     const x = await extras;
     check(sameBeats(log, 'bull'), `the beats, in order (${beatsOf(log).length} of ${GAGS.bull.beats.length})`);
     check(log[0].bull.r <= 0, `the bull enters from fully off screen (${Math.round(log[0].bull.r)})`);
-    check(x.curly !== x.slick && x.leg > 2 && x.sparkle, `he primps: a stretched leg (${x.leg.toFixed(1)}x) slicks his curly forelock back, it stays slicked, and a sparkle on the chest puff`);
+    check(x.curly && x.slick && x.lick && x.leg > 1.5 && x.sparkle, `he primps as in the reference: licks a hoof, a stretched leg (${x.leg.toFixed(2)}x) slicks his curly forelock back and it stays slicked, a sparkle on the chest puff`);
     check(x.hearts >= 4 && x.bubbles === 0, `dreamy: ${x.hearts} red hearts float up, and no speech bubble at any point`);
     check(x.eye > 7, `her eyes go huge (${x.eye})`);
-    const cowOut = log.filter((f) => f.cow.vis).at(-1), bullOut = log.filter((f) => f.beat === 'charge' && f.bull.vis).at(-1);
+    const cowOut = log.filter((f) => f.cow.vis && ['bolts', 'paws', 'charge'].includes(f.beat)).at(-1), bullOut = log.filter((f) => f.beat === 'charge' && f.bull.vis).at(-1);
     check(cowOut.cow.l >= W - 2, `she bolts until she is fully off screen (x ${Math.round(cowOut.cow.l)})`);
     check(bullOut.bull.l >= W - 10 && x.trail >= 2, `he charges after her, hearts trailing, until fully off screen (x ${Math.round(bullOut.bull.l)})`);
     check(x.pop, 'a last heart floats up and pops');
     check(log.every((f) => f.others === 0), 'nothing else was on stage');
+    // SAME START, SAME END: she wanders back in from the edge she left by and grazes again in her spot.
+    const back = log.filter((f) => f.beat === 'cow-back' && f.cow.vis);
+    check(back[0].cow.l >= W - 2 && back.every((f, i) => i === 0 || f.cow.l <= back[i - 1].cow.l + 0.6), `the cow wanders back in from the right edge, the one she left by (from x ${Math.round(back[0].cow.l)})`);
+    check(log.some((f) => (f.beat === 'cow-back' || f.beat === 'catches-breath') && f.breath), 'a little out of breath: puffs at her muzzle');
+    check(log.filter((f) => ['last-heart', 'cow-back', 'catches-breath', 'grazes-again'].includes(f.beat)).every((f) => !f.bull.vis || f.bull.l >= W - 10), 'the bull stays gone');
     await wait(300);
-    const gone = await page.evaluate(() => getComputedStyle(document.querySelector('.cow-layer svg.pup')).visibility);
+    const home = await page.evaluate(() => { const r = document.querySelector('.cow-layer svg.pup .root').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, vis: getComputedStyle(document.querySelector('.cow-layer svg.pup')).visibility }; });
+    check(home.vis === 'visible' && Math.abs(home.x - cow.x) < 1 && Math.abs(home.y - cow.y) < 1, 'afterwards she is back grazing in her spot, exactly where she began');
     await tapAt(page, cow.x, cow.y);
     await wait(900);
-    check(gone === 'hidden' && !(await page.$('.strip-layer')), 'she stays gone for the rest of the level');
-    await page.locator('[data-act="levels"]').first().click();
-    await page.locator('.level-btn').nth(5).click();
-    await page.waitForSelector('.board .truck.sprite-on');
-    check((await page.evaluate(() => getComputedStyle(document.querySelector('.cow-layer svg.pup')).visibility)) === 'visible', 'and is back grazing on the next level load');
+    check(!(await page.$('.strip-layer')), 'once per level: another tap brings nobody');
     await context.close();
   }
 
@@ -378,24 +382,20 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       await context.close();
     }
 
-    // ---------- Porcupine: no trigger in the game yet; in demo mode, tap the bush ----------
-    console.log(`\n${engine}: porcupine (Cardium 6)`);
-    {
-      const { context, page } = await open(browser, { level: [region('cardium'), 5] });
-      const at = await page.evaluate(() => { const r = document.querySelector('.bush-layer svg.pup').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
-      await tapAt(page, at.x, at.y);
-      await wait(1200);
-      check(!(await page.$('.strip-layer')), 'in the game nothing sets it off yet (trigger TBD): a tap on the bush does nothing');
-      await context.close();
-    }
-    const { context, page } = await open(browser, { level: [region('cardium'), 5], progress: DEMO });
+    // ---------- Porcupine: three taps on the Cardium bush ----------
+    console.log(`\n${engine}: porcupine, three taps on the bush (Cardium 6)`);
+    const { context, page } = await open(browser, { level: [region('cardium'), 5] });
     const at = await page.evaluate(() => { const r = document.querySelector('.bush-layer svg.pup').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    await tapAt(page, at.x, at.y);
+    await tapAt(page, at.x, at.y);
+    await wait(900);
+    check(!(await page.$('.strip-layer')), 'two taps are not enough');
     const watching = watch(page, 'porcupine', { parts: { porc: '.porcupine-layer svg.pup:nth-of-type(1) .root', worker: '.porcupine-layer svg.pup:nth-of-type(2) .head', bush: '.porcupine-layer svg.pup:nth-of-type(3)', shuf: '.porcupine-layer svg.pup:nth-of-type(4) .root', roll: '.porcupine-layer .pup-roll' } });
     const clipped = page.waitForSelector('.porcupine-layer', { state: 'attached', timeout: 8000 }).then(() => page.evaluate(() => { const l = document.querySelector('.porcupine-layer'); return { clip: l.querySelector('svg.pup').style.clipPath.startsWith('polygon'), pe: getComputedStyle(l).pointerEvents, z: l.querySelector('svg.pup').style.zIndex, bushZ: l.querySelectorAll('svg.pup')[2].style.zIndex }; }));
     await tapAt(page, at.x, at.y);
     const c = await clipped;
     const log = await watching;
-    check(sameBeats(log, 'porcupine'), `demo mode, tap the bush: the reference beats, in order (${beatsOf(log).length} of ${GAGS.porcupine.beats.length})`);
+    check(sameBeats(log, 'porcupine'), `the third tap, in the game itself (not only demo mode): the reference beats, in order (${beatsOf(log).length} of ${GAGS.porcupine.beats.length})`);
     const quiet = log.filter((f) => f.beat === 'quiet-bush' || f.beat === 'stroll-in' || f.beat === 'look-around');
     check(c.clip && +c.z < +c.bushZ && quiet.every((f) => f.porc.l >= f.bush.l && f.porc.r <= f.bush.r && f.porc.t >= f.bush.t), 'the porcupine is hidden behind the bush from the start: inside its outline, behind it, cut off under the leaves');
     const walkIn = log.find((f) => f.worker?.vis), run = log.filter((f) => f.shuf?.vis && f.shuf.l < 5000);
@@ -665,7 +665,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       if (mode === 'game') check(by.bear?.art && by.bear.legendary && !!(await page.$('.log-card[data-id="bear"] .legend-tag')), 'the Bear has a LEGENDARY card with a gold frame and puppet art');
       if (mode === 'game') check(by.bull?.art && by.bull.text === 'Not seen yet.', 'Bull and Cow has a card with puppet art');
       if (mode === 'game') check(by.porcupine?.art && by.lunch?.art && by.porcupine.text === 'Not seen yet.', 'Porcupine and Gopher Lunch have cards with puppet art');
-      else check(by.porcupine.text === 'Demo mode only for now: tap the bush in Cardium.' && by.lunch.text === 'Sit tight for 30 seconds in Cardium.', 'demo mode shows the porcupine\'s and the lunch\'s hints');
+      else check(by.porcupine.text === 'Tap the bush three times in Cardium.' && by.lunch.text === 'Sit tight for 30 seconds in Cardium.', 'demo mode shows the porcupine\'s and the lunch\'s hints');
       if (mode === 'game') check(by.sam?.art && by.tongue?.art && by.sam.text === 'Not seen yet.', 'Safety Sam and Frozen Tongue have cards with puppet art');
       else check(by.sam.text === 'Bump three times in a row, or push a truck at a wrong-colour gate.' && by.tongue.text === 'Sit tight for 30 seconds on a winter level.', 'demo mode shows Sam\'s and the tongue\'s hints');
       if (mode === 'game') check(by.marshmallow?.art && by.geese?.art && by.marshmallow.text === 'Not seen yet.' && by.geese.text === 'Not seen yet.', `Marshmallow and Lost Goose have cards with puppet art; the game hides the hints (${cards.length} cards)`);
