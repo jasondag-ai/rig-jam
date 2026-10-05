@@ -144,12 +144,14 @@ describe('moose peekaboo: the reference, as approved', () => {
 });
 
 describe('Wildlife Log: the gags that are live', () => {
-  it('lists the magpie, the sleepy worker and the moose; all ten with every gag switched on', () => {
-    expect(LIVE).toEqual(['magpie', 'spotter', 'moose']);
-    expect(liveEntries(false).map((e) => e.name)).toEqual(['Magpie', 'Sleepy Worker', 'Moose']);
+  it('lists the seven live gags in order; the old ten with the old gag layer switched on', () => {
+    expect(LIVE).toEqual(['magpie', 'spotter', 'moose', 'nearmiss', 'landowner', 'biffy', 'biffyB']);
+    expect(liveEntries(false).map((e) => e.name)).toEqual(['Magpie', 'Sleepy Worker', 'Moose', 'Near Miss', 'Angry Landowner', 'Occupied', 'The Runaway Roll']);
     expect(liveEntries(true)).toBe(LOG_ENTRIES);
-    expect(liveCount({ found: ['magpie', 'bear'], camo: true, camoEarned: false }, false)).toBe(1);
-    expect(sightingToast('spotter', 2, false, false)).toBe('New sighting! Sleepy Worker (2/3)');
+    expect(liveCount({ found: ['magpie', 'bear', 'biffyB'], camo: true, camoEarned: false }, false)).toBe(2);
+    expect(sightingToast('spotter', 2, false, false)).toBe('New sighting! Sleepy Worker (2/7)');
+    expect(sightingToast('biffyB', 3, false, false)).toBe('New sighting! The Runaway Roll (3/7)');
+    for (const e of liveEntries(false)) expect(e.hint.length).toBeGreaterThan(10);
   });
 
   it('demo mode shows each gag hint; the game keeps them secret', () => {

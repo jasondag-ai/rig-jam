@@ -53,8 +53,8 @@ export interface SceneryOptions {
   depth?: number;
   /** Permanent gag anchors below the box: the bear's willow bush (every region), the gopher's dirt mound (Cardium). */
   anchors?: { bush?: boolean; mound?: boolean };
-  /** A patch kept clear of trees (the sleepy worker's spot by the screen's edge). */
-  clearing?: Box | null;
+  /** Patches kept clear of trees (the sleepy worker's spot, the biffy). */
+  clearings?: Box[];
 }
 
 /** Clear grass kept between the berm and any tree, px. */
@@ -177,8 +177,7 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
       return !(b.right > keepOut.left && b.left < keepOut.right && b.bottom > keepOut.top && b.top < keepOut.bottom);
     });
 
-  const gap = options.clearing;
-  if (gap)
+  for (const gap of options.clearings ?? [])
     items = items.filter((it) => {
       const b = treeBox(it);
       return !(b.right > gap.x && b.left < gap.x + gap.width && b.bottom > gap.y && b.top < gap.y + gap.height + 6);
@@ -191,7 +190,7 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
     const floor = box.y + box.height;
     const size = Math.max(14, Math.min(34, bandBelow - BERM_CLEAR - 6));
     const y = Math.min(height - 2, floor + BERM_CLEAR + size + 2);
-    if (options.anchors.bush) anchors.push({ kind: 'bush', x: box.x + box.width * 0.34, y, w: size * 0.8 * ART.willow, h: size * 0.8 });
+    if (options.anchors.bush) anchors.push({ kind: 'bush', x: box.x + box.width * 0.54, y, w: size * 0.8 * ART.willow, h: size * 0.8 });
     if (options.anchors.mound) anchors.push({ kind: 'mound', x: box.x + box.width * 0.78, y, w: size * 1.5, h: size * 0.8 });
     // Trees give the anchors room.
     items = items.filter((it) => {

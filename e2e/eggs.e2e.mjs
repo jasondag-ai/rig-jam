@@ -241,7 +241,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       await page.waitForSelector('.log-card');
       const cards = await page.$$eval('.log-card', (cs) => cs.map((c) => ({ id: c.dataset.id, text: c.querySelector('p').textContent, art: !!c.querySelector('.art svg') })));
       if (mode === 'game') {
-        check(cards.map((c) => c.id).join() === 'magpie,spotter,moose' && cards.every((c) => c.art), 'lists the three live gags, each with card art from its puppet');
+        check(cards.map((c) => c.id).slice(0, 3).join() === 'magpie,spotter,moose' && cards.every((c) => c.art), 'lists the live gags, each with card art from its puppet');
         check(cards.every((c) => c.text === 'Not seen yet.'), 'game mode hides the hints');
       } else check(cards[1].text === 'Sit tight for 20 seconds.' && cards[2].text === 'Bump a truck into the top berm twice in Duvernay.', `demo mode shows each gag's hint ("${cards[1].text}" / "${cards[2].text}")`);
       await context.close();

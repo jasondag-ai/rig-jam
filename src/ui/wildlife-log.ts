@@ -3,7 +3,7 @@
 // `rush-hour-rigs:` key, so "Reset progress" clears it too. `?log=all` previews a full log.
 import { STORAGE_PREFIX } from './progress.ts';
 
-export type Sighting = 'magpie' | 'spotter' | 'biffy' | 'landowner' | 'bear' | 'moose' | 'hotshot' | 'gopher' | 'geese' | 'pumper';
+export type Sighting = 'magpie' | 'spotter' | 'biffy' | 'landowner' | 'bear' | 'moose' | 'hotshot' | 'gopher' | 'geese' | 'pumper' | 'nearmiss' | 'biffyB';
 
 export interface LogEntry {
   id: Sighting;
@@ -29,12 +29,22 @@ export const LOG_ENTRIES: LogEntry[] = [
 ];
 
 /**
- * The gags that are in the game right now (they come back one at a time: GAME_BIBLE 9b). The log
- * page, its count and the sighting toasts cover these; with every gag switched on (`all`) they
- * cover all ten. Camo still needs all ten.
+ * The gags that are in the game right now, as the log lists them (they come back one at a time:
+ * GAME_BIBLE 9b). Each is an Easter egg; its hint (how to set it off) shows in demo mode only. The
+ * log page, its count and the sighting toasts cover these; with the old gag layer switched on
+ * (`all`) they cover the old ten. Camo still needs the old ten.
  */
-export const LIVE: Sighting[] = ['magpie', 'spotter', 'moose'];
-export const liveEntries = (all: boolean): LogEntry[] => (all ? LOG_ENTRIES : LOG_ENTRIES.filter((e) => LIVE.includes(e.id)));
+export const EGGS: LogEntry[] = [
+  { id: 'magpie', name: 'Magpie', caption: 'Never park under a tree.', hint: 'Sit tight for 10 seconds.' },
+  { id: 'spotter', name: 'Sleepy Worker', caption: 'On the clock. Allegedly.', hint: 'Sit tight for 20 seconds.' },
+  { id: 'moose', name: 'Moose', caption: 'Just checking in.', hint: 'Bump a truck into the top berm twice in Duvernay.' },
+  { id: 'nearmiss', name: 'Near Miss', caption: 'Owns the lease. Pays no rent.', hint: 'Send two trucks out back to back in Cardium.' },
+  { id: 'landowner', name: 'Angry Landowner', caption: 'Wants a word about the ruts.', hint: 'Drive the same truck back and forth four times.' },
+  { id: 'biffy', name: 'Occupied', caption: 'Knock first.', hint: 'Bump a truck into the bottom berm.' },
+  { id: 'biffyB', name: 'The Runaway Roll', caption: 'It got away from him.', hint: 'Bump the bottom berm twice, quickly.' },
+];
+export const LIVE: Sighting[] = EGGS.map((e) => e.id);
+export const liveEntries = (all: boolean): LogEntry[] => (all ? LOG_ENTRIES : EGGS);
 export const liveCount = (log: WildlifeLog, all: boolean): number => liveEntries(all).filter((e) => log.found.includes(e.id)).length;
 /** What an unfound card says: the gag's hint in demo mode; nothing given away in the game. */
 export const cardHint = (e: LogEntry, demo: boolean): string => (demo ? e.hint : 'Not seen yet.');
@@ -59,7 +69,7 @@ export interface WildlifeLog {
 /** Saved-log format: 2 added entries 8 to 10 (and `camoEarned`). */
 const VERSION = 2;
 
-const IDS = new Set<string>(LOG_ENTRIES.map((e) => e.id));
+const IDS = new Set<string>([...LOG_ENTRIES, ...EGGS].map((e) => e.id));
 
 export function parseLog(raw: string | null): WildlifeLog {
   try {
@@ -115,7 +125,7 @@ export function record(log: WildlifeLog, id: Sighting): { log: WildlifeLog; isNe
 }
 
 export const sightingToast = (id: Sighting, count: number, demo = false, all = true) =>
-  `${demo ? 'Demo' : 'New'} sighting! ${LOG_ENTRIES.find((e) => e.id === id)!.name} (${count}/${liveEntries(all).length})`;
+  `${demo ? 'Demo' : 'New'} sighting! ${liveEntries(all).find((e) => e.id === id)?.name ?? id} (${count}/${liveEntries(all).length})`;
 
 /** Every pickup in the game wears camo (a class on <body>; style.css draws it). */
 export function applyCamo(log: WildlifeLog = loadLog()): void {

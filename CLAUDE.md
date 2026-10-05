@@ -98,12 +98,41 @@ something, give exact clicks and one command at a time.
   (GAME_BIBLE 9b; `claude/GAG_STYLE_GUIDE.md` is the rulebook), each behind its own flag and each an
   EASTER EGG set off by what the player does: `MAGPIE_ON`, `WORKER_ON`, `MOOSE_ON` (`?magpie=0`,
   `?worker=0`, `?moose=0` turn one off for a page load).
+- TRIGGER SETTINGS: every gag's trigger lives in ONE file, `src/ui/gag-triggers.ts` (`GAG_TRIGGERS`),
+  for Jay to tune after playing. Placeholders now: magpie 10 s idle; worker 20 s idle; moose = 2
+  bumps up into the top berm (Duvernay); Near Miss = two exits within 3.5 s (Cardium); landowner =
+  the same truck driven back and forth 4 times (`BackAndForth`: 4 direction changes in a row, any
+  other truck resets it); Biffy A = one bump down into the bottom berm; Biffy B = a second one
+  within 1.4 s (so A waits that long before it plays; once one of the two has played in a level, any
+  bottom bump brings the other). `bermBump` says which berm a bump hit.
 - EGG SCHEDULING (`GameView.tickEggs`): ONE gag at a time, none while a truck is moving or once
-  the level is won. The moose comes as soon as the stage is free after his trigger. The magpie comes
-  after `MAGPIE_IDLE_MS` (10 s) with no moves and the worker after `SPOTTER_IDLE_MS` (20 s), each
+  the level is won. A gag the player set off waits in `eggQueue` and plays as soon as the stage is
+  free. The magpie comes after his idle time with no moves and the worker after his, each
   counted from the last move or the last gag leaving (the worker waits until the magpie has been),
-  each once per level; one that was scared off or cancelled may try again. `?gag=magpie|worker|moose`
-  plays one at once, again and again; `?idle=0.1` makes the idle times 10x shorter.
+  each once per level; one that was scared off or cancelled may try again.
+  `?gag=magpie|worker|moose|nearmiss|landowner|biffya|biffyb` plays one at once, again and again;
+  `?idle=0.1` makes the idle times 10x shorter.
+- STRIP GAGS (gags 4 to 7; `src/ui/strip-gags.ts` runner `TimelineGag`, placement `stripGeom`;
+  puppets and timelines ported as written from `near_miss_landowner_reference.html` and
+  `biffy_reference.html` into `near-miss.ts`, `landowner.ts`, `biffy.ts`, helpers `puppet-stage.ts`).
+  Each is a `TimelineDef`: full-screen layers that take no touches, `apply(t)` per frame, `data-beat`
+  on the last layer, its line said through `host.say`. Reduced motion: a still fades in and out.
+  - NEAR MISS (Cardium): the gopher comes up out of the scenery's mound (`[data-anchor="mound"]`),
+    his layer cut off at the hole line; double take, ducks; the hotshot crosses the bottom strip
+    right to left, off screen to off screen, in dust; the gopher comes back dusty, "Near miss!",
+    coughs, sinks.
+  - LANDOWNER (any region): rides in on the quad from off screen, skids, shakes his head, fist with
+    "Who's paying for these ruts?", wheelie, hat blows off and is caught, out the far side.
+  - THE BIFFY is permanent scenery (`BiffyProp`, `.biffy-layer`, under the board): bottom strip of
+    every level at `BIFFY_X`, about 80 px tall at 390 (smaller on a short strip), in its own
+    clearing (scenery `clearings`), clear of the board, tip line and buttons. No biffy appears and
+    disappears any more (the old one lives only in `?gags=1`).
+  - BIFFY A "Occupied": door bangs open, the occupant looks back wide-eyed, nods, reaches, pulls it
+    shut; the indicator ends red. BIFFY B "The Runaway Roll": the roll rolls out and away, the arm
+    gropes, he shuffles after it off screen with paper on his boot, the door creaks shut; green.
+  - `npm run test:e2e:strip` checks all of it in WebKit (beats, real triggers, off-screen entry and
+    exit, hole clip, biffy placement, reduced motion, log), 60 fps at 4x throttle in Chromium, and
+    saves `gag47_*.webm` clips.
 - THE SLEEPY WORKER (gag 2; `src/ui/worker.ts` pure and tested, runner `WorkerGag` in
   `src/ui/egg-gags.ts`; spec: `~/Desktop/RHR Art Inbox/worker_moose_puppet_reference.html`, ported as
   written). He has a clearing in the bottom strip by the screen's LEFT edge (`workerSpot`; scenery
@@ -396,8 +425,9 @@ something, give exact clicks and one command at a time.
 
 ## Wildlife Log
 - LIVE NOW: the log's button is back on the level list and the page lists only the gags that are in
-  the game (`LIVE`: magpie, sleepy worker, moose; all ten with `?gags=1`), with card art from their
-  puppets (`magpieStill`, `workerStill`, `mooseStill`), the count and toasts out of that number.
+  the game (`EGGS`: magpie, sleepy worker, moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll;
+  the old ten with `?gags=1`), with card art from their puppets (`magpieStill`, `workerStill`,
+  `mooseStill`, `nearMissStill`, `landownerStill`, `biffyAStill`, `biffyBStill`), the count and toasts out of that number.
   An unfound card shows the gag's hint in DEMO mode only (`cardHint`); the game says "Not seen yet."
   Camo still needs all ten, so it cannot be earned yet.
 - `src/ui/wildlife-log.ts` (pure + storage, tested): 10 entries (Magpie, Sleeping Spotter, Biffy
@@ -549,6 +579,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:card` – win card frame, column, medal, confetti, with screenshots (start the dev server first)
 - `npm run test:e2e:magpie` – the magpie gag: beats, off-screen entry and exit, splat, startle, reduced motion, frame rate, clips (start the dev server first)
 - `npm run test:e2e:eggs` – the sleepy worker and the moose: beats, entry and exit, cancel, triggers, reduced motion, log, frame rate, clips (start the dev server first)
+- `npm run test:e2e:strip` – Near Miss, landowner, Biffy A and B and the permanent biffy (start the dev server first)
 - `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)

@@ -21,7 +21,8 @@
     "test:e2e:card": "node e2e/card.e2e.mjs",
     "test:e2e:hints": "node e2e/hint-shots.mjs",
     "test:e2e:magpie": "node e2e/magpie.e2e.mjs",
-    "test:e2e:eggs": "node e2e/eggs.e2e.mjs"
+    "test:e2e:eggs": "node e2e/eggs.e2e.mjs",
+    "test:e2e:strip": "node e2e/strip.e2e.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
