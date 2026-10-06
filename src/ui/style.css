@@ -3640,11 +3640,11 @@ canvas.berm-night { opacity: 0; transition: opacity var(--night-out) ease-in-out
   from { transform: scale(0.4); }
 }
 
-/* Four regions: the tabs share ONE row (a second row pushes the level list down the page). When
-   Bakken comes in as the fifth they go three to a row. */
-.regions { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.regions:has(.region-tab:nth-child(5)) { grid-template-columns: repeat(3, 1fr); }
-.region-tab { min-width: 0; font-size: clamp(13px, 3.9vw, 17px); padding-left: 2px; padding-right: 2px; }
-.region-tab .rlock { font-size: 10px; }
-.region-tab.locked .rname { gap: 2px; }
-.region-tab.locked img.padlock { width: 14px; height: 14px; flex: none; }
+/* Five regions: the tabs share ONE row (a second row pushes the level list down the page), so
+   their lettering is small and a locked tab's padlock sits over its name. */
+.regions { grid-auto-flow: row; grid-template-columns: repeat(5, minmax(0, 1fr)); padding-left: 3px; padding-right: 3px; gap: 1px; }
+.region-tab { min-width: 0; font-size: clamp(12px, 3.35vw, 15px); padding-left: 0; padding-right: 0; letter-spacing: -0.01em; }
+.region-tab .rdone { font-size: 12px; }
+.region-tab .rlock { font-size: 9.5px; padding: 0 1px; }
+.region-tab.locked .rname { flex-direction: column; gap: 0; }
+.region-tab.locked img.padlock { width: 13px; height: 13px; flex: none; }

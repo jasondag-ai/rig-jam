@@ -79,12 +79,8 @@ something, give exact clicks and one command at a time.
   first included (Jay, Oct 5: nothing below the floor); level 1 has muskeg and nothing else new.
   8 to 9 trucks. Theme: `fall` (late fall: dry tan grass, gold aspen
   thinning among the spruce, pale overcast sky). Opens after 5 of Duvernay.
-- Bakken: HELD, NOT IN THE GAME YET (Jay, Oct 5: Mannville shipped first; Bakken's levels get a
-  second pass). Its rules, art, lines and tests are in; it is left out of `regions.ts`, its level
-  tests are `describe.skip`, and `gen-levels` skips it (`held`). To bring it in: finish its ten
-  levels in `tools/fixed-levels/k01..k10.json`, take `held` off, add it back to `regions.ts`. The plan:
-  10 levels, adds LOAD RACKS and SHIFT-CHANGE GATES. EVERY level is par 18 to 24, the
-  first included; level 1 has racks and no clock gate, level 2 brings in one. 8 to 9 trucks. Theme: `prairie` (canola stubble in rows to a flat
+- Bakken: 10 levels, adds LOAD RACKS and SHIFT-CHANGE GATES. EVERY level is par 18 to 24, the
+  first included; level 1 has racks and no clock gate, level 2 brings in the clock (two gates; the one-clock level would not come down to par 18, so it is level 3 at par 19: Jay, Oct 6). Pars 18, 18, 19, 19, 20, 21, 21, 22, 23, 24. Levels 1, 3, 7 to 10 were hill-climbed (`tools/climb.ts`), the rest accepted from the random search. 8 to 9 trucks. Theme: `prairie` (canola stubble in rows to a flat
   horizon, a big blue sky, hardly a tree: `Theme.trees` 0.14). Opens after 5 of Mannville.
 - LEVELS OF REGIONS 4 AND 5 ARE NOT SEARCHED FOR AT RANDOM (it took 6 hours): the accepted ones
   live in `tools/fixed-levels/<id>.json` and `gen-levels` reads them first. A missing slot is
@@ -92,6 +88,7 @@ something, give exact clicks and one command at a time.
   one piece changed at a time, kept if still sound and par did not drop, solver capped at
   `MAX_STATES` 2 million, done when par is in the window and it stands at least 4 trucks apart
   from the others). Mannville 1 was climbed from Mannville 2 (convoy and equipment taken off).
+  The region tabs: all five share ONE row (small lettering; a locked tab's padlock sits over its name).
 - Both go dark after 30 s idle like Montney and Duvernay (`GAG_TRIGGERS.night.themes`). A theme
   has a `season` (which drawing of the trees: `fall` is new in trees.ts) and a `trees` density.
   Their outside ground tiles (`grass-fall`, `grass-prairie`) are made from the summer grass by
