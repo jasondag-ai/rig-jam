@@ -1,19 +1,25 @@
-// The audio engine: one AudioContext, created on the first tap (iOS only allows sound after a user
-// gesture), an effects bus and a quieter music bus, and the named game cues the UI calls (`sound`).
-// Web Audio only, no audio files. Where Safari supports it, the session is "ambient" so the iPhone
-// silent switch mutes the game and it mixes politely with other audio.
+// The audio engine: Jay's picked cartoon sounds and music, played from files (public/audio; the
+// pack and the mix are in pack.ts). One AudioContext, made on the first tap (iOS only allows sound
+// after a touch), an effects bus and a music bus, and the named game cues the UI calls (`sound`).
+// Nothing is fetched before that first tap, and nothing at all while its switch is off: the effects
+// load when Sound effects is on, a music loop only when Music is on. Where Safari supports it the
+// session is "ambient", so the iPhone's silent switch mutes the game.
 import { STEP_CELLS, chordLift, nextChain, winCue } from './cues.ts';
-import { STYLES, Sequencer } from './music.ts';
+import { GAG_LOOPS, GAG_SOUNDS, parseCue, type GagLoop } from './gag-sounds.ts';
+import { MUSIC_FADE, SFX_KEYS, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, sfxInfo, type MusicKey, type Scene, type SfxKey } from './pack.ts';
 import { loadAudioSettings, saveAudioSettings, type AudioSettings } from './settings.ts';
-import * as fx from './sfx.ts';
-import type { Held } from './synth.ts';
+import type { GagId } from '../ui/gag-triggers.ts';
 
-type Recipe = (ctx: BaseAudioContext, out: AudioNode, t: number) => void;
 export type Ground = 'gravel' | 'mud' | 'snow';
+const BASE = './audio/';
+/** A sound asked for before its file has arrived is still played if the file lands within this long (s); later, it is dropped. */
+const LATE = 0.25;
 
-const SFX_LEVEL = 0.9;
-/** Music sits well under the effects. */
-const MUSIC_LEVEL = 0.32;
+interface Loop {
+  src: AudioBufferSourceNode;
+  gain: GainNode;
+  level: number;
+}
 
 class AudioEngine {
   ctx: AudioContext | null = null;
@@ -22,13 +28,16 @@ class AudioEngine {
   readonly log: string[] = [];
   private sfxBus: GainNode | null = null;
   private musicBus: GainNode | null = null;
-  private music: Sequencer | null = null;
-  private musicStyle: string | null = null;
-  private held = new Map<string, Held>();
-  private loops = new Map<string, number>();
+  private buffers = new Map<string, AudioBuffer>();
+  private loading = new Map<string, Promise<AudioBuffer | null>>();
+  private loops = new Map<string, Loop>();
+  private timers = new Map<string, number>();
+  private scene: Scene = 'menu';
+  private music: { key: MusicKey; src: AudioBufferSourceNode; gain: GainNode } | null = null;
+  private wanted: MusicKey | null = null;
   private installed = false;
 
-  /** Listens for the first tap/key to start audio. Safe to call more than once. */
+  /** Listens for the first tap/key to start audio, and for taps on buttons (the UI's pops). Safe to call more than once. */
   install(): void {
     if (this.installed) return;
     this.installed = true;
@@ -39,9 +48,21 @@ class AudioEngine {
       if (document.hidden) void this.ctx.suspend();
       else void this.ctx.resume();
     });
+    // Every button pops when tapped (a touch that lifts on the button it landed on): a softer pop for Back and Close.
+    let down: Element | null = null;
+    document.addEventListener('pointerdown', (e) => (down = (e.target as Element | null)?.closest?.(BUTTONS) ?? null), { capture: true });
+    document.addEventListener(
+      'pointerup',
+      (e) => {
+        const on = (e.target as Element | null)?.closest?.(BUTTONS) ?? null;
+        if (on && on === down && !(on as HTMLButtonElement).disabled) this.play(on.matches(BACKS) ? 'back' : 'tap');
+        down = null;
+      },
+      { capture: true },
+    );
   }
 
-  /** Called from a user gesture: create (or resume) the context. */
+  /** Called from a user gesture: create (or resume) the context, then fetch what the switches ask for. */
   unlock(): void {
     if (!this.ctx) {
       const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -63,9 +84,15 @@ class AudioEngine {
       this.sfxBus.connect(comp);
       this.musicBus.connect(comp);
       this.applyLevels();
-      fx.unlockBlip(this.ctx);
+      // iOS wants a sound started inside the gesture itself: one silent sample.
+      const blip = this.ctx.createBufferSource();
+      blip.buffer = this.ctx.createBuffer(1, 1, this.ctx.sampleRate);
+      blip.connect(this.ctx.destination);
+      blip.start();
+      this.note('unlock');
     }
     if (this.ctx.state !== 'running') void this.ctx.resume();
+    this.preload();
     this.syncMusic();
   }
 
@@ -74,83 +101,206 @@ class AudioEngine {
     saveAudioSettings(this.settings);
     this.applyLevels();
     if (!this.settings.sfx) this.silenceEffects();
+    this.preload();
+    this.syncMusic();
+  }
+
+  /** The menus or a level: each has its own loop of the chosen style. */
+  setScene(scene: Scene): void {
+    if (scene === this.scene) return;
+    this.scene = scene;
     this.syncMusic();
   }
 
   private applyLevels(): void {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    this.sfxBus!.gain.setTargetAtTime(this.settings.sfx ? SFX_LEVEL : 0, now, 0.05);
-    this.musicBus!.gain.setTargetAtTime(this.settings.music ? MUSIC_LEVEL : 0, now, 0.4);
-  }
-
-  private syncMusic(): void {
-    if (!this.ctx) return;
-    const want = this.settings.music ? this.settings.style : null;
-    if (want === this.musicStyle) return;
-    this.music?.stop();
-    this.music = null;
-    this.musicStyle = want;
-    if (want) {
-      this.music = new Sequencer(this.ctx, this.musicBus!, STYLES[want]);
-      this.music.play();
-      this.note(`music:${want}`);
-    }
+    this.sfxBus!.gain.setTargetAtTime(this.settings.sfx ? 1 : 0, now, 0.05);
+    this.musicBus!.gain.setTargetAtTime(this.settings.music ? 1 : 0, now, 0.2);
   }
 
   private note(name: string): void {
     this.log.push(name);
-    if (this.log.length > 300) this.log.splice(0, this.log.length - 300);
+    if (this.log.length > 400) this.log.splice(0, this.log.length - 400);
   }
 
-  /** Plays a one-shot effect now (+ delay seconds). */
-  play(name: string, recipe: Recipe, delay = 0): void {
+  // ---------- Files ----------
+
+  private fetchBuffer(id: string, urls: string[]): Promise<AudioBuffer | null> {
+    const have = this.loading.get(id);
+    if (have) return have;
+    const job = (async () => {
+      for (const url of urls) {
+        try {
+          const res = await fetch(BASE + url);
+          if (!res.ok) continue;
+          const data = await res.arrayBuffer();
+          const buffer = await new Promise<AudioBuffer>((ok, no) => {
+            // (The callback form: older Safari has no promise here.)
+            const p = this.ctx!.decodeAudioData(data, ok, no);
+            if (p) p.then(ok, no);
+          });
+          this.buffers.set(id, buffer);
+          this.note(`loaded:${url}`);
+          return buffer;
+        } catch {
+          // Could not fetch or decode this format: try the next.
+        }
+      }
+      this.loading.delete(id);
+      return null;
+    })();
+    this.loading.set(id, job);
+    return job;
+  }
+
+  /** The effects, fetched once Sound effects is on (after the first tap). About 0.9 MB in all. */
+  private preload(): void {
     if (!this.ctx || !this.settings.sfx) return;
+    for (const key of SFX_KEYS) void this.fetchBuffer(key, [`sfx/${key}.mp3`]);
+  }
+
+  // ---------- Effects ----------
+
+  /** Plays a one-shot now (+ `delay` s). `rate`: pitch and speed; `gain`: on top of its place in the mix. */
+  play(key: SfxKey, opts: { delay?: number; rate?: number; gain?: number; as?: string } = {}): void {
+    if (!this.ctx || !this.settings.sfx) return;
+    this.note(opts.as ?? key);
+    const ctx = this.ctx;
+    const asked = ctx.currentTime;
+    const start = (buffer: AudioBuffer) => {
+      const late = ctx.currentTime - asked;
+      if (late > LATE) return;
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.playbackRate.value = opts.rate ?? 1;
+      const g = ctx.createGain();
+      g.gain.value = gainFor(key) * (opts.gain ?? 1);
+      src.connect(g).connect(this.sfxBus!);
+      src.start(ctx.currentTime + 0.005 + Math.max(0, (opts.delay ?? 0) - late));
+    };
+    const ready = this.buffers.get(key);
+    if (ready) start(ready);
+    else void this.fetchBuffer(key, [`sfx/${key}.mp3`]).then((b) => b && this.settings.sfx && start(b));
+  }
+
+  /** Starts a looping sound under `name` (no-op if it is running). The file loops on itself, its padding skipped. */
+  loopOn(name: string, key: SfxKey, opts: { rate?: number; gain?: number; fade?: number } = {}): void {
+    if (!this.ctx || !this.settings.sfx || this.loops.has(name)) return;
+    const buffer = this.buffers.get(key);
+    if (!buffer) return void this.fetchBuffer(key, [`sfx/${key}.mp3`]);
     this.note(name);
-    recipe(this.ctx, this.sfxBus!, this.ctx.currentTime + 0.005 + delay);
+    const ctx = this.ctx;
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    src.loop = true;
+    const pts = loopPoints(buffer.getChannelData(0), buffer.sampleRate);
+    src.loopStart = pts.start;
+    src.loopEnd = pts.end;
+    src.playbackRate.value = opts.rate ?? 1;
+    const gain = ctx.createGain();
+    const level = gainFor(key) * (opts.gain ?? 1);
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(level, ctx.currentTime + (opts.fade ?? 0.06));
+    src.connect(gain).connect(this.sfxBus!);
+    src.start(ctx.currentTime, pts.start);
+    this.loops.set(name, { src, gain, level: gainFor(key) });
   }
 
-  /** Starts a continuous effect under `name` (no-op if already running). */
-  hold(name: string, make: (ctx: BaseAudioContext, out: AudioNode) => Held): Held | null {
-    if (!this.ctx || !this.settings.sfx) return null;
-    const existing = this.held.get(name);
-    if (existing) return existing;
-    const h = make(this.ctx, this.sfxBus!);
-    this.held.set(name, h);
-    this.note(name);
-    return h;
+  /** Changes a running loop's pitch and loudness, smoothly. */
+  loopSet(name: string, opts: { rate?: number; gain?: number }): void {
+    const l = this.loops.get(name);
+    if (!l || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    if (opts.rate !== undefined) l.src.playbackRate.setTargetAtTime(opts.rate, now, 0.06);
+    if (opts.gain !== undefined) l.gain.gain.setTargetAtTime(l.level * opts.gain, now, 0.06);
   }
 
-  release(name: string): void {
-    this.held.get(name)?.stop();
-    this.held.delete(name);
+  /** Stops a loop with a short fade (nothing ends on a click). */
+  loopOff(name: string, fade = 0.12): void {
+    const l = this.loops.get(name);
+    if (!l || !this.ctx) return;
+    this.loops.delete(name);
+    const now = this.ctx.currentTime;
+    l.gain.gain.cancelScheduledValues(now);
+    l.gain.gain.setTargetAtTime(0, now, fade / 3);
+    l.src.stop(now + fade + 0.05);
   }
 
-  heldNow(name: string): Held | undefined {
-    return this.held.get(name);
+  loopRunning(name: string): boolean {
+    return this.loops.has(name);
   }
 
-  /** Repeats `recipe` every `ms` (with optional random extra) until stopped. */
-  loop(name: string, recipe: Recipe, ms: number, jitter = 0): void {
-    if (this.loops.has(name) || !this.ctx || !this.settings.sfx) return;
+  /** Repeats a one-shot every `seconds` until `repeatOff(name)`. */
+  repeatOn(name: string, key: SfxKey, seconds: number, opts: { jitter?: number } = {}): void {
+    if (this.timers.has(name) || !this.ctx || !this.settings.sfx) return;
     const tick = () => {
-      this.play(name, recipe);
-      this.loops.set(name, window.setTimeout(tick, ms + Math.random() * jitter));
+      this.play(key, { as: name, rate: 1 + (Math.random() - 0.5) * (opts.jitter ?? 0) });
+      this.timers.set(name, window.setTimeout(tick, seconds * 1000));
     };
     tick();
   }
 
-  stopLoop(name: string): void {
-    clearTimeout(this.loops.get(name));
-    this.loops.delete(name);
+  repeatOff(name: string): void {
+    clearTimeout(this.timers.get(name));
+    this.timers.delete(name);
   }
 
-  /** Stops every running loop and held sound (leaving the game screen, or effects switched off). */
+  /** Stops every loop and repeat (leaving the game screen, or effects switched off). */
   silenceEffects(): void {
-    for (const name of [...this.held.keys()]) this.release(name);
-    for (const name of [...this.loops.keys()]) this.stopLoop(name);
+    for (const name of [...this.loops.keys()]) this.loopOff(name);
+    for (const name of [...this.timers.keys()]) this.repeatOff(name);
+  }
+
+  // ---------- Music ----------
+
+  /** Plays the loop for the chosen style and the scene, if Music is on; fades between loops. Fetched only now. */
+  private syncMusic(): void {
+    if (!this.ctx) return;
+    const want = this.settings.music ? musicKey(this.settings.style, this.scene) : null;
+    if (want === this.wanted) return;
+    this.wanted = want;
+    const ctx = this.ctx;
+    const old = this.music;
+    if (old) {
+      this.music = null;
+      old.gain.gain.cancelScheduledValues(ctx.currentTime);
+      old.gain.gain.setTargetAtTime(0, ctx.currentTime, MUSIC_FADE / 3);
+      old.src.stop(ctx.currentTime + MUSIC_FADE + 0.1);
+    }
+    if (!want) return;
+    const formats = pickFormat(musicInfo(want).formats, (type) => (typeof Audio === 'undefined' ? '' : new Audio().canPlayType(type)));
+    const mp3 = musicInfo(want).formats.find((f) => f.type === 'audio/mpeg');
+    const urls = [...new Set([...formats, ...(mp3 ? [mp3] : [])].map((f) => `music/${f.file}`))];
+    void this.fetchBuffer(`music:${want}`, urls).then((buffer) => {
+      // Still the loop that is wanted? (The player may have moved on while it loaded.)
+      if (!buffer || this.wanted !== want || this.music?.key === want) return;
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.loop = true;
+      const pts = loopPoints(buffer.getChannelData(0), buffer.sampleRate);
+      src.loopStart = pts.start;
+      src.loopEnd = pts.end;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(musicGain(want), ctx.currentTime + MUSIC_FADE);
+      src.connect(gain).connect(this.musicBus!);
+      src.start(ctx.currentTime, pts.start);
+      this.music = { key: want, src, gain };
+      this.note(`music:${want}`);
+    });
+  }
+
+  /** Tests: which loop is playing, and where its loop points are. */
+  musicState(): { key: string; loopStart: number; loopEnd: number; seconds: number; gain: number } | null {
+    const m = this.music;
+    return m ? { key: m.key, loopStart: m.src.loopStart, loopEnd: m.src.loopEnd, seconds: m.src.buffer!.duration, gain: musicGain(m.key) } : null;
   }
 }
+
+/** What pops when tapped, and which of those are a way back. */
+const BUTTONS = 'button, .btn, [role="tab"], [role="radio"], label.switch, a[href]';
+const BACKS = '[data-act="levels"], [data-act="close"], [data-act="cancel"], [data-t="close"], .back, .t-x';
 
 export const audio = new AudioEngine();
 
@@ -159,124 +309,132 @@ export const audio = new AudioEngine();
 let chain = 0;
 let lastExitAt: number | null = null;
 let rolled = 0;
-let ground: Ground = 'gravel';
 let idleTimer = 0;
+/** The loops and repeats each gag has started (stopped when it ends). */
+const gagLoops = new Map<string, Set<string>>();
+const gagTimers = new Map<string, number[]>();
 
 export const sound = {
-  /** A drag starts: the diesel turns over. */
+  /** A drag starts: the toy engine turns over and keeps running while the truck is held. */
   dragStart(): void {
-    audio.hold('diesel', fx.diesel);
+    audio.play('drag');
+    audio.loopOn('motor', 'motor', { rate: 0.9, gain: 0.5, fade: 0.25 });
   },
-  /** The truck is moving `speed` cells/s; mud squelches and snow crunches every so often. */
+  /** The truck is moving `speed` cells/s: the engine climbs with it. */
   motion(speed: number, dt: number): void {
-    audio.heldNow('diesel')?.set(speed);
+    const v = Math.min(1, Math.abs(speed) / 6);
+    audio.loopSet('motor', { rate: 0.9 + v * 0.5, gain: 0.5 + v * 0.5 });
     // No motion for a moment (finger held still): drop back to idle.
     clearTimeout(idleTimer);
-    idleTimer = window.setTimeout(() => audio.heldNow('diesel')?.set(0), 120);
+    idleTimer = window.setTimeout(() => audio.loopSet('motor', { rate: 0.9, gain: 0.5 }), 120);
     rolled += Math.abs(speed) * dt;
-    if (rolled >= STEP_CELLS) {
-      rolled = 0;
-      if (ground === 'mud') audio.play('squelch', fx.squelch);
-      if (ground === 'snow') audio.play('crunch', fx.crunch);
-    }
+    if (rolled >= STEP_CELLS) rolled = 0;
   },
-  /** The truck has settled (or driven off): engine winds down. */
+  /** The truck has settled (or driven off): the engine winds down. */
   dragEnd(): void {
-    audio.release('diesel');
+    clearTimeout(idleTimer);
+    audio.loopOff('motor', 0.2);
     this.reversing(false);
   },
-  /** Backing up (away from its gate): the backup alarm beeps until it stops reversing. */
+  /** Backing up (away from its gate): the backup beeper until it stops reversing. */
   reversing(on: boolean): void {
-    if (on) audio.loop('beeper', fx.beep, 520);
-    else audio.stopLoop('beeper');
+    if (on) audio.loopOn('beeper', 'reverse');
+    else audio.loopOff('beeper', 0.05);
   },
   bump(): void {
-    audio.play('thud', fx.thud);
-    audio.play('horn', fx.horn, 0.06);
+    audio.play('bump');
   },
   /** Radio squelch: plays just before a driver's speech bubble. */
   radio(): void {
-    audio.play('radio', fx.radio);
+    audio.play('radio');
   },
-  /** A truck drives out: gate clank and air brakes; quick exits in a row climb a horn chord. */
+  /** A truck drives out: the gate's ratchet and ding, a whoosh; quick exits in a row sound the toy horn as a chord that climbs. */
   exit(): void {
-    audio.play('clank', fx.clank);
-    audio.play('hiss', fx.airHiss, 0.12);
+    audio.play('gate');
+    audio.play('exit', { delay: 0.08 });
     const now = performance.now();
     chain = nextChain(lastExitAt, now, chain);
     lastExitAt = now;
     if (chain >= 1) {
+      // One horn at three pitches (a major chord), raised two semitones for each exit in the chain.
       const lift = chordLift(chain);
-      audio.play('horn-chord', (c, o, t) => fx.hornChord(c, o, t, lift), 0.05);
+      HORN_CHORD.forEach((semis, i) => audio.play('horn', { as: i ? 'horn-chord' : 'horn', rate: 2 ** ((semis + lift) / 12), delay: 0.12 + i * 0.03, gain: 0.8 }));
     }
   },
-  /** Win screen: one clink per hard hat, then the ditty (par) or the sad trombone (+4 or worse). */
+  /** Win screen: a pop per hard hat, then the toy whistle (par) or the wah-wah horn (+4 or worse). */
   win(hats: number, moves: number, par: number): void {
-    for (let i = 0; i < hats; i++) audio.play('clink', (c, o, t) => fx.clink(c, o, t, i), 0.15 + i * 0.22);
+    for (let i = 0; i < hats; i++) audio.play('tap', { as: 'hat', delay: 0.15 + i * 0.22, rate: 1 + i * 0.12 });
     const cue = winCue(moves, par);
     const after = 0.25 + hats * 0.22;
-    if (cue === 'ditty') audio.play('ditty', fx.ditty, after);
-    if (cue === 'trombone') audio.play('trombone', fx.trombone, after);
+    if (cue === 'ditty') audio.play('win', { delay: after });
+    if (cue === 'trombone') audio.play('lose', { delay: after });
   },
   /** The streak sign ticks up. */
   streakUp(): void {
-    audio.play('stamp', fx.stamp, 0.9);
+    audio.play('streak', { delay: 0.9 });
   },
-  /** Ground for this level: birdsong over summer gravel; mud and snow sound under the wheels. */
-  setGround(g: Ground | null): void {
-    ground = g ?? 'gravel';
+  /** A level begins (its ground no longer changes the sound): the in-play music, a fresh exit chain. */
+  setGround(_g: Ground | null): void {
     chain = 0;
     lastExitAt = null;
-    if (g === 'gravel') audio.loop('birds', fx.chirp, 4000, 5000);
-    else audio.stopLoop('birds');
+    audio.setScene('play');
   },
-
-  /** Off the game screen: no engines, birds or snoring left running. */
+  /** Off the game screen: no engines or snoring left running; the menu's music. */
   quiet(): void {
     audio.silenceEffects();
+    for (const name of [...gagLoops.keys()]) sound.gagEnd(name as GagId);
+    audio.setScene('menu');
+  },
+  /** A pumpjack's stroke: a small squeak and clunk, well down in the mix. */
+  pumpjack(): void {
+    audio.play('pumpjack');
   },
 
-  // Gags
-  squawk: () => audio.play('squawk', fx.squawk),
-  plop: (delay = 0) => audio.play('plop', fx.plop, delay),
-  grunt: () => audio.play('grunt', fx.grunt),
-  doorBang: () => audio.play('door-bang', fx.doorBang),
-  feet(on: boolean): void {
-    if (on) audio.loop('feet', fx.footstep, 110);
-    else audio.stopLoop('feet');
+  // The magpie's own (they follow what the player does, not his beats).
+  squawk: () => audio.play('magpie'),
+  plop: (delay = 0) => audio.play('splat', { delay }),
+  grunt: () => audio.play('radio'),
+
+  /** A gag reached a beat: play what the table says for it (gag-sounds.ts). */
+  gag(id: GagId, beat: string): void {
+    for (const cue of GAG_SOUNDS[id]?.[beat] ?? []) {
+      const { op, name, delay } = parseCue(cue);
+      const act = () => {
+        if (op === 'play') return audio.play(name as SfxKey);
+        const mine = gagLoops.get(id) ?? new Set<string>();
+        gagLoops.set(id, mine);
+        const loop = GAG_LOOPS[name as GagLoop];
+        const tag = `${id}:${name}`;
+        if (op === 'start') {
+          mine.add(name);
+          if ('every' in loop) audio.repeatOn(tag, loop.key, loop.every, { jitter: 0.12 });
+          else audio.loopOn(tag, loop.key);
+        } else {
+          mine.delete(name);
+          audio.repeatOff(tag);
+          audio.loopOff(tag);
+        }
+      };
+      if (!delay) act();
+      else gagTimers.set(id, [...(gagTimers.get(id) ?? []), window.setTimeout(act, delay * 1000)]);
+    }
   },
-  quad(state: 'start' | 'idle' | 'rev' | 'stop'): void {
-    if (state === 'stop') return audio.release('quad');
-    // Only 'start' turns the engine over, so a ride that outlives its screen can't restart it.
-    const h = state === 'start' ? audio.hold('quad', fx.quad) : audio.heldNow('quad');
-    h?.set(state === 'idle' ? 0 : state === 'rev' ? 1 : 0.6);
-  },
-  snore(on: boolean): void {
-    if (on) audio.loop('snore', fx.snore, 2800);
-    else audio.stopLoop('snore');
-  },
-  clatter: () => audio.play('clatter', fx.clatter),
-  bearGrunt: () => audio.play('bear-grunt', fx.bearGrunt),
-  bearHuff: () => audio.play('bear-huff', fx.bearHuff),
-  rabbitSqueak: () => audio.play('rabbit-squeak', fx.rabbitSqueak),
-  mooseGroan: () => audio.play('moose-groan', fx.mooseGroan),
-  pop: () => audio.play('pop', fx.pop),
-  swish: () => audio.play('swish', fx.swish),
-  shakeOff: () => audio.play('shake', fx.shake),
-  whistle: (delay = 0) => audio.play('whistle', fx.whistle, delay),
-  honk: () => audio.play('honk', fx.honk),
-  carDoor: () => audio.play('car-door', fx.carDoor),
-  scribble: () => audio.play('scribble', fx.scribble),
-  putter: (seconds: number) => audio.play('putter', (c, o, t) => fx.putter(c, o, t, seconds)),
-  /** The hot shot passing: `seconds` long, panned the way it drives. */
-  hotshot: (seconds: number, leftToRight: boolean) => audio.play('hotshot', (c, o, t) => fx.hotshot(c, o, t, seconds, leftToRight)),
-  cordSnap(): void {
-    audio.play('cord-snap', fx.cordSnap);
-    audio.play('crackle', fx.crackle, 0.02);
+  /** A gag is over (or was cut short): everything it left running stops. */
+  gagEnd(id: GagId): void {
+    for (const t of gagTimers.get(id) ?? []) clearTimeout(t);
+    gagTimers.delete(id);
+    for (const name of gagLoops.get(id) ?? []) {
+      audio.repeatOff(`${id}:${name}`);
+      audio.loopOff(`${id}:${name}`);
+    }
+    gagLoops.delete(id);
   },
 };
+/** The horn chord: the picked toy horn at three pitches (semitones above the file's own). */
+export const HORN_CHORD = [0, 4, 7];
 
 /** Test hook: ?audiolog exposes the engine so end-to-end tests can see which cues fired. */
 if (typeof location !== 'undefined' && new URLSearchParams(location.search).has('audiolog')) {
   (window as unknown as { __rhrAudio: AudioEngine }).__rhrAudio = audio;
 }
+void sfxInfo;

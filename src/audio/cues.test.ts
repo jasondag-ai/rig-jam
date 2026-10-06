@@ -3,21 +3,21 @@ import { CHAIN_MS, chordLift, nextChain, winCue } from './cues.ts';
 import { DEFAULT_AUDIO, MUSIC_STYLES, parseAudioSettings } from './settings.ts';
 
 describe('sound settings', () => {
-  it('defaults to effects on, music off, 80s synth', () => {
-    expect(DEFAULT_AUDIO).toEqual({ sfx: true, music: false, style: 'synth' });
+  it('sound is OFF by default: no effects, no music; Country is the first style', () => {
+    expect(DEFAULT_AUDIO).toEqual({ sfx: false, music: false, style: 'country' });
     expect(parseAudioSettings(null)).toEqual(DEFAULT_AUDIO);
     expect(parseAudioSettings('not json')).toEqual(DEFAULT_AUDIO);
   });
 
   it('keeps valid choices and repairs bad ones', () => {
-    expect(parseAudioSettings(JSON.stringify({ sfx: false, music: true, style: 'lofi' }))).toEqual({ sfx: false, music: true, style: 'lofi' });
+    expect(parseAudioSettings(JSON.stringify({ sfx: true, music: true, style: 'chill' }))).toEqual({ sfx: true, music: true, style: 'chill' });
     expect(parseAudioSettings(JSON.stringify({ sfx: 'yes', style: 'polka' }))).toEqual(DEFAULT_AUDIO);
   });
 
-  it('offers three music styles', () => {
-    expect(MUSIC_STYLES.map((s) => s.name)).toEqual(['80s Synth', 'Chill Lo-fi']);
-    // Country Twang was retired: a phone that saved it gets 80s Synth (and keeps its other choices).
-    expect(parseAudioSettings(JSON.stringify({ sfx: false, music: true, style: 'country' }))).toEqual({ sfx: false, music: true, style: 'synth' });
+  it('offers three music styles; a style saved under the old synth engine keeps its nearest new one', () => {
+    expect(MUSIC_STYLES.map((s) => s.name)).toEqual(['Country', '80s Retro', 'Chill']);
+    expect(parseAudioSettings(JSON.stringify({ sfx: true, music: true, style: 'synth' }))).toEqual({ sfx: true, music: true, style: 'retro' });
+    expect(parseAudioSettings(JSON.stringify({ style: 'lofi' })).style).toBe('chill');
   });
 });
 
