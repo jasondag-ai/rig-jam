@@ -324,7 +324,7 @@ export class GameView {
       }
       if (this.bakken) {
         const bakken = this.bakken;
-        for (const id of ['tumbleweed', 'pdogs', 'cloud'] as GagId[]) if (!eggOff(id)) this.strips[id] = new TimelineGag(egg, sceneDef(id, id, () => bakken.geom()));
+        for (const id of ['tumbleweed', 'pdogs', 'cloud'] as GagId[]) if (!eggOff(id)) this.strips[id] = new TimelineGag(egg, sceneDef(id, id, () => bakken.geom(), { overLease: id === 'cloud' }));
         if (!eggOff('bale')) this.strips.bale = new TimelineGag(egg, sceneDef('bale', 'bale', () => bakken.geom(), { prop: bakken, line: BALE_LINE }));
       }
       // Taps on a flare stack (gag-triggers.ts): a touch that lifts where it landed, on a flare's picture.

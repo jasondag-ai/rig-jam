@@ -381,6 +381,41 @@ if (!ONLY) {
     await context.close();
   }
 }
+// Job P (Jay's playtest, Oct 6), held frame by frame.
+console.log('\nwebkit: the cloud over the berm, the beaver\'s one twist, the coyote behind the front trees');
+for (const [width, height] of [[390, 844], [375, 667]]) {
+  const { context, page } = await open(wk, { width, height, region: bakk, level: 2, query: 'gagtest=1&night=0' });
+  const c = await page.evaluate(() => {
+    const g = window.__rhrGag; g.hold('cloud', g.end('cloud') * 0.45);
+    const layer = [...document.querySelectorAll('.strip-layer.scene-gag')].find((l) => l.querySelector('svg .pup circle'));
+    const z = (el) => +getComputedStyle(el).zIndex || 0;
+    const out = { over: layer?.classList.contains('over-lease'), z: layer ? z(layer) : -1, board: z(document.querySelector('.board')), touch: layer ? getComputedStyle(layer).pointerEvents : '' };
+    g.release('cloud'); return out;
+  });
+  check(c.over && c.z > c.board && c.touch === 'none', `${width}x${height}: the personal cloud's layer is drawn over the board and its berm (z ${c.z} over ${c.board}), and takes no touches`);
+  await context.close();
+}
+{
+  const { context, page } = await open(wk, { region: mann, level: 2, query: 'gagtest=1&night=1' });
+  await page.waitForTimeout(4600);
+  const a = await page.evaluate(() => {
+    const g = window.__rhrGag, end = g.end('aurora'), out = [];
+    for (let t = 0; t <= end; t += 0.1) {
+      g.hold('aurora', t);
+      const under = document.querySelector('.scenery .trees > svg.aurora-under'), top = document.querySelector('.aurora-layer .pup');
+      const next = under?.nextElementSibling;
+      out.push({ t, under: !!under?.innerHTML, front: !under || !!next?.classList.contains('front'), before: under ? [...under.parentElement.children].filter((e) => e.classList.contains('front')).every((e) => under.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING) : true, top: top ? +(top.style.opacity || 1) : 1, drawn: !!top?.innerHTML });
+    }
+    g.release('aurora');
+    return { out, left: !!document.querySelector('.aurora-under') };
+  });
+  const sitting = a.out.filter((f) => f.drawn && f.top === 1), leaving = a.out.filter((f) => f.under && f.top === 0);
+  check(sitting.length > 20 && sitting.every((f) => !f.under) && leaving.length > 8 && a.out.every((f) => f.before) && !a.left,
+    `aurora: he trots in, sits and howls in front of the trees (${sitting.length} frames); on his way out he is drawn in the scenery UNDER every tree of the front row (${leaving.length} frames), and that drawing is gone at the end`);
+  const steps = a.out.slice(1).map((f, i) => Math.abs(f.top - a.out[i].top));
+  check(Math.max(...steps) < 0.75, `aurora: he passes from over the trees to behind them in a fade, not a pop (most in 0.1 s: ${Math.max(...steps).toFixed(2)})`);
+  await context.close();
+}
 await wk.close();
 
 // ---------- 5. Frame rate ----------

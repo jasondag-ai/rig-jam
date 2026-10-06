@@ -107,6 +107,48 @@ describe('the four Mannville gags (ported: wave3.ts)', () => {
     }
   });
 
+  it("the beaver's pipe makes ONE simple twist: up to upright, carried upright past the aspen, back down (no spin)", () => {
+    const angle = (t: number) => +/translate\([-\d. ]+\) rotate\(([-\d.]+)\)/.exec(gags.beaver.render(t, 0))![1];
+    for (let t = 0; t <= 11.4; t += 0.05) expect(angle(t), `t ${t.toFixed(2)}`).toBeGreaterThanOrEqual(-90.01);
+    for (let t = 0; t <= 11.4; t += 0.05) expect(angle(t), `t ${t.toFixed(2)}`).toBeLessThan(8);
+    for (const t of [5.8, 6.2, 7, 8.4]) expect(angle(t)).toBe(-90);
+    for (const t of [1, 4.8, 9.0, 10.5]) expect(angle(t)).toBeCloseTo(0, 5);
+    // Up once, down once.
+    let turns = 0, dir = 0;
+    for (let t = 4.8; t <= 9.0; t += 0.02) { const d = Math.sign(Math.round((angle(t + 0.02) - angle(t)) * 100)); if (d && d !== dir) { turns++; dir = d; } }
+    expect(turns).toBe(2);
+    expect(gags.beaver.beats.map((b) => b[1])).toContain('tilts-pipe');
+  });
+
+  it('the coyote slows to his stop and gets going again; his sit is one smooth fold; he leaves behind the trees', () => {
+    const a = gags.aurora as unknown as Gag & { cx: (t: number) => number; pace: (t: number) => number; behind: (t: number) => number };
+    // No jump in his place or his speed at the stop and the start.
+    for (const t of [2.3, 2.8, 7.0, 7.5]) {
+      const v0 = (a.cx(t) - a.cx(t - 0.01)) / 0.01, v1 = (a.cx(t + 0.01) - a.cx(t)) / 0.01;
+      expect(Math.abs(v1 - v0), `speed at ${t}`).toBeLessThan(6);
+    }
+    expect(a.cx(2.8)).toBe(190);
+    expect(a.cx(5)).toBe(190);
+    expect(a.pace(1)).toBe(1);
+    expect(a.pace(2.8)).toBe(0);
+    expect(a.pace(5)).toBe(0);
+    expect(a.pace(8)).toBe(1);
+    // Every number of his drawing moves a little at a time through the sit (nothing switches halfway).
+    const nums = (t: number) => (a.render(t, 0).match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
+    // (The haunch grows out from nothing once, right at the start; no part comes or goes after that.)
+    let changes = 0;
+    for (let t = 3.3; t < 3.7; t += 0.01) if (nums(t).length !== nums(t + 0.01).length) changes++;
+    expect(changes).toBeLessThanOrEqual(1);
+    for (let t = 3.36; t < 3.7; t += 0.01) {
+      const p = nums(t), q = nums(t + 0.01);
+      expect(Math.max(...p.map((v, i) => Math.abs(v - q[i]))), `step at ${t.toFixed(2)}`).toBeLessThan(6);
+    }
+    expect(a.behind(6.7)).toBe(0);
+    expect(a.behind(7.1)).toBe(1);
+    // Off the screen at both ends, however wide.
+    for (const E of [0, 60, 200]) { expect(a.cx(-a.lead(E))).toBeLessThanOrEqual(-45 - E + 0.01 + (a.lead(E) === 0 ? 400 : 0)); expect(a.cx(a.dur + a.tail(E))).toBeGreaterThan(440 + E); }
+  });
+
   it.each(MANN)("%s: between its first beat and its last it keeps the reference's clock whatever the strip (only the walk in and the walk off grow)", (k) => {
     const g = gags[k];
     expect(g.lead(0)).toBe(0);

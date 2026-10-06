@@ -104,16 +104,19 @@ function beaver(o){
 
 function coyote(o){
  o=Object.assign({x:0,y:124,s:.72,face:1,ph:0,walk:0,sit:0,low:0,headRot:0,eye:'n',px:0,mouth:'',ears:0,blush:0,sq:0},o);
- const c='#b59b6d',cd='#8c7550',cl='#ece0c4',sn=Math.sin(o.ph)*o.walk*30;
- const sx=o.s*o.face*(1+o.sq),sy=o.s*(1-o.sq),dy=7*o.low;
+ // A trot: diagonal pairs swing together, the swinging pair lifts its paws, the body rides a small bounce.
+ const c='#b59b6d',cd='#8c7550',cl='#ece0c4',sn=Math.sin(o.ph)*o.walk*26,cs=Math.cos(o.ph)*o.walk;
+ const sx=o.s*o.face*(1+o.sq),sy=o.s*(1-o.sq),dy=7*o.low-1.6*Math.abs(cs);
  const lg=(x,a,col,h,up=0)=>`<g transform="rotate(${r2(a)} ${x} -20)"><rect x="${x-2.8}" y="${r2(-21-up)}" width="5.6" height="${r2(h)}" rx="2.6" fill="${col}" ${sw(2.2)}/></g>`;
  const lh=21-7*o.low;
- let legs='';
- if(o.sit<.5)legs+=lg(-15,sn,cd,lh)+lg(-11,-sn,c,lh);
- legs+=lg(12,-sn,cd,lh+14*o.sit,14*o.sit)+lg(16,sn,c,lh+14*o.sit,14*o.sit);if(o.sit>.5)legs+=`<ellipse cx="-6" cy="-2.5" rx="7" ry="3" fill="${cd}" ${sw(2)}/>`;
- const tailRot=o.low*38+(o.sit>.5?30:0);
+ const liftA=3*Math.max(0,cs),liftB=3*Math.max(0,-cs);
+ // Sitting down is one smooth fold (nothing switches at a halfway point): the hind legs swing
+ // forward under him as the rump comes down, the haunch grows out of the body.
+ const hind=`<g transform="translate(0 ${r2(11*o.sit)})">${lg(-15,sn-78*o.sit,cd,lh-liftA-5*o.sit)}${lg(-11,-sn-78*o.sit,c,lh-liftB-5*o.sit)}</g>`;
+ let legs=hind+lg(12,-sn,cd,lh+14*o.sit-liftB,14*o.sit)+lg(16,sn,c,lh+14*o.sit-liftA,14*o.sit);
+ const tailRot=o.low*38+30*o.sit+4*Math.sin(o.ph*2)*o.walk;
  const tail=`<g transform="rotate(${r2(tailRot)} -20 -25)"><path d="M-19 -27 Q-34 -30 -43 -17 Q-37 -14 -31 -19 Q-26 -21 -19 -21 z" fill="${c}" ${sw(2.2)}/><path d="M-43 -17 Q-41 -21 -37 -21 Q-38 -17 -40 -16 z" fill="${OL}"/></g>`;
- const body=`<g transform="translate(0 ${r2(dy+9*o.sit)}) rotate(${r2(-26*o.sit)} -14 -20)">${tail}<ellipse cx="0" cy="-26" rx="22" ry="10" fill="${c}" ${sw(2.6)}/><path d="M-12 -18 Q2 -14 14 -19" fill="none" stroke="${cl}" stroke-width="4" stroke-linecap="round"/>${o.sit>.5?`<ellipse cx="-12" cy="-17" rx="10" ry="8" fill="${c}" ${sw(2.2)}/>`:''}</g>`;
+ const body=`<g transform="translate(0 ${r2(dy+9*o.sit)}) rotate(${r2(-26*o.sit)} -14 -20)">${tail}<ellipse cx="0" cy="-26" rx="22" ry="10" fill="${c}" ${sw(2.6)}/><path d="M-12 -18 Q2 -14 14 -19" fill="none" stroke="${cl}" stroke-width="4" stroke-linecap="round"/>${o.sit>.02?`<ellipse cx="-12" cy="-17" rx="${r2(10*o.sit)}" ry="${r2(8*o.sit)}" fill="${c}" ${sw(2.2)}/>`:''}</g>`;
  let eye;const ex=2,eyy=-3;
  if(o.eye==='closed')eye=`<path d="M-1 ${eyy} q3.5 3 7 0" fill="none" ${sw(2)}/>`;
  else{const wide=o.eye==='wide',er=wide?5:4;eye=`<circle cx="${ex}" cy="${eyy}" r="${er}" fill="#fff" ${sw(2)}/><circle cx="${r2(ex+.8+o.px)}" cy="${eyy}" r="${wide?1.8:2.2}" fill="${OL}"/>${wide?`<circle cx="${ex-.6}" cy="${eyy-1.6}" r="1" fill="#fff"/>`:''}`;
@@ -243,7 +246,7 @@ WAVE3.catTrain = { name:'Cat Train', dur:12.4, still:7.0,
 /* 3. Beaver */
 const BEAVER_IN=293/2.2, BEAVER_OUT=143/1.4;
 WAVE3.beaver = { name:'Beaver', dur:11.4, still:5.6,
- beats:[[0,'waddles-in','Waddles in with a pipe joint balanced on his head.'],[2.2,'bonk','BONK. The pipe hits the aspen.'],[2.5,'glares','Shakes it off, backs up, glares at the tree.'],[3.3,'bonk-again','Crouch, charge, BONK again. Dizzy.'],[4.2,'thinks','Thinks it over.'],[4.6,'idea','Idea!'],[4.8,'spins-pipe','Spins the pipe end over end, overhead.'],[6.2,'squeezes-past','Squeezes past behind the tree, pipe straight up.'],[8.4,'lowers','Lowers it on the far side.'],[9.0,'proud','Chin up, proud. Two tail slaps.'],[9.6,'waddles-off','Waddles off with his pipe.']],
+ beats:[[0,'waddles-in','Waddles in with a pipe joint balanced on his head.'],[2.2,'bonk','BONK. The pipe hits the aspen.'],[2.5,'glares','Shakes it off, backs up, glares at the tree.'],[3.3,'bonk-again','Crouch, charge, BONK again. Dizzy.'],[4.2,'thinks','Thinks it over.'],[4.6,'idea','Idea!'],[4.8,'tilts-pipe','Tilts the pipe upright.'],[6.2,'squeezes-past','Squeezes past behind the tree, pipe straight up.'],[8.4,'lowers','Lowers it on the far side.'],[9.0,'proud','Chin up, proud. Two tail slaps.'],[9.6,'waddles-off','Waddles off with his pipe.']],
  lead:E=>E/BEAVER_IN, tail:E=>E/BEAVER_OUT,
  bx(t){return t<0?-80+BEAVER_IN*t:t>11.0?495+BEAVER_OUT*(t-11.0):kf(t,[[0,-80],[2.2,213,'lin'],[2.5,213],[3.0,192],[3.3,192],[3.45,188],[3.6,213,'in'],[3.8,200,'out'],[6.2,200],[8.4,352,'lin'],[9.6,352],[11.0,495,'lin']]);},
  focus(t){return{x:this.bx(t)+20,y:110};},
@@ -252,8 +255,10 @@ WAVE3.beaver = { name:'Beaver', dur:11.4, still:5.6,
   const bx=this.bx(t);
   const walking=t<2.2||inr(t,6.2,8.4)||t>=9.6||inr(t,2.5,3.0);
   const wob=(t0)=>t>t0?4*Math.sin((t-t0)*40)*Math.exp(-(t-t0)*6):0;
-  const pa=kf(t,[[4.8,0],[6.2,450],[8.4,450],[9.0,540]])+wob(2.2)+wob(3.6)*1.6;
-  const lift=kf(t,[[4.8,0],[5.1,1],[8.4,1],[9.0,0]]);
+  // ONE SIMPLE TWIST (Jay, Oct 6; no baton spin): tilt it upright, carry it upright past the aspen, tilt it back down.
+  const up=kf(t,[[4.8,0],[5.7,1],[8.4,1],[9.0,0]]);
+  const pa=-90*up+wob(2.2)+wob(3.6)*1.6;
+  const lift=up;
   const bob=walking?-1.5*Math.abs(Math.cos(bx/5)):0;
   const pcy=lerp(GY-38,GY-72,lift)+bob, pcx=bx+8;
   s+=pipe(pcx,pcy,pa);
@@ -268,7 +273,7 @@ WAVE3.beaver = { name:'Beaver', dur:11.4, still:5.6,
   if(inr(t,3.6,4.2)){b.sq=.2*Math.exp(-(t-3.6)*5);b.eye='dizzy';}
   if(inr(t,4.2,4.6)){b.eye='squint';b.brow=-2;b.headRot=-8;b.px=-1;}
   if(inr(t,4.6,4.8)){b.eye='wide';b.sq=-.08;}
-  if(inr(t,4.8,6.2)){b.eye='wide';b.py=-2;b.y=GY+hop(t,4.9,5.4,6);}
+  if(inr(t,4.8,6.2)){b.eye='wide';b.py=-2;}
   if(inr(t,6.2,8.4)){b.eye='n';b.brow=-1;b.headRot=-6;}
   if(inr(t,8.4,9.0)){b.eye='n';}
   if(inr(t,9.0,9.6)){b.eye='happy';b.headRot=-14;b.tail=kf(t,[[9.0,0],[9.12,-38],[9.22,8],[9.36,-38],[9.46,8],[9.6,0]]);}
@@ -287,11 +292,17 @@ WAVE3.beaver = { name:'Beaver', dur:11.4, still:5.6,
 
 /* 4. Aurora Howl (in the sky band: the ridge's ground line is y 124, the lease's top berm y 144) */
 const COY_IN=240/2.0, COY_OUT=250/2.0;
+/** He slows to his stop and gets going again over this long (s): no dead stop, no standing start. */
+const COY_EASE=0.5;
 WAVE3.aurora = { name:'Aurora Howl', dur:11.6, still:4.4, H:140,
  beats:[[0,'lights','Northern lights ripple in over the tree line.'],[0.8,'trots-in','A coyote trots in along the ridge.'],[2.8,'amazed','Stops. Looks up, amazed.'],[3.3,'sits','Sits. Big breath in.'],[3.9,'howls','Howls at the lights.'],[5.0,'squeak','His voice cracks. Squeak.'],[5.4,'freezes','Freezes. Eyes dart left and right. Ears down.'],[6.4,'cough','Tiny cough.'],[6.8,'slinks-off','Slinks off low, tail tucked. One glance back.'],[10.2,'lights-fade','The lights fade out.']],
  // He needs E/COY_IN more seconds to trot in; the first 0.8 s (lights only) is there already.
- lead:E=>Math.max(0,E/COY_IN-0.8), tail:E=>Math.max(0,9.0+E/COY_OUT+0.3-11.6),
- cx(t){return t<2.8?190-COY_IN*(2.8-t):t>7.0?190+COY_OUT*(t-7.0):190;},
+ lead:E=>Math.max(0,E/COY_IN-0.8+COY_EASE/2), tail:E=>Math.max(0,9.0+COY_EASE/2+E/COY_OUT+0.3-11.6),
+ cx(t){const run=(u)=>u<COY_EASE?u*u/(2*COY_EASE):u-COY_EASE/2;return t<2.8?190-COY_IN*run(2.8-t):t>7.0?190+COY_OUT*run(t-7.0):190;},
+ /** How much he is trotting, 0 to 1: it fades with his speed, so his legs settle as he stops. */
+ pace(t){return io(clamp(t<2.8?(2.8-t)/COY_EASE:t>7.0?(t-7.0)/COY_EASE:0));},
+ /** From here on he is BEHIND the front tree line (0 to 1: the game fades him from over the trees to behind them). */
+ behind(t){return es(t,6.75,7.05);},
  focus(t){return{x:clamp(this.cx(t)+10,60,330),y:88};},
  // The lights: bands right across the sky, however wide the screen (x0 to x1 in the reference's units).
  lights(t,x0=-10,x1=400){
@@ -302,8 +313,7 @@ WAVE3.aurora = { name:'Aurora Howl', dur:11.6, still:4.4, H:140,
  render(t,E=0){
   let s='';
   const x=this.cx(t);if(x<-45-E||x>440+E)return s;
-  const walking=t<2.8||t>=7.0;
-  let o={x,ph:x/6,walk:walking?1:0};
+  let o={x,ph:x/6,walk:this.pace(t)};
   o.sit=es(t,3.3,3.7)*(1-es(t,6.7,6.95));
   o.low=es(t,6.8,7.1);
   o.headRot=kf(t,[[2.8,0],[3.1,-25],[3.7,-25],[3.9,-58],[5.0,-58],[5.08,-44],[5.3,-56],[5.6,-8],[6.7,-4],[7.0,4]]);

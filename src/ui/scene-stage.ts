@@ -238,7 +238,7 @@ const gagOf = (key: string) => (WAVE3 as Record<string, Wave3>)[key];
  * touches. The clock runs from `lead` seconds before the reference's t = 0 (its walk-in from the
  * screen's real edge) to `tail` seconds after its end; every beat keeps the reference's time.
  */
-export function sceneDef(name: string, key: string, geom: () => SceneGeom | null, opts: { prop?: { show: (on: boolean) => void }; line?: string } = {}): TimelineDef {
+export function sceneDef(name: string, key: string, geom: () => SceneGeom | null, opts: { prop?: { show: (on: boolean) => void }; line?: string; overLease?: boolean } = {}): TimelineDef {
   const gag = gagOf(key);
   const lead = () => gag.lead(geom()?.E ?? 0);
   return {
@@ -262,7 +262,8 @@ export function sceneDef(name: string, key: string, geom: () => SceneGeom | null
         place(el.firstElementChild as SVGSVGElement, g);
         return el.querySelector('g')!;
       };
-      const main = svgIn(layer('scene-gag'));
+      // `overLease`: drawn over the board and its berm (the personal cloud floats up at the berm; it must never go behind it).
+      const main = svgIn(layer(opts.overLease ? 'scene-gag over-lease' : 'scene-gag'));
       const over = gag.over ? svgIn(layer('scene-gag scene-over')) : null;
       let last = '', lastOver = '';
       // A prop the gag takes over (the bale): the gag draws it while it plays, in the very same place.
@@ -341,13 +342,27 @@ export function auroraDef(host: EggHost, night: () => boolean, mountSky: (el: HT
       place(el.firstElementChild as SVGSVGElement, g);
       const lights = el.querySelector('.lights')!, pup = el.querySelector('.pup')!;
       const E = g.E, l = gag.lead(E), x0 = Math.floor(g.left / 20) * 20 - 20, x1 = g.left + g.worldW + 20;
-      let last = '';
+      // HIS WAY OUT IS BEHIND THE FRONT TREE LINE. A second drawing of him lies in the scenery
+      // itself, just under its front row of trees (so it is dimmed by the night like them), and
+      // as he turns to go the one over the trees fades into it: no pop, even behind a tree.
+      const under = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      under.setAttribute('class', 'scene-svg aurora-under');
+      under.setAttribute('preserveAspectRatio', 'none');
+      place(under, g);
+      under.style.pointerEvents = 'none';
+      const behind = (gag as unknown as { behind: (t: number) => number }).behind.bind(gag);
+      let last = '', lastUnder = '';
       return {
         apply(t) {
           lights.innerHTML = gag.lights(t - l, x0, x1);
-          const now = gag.render(t - l, E);
+          const now = gag.render(t - l, E), k = behind(t - l);
           if (now !== last) pup.innerHTML = last = now;
+          (pup as SVGGElement).style.opacity = String(1 - k);
+          if (k > 0 && !under.isConnected) host.screen.querySelector('.scenery .trees .sc.front')?.before(under);
+          const below = k > 0 ? now : '';
+          if (below !== lastUnder) under.innerHTML = lastUnder = below;
         },
+        done: () => under.remove(),
       };
     },
   };

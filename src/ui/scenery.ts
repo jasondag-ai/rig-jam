@@ -24,6 +24,8 @@ export interface Item {
   h: number;
   art: WorldArt;
   flip: boolean;
+  /** The front row above the lease (the tree line nearest the berm): `.sc.front`. A gag up there may pass behind it. */
+  front?: boolean;
 }
 
 export interface Box {
@@ -34,10 +36,10 @@ export interface Box {
 }
 
 /** One piece: a small <svg> that uses the season's symbol for its species and size. */
-const piece = (season: Season, { x, y, h, art, flip }: Item, anchor = '') => {
+const piece = (season: Season, { x, y, h, art, flip, front }: Item, anchor = '') => {
   const w = h * ART[art];
   return (
-    `<svg class="sc tree_${art}_${season}"${anchor} style="left:${r1(x - w / 2)}px;top:${r1(y - h)}px;width:${r1(w)}px;height:${r1(h)}px${flip ? ';transform:scaleX(-1)' : ''}">` +
+    `<svg class="sc${front ? ' front' : ''} tree_${art}_${season}"${anchor} style="left:${r1(x - w / 2)}px;top:${r1(y - h)}px;width:${r1(w)}px;height:${r1(h)}px${flip ? ';transform:scaleX(-1)' : ''}">` +
     `<use href="#${symbolId(art, season, sizeFor(art, h))}"/></svg>`
   );
 };
@@ -150,7 +152,7 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
   const tall = Math.min(maxTree, Math.max(34, (bandAbove - depth) * 0.82));
   items.push(...groveRow(rng, -20, width + 20, top - depth, tall * 0.5, depth * 0.12, 0.25, pick, null));
   items.push(...groveRow(rng, -30, width + 20, top - depth * 0.5, tall * 0.72, depth * 0.25, 0.8, pick, bandAbove > 40 ? art.bush : null));
-  items.push(...groveRow(rng, -24, width + 20, top - 2, tall * 0.95, Math.min(6, depth * 0.3), 1.5, pick, bandAbove > 40 ? art.bush : null));
+  items.push(...groveRow(rng, -24, width + 20, top - 2, tall * 0.95, Math.min(6, depth * 0.3), 1.5, pick, bandAbove > 40 ? art.bush : null).map((it) => ({ ...it, front: true })));
 
   // Below: the same groves, sized to the strip so they never reach the buttons. Rows step down the
   // strip from the back (near the board, small) to the front (bigger).
