@@ -15,18 +15,31 @@ export const sfxInfo = (key: SfxKey): { seconds: number; mean: number; peak: num
  */
 export const VOLUME: Record<SfxKey, number> = {
   // The player's truck
-  drag: 0.45, motor: 0.22, reverse: 0.3, bump: 0.8, exit: 0.6, gate: 0.5, horn: 0.5, radio: 0.3,
+  drag: 0.45, motor: 0.22, reverse: 0.3, bump: 0.8, clack: 0.55, horn: 0.5, radio: 0.3,
   // Results and menus
-  win: 0.8, lose: 0.7, streak: 0.7, tap: 0.4, back: 0.4,
+  tada: 0.8, lose: 0.7, streak: 0.7, tap: 0.4, back: 0.4,
   // People and engines in the gags
   step: 0.3, quad_start: 0.4, quad_idle: 0.3, quad_rev: 0.36, snore: 0.5, cord: 0.5,
   // Animals
   magpie: 0.55, geese: 0.55, moose: 0.7, gopher: 0.5, cow: 0.6, bull: 0.6, mosquito: 0.32,
   // Things
-  outhouse: 0.6, pumpjack: 0.16, camera: 0.5, wind: 0.5, rattle: 0.5,
+  outhouse: 0.6, pumpjack: 0.16, camera: 0.5, wind: 0.5, knock: 0.5,
   // Cartoon effects
   splat: 0.7, chomp: 0.55, burp: 0.6, slap: 0.7, poke: 0.55, thwip: 0.6, slurp: 0.6, puff: 0.45, twinkle: 0.45, scurry: 0.5, hop: 0.5,
+  // Gag wave 3 (the sound pass, Jay's picks). Their files are levelled alike (audio-pack.py), so
+  // these are their places only: one-shots a notch under the truck's bump and the win; anything
+  // that runs on (rain, rumble, rustle, the lights) lower still, so it lies under the action.
+  squelch: 0.3, shluck: 0.4, blup: 0.45, mew: 0.42, yawn: 0.42, pats: 0.34, bonk: 0.6, tailslap: 0.55, shimmer: 0.28, howl: 0.5,
+  rustle: 0.32, whistle: 0.3, squeak: 0.42, aww: 0.45, rumble: 0.36, sigh: 0.36, rain: 0.26, umbrella: 0.5, downpour: 0.42,
 };
+/**
+ * LAZY: the sounds only gag wave 3 uses (Mannville and Bakken). They are NOT fetched with the
+ * rest when Sound effects is switched on: a level fetches the ones its own gags can play as it
+ * opens (`sound.warm`), and any other is fetched the first time it is asked for.
+ */
+export const LAZY_KEYS: SfxKey[] = ['squelch', 'shluck', 'blup', 'mew', 'yawn', 'pats', 'bonk', 'tailslap', 'shimmer', 'howl', 'rustle', 'whistle', 'squeak', 'aww', 'rumble', 'sigh', 'rain', 'umbrella', 'downpour'];
+/** Fetched as soon as Sound effects is on: everything else. */
+export const CORE_KEYS: SfxKey[] = SFX_KEYS.filter((k) => !LAZY_KEYS.includes(k));
 /** Every file is first brought to about this average level (dB), then given its place from VOLUME. */
 export const TARGET_MEAN = -19;
 /** How far a file's own level may be corrected, either way (a very short click's average says little). */

@@ -5,8 +5,8 @@
 // load when Sound effects is on, a music loop only when Music is on. Where Safari supports it the
 // session is "ambient", so the iPhone's silent switch mutes the game.
 import { STEP_CELLS, chordLift, nextChain, winCue } from './cues.ts';
-import { GAG_LOOPS, GAG_SOUNDS, parseCue, type GagLoop } from './gag-sounds.ts';
-import { MUSIC_FADE, SFX_KEYS, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, sfxInfo, type MusicKey, type Scene, type SfxKey } from './pack.ts';
+import { GAG_LOOPS, GAG_SOUNDS, gagKeys, parseCue, type GagLoop } from './gag-sounds.ts';
+import { CORE_KEYS, LAZY_KEYS, MUSIC_FADE, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, sfxInfo, type MusicKey, type Scene, type SfxKey } from './pack.ts';
 import { loadAudioSettings, saveAudioSettings, type AudioSettings } from './settings.ts';
 import type { GagId } from '../ui/gag-triggers.ts';
 
@@ -21,6 +21,8 @@ interface Loop {
   level: number;
 }
 
+const METERED = typeof location !== 'undefined' && new URLSearchParams(location.search).has('audiolog');
+
 class AudioEngine {
   ctx: AudioContext | null = null;
   settings: AudioSettings = loadAudioSettings();
@@ -32,10 +34,14 @@ class AudioEngine {
   private loading = new Map<string, Promise<AudioBuffer | null>>();
   private loops = new Map<string, Loop>();
   private timers = new Map<string, number>();
+  /** What each repeat still has sounding (so stopping it can fade them), and the gag sounds this level asked for. */
+  private ringing = new Map<string, { src: AudioBufferSourceNode; gain: GainNode }[]>();
+  private warmed = new Set<SfxKey>();
   private scene: Scene = 'menu';
   private music: { key: MusicKey; src: AudioBufferSourceNode; gain: GainNode } | null = null;
   private wanted: MusicKey | null = null;
   private installed = false;
+  private meter: AnalyserNode | null = null;
 
   /** Listens for the first tap/key to start audio, and for taps on buttons (the UI's pops). Safe to call more than once. */
   install(): void {
@@ -83,6 +89,12 @@ class AudioEngine {
       this.musicBus = this.ctx.createGain();
       this.sfxBus.connect(comp);
       this.musicBus.connect(comp);
+      // (Tests: a meter on what actually goes out, after the compressor. See `peak`.)
+      if (METERED) {
+        this.meter = this.ctx.createAnalyser();
+        this.meter.fftSize = 4096;
+        comp.connect(this.meter);
+      }
       this.applyLevels();
       // iOS wants a sound started inside the gesture itself: one silent sample.
       const blip = this.ctx.createBufferSource();
@@ -158,16 +170,26 @@ class AudioEngine {
     return job;
   }
 
-  /** The effects, fetched once Sound effects is on (after the first tap). About 0.9 MB in all. */
+  /**
+   * The effects, fetched once Sound effects is on (after the first tap): the game's own and the
+   * older gags' (about 0.9 MB), plus whatever the level on screen has asked for (`warm`). The
+   * sounds of gag wave 3 are fetched only by the levels that can play them.
+   */
   private preload(): void {
     if (!this.ctx || !this.settings.sfx) return;
-    for (const key of SFX_KEYS) void this.fetchBuffer(key, [`sfx/${key}.mp3`]);
+    for (const key of [...CORE_KEYS, ...this.warmed]) void this.fetchBuffer(key, [`sfx/${key}.mp3`]);
+  }
+
+  /** A level opens: these are the sounds its gags may need (fetched now if sound is on, else when it is switched on). */
+  warm(keys: SfxKey[]): void {
+    this.warmed = new Set(keys);
+    this.preload();
   }
 
   // ---------- Effects ----------
 
   /** Plays a one-shot now (+ `delay` s). `rate`: pitch and speed; `gain`: on top of its place in the mix. */
-  play(key: SfxKey, opts: { delay?: number; rate?: number; gain?: number; as?: string } = {}): void {
+  play(key: SfxKey, opts: { delay?: number; rate?: number; gain?: number; as?: string; ring?: string } = {}): void {
     if (!this.ctx || !this.settings.sfx) return;
     this.note(opts.as ?? key);
     const ctx = this.ctx;
@@ -182,6 +204,18 @@ class AudioEngine {
       g.gain.value = gainFor(key) * (opts.gain ?? 1);
       src.connect(g).connect(this.sfxBus!);
       src.start(ctx.currentTime + 0.005 + Math.max(0, (opts.delay ?? 0) - late));
+      // (Part of a repeat that may be stopped: remembered until it has played out.)
+      if (opts.ring && this.timers.has(opts.ring)) {
+        const mine = this.ringing.get(opts.ring) ?? [];
+        const one = { src, gain: g };
+        mine.push(one);
+        this.ringing.set(opts.ring, mine);
+        src.onended = () => {
+          const left = (this.ringing.get(opts.ring!) ?? []).filter((x) => x !== one);
+          if (left.length) this.ringing.set(opts.ring!, left);
+          else this.ringing.delete(opts.ring!);
+        };
+      }
     };
     const ready = this.buffers.get(key);
     if (ready) start(ready);
@@ -231,6 +265,16 @@ class AudioEngine {
     l.src.stop(now + fade + 0.05);
   }
 
+  /** Tests (?audiolog): the loudest sample that went out in the last 90 ms or so, 0 to 1 and beyond if it would clip. */
+  peak(): number {
+    if (!this.meter) return 0;
+    const data = new Float32Array(this.meter.fftSize);
+    this.meter.getFloatTimeDomainData(data);
+    let max = 0;
+    for (const v of data) max = Math.max(max, Math.abs(v));
+    return max;
+  }
+
   loopRunning(name: string): boolean {
     return this.loops.has(name);
   }
@@ -239,15 +283,27 @@ class AudioEngine {
   repeatOn(name: string, key: SfxKey, seconds: number, opts: { jitter?: number } = {}): void {
     if (this.timers.has(name) || !this.ctx || !this.settings.sfx) return;
     const tick = () => {
-      this.play(key, { as: name, rate: 1 + (Math.random() - 0.5) * (opts.jitter ?? 0) });
       this.timers.set(name, window.setTimeout(tick, seconds * 1000));
+      this.play(key, { as: name, ring: name, rate: 1 + (Math.random() - 0.5) * (opts.jitter ?? 0) });
     };
     tick();
   }
 
-  repeatOff(name: string): void {
+  /** Stops a repeat, and fades out whatever of it is still sounding (rain does not ring on under an open umbrella). */
+  repeatOff(name: string, fade = 0.18): void {
     clearTimeout(this.timers.get(name));
     this.timers.delete(name);
+    const now = this.ctx?.currentTime ?? 0;
+    for (const { src, gain } of this.ringing.get(name) ?? []) {
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setTargetAtTime(0, now, fade / 3);
+      src.stop(now + fade + 0.05);
+    }
+    this.ringing.delete(name);
+  }
+
+  repeatRunning(name: string): boolean {
+    return this.timers.has(name);
   }
 
   /** Stops every loop and repeat (leaving the game screen, or effects switched off). */
@@ -352,10 +408,9 @@ export const sound = {
   radio(): void {
     audio.play('radio');
   },
-  /** A truck drives out: the gate's ratchet and ding, a whoosh; quick exits in a row sound the toy horn as a chord that climbs. */
+  /** A truck drives out: a light wooden clack at the gate; quick exits in a row sound the toy horn as a chord that climbs. */
   exit(): void {
-    audio.play('gate');
-    audio.play('exit', { delay: 0.08 });
+    audio.play('clack');
     const now = performance.now();
     chain = nextChain(lastExitAt, now, chain);
     lastExitAt = now;
@@ -365,12 +420,12 @@ export const sound = {
       HORN_CHORD.forEach((semis, i) => audio.play('horn', { as: i ? 'horn-chord' : 'horn', rate: 2 ** ((semis + lift) / 12), delay: 0.12 + i * 0.03, gain: 0.8 }));
     }
   },
-  /** Win screen: a pop per hard hat, then the toy whistle (par) or the wah-wah horn (+4 or worse). */
+  /** Win screen: a pop per hard hat, then the xylophone ta-da (par) or the wah-wah horn (+4 or worse). */
   win(hats: number, moves: number, par: number): void {
     for (let i = 0; i < hats; i++) audio.play('tap', { as: 'hat', delay: 0.15 + i * 0.22, rate: 1 + i * 0.12 });
     const cue = winCue(moves, par);
     const after = 0.25 + hats * 0.22;
-    if (cue === 'ditty') audio.play('win', { delay: after });
+    if (cue === 'ditty') audio.play('tada', { delay: after });
     if (cue === 'trombone') audio.play('lose', { delay: after });
   },
   /** The streak sign ticks up. */
@@ -382,6 +437,10 @@ export const sound = {
     chain = 0;
     lastExitAt = null;
     audio.setScene('play');
+  },
+  /** A level opens with these gags in it: fetch the sounds only they use (the rest are fetched with the switch). */
+  warm(ids: GagId[]): void {
+    audio.warm(ids.flatMap(gagKeys).filter((k) => LAZY_KEYS.includes(k)));
   },
   /** Off the game screen: no engines or snoring left running; the menu's music. */
   quiet(): void {
@@ -403,16 +462,16 @@ export const sound = {
   /** A gag reached a beat: play what the table says for it (gag-sounds.ts). */
   gag(id: GagId, beat: string): void {
     for (const cue of GAG_SOUNDS[id]?.[beat] ?? []) {
-      const { op, name, delay } = parseCue(cue);
+      const { op, name, delay, semis } = parseCue(cue);
       const act = () => {
-        if (op === 'play') return audio.play(name as SfxKey);
+        if (op === 'play') return audio.play(name as SfxKey, semis ? { rate: 2 ** (semis / 12) } : {});
         const mine = gagLoops.get(id) ?? new Set<string>();
         gagLoops.set(id, mine);
         const loop = GAG_LOOPS[name as GagLoop];
         const tag = `${id}:${name}`;
         if (op === 'start') {
           mine.add(name);
-          if ('every' in loop) audio.repeatOn(tag, loop.key, loop.every, { jitter: 0.12 });
+          if ('every' in loop) audio.repeatOn(tag, loop.key, loop.every, { jitter: STEADY.has(name) ? 0 : 0.12 });
           else audio.loopOn(tag, loop.key);
         } else {
           mine.delete(name);
@@ -435,6 +494,8 @@ export const sound = {
     gagLoops.delete(id);
   },
 };
+/** Repeats that are one sound running on (rain, a rumble): played again at the same pitch, so the joins do not show. */
+const STEADY = new Set(['rustle', 'rumble', 'rain', 'downpour']);
 /** The horn chord: the picked toy horn at three pitches (semitones above the file's own). */
 export const HORN_CHORD = [0, 4, 7];
 

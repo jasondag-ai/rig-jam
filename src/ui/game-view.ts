@@ -333,6 +333,8 @@ export class GameView {
         for (const id of ['tumbleweed', 'pdogs', 'cloud'] as GagId[]) if (!eggOff(id)) this.strips[id] = new TimelineGag(egg, sceneDef(id, id, () => bakken.geom(), { overLease: id === 'cloud' }));
         if (!eggOff('bale')) this.strips.bale = new TimelineGag(egg, sceneDef('bale', 'bale', () => bakken.geom(), { prop: bakken, line: BALE_LINE }));
       }
+      // The sounds only this level's gags use are fetched now (the rest came with the switch): audio/pack.ts `LAZY_KEYS`.
+      sound.warm(Object.keys(this.strips) as GagId[]);
       // Taps on a flare stack (gag-triggers.ts): a touch that lifts where it landed, on a flare's picture.
       let down: { x: number; y: number; truck: boolean } | null = null;
       this.el.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY, truck: !!(e.target as Element | null)?.closest?.('.truck') }), { capture: true });
