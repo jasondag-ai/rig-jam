@@ -17,7 +17,8 @@ describe('scenery', () => {
     for (const s of SCREENS)
       for (const l of LEVELS) {
         const { items } = sceneryItems(l.theme, s.w, s.floor, s.box, { seed: l.seed, depth: 20, anchors: { bush: true, mound: l.region === 'cardium' } });
-        expect(items.length).toBeGreaterThan(10);
+        // (The Bakken's prairie has hardly a tree, by design: `Theme.trees`.)
+        expect(items.length).toBeGreaterThan(l.theme.trees < 0.5 ? 2 : 10);
         for (const it of items) {
           const b = treeBox(it);
           const beside = b.bottom > s.box.y + 2 && b.top < s.box.y + s.box.height + BERM_CLEAR;

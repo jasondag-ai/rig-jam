@@ -10,6 +10,7 @@ describe('shipped levels', () => {
       ['montney', 10],
       ['duvernay', 10],
       ['mannville', 10],
+      ['bakken', 10],
     ]);
     const ids = REGIONS.flatMap((r) => r.levels.map((l) => l.id));
     expect(new Set(ids).size).toBe(ids.length);
@@ -161,17 +162,17 @@ describe('Mannville (region 4): muskeg', () => {
   });
 });
 
-// HELD (Jay, Oct 5): Bakken is not in the game until its levels have had a second pass. These
-// are the rules its levels must meet when it comes in.
-describe.skip('Bakken (region 5): load racks and shift-change gates', () => {
-  const levels = REGIONS.find((r) => r.id === 'bakken')?.levels ?? [];
+describe('Bakken (region 5): load racks and shift-change gates', () => {
+  const levels = REGIONS.find((r) => r.id === 'bakken')!.levels;
   const tankers = (l: (typeof levels)[number]) => l.trucks.filter((t) => t.load);
 
-  it('level 1 has load racks and no clock gate; level 2 brings in one shift-change gate', () => {
+  it('level 1 has load racks and no clock gate; level 2 brings in the shift-change gate', () => {
     expect(tankers(levels[0]).length).toBeGreaterThan(0);
     expect(levels[0].gates.some((g) => g.shift)).toBe(false);
     expect(levels[0].hint).toMatch(/rack/);
-    expect(levels[1].gates.filter((g) => g.shift)).toHaveLength(1);
+    // (The one-clock level would not come down to par 18, so it is level 3, at par 19: Jay, Oct 6.)
+    expect(levels[1].gates.filter((g) => g.shift).length).toBeGreaterThanOrEqual(1);
+    expect(levels[2].gates.filter((g) => g.shift)).toHaveLength(1);
     expect(levels[1].hint).toMatch(/even/);
   });
 
@@ -208,5 +209,6 @@ describe('regions 4 and 5: more 3-cell rigs', () => {
   it('a bigger share of long trucks than any region before them', () => {
     const before = Math.max(share('cardium'), share('montney'), share('duvernay'));
     expect(share('mannville')).toBeGreaterThan(before);
+    expect(share('bakken')).toBeGreaterThan(before);
   });
 });

@@ -40,6 +40,7 @@ describe('themes', () => {
       ['montney', 'spring'],
       ['duvernay', 'winter'],
       ['mannville', 'fall'],
+      ['bakken', 'prairie'],
     ]);
     for (const r of REGIONS) expect(THEMES[r.theme]).toBeDefined();
   });
