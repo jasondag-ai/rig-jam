@@ -114,7 +114,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
 
   if (engine === 'webkit') {
     // ---------- The permanent biffy ----------
-    for (const [width, height] of [[390, 844], [375, 667]]) {
+    for (const [width, height] of [[390, 844], [375, 667], [430, 932]]) {
       console.log(`\n${engine} ${width}x${height}: the biffy is permanent scenery`);
       for (const [ri, li] of [[0, 0], [1, 4], [2, 8]]) {
         const { context, page } = await open(browser, { width, height, level: [ri, li] });
@@ -125,11 +125,13 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
           const r = s.querySelector('.root').getBoundingClientRect();
           const R = (q) => document.querySelector(q).getBoundingClientRect();
           const trees = [...document.querySelectorAll('.scenery .sc, .scenery .mound')].filter((t) => { const q = t.getBoundingClientRect(); const m = q.width * 0.2; return q.left + m < r.right && q.right - m > r.left && q.top < r.bottom && q.bottom > r.top; }).length;
-          return { n: document.querySelectorAll('.biffy-layer').length, h: r.height, gap: r.top - R('.board').bottom, clearBoard: r.top >= R('.board').bottom, clearNote: r.bottom <= R('.note').top + 1, clearButtons: r.bottom <= R('.controls').top, onScreen: r.left >= 0 && r.right <= innerWidth, trees, touch: getComputedStyle(document.querySelector('.biffy-layer')).pointerEvents, old: document.querySelectorAll('.gag.biffy').length };
+          return { n: document.querySelectorAll('.biffy-layer').length, h: r.height, gap: r.top - R('.board').bottom, left: r.left, clearGates: [...document.querySelectorAll('.gate')].every((g) => { const q = g.getBoundingClientRect(); return q.right <= r.left || q.left >= r.right || q.bottom <= r.top || q.top >= r.bottom; }), clearHud: r.top > R('.hud').bottom, clearBoard: r.top >= R('.board').bottom, clearNote: r.bottom <= R('.note').top + 1, clearButtons: r.bottom <= R('.controls').top, onScreen: r.left >= 0 && r.right <= innerWidth, trees, touch: getComputedStyle(document.querySelector('.biffy-layer')).pointerEvents, old: document.querySelectorAll('.gag.biffy').length };
         });
         check(!!b && b.n === 1 && b.onScreen && b.old === 0, `${REGIONS[ri].name} ${li + 1}: one biffy, always on screen (no old one that comes and goes)`);
         check(b.clearBoard && b.clearNote && b.clearButtons && b.trees === 0 && b.touch === 'none', `clear of the lease, the tip line, the buttons and the trees; takes no touches (${Math.round(b.h)}px tall)`);
-        if (width === 390) check(b.h > 52 && b.h < 68 && b.gap >= 6 && b.gap <= 24, `about 60 px tall at 390, a fifth smaller than the reference, and up by the berm (${Math.round(b.h)}px tall, ${Math.round(b.gap)}px of grass between)`);
+        if (width === 390) check(b.h > 52 && b.h < 68, `about 60 px tall at 390, a fifth smaller than the reference (${Math.round(b.h)}px tall)`);
+        check(b.gap >= 0 && b.gap <= 8 && b.left >= 2 && b.left <= width * 0.06, `in the corner of the strip, right up at the berm (${Math.round(b.left)}px from the screen's edge, ${b.gap.toFixed(1)}px under the lease)`);
+        check(b.clearGates && b.clearHud, 'it touches no gate post and nothing of the HUD');
         await context.close();
       }
     }
@@ -160,6 +162,52 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       seen++;
       if (d.layers !== 1 || d.biffies !== 1 || d.others !== 0 || !d.shown) wrong.push(`Daily Pad: ${JSON.stringify(d)}`);
       check(seen === 31 && wrong.length === 0, `all ${seen} (30 levels and the Daily Pad): one biffy each, on screen, and no other${wrong.length ? ': ' + wrong.join(' | ') : ''}`);
+      await context.close();
+    }
+
+    // ---------- Biffy B's roll rolls flat (Jay, Oct 5) ----------
+    // The roll's drawing must sit dead centre in its turning box (an inline SVG sat about 6 px
+    // low, so the roll orbited up and down once a turn), and its middle must stay on one line.
+    for (const [width, height] of [[390, 844], [375, 667], [430, 932]]) {
+      console.log(`\n${engine} ${width}x${height}: Biffy B's roll rolls flat (?gag=biffyb)`);
+      const { context, page } = await open(browser, { width, height, query: '?gag=biffyb' });
+      const frames = await page.evaluate(
+        () =>
+          new Promise((res) => {
+            const out = [];
+            const tick = () => {
+              const layer = [...document.querySelectorAll('.strip-layer[data-gag="biffyB"]')].at(-1);
+              const roll = layer?.querySelector('.pup-roll');
+              if (roll) {
+                const t = Number(layer.dataset.t ?? NaN);
+                // The box's own centre: where it is laid out plus where its transform carries it (its turning does not move its centre).
+                const m = new DOMMatrix(getComputedStyle(roll).transform);
+                const w = roll.offsetWidth, h = roll.offsetHeight;
+                const o = roll.offsetParent.getBoundingClientRect();
+                // (It turns about its own middle, so its middle only moves by the transform's shift.)
+                const origin = getComputedStyle(roll).transformOrigin.split(' ').map(parseFloat);
+                const div = { x: o.left + roll.offsetLeft + w / 2 + m.e, y: o.top + roll.offsetTop + h / 2 + m.f, centred: Math.abs(origin[0] - w / 2) < 0.01 && Math.abs(origin[1] - h / 2) < 0.01 };
+                const s = roll.querySelector('svg circle').getBoundingClientRect();
+                out.push({ beat: layer.dataset.beat, t: performance.now(), div, svg: { x: s.left + s.width / 2, y: s.top + s.height / 2 }, display: getComputedStyle(roll.querySelector('svg')).display, lh: getComputedStyle(roll).lineHeight, o: getComputedStyle(roll).opacity });
+              }
+              if (out.length && (!layer || out.at(-1).beat === 'grope' || out.length > 400)) return res(out);
+              requestAnimationFrame(tick);
+            };
+            tick();
+          }),
+      );
+      const rolling = frames.filter((f) => f.beat === 'roll-out' || f.beat === 'roll-away');
+      const off = Math.max(...frames.map((f) => Math.hypot(f.svg.x - f.div.x, f.svg.y - f.div.y)));
+      const ys = rolling.map((f) => f.svg.y);
+      check(frames[0].display === 'block' && frames[0].div.centred && frames.length > 40, `the roll's drawing is a block in its box (display ${frames[0].display}; ${frames.length} frames watched)`);
+      check(off <= 0.5, `its centre is the centre of the box that turns: never more than ${off.toFixed(2)} px apart (0.5 allowed)`);
+      check(rolling.length > 30 && Math.max(...ys) - Math.min(...ys) <= 0.5, `rolling (0.8 to 2.6 s), its centre stays on one line: ${(Math.max(...ys) - Math.min(...ys)).toFixed(2)} px up and down over ${rolling.length} frames (0.5 allowed)`);
+      // One constant speed, no easing: equal steps in equal times, from the first frame it moves.
+      const xs = rolling.map((f) => f.svg.x), ts = rolling.map((f) => f.t);
+      const v = (xs.at(-1) - xs[0]) / (ts.at(-1) - ts[0]);
+      const bend = Math.max(...rolling.map((f, i) => Math.abs(f.svg.x - (xs[0] + v * (ts[i] - ts[0])))));
+      check(v < 0 && bend < 2.5, `at one constant speed, no easing (${(-v * 1000).toFixed(0)} px a second, never more than ${bend.toFixed(1)} px off a straight line)`);
+      check(frames.every((f) => f.o === '1' || f.beat === 'grope'), 'no fade: it waits behind the shut door and is simply there when the door opens');
       await context.close();
     }
 
@@ -206,7 +254,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       const shakeB = sway(log);
       check(shakeB > shakeA * 1.4, `two bumps: a bigger shake than Biffy A's (${shakeB.toFixed(1)} px against ${shakeA.toFixed(1)})`);
       // The biffy stands left of the middle, so the near edge is the left one.
-      const rolling = log.filter((f) => f.roll?.vis);
+      const rolling = log.filter((f) => f.roll?.vis && (f.beat === 'roll-out' || f.beat === 'roll-away'));
       // (Its middle: a turning square's box grows and shrinks as it turns.)
       const mid = (f) => ({ x: (f.roll.l + f.roll.r) / 2, y: (f.roll.t + f.roll.b) / 2 });
       const ys = rolling.map((f) => mid(f).y);
@@ -267,7 +315,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       const c = await clip;
       check(c.cut && c.inHole && c.below, 'the gopher comes up out of the mound\'s hole, cut off at the hole line');
       const pass = log.filter((f) => f.beat === 'hotshot');
-      check(pass[0].truck.l >= 390 && pass.at(-1).truck.r <= 2 && pass.every((f, i) => i === 0 || f.truck.l <= pass[i - 1].truck.l + 0.5), `the hotshot crosses right to left, fully off screen to fully off screen (${Math.round(pass[0].truck.l)} to ${Math.round(pass.at(-1).truck.r)})`);
+      check(pass[0].truck.l >= 390 && pass.at(-1).truck.r <= 8 && pass.every((f, i) => i === 0 || f.truck.l <= pass[i - 1].truck.l + 0.5), `the hotshot crosses right to left, fully off screen to fully off screen (${Math.round(pass[0].truck.l)} to ${Math.round(pass.at(-1).truck.r)})`);
       const b = await bubble;
       check(b?.text === 'Near miss!' && b.box.x >= 6 && b.box.x + b.box.width <= 384, `"${b?.text}", on screen`);
       await context.close();

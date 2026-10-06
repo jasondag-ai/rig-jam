@@ -1,6 +1,6 @@
 // Gags 2 and 3 (Playwright, WebKit as the judge; Chromium for the frame rate): the sleepy worker and
 // the moose peekaboo, as code puppets ported from the approved reference.
-//  - worker: after 20 s with no moves (2 s here: ?idle=0.1, magpie switched off so he need not wait
+//  - worker: when a truck slides into another truck (1 in 2; ?nap=1 here; magpie switched off
 //    his turn). In from fully off the left edge, the reference beats in order, the pail left behind,
 //    the peek and the yank, everything off screen at the end. A move cancels him: he runs off with
 //    the pail. His clearing has no trees; he is clear of the tip line and buttons at 375 px.
@@ -37,7 +37,7 @@ const topBumper = (level) => {
 const mooseLevel = REGIONS[duvernay].levels.findIndex((l) => topBumper(l)?.row === 0);
 const bumper = topBumper(REGIONS[duvernay].levels[mooseLevel]);
 
-async function open(browser, { width = 390, height = 844, query = '?cover=0&idle=0.1&magpie=0&cooldown=0&off=lunch,sam,tongue&night=0', reducedMotion = 'no-preference', video = null, level = [0, 5], progress = UNLOCKED, enter = true } = {}) {
+async function open(browser, { width = 390, height = 844, query = '?cover=0&idle=0.1&magpie=0&nap=1&off=lunch,sam,tongue&night=0', reducedMotion = 'no-preference', video = null, level = [0, 5], progress = UNLOCKED, enter = true } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, hasTouch: true, reducedMotion, ...(video ? { recordVideo: { dir: video, size: { width, height } } } : {}) });
   const page = await context.newPage();
   page.on('pageerror', (e) => console.log('ERR', e.message));
@@ -125,11 +125,13 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
   if (engine === 'webkit') {
     // ---------- 1. The sleepy worker ----------
     for (const [width, height] of [[390, 844], [375, 667]]) {
-      console.log(`\n${engine} ${width}x${height}: sleepy worker after 20 s idle (2 s here)`);
+      console.log(`\n${engine} ${width}x${height}: sleepy worker when a truck slides into a truck (1 in 2; ?nap=1 here; Cardium 6, truck ${truckBumper?.id})`);
       const { context, page } = await open(browser, { width, height });
       const watching = watch(page, '.worker-layer', '.flip', 24000);
-      await wait(1200);
-      check(!(await page.$('.worker-layer')), 'he does not come before the idle time');
+      // No gag comes from waiting: long past his old 20 s (2 s here), nobody.
+      await wait(3000);
+      check(!(await page.$('.worker-layer')), 'he does not come from waiting');
+      await push(page, truckBumper);
       await page.waitForSelector('.worker-layer', { state: 'attached', timeout: 6000 });
       const space = await page.evaluate(() => {
         const s = document.querySelector('.worker-layer svg.pup').getBoundingClientRect();
@@ -161,6 +163,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     {
       const { context, page } = await open(browser);
       const watching = watch(page, '.worker-layer', '.flip', 16000);
+      await push(page, truckBumper);
       await page.waitForFunction(() => document.querySelector('.worker-layer')?.dataset.beat === 'doze', null, { timeout: 12000 });
       await page.evaluate(() => {
         const el = document.querySelector('.truck');
@@ -178,18 +181,13 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       await context.close();
     }
 
-    // His other trigger: two bumps of a truck into another truck in one level (no idle wait).
-    console.log(`\n${engine}: sleepy worker on two truck-into-truck bumps (Cardium 6, truck ${truckBumper?.id})`);
+    // The roll: a bump that loses it brings nobody; and he comes once a level.
+    console.log(`\n${engine}: the sleepy worker's roll`);
     {
-      const { context, page } = await open(browser, { query: '?cover=0&magpie=0&cooldown=0&off=lunch,sam,tongue&night=0' });
+      const { context, page } = await open(browser, { query: '?cover=0&magpie=0&nap=0&off=lunch,sam,tongue&night=0' });
       await push(page, truckBumper);
-      await wait(600);
-      check(!(await page.$('.worker-layer')), 'one bump into a truck: he does not come');
-      await push(page, truckBumper);
-      const came = await page.waitForSelector('.worker-layer', { state: 'attached', timeout: 3000 }).then(() => true).catch(() => false);
-      check(came, 'the second one brings him in, with no idle wait (idle times are the real 20 s here)');
-      const beat = await page.waitForFunction(() => document.querySelector('.worker-layer')?.dataset.beat === 'sit', null, { timeout: 12000 }).then(() => true).catch(() => false);
-      check(beat, 'he walks in and sits down as usual');
+      await wait(1200);
+      check(!(await page.$('.worker-layer')), 'a truck-into-truck bump that loses the roll (?nap=0): he does not come');
       await context.close();
     }
 
@@ -249,6 +247,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     console.log(`\n${engine}: reduced motion`);
     {
       const { context, page } = await open(browser, { reducedMotion: 'reduce' });
+      await push(page, truckBumper);
       await page.waitForSelector('.worker-layer', { state: 'attached', timeout: 6000 });
       await wait(700);
       const a = await page.evaluate(() => ({ beat: document.querySelector('.worker-layer').dataset.beat, o: getComputedStyle(document.querySelector('.worker-layer')).opacity, t: document.querySelector('.worker-layer .torso').getAttribute('transform') }));
@@ -282,7 +281,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       if (mode === 'game') {
         check(cards.map((c) => c.id).slice(0, 3).join() === 'magpie,spotter,moose' && cards.every((c) => c.art), 'lists the live gags, each with card art from its puppet');
         check(cards.every((c) => c.text === 'Not seen yet.'), 'game mode hides the hints');
-      } else check(cards[1].text === 'Sit tight for 20 seconds, or bump two trucks together twice.' && cards[2].text === 'Bump a truck into the top berm twice in Duvernay.', `demo mode shows each gag's hint ("${cards[1].text}" / "${cards[2].text}")`);
+      } else check(cards[1].text === 'Slide a truck into another truck. One time in two.' && cards[2].text === 'Bump a truck into the top berm twice in Duvernay.', `demo mode shows each gag's hint ("${cards[1].text}" / "${cards[2].text}")`);
       await context.close();
     }
   }

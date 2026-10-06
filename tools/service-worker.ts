@@ -9,9 +9,16 @@ export function hashOf(text: string): string {
   return h.toString(36);
 }
 
+/**
+ * The cache's generation. The name already changes with every build (it carries a hash of the
+ * built files), so a phone drops the old build by itself; bump this to force every phone to throw
+ * its whole cache away whatever the files look like.
+ */
+export const CACHE_GENERATION = 'g3';
+
 export function serviceWorkerSource(files: string[], version: string): string {
   return `// Generated at build time. Do not edit.
-const CACHE = 'rhr-${version}';
+const CACHE = 'rhr-${CACHE_GENERATION}-${version}';
 const FILES = ${JSON.stringify(['./', ...files])};
 
 self.addEventListener('install', (event) => {

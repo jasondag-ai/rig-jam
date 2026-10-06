@@ -3218,7 +3218,10 @@ img.hat { width: 100%; height: auto; }
 /* Gopher lunch: the gopher's box ends at the hole line; the sandwich and the crust. */
 .puppet-layer .pup-clip { position: absolute; left: 0; top: 0; width: 100%; overflow: hidden; pointer-events: none; }
 .puppet-layer .pup-food { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; }
-.puppet-layer .pup-roll { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; }
+/* The toilet roll (Biffy B, the porcupine): its drawing fills its box exactly. (An inline SVG sat on
+   the text line, about 6px off the box's centre, so a turning roll orbited up and down once a turn.) */
+.puppet-layer .pup-roll { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; line-height: 0; font-size: 0; transform-origin: 50% 50%; }
+.puppet-layer .pup-roll svg { display: block; }
 .log-card .art .egg-still { width: 84px; height: 84px; overflow: visible; }
 
 /* ---------- Night (night.ts). No level starts at night: `.night` is put on the screen and the

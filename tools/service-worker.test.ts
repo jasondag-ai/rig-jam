@@ -25,7 +25,7 @@ describe('PWA', () => {
 
   it('precaches the given files under a versioned cache', () => {
     const src = serviceWorkerSource(['index.html', 'assets/app.js'], 'abc');
-    expect(src).toContain("const CACHE = 'rhr-abc';");
+    expect(src).toContain("const CACHE = 'rhr-g3-abc';");
     expect(src).toContain('["./","index.html","assets/app.js"]');
     expect(hashOf('a')).toBe(hashOf('a'));
     expect(hashOf('a')).not.toBe(hashOf('b'));

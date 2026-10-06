@@ -98,8 +98,9 @@ something, give exact clicks and one command at a time.
   do not bring any of it back. ONE ART STYLE in play: the board's flat toy look and the puppets.
   Switches for tests (`src/ui/flags.ts`): `?magpie=0`, `?worker=0`, `?moose=0`, `?off=...`.
 - TRIGGER SETTINGS: every gag's trigger lives in ONE file, `src/ui/gag-triggers.ts` (`GAG_TRIGGERS`),
-  for Jay to tune after playing. Now: magpie 10 s idle; worker 20 s idle OR 2 bumps of a truck
-  into another truck in one level (`truckBumps`); moose = 2 bumps up into
+  for Jay to tune after playing. NO GAG COMES FROM WAITING (Jay, Oct 5): idle only brings the
+  night. Now: magpie = a truck TAPPED without being dragged, 1 in 2 (`?bird=1/0`); worker = a truck
+  slides into another truck, 1 in 2 (`?nap=1/0`); moose = 2 bumps up into
   the top berm (Duvernay); Near Miss = two exits within 3.5 s (Cardium); landowner = the same truck
   driven back and forth 4 times (`BackAndForth`), OR a fast wiggle: 4 reversals of one truck inside
   ONE drag within 2 s (`Wiggle`; the board reports each turn of the finger, `onReverse`, a quarter
@@ -109,15 +110,16 @@ something, give exact clicks and one command at a time.
   and drops a snow puff, `BushProp.shake`; demo mode always); bull = tap the cow (Montney);
   porcupine = 3 taps on the Cardium bush (the bear's pattern, every time); gopher lunch = a press of Hint in Cardium, 1 time in 2
   (`lunchComes`; demo mode always; `?lunch=1` / `?lunch=0` for tests); Sam = 3 bumps in a row
-  or a wrong-colour gate; frozen tongue = 30 s idle (winter); night = 30 s idle in Montney and Duvernay only, nudge 15 s after.
+  or a wrong-colour gate; frozen tongue = 3 taps on the frosty riser (winter; tap target at least 44 px, `RiserProp.hit`);
+  night = 30 s idle in Montney and Duvernay only, nudge 15 s after.
 - GAG RULES (GAME_BIBLE Oct 5; `GAG_RULES`, `SHARES`, `mustWait` in gag-triggers.ts; enforced in
   `GameView.fire`/`startEgg`/`tickEggs`): gags play AT THE SAME TIME. A trigger plays its gag right
   away, even during a drag and even if others are on; it waits (in `eggQueue`) only for a gag that
   shares its character or prop (`SHARES`: the biffy, the gopher, the bush, the worker in red) and
-  then follows it on. Once per level; none once the level is won (a win clears them). The IDLE
-  gags (`IDLE_GAGS`: magpie, sleepy worker, frozen tongue) still take turns, one at a
-  time, with `idleCooldownMs` (60 s) between them; none in demo mode. Tests: `?cooldown=0` (or a
-  scale), `?off=lunch,porcupine,sam,tongue` leaves gags out, `?bear=1` / `?bear=0`.
+  then follows it on. Once per level; none once the level is won (a win clears them). There are
+  no idle gags and no cooldown any more (`IDLE_GAGS`, `GAG_RULES` and `?cooldown=` are gone);
+  `tickEggs` only keeps a `?gag=` preview playing. Tests: `?off=lunch,porcupine,sam,tongue` leaves
+  gags out, `?bear=1` / `?bear=0`, and the rolls' pins (`rollPinned`).
 - SAME START, SAME END (GAME_BIBLE Oct 5): a gag's last frame looks exactly like its first.
   Characters walk in and out fully off screen; nothing appears or disappears by magic; any prop a
   gag uses is permanent scenery, and every prop is back as it began (the cow grazing in her spot,
@@ -127,12 +129,10 @@ something, give exact clicks and one command at a time.
   they dim exactly like the scenery and the props, with no filters. Only what must lie over the
   lease itself stays above the board and undimmed, like the trucks: `.strip-layer.over-lease`
   (the marshmallow stick; the worker himself is on an ordinary strip layer) and the magpie.
-- EGG SCHEDULING: `fire(id)` starts a player-triggered gag at once (see GAG RULES). `tickEggs`
-  only runs the idle gags: each after its own idle time with no moves, in `IDLE_GAGS` order, one
-  at a time with the idle cooldown between them, once per level (one that was scared off or
-  cancelled may try again).
+- EGG SCHEDULING: `fire(id)` starts a player-triggered gag at once (see GAG RULES). Nothing is
+  scheduled by the clock.
   `?gag=magpie|worker|moose|nearmiss|landowner|biffya|biffyb|marshmallow|geese|bear|bull|porcupine|lunch|sam|tongue` plays one at once, again and again;
-  `?idle=0.1` makes the idle times 10x shorter.
+  `?idle=0.1` makes the night's idle time 10x shorter.
 - STRIP GAGS (gags 4 to 7; `src/ui/strip-gags.ts` runner `TimelineGag`, placement `stripGeom`;
   puppets and timelines ported as written from `near_miss_landowner_reference.html` and
   `biffy_reference.html` into `near-miss.ts`, `landowner.ts`, `biffy.ts`, helpers `puppet-stage.ts`).
@@ -147,7 +147,10 @@ something, give exact clicks and one command at a time.
   - THE BIFFY is permanent scenery (`BiffyProp`, `.biffy-layer`, under the board): bottom strip of
     every level at `BIFFY_X`, about 60 px tall at 390 (`BIFFY_SIZE` 0.8 of the reference, after
     playing on a phone; the shuffler is the WORKER'S size, `SHUFFLER_FRAC` 0.243, as in the porcupine gag; smaller on a short strip), standing up by the
-    berm (`biffyStand`: `BIFFY_GAP` 12 px of grass under the berm's foot), in its own clearing
+    berm IN THE CORNER of the strip (`BIFFY_X` 0.08, `biffyStand`: `BIFFY_GAP` 2 px under the
+    berm's foot; where a bottom gate hangs over that corner it stands just under the gate's
+    posts, `BiffyProp.layout`; on a strip so short that the sleepy worker would sit on it he sits
+    just to its right, `workerPlace`), in its own clearing
     (scenery `clearings`, plus `biffyLane`, a tree-free lane to the near screen edge), clear of
     the board, tip line and buttons. No biffy appears and
     disappears any more. `npm run test:e2e:strip` checks there is exactly ONE on every level.
@@ -156,11 +159,18 @@ something, give exact clicks and one command at a time.
   - BIFFY A "Occupied": his embarrassment flushes his WHOLE face dark pink (`.headTurn .skin`), no
     cheek blush. Door bangs open, the occupant looks back wide-eyed, nods, reaches, pulls it
     shut; the indicator is red while he is caught (3.55 to 5.0 s), then clicks back to green
-    (`unlocked`). BIFFY B "The Runaway Roll": the roll glides out along the ground at one smooth
-    speed (no drop, no bounce), the arm gropes, he shuffles after it with paper on his boot, the
-    door creaks shut; red from the first bump until the door is shut, then green. The roll and the
-    shuffler both leave by the screen edge NEAREST the biffy (the left; he is mirrored), at the
-    reference's pace, so B is shorter than the reference (`B_ROLL_OFF`, `B_OFF`, `B_SHUT`). The indicator always starts and ends green.
+    (`unlocked`). BIFFY B "The Runaway Roll": the roll JUST ROLLS OUT: it waits on the floor
+    behind the shut door from the first frame (no fade; the door is drawn again over it,
+    `runawayScene` `front`, and the biffy's own door hidden meanwhile), the door bangs open on it,
+    and it rolls flat along the ground at ONE constant speed, no easing, behind the open door and
+    off the near edge. THE ROLL'S BOUNCE (root cause, Oct 5): `.pup-roll`'s inline SVG sat on the
+    text line about 6 px off the centre of its turning box, so it orbited once a turn; `.pup-roll`
+    now has no line box and its SVG is a block (the porcupine's roll too). The arm gropes, he
+    shuffles after it with paper on his boot, the door creaks shut; red from the first bump until
+    the door is shut, then green. Both leave by the screen edge NEAREST the biffy (the left: a few
+    steps, in the corner), so B is short (`B_ROLL_OFF`, `B_OFF`, `B_SHUT`). `test:e2e:strip` fails
+    if the roll's drawing is more than 0.5 px off its box's centre or its centre moves more than
+    0.5 px up or down while it rolls.
   - MARSHMALLOW (gag 8, levels with a flare stack; `marshmallow.ts`, ported from
     `marshmallow_geese_reference.html`): the sleepy worker's drawing walks in from off the left,
     telescopes a stick in three clicks from his glove to the nearest REAL flare's pilot flame
@@ -238,7 +248,7 @@ something, give exact clicks and one command at a time.
     hat) takes a photo (the flash lights the bottom strip only), cracks up and leaves, a snowflake
     lands on his nose. Ending (reference, Oct 5): the buddy comes back from the FAR side with a
     steaming thermos, sighs, pours hot coffee on the pipe, THWIP, the tongue frees; both hop-turn
-    and walk off their own ways; the empty riser again. Trigger: 30 s idle on a winter level.
+    and walk off their own ways; the empty riser again. Trigger: three taps on the riser.
   - THE LEASE SIGN AND ITS THREE GAGS (16 to 18; `sign-gags.ts`, ported from
     `sign_gags_reference.html`, saved Oct 5 13:22). The blank lease sign is PERMANENT scenery at
     one fixed spot on every level (`SignProp`, `.sign-layer`, `SIGN_X` 0.62, in the open row up by
@@ -263,7 +273,7 @@ something, give exact clicks and one command at a time.
   - `npm run test:e2e:strip` checks all of it in WebKit (beats, real triggers, off-screen entry and
     exit, hole clip, biffy placement, reduced motion, log), 60 fps at 4x throttle in Chromium, and
     saves `gag47_*.webm` clips.
-- THE SLEEPY WORKER (gag 2; he also comes on the second truck-into-truck bump of a level; `src/ui/worker.ts` pure and tested, runner `WorkerGag` in
+- THE SLEEPY WORKER (gag 2; trigger: a truck slides into another truck, 1 in 2, no idle timer; `src/ui/worker.ts` pure and tested, runner `WorkerGag` in
   `src/ui/egg-gags.ts`; spec: `~/Desktop/RHR Art Inbox/worker_moose_puppet_reference.html`, ported as
   written). He has a clearing in the bottom strip by the screen's LEFT edge (`workerSpot`; scenery
   keeps trees out of it; a little smaller on a short strip, and he does not come if there is no
@@ -284,8 +294,8 @@ something, give exact clicks and one command at a time.
   touch. `npm run test:e2e:eggs` checks the worker and the moose in WebKit and saves clips.
 - THE MAGPIE (gag 1; `src/ui/magpie.ts` pure and tested, `src/ui/magpie-gag.ts` runner; spec: the
   approved reference `~/Desktop/RHR Art Inbox/magpie_puppet_reference.html`, ported as written: same
-  parts, colours, outline, expressions, beats and timing). A code puppet, no sprites. After 10 s
-  with no moves (`MAGPIE_IDLE_MS`; a drag or a move restarts the clock), once per level:
+  parts, colours, outline, expressions, beats and timing). A code puppet, no sprites. When a truck
+  is tapped without being dragged (1 in 2; no idle timer any more), once per level:
   fly in facing travel > wobble landing > hop-turn (never paper-thin) > sly look and blink > glance
   left and right > crouch, tail up > strain while the drop slowly swells > relief > peek down > smug
   puff and two chuckles > crouch > launch forward and up, a feather drifts down (`BEATS`; the
@@ -567,7 +577,9 @@ something, give exact clicks and one command at a time.
 - All progress is in localStorage (`rush-hour-rigs:v2`); no accounts.
 - PWA: `public/manifest.webmanifest`, icons in `public/icons/` (Jay's chosen art, `tools/icon-art/roughneck_close.png`: the roughneck's face and white hard hat; made by `python3 tools/app-icons.py`; the maskable one is padded with the cover's sky; file names carry a version, `v2`, because phones cache icons hard: bump it for a new look; the favicon is the 48 px PNG, there is no favicon.svg), and a
   service worker generated at build time by the plugin in `vite.config.ts`
-  (`tools/service-worker.ts`). It precaches every built file; pages load network-first. Not
+  (`tools/service-worker.ts`). It precaches every built file; pages load network-first. The cache's name carries a hash of the
+  built files (a new build replaces the old by itself) and `CACHE_GENERATION` (bump it to make
+  every phone drop its cache). Not
   registered in dev.
 
 ## Stack

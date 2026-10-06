@@ -12,8 +12,9 @@
 // After playing on a phone (Jay, Oct 5), on top of the reference: the biffy is drawn `BIFFY_SIZE`
 // (a fifth smaller; the shuffler keeps his size); the truck's bump SHAKES it before the door opens,
 // a small shake for A (one bump) and two bigger ones for B (two bumps); A's embarrassment flushes
-// his whole face dark pink (no cheek blush); in B the roll glides out along the ground with no
-// bounce, and the roll and the shuffler both leave by the screen edge NEAREST the biffy.
+// his whole face dark pink (no cheek blush); in B the roll rolls out from behind the door, flat
+// along the ground at one constant speed, and the roll and the shuffler both leave by the screen
+// edge NEAREST the biffy (the biffy stands in the strip's corner, right up at the berm).
 // strip-gags.ts puts them on screen.
 /* eslint-disable */
 import { addEl, makePup, place, type Pup } from './puppet-stage.ts';
@@ -27,6 +28,13 @@ const mixC = (a: string, b: string, k: number) => { const pa = [1,3,5].map(i => 
 const BL='#3d7cc9', BL2='#2d62a6', RED='#c8352b', STRIPE='#d5dbe2', SKIN='#f0c09a', BUM='#f3b39b', HAT='#f2c230', BOOT='#5a3a24';
 
 /* ---------------- the biffy (front view, door hinged on the left) ---------------- */
+const DOOR = `<g class="door">
+    <rect x="22" y="38" width="56" height="94" fill="${BL}" stroke="${O}" stroke-width="2.6"/>
+    <path d="M30 50 L70 50 M30 55 L70 55 M30 60 L70 60" stroke="${BL2}" stroke-width="2.6"/>
+    <rect class="ind" x="44" y="41" width="12" height="5" rx="1.5" fill="#56b05a" stroke="${O}" stroke-width="1.6"/>
+    <rect x="66" y="84" width="5" height="12" rx="2" fill="#d5dbe2" stroke="${O}" stroke-width="1.6"/>
+    <path d="M28 70 Q34 66 40 68" stroke="#6fa2e0" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>`;
 export function biffy(withOccupant: boolean): string { return `
 <g class="root">
   <rect x="14" y="26" width="72" height="108" rx="6" fill="${BL}" stroke="${O}" stroke-width="3"/>
@@ -58,13 +66,7 @@ export function biffy(withOccupant: boolean): string { return `
       <path d="M66 47 Q68 51 66 53 Q64 51 66 47 Z" fill="#9fd3f2" stroke="${O}" stroke-width="1.2"/></g>
     <g class="hat"><path d="M37 50 Q37 38 50 38 Q63 38 63 50 Z" fill="${HAT}" stroke="${O}" stroke-width="2.4"/><rect x="34" y="48" width="32" height="4" rx="2" fill="${HAT}" stroke="${O}" stroke-width="2"/></g>
   </g>` : ''}
-  <g class="door">
-    <rect x="22" y="38" width="56" height="94" fill="${BL}" stroke="${O}" stroke-width="2.6"/>
-    <path d="M30 50 L70 50 M30 55 L70 55 M30 60 L70 60" stroke="${BL2}" stroke-width="2.6"/>
-    <rect class="ind" x="44" y="41" width="12" height="5" rx="1.5" fill="#56b05a" stroke="${O}" stroke-width="1.6"/>
-    <rect x="66" y="84" width="5" height="12" rx="2" fill="#d5dbe2" stroke="${O}" stroke-width="1.6"/>
-    <path d="M28 70 Q34 66 40 68" stroke="#6fa2e0" stroke-width="3" fill="none" stroke-linecap="round"/>
-  </g>
+  ${DOOR}
 </g>`; }
 
 /* ---------------- the shuffler (side view, facing right, bent over, pants down) ---------------- */
@@ -112,13 +114,13 @@ export const A_END = 5.4;
  * leave by the near one at the reference's own pace, so the shuffle is shorter (`B_OFF`) and the
  * door shuts sooner (`B_SHUT`).
  */
-export const B_ROLL_OFF = 2.6, B_OFF = 6.2, B_SHUT = 6.5;
+export const B_ROLL_OFF = 2.6, B_OFF = 4.7, B_SHUT = 5.0;
 export const B_BEATS: [number, string, string][] = [
-  [0, 'sits', 'Biffy sits there'], [0.05, 'jolt', 'Two truck bumps: two big shakes'], [0.5, 'door-open', 'Door bangs open'], [0.8, 'roll-out', 'The toilet paper roll rolls out of the doorway'],
-  [1.1, 'roll-away', 'It glides smoothly away, no bounce, off the near edge of the screen'], [1.4, 'grope', 'His arm gropes around out of the dark, a few sweeps, nothing'],
+  [0, 'sits', 'Biffy sits there'], [0.05, 'jolt', 'Two truck bumps: two big shakes'], [0.5, 'door-open', 'Door bangs open'], [0.8, 'roll-out', 'The toilet paper roll rolls out from behind the door'],
+  [1.1, 'roll-away', 'It rolls flat along the ground at one steady speed, off the near edge of the screen'], [1.4, 'grope', 'His arm gropes around out of the dark, a few sweeps, nothing'],
   [2.9, 'shuffle', 'He shuffles out after it: bent over, pants at his ankles, mortified'], [B_OFF, 'off-screen', 'Off screen, by the near edge'], [B_SHUT, 'door-shut', 'The door creaks shut. Indicator flips to green'],
 ];
-export const B_END = 7.6;
+export const B_END = 6.1;
 /** Reference sizes, as shares of the screen's width: the biffy (about 80 px tall at 390) and the shuffler. */
 export const BIFFY_FRAC = 0.15;
 /** The biffy is drawn this much of the reference's size (about 60 px tall at 390). The shuffler is not shrunk. */
@@ -190,18 +192,23 @@ export function bApply(sc: any, t: number): void {
   if (t >= B_SHUT){ const k = seg(t,B_SHUT,B_SHUT + .9); door = lerp(-0.42, 1, k*k); if (t > B_SHUT + .9) red = false; }
   const sh = shakeB(t);
   doorAndBody(pp, door, sh * B_SHAKE.px, sh * B_SHAKE.deg, red);
-  // the roll: out of the doorway along the ground, one smooth glide (it gathers speed, then holds
-  // it) to past the near edge; no drop, no bounce. It turns as far as it travels.
-  const groundY = pp.spot.y*r.height, doorX = pp.spot.x*r.width + dir*4*u;
+  // The door, drawn again OVER the roll (and the biffy's own door hidden meanwhile), so the roll can
+  // wait behind the shut door and pass behind the open one.
+  const front = sc.front; front.frac = pp.frac; front.spot = pp.spot; place(front);
+  doorAndBody(front, door, sh * B_SHAKE.px, sh * B_SHAKE.deg, red);
+  pp.q('.door').style.visibility = 'hidden';
+  // the roll: it just rolls out. It waits on the floor behind the shut door from the start (no
+  // fade: the door hides it), the door bangs open on it, and it rolls along the ground at ONE
+  // constant speed, no easing, no drop, behind the open door and off the near edge. It turns as
+  // far as it travels.
+  const groundY = pp.spot.y*r.height, startX = pp.spot.x*r.width;
   const rs = Math.max(10, 14*u/BIFFY_SIZE);
-  const far = (dir < 0 ? doorX : r.width - doorX) + rs + 30;
-  if (t > .8 && t < B_ROLL_OFF){
-    const k = seg(t,.8,B_ROLL_OFF), a = .3, s = k < a ? k*k/(a*(2-a)) : (2*k - a)/(2 - a);
-    const rx = doorX + dir*far*s, ry = groundY - rs/2;
-    sc.roll.style.opacity = String(seg(t,.8,.92)); sc.roll.style.width = sc.roll.style.height = rs+'px';
-    sc.roll.style.left = '0px'; sc.roll.style.top = '0px'; sc.roll.style.willChange = 'transform';
-    sc.roll.style.transform = `translate3d(${rx - rs/2}px, ${ry - rs/2}px, 0) rotate(${dir*far*s/(Math.PI*rs)*360}deg)`; }
-  else sc.roll.style.opacity = String(0);
+  const far = (dir < 0 ? startX : r.width - startX) + rs + 30;
+  const k = seg(t,.8,B_ROLL_OFF);
+  const rx = startX + dir*far*k, ry = groundY - 2*u - rs/2;
+  sc.roll.style.opacity = t < B_ROLL_OFF ? '1' : '0'; sc.roll.style.width = sc.roll.style.height = rs+'px';
+  sc.roll.style.left = '0px'; sc.roll.style.top = '0px'; sc.roll.style.willChange = 'transform';
+  sc.roll.style.transform = `translate3d(${rx - rs/2}px, ${ry - rs/2}px, 0) rotate(${dir*far*k/(Math.PI*rs)*360}deg)`;
   // the shuffler (drawn facing right; mirrored about his own middle when he leaves to the left)
   const s = sc.s, sq = s.q;
   s.svg.style.transform = dir < 0 ? 'scaleX(-1)' : '';
@@ -228,7 +235,7 @@ export function bApply(sc: any, t: number): void {
     sq('.bunch').setAttribute('transform', `translate(${c*.8} 0)`);
     sq('.root').setAttribute('transform', `translate(0 ${-Math.abs(c)*1.2})`);
     sq('.arm').setAttribute('transform', `rotate(${Math.sin(t*9)*8} 70 66)`);
-    const glance = t > 4.4 && t < 5.1;
+    const glance = t > 3.5 && t < 4.0;
     sq('.head').setAttribute('transform', glance ? 'rotate(-10 80 62)' : `rotate(${Math.sin(t*4)*2} 80 62)`);
     sq('.pupil').setAttribute('cx', glance ? 85 : 87.5);
     sq('.tpTail').setAttribute('transform', `rotate(${c*4} 44 106)`);
@@ -242,6 +249,7 @@ export function biffyRest(pp: Pup, red: boolean): void {
   doorAndBody(pp, 1, 0, 0, red);
   const occ = pp.q('.occ') as SVGElement | null;
   if (occ) occ.style.display = '';
+  (pp.q('.door') as SVGElement).style.visibility = '';
   pp.svg.querySelectorAll('.headTurn .skin').forEach((n) => n.setAttribute('fill', SKIN));
 }
 
@@ -249,7 +257,9 @@ export function biffyRest(pp: Pup, red: boolean): void {
 export const biffyPup = (host: HTMLElement, spot: { x: number; y: number }, scale: number): Pup => makePup(host, biffy(true), { vw: 100, vh: 140, ax: 50, ay: 134, frac: BIFFY_FRAC * BIFFY_SIZE * scale, spot });
 /** Biffy B's extras: the shuffler and the roll, on a layer over everything (they leave past the screen's edge). */
 export function runawayScene(biffyP: Pup, over: HTMLElement, scale: number): any {
-  const s = makePup(over, SHUFFLER, { vw: 120, vh: 120, ax: 60, ay: 108, frac: SHUFFLER_FRAC * scale, spot: biffyP.spot });
+  // Stacked: the roll, then the door drawn again over it, then the shuffler in front of both.
   const roll = addEl(over, 'pup-roll', ROLL);
-  return { p: biffyP, s, roll };
+  const front = makePup(over, `<g class="root">${DOOR}</g>`, { vw: 100, vh: 140, ax: 50, ay: 134, frac: biffyP.frac, spot: biffyP.spot });
+  const s = makePup(over, SHUFFLER, { vw: 120, vh: 120, ax: 60, ay: 108, frac: SHUFFLER_FRAC * scale, spot: biffyP.spot });
+  return { p: biffyP, s, roll, front };
 }

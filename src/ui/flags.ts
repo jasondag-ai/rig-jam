@@ -12,12 +12,6 @@ export const magpieOn = (search: string = location.search): boolean => MAGPIE_ON
 export const WORKER_ON = true;
 export const MOOSE_ON = true;
 export const workerOn = (search: string = location.search): boolean => WORKER_ON && new URLSearchParams(search).get('worker') !== '0';
-/** `?cooldown=0` (or any number): scales the cooldown between gags (tests). */
-export const cooldownScale = (search: string = location.search): number => {
-  const v = new URLSearchParams(search).get('cooldown');
-  const n = v === null ? 1 : Number(v);
-  return Number.isFinite(n) && n >= 0 ? n : 1;
-};
 /** `?off=lunch,porcupine`: gags left out for one page load (tests), by their `?gag=` names. */
 export const eggOff = (name: string, search: string = location.search): boolean => (new URLSearchParams(search).get('off') ?? '').split(',').includes(name);
 /** `?gagtest=1`: no gag starts by itself; `window.__rhrGag` can hold any strip gag at a time of its run (the first-and-last-frame test). */
@@ -27,7 +21,7 @@ export const bearAlways = (search: string = location.search): boolean => new URL
 /** `?lunch=1`: a press of Hint always brings gopher lunch; `?lunch=0`: never (tests). */
 export const lunchAlways = (search: string = location.search): boolean => new URLSearchParams(search).get('lunch') === '1';
 export const lunchNever = (search: string = location.search): boolean => new URLSearchParams(search).get('lunch') === '0';
-/** `?surveyor=1`, `?tourists=1`: that roll always wins; `=0`: never (tests). Null: roll the dice. */
+/** `?surveyor=1`, `?tourists=1`, `?bird=1` (the magpie), `?nap=1` (the sleepy worker): that roll always wins; `=0`: never (tests). Null: roll the dice. */
 export const rollPinned = (name: string, search: string = location.search): boolean | null => {
   const v = new URLSearchParams(search).get(name);
   return v === '1' ? true : v === '0' ? false : null;

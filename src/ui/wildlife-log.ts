@@ -19,8 +19,8 @@ export interface LogEntry {
 
 /** One entry per gag in the game, in the order the page lists them. */
 export const LOG_ENTRIES: LogEntry[] = [
-  { id: 'magpie', name: 'Magpie', caption: 'Never park under a tree.', hint: 'Sit tight for 10 seconds.' },
-  { id: 'spotter', name: 'Sleepy Worker', caption: 'On the clock. Allegedly.', hint: 'Sit tight for 20 seconds, or bump two trucks together twice.' },
+  { id: 'magpie', name: 'Magpie', caption: 'Never park under a tree.', hint: 'Tap a truck without dragging it. One time in two.' },
+  { id: 'spotter', name: 'Sleepy Worker', caption: 'On the clock. Allegedly.', hint: 'Slide a truck into another truck. One time in two.' },
   { id: 'moose', name: 'Moose', caption: 'Just checking in.', hint: 'Bump a truck into the top berm twice in Duvernay.' },
   { id: 'nearmiss', name: 'Near Miss', caption: 'Owns the lease. Pays no rent.', hint: 'Send two trucks out back to back in Cardium.' },
   { id: 'landowner', name: 'Angry Landowner', caption: 'Wants a word about the ruts.', hint: 'Drive one truck back and forth four times, or wiggle it fast.' },
@@ -31,7 +31,7 @@ export const LOG_ENTRIES: LogEntry[] = [
   { id: 'porcupine', name: 'Porcupine', caption: 'Check behind the bush first.', hint: 'Tap the bush three times in Cardium.' },
   { id: 'lunch', name: 'Gopher Lunch', caption: 'He left you the crust.', hint: 'Press Hint in Cardium. One time in two.' },
   { id: 'sam', name: 'Safety Sam', caption: 'See me.', hint: 'Bump three times in a row, or push a truck at a wrong-colour gate.' },
-  { id: 'tongue', name: 'Frozen Tongue', caption: 'HEWP!', hint: 'Sit tight for 30 seconds on a winter level.' },
+  { id: 'tongue', name: 'Frozen Tongue', caption: 'HEWP!', hint: 'Tap the frosty riser three times on a winter level.' },
   { id: 'surveyor', name: 'Surveyor', caption: 'Off a metre. Or not.', hint: 'Press Restart. One time in two.' },
   { id: 'deer', name: 'Back Scratcher', caption: "That's the spot.", hint: 'Tap the lease sign (not in winter).' },
   { id: 'tourists', name: 'Tourists', caption: 'A real oil sign!', hint: 'Make your first move on the Daily Pad (not in winter). One time in three.' },

@@ -1,14 +1,11 @@
 // EVERY GAG TRIGGER IN ONE PLACE, so they can be tuned after playing (GAME_BIBLE, Oct 4). Gags are
-// Easter eggs: each is set off by something the player does. These are placeholders until Jay has
-// played them. Times are in milliseconds. `?idle=0.1` makes the idle times 10x shorter (tests).
+// Easter eggs: each is set off by something the player does, never by waiting. Times are in
+// milliseconds. `?idle=0.1` makes the night's idle time 10x shorter (tests).
 export const GAG_TRIGGERS = {
-  /** Gag 1, the magpie: this long with no moves. Any region. */
-  magpie: { idleMs: 10_000 },
-  /**
-   * Gag 2, the sleepy worker (any region). Either: this long with no moves (after the magpie has
-   * had his turn); or this many bumps of a truck into ANOTHER TRUCK in one level.
-   */
-  worker: { idleMs: 20_000, truckBumps: 2 },
+  /** Gag 1, the magpie: the player taps a truck without dragging it, with this chance each tap. Any region. Demo mode: every time. */
+  magpie: { truckTap: true, chance: 1 / 2 },
+  /** Gag 2, the sleepy worker: a truck slides into ANOTHER TRUCK (a bump), with this chance each time. Any region. Demo mode: every time. */
+  worker: { truckBump: true, chance: 1 / 2 },
   /** Gag 3, the moose: this many bumps of a truck up into the TOP berm in one level. */
   moose: { region: 'duvernay', topBermBumps: 2 },
   /** Gag 4, Near Miss (gopher and hotshot): two trucks driven out within this long of each other. */
@@ -47,8 +44,8 @@ export const GAG_TRIGGERS = {
    * between, OR one push at a wrong-colour gate. Once per level.
    */
   sam: { bumpsInARow: 3, wrongGate: true },
-  /** Gag 15, the frozen tongue (winter levels, at the frosty riser): this long with no moves (after the magpie and the worker). */
-  tongue: { theme: 'winter', idleMs: 30_000 },
+  /** Gag 15, the frozen tongue (winter levels, at the frosty riser): this many taps on the riser. */
+  tongue: { theme: 'winter', riserTaps: 3 },
   /** Gag 16, the surveyor (any region, at the lease sign): the Restart button, with this chance each press. Demo mode: every time. */
   surveyor: { onRestart: true, chance: 1 / 2 },
   /** Gag 17, the back scratcher (a mule deer at the lease sign): this many taps on the sign. Not on these themes' levels. */
@@ -69,13 +66,9 @@ export const GAG_TRIGGERS = {
  * RULES FOR EVERY GAG (GAME_BIBLE, Oct 5): gags run AT THE SAME TIME. When a trigger fires its gag
  * plays right away, even if another is playing; it waits only if it shares a character or a prop
  * with one that is on (`SHARES`), and then it plays as soon as that one has left. None starts once
- * the level is won. The gags that come by themselves when the player sits idle (the magpie, the
- * sleepy worker, the frozen tongue) still come one at a time, with `idleCooldownMs`
- * between them, so an idle lease is not a parade. Demo mode and `?gag=` previews have no cooldown;
- * `?cooldown=0.1` scales it (tests).
+ * the level is won. NO GAG COMES FROM WAITING (Jay, Oct 5): every one is set off by something the
+ * player does. Sitting idle only brings the night (and its nudge).
  */
-export const GAG_RULES = { idleCooldownMs: 60_000 } as const;
-
 export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists';
 
 /** Is a bump a push at a wrong-colour gate? (A truck in line with a gate that is not its own; `hit` is what it ran into.) */
@@ -112,9 +105,6 @@ export const PREVIEWS: Record<string, { gag: GagId; region: string; level: numbe
   deer: { gag: 'deer', region: 'cardium', level: 6 },
   tourists: { gag: 'tourists', region: 'cardium', level: 6 },
 };
-
-/** The gags that come by themselves after a quiet spell, in the order they take their turns. */
-export const IDLE_GAGS: GagId[] = ['magpie', 'worker', 'tongue'];
 
 /**
  * What each gag uses that another gag might also need: a character or a prop. Two gags that share

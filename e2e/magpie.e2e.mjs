@@ -1,5 +1,5 @@
 // Magpie gag test (Playwright, WebKit as the judge, plus Chromium for the frame rate), 390x844 and
-// 375x667. After 10 s with no moves (1 s here: ?idle=0.1) the toy magpie plays the approved gag on
+// 375x667. When a truck is tapped without being dragged (1 in 2; ?bird=1 here) the toy magpie plays the approved gag on
 // a truck roof: in from fully off screen, the reference beats in order, the splat and drip left on
 // the truck (drip toward its front), "Seriously?" beside him and on screen, out until fully off
 // screen. Grabbing his truck startles him off early. He never blocks a touch. Every other gag is
@@ -23,7 +23,15 @@ const check = (ok, text) => {
 };
 const BEATS = ['fly-in', 'land', 'hop-turn', 'look', 'glance', 'crouch', 'strain', 'relief', 'peek', 'smug', 'wind-up', 'launch', 'gone'];
 
-async function open(browser, { width = 390, height = 844, query = '?cover=0&idle=0.1&cooldown=0&off=lunch,sam,tongue&night=0', reducedMotion = 'no-preference', video = null, level = [0, 5] } = {}) {
+/** Taps a truck without dragging it: a touch that lifts where it landed. (The magpie's trigger: 1 in 2; ?bird=1 here.) */
+const tapTruck = (page) =>
+  page.evaluate(() => {
+    const el = document.querySelector('.truck');
+    const r = el.getBoundingClientRect();
+    for (const type of ['pointerdown', 'pointerup']) el.dispatchEvent(new PointerEvent(type, { pointerId: 8, pointerType: 'touch', isPrimary: true, clientX: r.x + r.width / 2, clientY: r.y + r.height / 2, bubbles: true, cancelable: true, buttons: type === 'pointerdown' ? 1 : 0 }));
+  });
+
+async function open(browser, { width = 390, height = 844, query = '?cover=0&idle=0.1&bird=1&worker=0&off=lunch,sam,tongue&night=0', reducedMotion = 'no-preference', video = null, level = [0, 5] } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 2, hasTouch: true, reducedMotion, ...(video ? { recordVideo: { dir: video, size: { width, height } } } : {}) });
   const page = await context.newPage();
   page.on('pageerror', (e) => console.log('ERR', e.message));
@@ -82,12 +90,15 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
 
   // 1. The whole gag, after the idle time, at two phone sizes.
   for (const [width, height] of engine === 'webkit' ? [[390, 844], [375, 667]] : [[390, 844]]) {
-    console.log(`\n${engine} ${width}x${height}: the gag after 10 s idle (1 s here)`);
+    console.log(`\n${engine} ${width}x${height}: the gag, when a truck is tapped (1 in 2; ?bird=1 here)`);
     const { context, page } = await open(browser, { width, height });
+    // No gag comes from waiting: long past his old 10 s (1 s here), nobody.
+    await wait(2500);
     const others = await page.evaluate(() => ({ gags: document.querySelectorAll('.gag').length, log: !!document.querySelector('.binoculars'), early: !!document.querySelector('.magpie-layer') }));
-    check(others.gags === 0 && !others.early, 'every other gag is off, and he does not come before the idle time');
+    check(others.gags === 0 && !others.early, 'every other gag is off, and he does not come from waiting');
     // Watching from before he appears, so the very first frame is seen.
     const watching = watch(page, 20000);
+    await tapTruck(page);
     await page.waitForSelector('.magpie-layer', { state: 'attached', timeout: 5000 });
     const bubbleSeen = page.waitForSelector('.bubble', { timeout: 14000 }).then(async (b) => ({ text: await b.textContent(), box: await b.boundingBox() })).catch(() => null);
     // He never blocks a touch: at the smug beat, the point he stands on still reaches his truck.
@@ -153,10 +164,35 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     await context.close();
   }
 
+  // A tap that loses the roll brings nobody; neither does a drag.
+  if (engine === 'webkit') {
+    console.log(`\n${engine}: the roll, and a drag is not a tap`);
+    {
+      const { context, page } = await open(browser, { query: '?cover=0&bird=0&worker=0&off=lunch,sam,tongue&night=0' });
+      await tapTruck(page);
+      await wait(1200);
+      check(!(await page.$('.magpie-layer')), 'a tap that loses the roll (?bird=0): he does not come');
+      await context.close();
+    }
+    {
+      const { context, page } = await open(browser);
+      await page.evaluate(async () => {
+        const el = document.querySelector('.truck'); const r = el.getBoundingClientRect(); const h = el.classList.contains('horiz');
+        let x = r.x + r.width / 2, y = r.y + r.height / 2;
+        const ev = (type) => el.dispatchEvent(new PointerEvent(type, { pointerId: 7, pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, bubbles: true, cancelable: true, buttons: 1 }));
+        ev('pointerdown'); for (let k = 0; k < 6; k++) { if (h) x += 6; else y += 6; ev('pointermove'); await new Promise((q) => requestAnimationFrame(q)); } ev('pointerup');
+      });
+      await wait(1200);
+      check(!(await page.$('.magpie-layer')), 'a truck dragged (36 px) is not a tap: he does not come');
+      await context.close();
+    }
+  }
+
   // 2. Startled: grab his truck mid-gag.
   if (engine === 'webkit') {
     console.log(`\n${engine}: his truck is grabbed mid-gag`);
     const { context, page } = await open(browser);
+    await tapTruck(page);
     await page.waitForFunction(() => document.querySelector('.magpie-layer')?.dataset.beat === 'look', null, { timeout: 9000 });
     const watching = watch(page, 6000);
     await page.evaluate(() => {
@@ -182,6 +218,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
   if (engine === 'webkit') {
     console.log(`\n${engine}: reduced motion`);
     const { context, page } = await open(browser, { reducedMotion: 'reduce' });
+    await tapTruck(page);
     await page.waitForSelector('.magpie-layer', { state: 'attached', timeout: 5000 });
     const a = await page.evaluate(() => ({ beat: document.querySelector('.magpie-layer').dataset.beat, t: document.querySelector('.magpie-layer svg.magpie .root').getAttribute('transform') }));
     await wait(1200);

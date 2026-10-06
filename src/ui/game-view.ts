@@ -19,9 +19,9 @@ import { uiImg } from './ui-art.ts';
 import { preloadSprites } from './sprites.ts';
 import { defaultKind } from './vehicles.ts';
 import { applyCamo, loadLog, record, saveLog, sightingToast, type Sighting } from './wildlife-log.ts';
-import { bearAlways, bearNever, cooldownScale, eggOff, gagTest, lunchAlways, lunchNever, rollPinned, magpieOn, mooseOn, workerOn } from './flags.ts';
+import { bearAlways, bearNever, eggOff, gagTest, lunchAlways, lunchNever, rollPinned, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
-import { BackAndForth, GAG_RULES, GAG_TRIGGERS, IDLE_GAGS, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump, type GagId } from './gag-triggers.ts';
+import { BackAndForth, GAG_TRIGGERS, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump, type GagId } from './gag-triggers.ts';
 import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, SignProp, deerDef, signLane, surveyorDef, touristsDef, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
@@ -135,10 +135,9 @@ export class GameView {
   private finger: HTMLElement | null = null;
   private coached = false;
   private topBumps = 0;
-  private truckBumps = 0;
+  private riserTaps = 0;
   private lastExitAt = -Infinity;
   private undos = 0;
-  private lastIdleGagAt = -Infinity;
   private bush: BushProp | null = null;
   private riser: RiserProp | null = null;
   /** Blocked moves in a row (Safety Sam). */
@@ -297,14 +296,22 @@ export class GameView {
         this.strips.bear = new TimelineGag(egg, bearDef(this.bush));
       }
       // Taps on a flare stack (gag-triggers.ts): a touch that lifts where it landed, on a flare's picture.
-      let down: { x: number; y: number } | null = null;
-      this.el.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }), { capture: true });
+      let down: { x: number; y: number; truck: boolean } | null = null;
+      this.el.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY, truck: !!(e.target as Element | null)?.closest?.('.truck') }), { capture: true });
       this.el.addEventListener(
         'pointerup',
         (e) => {
           const tap = down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < TAP_SLOP;
+          const onTruck = !!down?.truck;
           down = null;
           if (!tap) return;
+          // A truck tapped, not dragged: the magpie may come (one time in two, once a level).
+          if (onTruck && this.magpie && !this.eggDone.has('magpie') && !this.eggsOn.has('magpie') && this.roll('bird', GAG_TRIGGERS.magpie.chance)) this.fire('magpie');
+          // The frosty riser, tapped three times: the frozen tongue.
+          if (this.riser?.fits && this.riser.hit(e.clientX, e.clientY) && ++this.riserTaps >= GAG_TRIGGERS.tongue.riserTaps) {
+            this.riserTaps = 0;
+            this.fire('tongue');
+          }
           const onBush = !!this.bush?.hit(e.clientX, e.clientY);
           // The bush: every so many taps and somebody may come out of it. In Duvernay the bear (he may
           // not: then it shakes and drops a puff of snow); in Cardium the porcupine's gag. Once they
@@ -561,7 +568,7 @@ export class GameView {
     this.witnessed.clear();
     this.bushTaps = 0;
     this.topBumps = 0;
-    this.truckBumps = 0;
+    this.riserTaps = 0;
     this.undos = 0;
     this.signTaps = 0;
     this.bumpRun = 0;
@@ -588,7 +595,6 @@ export class GameView {
     this.gagsThisLevel.add(id);
     void this.playEgg(id).then((r) => {
       this.eggsOn.delete(id);
-      if (IDLE_GAGS.includes(id) && r !== 'none') this.lastIdleGagAt = performance.now();
       if (this.eggForced) this.lastMoveAt = performance.now() + 900;
       else if (r === 'seen') {
         this.eggDone.add(id);
@@ -664,11 +670,6 @@ export class GameView {
     this.el.insertBefore(el, this.nightShade);
   }
 
-  /** The cooldown between the idle gags (GAG_RULES): none in demo mode. */
-  private idleCooldownMs(): number {
-    return loadProgress().demo ? 0 : GAG_RULES.idleCooldownMs * cooldownScale();
-  }
-
   /** Plays a gag by id. Resolves 'seen' if it counts as a sighting. */
   private playEgg(id: GagId): Promise<EggResult> {
     if (id === 'magpie') return this.magpie?.play().then((ok): EggResult => (ok ? 'seen' : 'cancelled')) ?? Promise.resolve('none');
@@ -678,33 +679,17 @@ export class GameView {
   }
 
   /**
-   * The idle gags' clock (used while the old gag layer is off). The gags the player sets off play
-   * at once (`fire`). The ones that come by themselves when the lease is quiet (IDLE_GAGS: the
-   * magpie, the sleepy worker, gopher lunch, the frozen tongue) take turns here: each after its own
-   * idle time with no moves, one at a time, with the idle cooldown between them, once per level
-   * (one that was scared off or cancelled may try again).
+   * NO GAG COMES FROM WAITING: every gag is set off by something the player does (`fire`). This
+   * clock only keeps a `?gag=` preview playing, again and again.
    */
   private tickEggs(): void {
     if (!this.el.isConnected) return void window.clearInterval(this.eggTimer);
-    if (document.hidden || isWon(this.state)) return;
-    const now = performance.now();
-    const idle = now - this.lastMoveAt;
-    if (this.eggForced) {
-      if (this.eggsOn.size || idle < 600 || this.board.moving) return;
-      // A preview plays again and again: the cow comes back for each one.
-      if (this.eggForced === 'bull') this.cow?.reset();
-      return this.startEgg(this.eggForced);
-    }
-    if (this.board.moving || IDLE_GAGS.some((g) => this.eggsOn.has(g) || this.eggQueue.includes(g))) return;
-    if (now - this.lastIdleGagAt < this.idleCooldownMs()) return;
-    const T = GAG_TRIGGERS;
-    const due: Record<string, boolean> = {
-      magpie: !!this.magpie && idle >= T.magpie.idleMs * this.idleScale,
-      worker: !!this.worker && this.worker.canPlay() && idle >= T.worker.idleMs * this.idleScale,
-      tongue: !!this.strips.tongue && !!this.riser?.fits && idle >= T.tongue.idleMs * this.idleScale,
-    };
-    const next = IDLE_GAGS.find((g) => due[g] && !this.eggDone.has(g));
-    if (next) this.fire(next);
+    if (document.hidden || isWon(this.state) || !this.eggForced) return;
+    const idle = performance.now() - this.lastMoveAt;
+    if (this.eggsOn.size || idle < 600 || this.board.moving) return;
+    // A preview plays again and again: the cow comes back for each one.
+    if (this.eggForced === 'bull') this.cow?.reset();
+    this.startEgg(this.eggForced);
   }
 
   /** A bump: count it and give the hazard counter a quick shake. */
@@ -716,8 +701,8 @@ export class GameView {
     // Safety Sam: blocked moves piling up, or a push at a wrong-colour gate.
     const wrongGate = GAG_TRIGGERS.sam.wrongGate && !!bumped && wrongGateBump(bumped, direction, hit, this.level.gates);
     if (++this.bumpRun >= GAG_TRIGGERS.sam.bumpsInARow || wrongGate) this.fire('sam');
-    // The sleepy worker: trucks bumping trucks (he also comes when the lease is idle, `tickEggs`).
-    if (hit === 'truck' && ++this.truckBumps >= GAG_TRIGGERS.worker.truckBumps) this.fire('worker');
+    // The sleepy worker: a truck slides into another truck, and he may come (one time in two).
+    if (hit === 'truck' && this.worker?.canPlay() && !this.eggDone.has('worker') && !this.eggsOn.has('worker') && this.roll('nap', GAG_TRIGGERS.worker.chance)) this.fire('worker');
     if (berm === 'top' && ++this.topBumps >= GAG_TRIGGERS.moose.topBermBumps) this.fire('moose');
     if (berm === 'bottom' && this.biffy) {
       if (this.biffyWait) {

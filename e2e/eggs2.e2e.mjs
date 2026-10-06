@@ -567,15 +567,27 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       await context.close();
     }
 
-    // ---------- The frozen tongue: 30 s idle on a winter level (3 s here) ----------
-    console.log(`\n${engine}: frozen tongue, 30 s idle on a winter level (3 s here)`);
+    // ---------- The frozen tongue: three taps on the frosty riser, on a winter level ----------
+    console.log(`\n${engine}: frozen tongue, three taps on the riser on a winter level`);
     const { context, page } = await open(browser, { query: QUIET.replace(',tongue', '') + '&idle=0.1', level: [duv, 1] });
     const riser = await page.evaluate(() => { const r = document.querySelector('.riser-layer svg.pup').getBoundingClientRect(); return { l: r.left, r: r.right, x: r.left + r.width / 2 }; });
-    await wait(1500);
-    check(!(await page.$('.strip-layer')), 'not before the idle time is up');
+    // No gag comes from waiting: long past its old 30 s (3 s here), nobody.
+    await wait(4000);
+    check(!(await page.$('.strip-layer')), 'it does not come from waiting');
+    // The riser's tap target is at least 44 px each way: a tap 20 px to the side of the thin pipe still counts.
+    const tapRiser = (dx = 0, dy = 0) => page.evaluate(([ox, oy]) => { const r = (document.querySelector('.riser-layer svg.pup g') ?? document.querySelector('.riser-layer svg.pup')).getBoundingClientRect(); const x = r.left + r.width / 2 + ox, y = r.top + r.height / 2 + oy; const el = document.querySelector('.screen.game'); for (const type of ['pointerdown', 'pointerup']) el.dispatchEvent(new PointerEvent(type, { pointerId: 61, pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, bubbles: true, cancelable: true })); return { w: r.width, h: r.height }; }, [dx, dy]);
+    await tapRiser(0, 0);
+    await tapRiser(20, 0);
+    await wait(500);
+    check(!(await page.$('.strip-layer')), 'two taps are not enough');
+    await tapRiser(-60, 0);
+    await wait(400);
+    check(!(await page.$('.strip-layer')), 'a tap 60 px off the riser does not count');
     const watching = watch(page, 'tongue', { parts: { worker: '.tongue-layer svg.pup:nth-of-type(1) .torso', buddy: '.tongue-layer svg.pup:nth-of-type(2) .torso', tongue: '.tongue-layer .pup-overlay .tongue', flake: '.tongue-layer .pup-overlay .flake', flash: '.tongue-layer .pup-flash', coffee: '.tongue-layer .pup-overlay .coffee', thwip: '.tongue-layer .pup-overlay .thwip', thermos: '.tongue-layer svg.pup:nth-of-type(2) .thermos' } }, 36000);
     const bubble = bubbleOf(page, 'tongue', 20000);
+    const size = await tapRiser(-20, 18);
     const log = await watching;
+    check(log.length > 100, `the third tap (20 px off the pipe, inside its 44 px tap target; the pipe itself is ${Math.round(size.w)}x${Math.round(size.h)} px) brings the gag`);
     check(sameBeats(log, 'tongue'), `the reference beats, in order, to the empty riser again (${beatsOf(log).length} of ${GAGS.tongue.beats.length})`);
     const vis = (k) => log.filter((f) => f[k]?.vis);
     check(vis('worker')[0].worker.r <= 0 && vis('worker').at(-1).worker.r <= 2, `the worker strolls in from fully off screen and trudges off until fully off screen (${Math.round(vis('worker')[0].worker.r)} to ${Math.round(vis('worker').at(-1).worker.r)})`);
@@ -689,7 +701,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       if (mode === 'game') check(by.porcupine?.art && by.lunch?.art && by.porcupine.text === 'Not seen yet.', 'Porcupine and Gopher Lunch have cards with puppet art');
       else check(by.porcupine.text === 'Tap the bush three times in Cardium.' && by.lunch.text === 'Press Hint in Cardium. One time in two.', 'demo mode shows the porcupine\'s and the lunch\'s hints');
       if (mode === 'game') check(by.sam?.art && by.tongue?.art && by.sam.text === 'Not seen yet.', 'Safety Sam and Frozen Tongue have cards with puppet art');
-      else check(by.sam.text === 'Bump three times in a row, or push a truck at a wrong-colour gate.' && by.tongue.text === 'Sit tight for 30 seconds on a winter level.', 'demo mode shows Sam\'s and the tongue\'s hints');
+      else check(by.sam.text === 'Bump three times in a row, or push a truck at a wrong-colour gate.' && by.tongue.text === 'Tap the frosty riser three times on a winter level.', 'demo mode shows Sam\'s and the tongue\'s hints');
       if (mode === 'game') check(by.marshmallow?.art && by.geese?.art && by.marshmallow.text === 'Not seen yet.' && by.geese.text === 'Not seen yet.', `Marshmallow and Lost Goose have cards with puppet art; the game hides the hints (${cards.length} cards)`);
       else check(by.marshmallow.text === 'Tap a flare stack three times.' && by.geese.text === 'Undo three times in a row.' && by.bear.text === 'Tap the snowy bush three times in Duvernay. One time in three.' && by.bull.text === 'Tap the cow in Montney.', 'demo mode shows each gag\'s hint');
       await context.close();

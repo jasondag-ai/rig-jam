@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BackAndForth, GAG_RULES, GAG_TRIGGERS, IDLE_GAGS, SHARES, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump } from './gag-triggers.ts';
+import { BackAndForth, GAG_TRIGGERS, SHARES, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump } from './gag-triggers.ts';
 import { BEAR_BEATS, BEAR_END, bPose } from './bear.ts';
 import { BUSH_X, COW_X, PORC_BUSH_X, bearBox, bushBox, cowBox, moundSpot } from './strip-gags.ts';
 import { BUSH_BOX, BUSH_FRAC, bushMarkup } from './gag-bush.ts';
@@ -7,9 +7,9 @@ import { LUNCH_BEATS, LUNCH_END, MOUND_DRAWN, lunchPose, moundWidthFor } from '.
 import { PC_BEATS, PC_END, SHIFT, pcPose } from './porcupine.ts';
 import { SAM, SAM_BEATS, SAM_END, backGlove, samPose } from './sam.ts';
 import { BUDDY, BUDDY_FAR, BUDDY_STOP, STAND, TONGUE_BEATS, TONGUE_END, tonguePose } from './frozen-tongue.ts';
-import { RISER_X, riserBox, riserHeight } from './strip-gags.ts';
+import { RISER_TAP, RISER_X, riserBox, riserHeight } from './strip-gags.ts';
 import { treeArt } from './trees.ts';
-import { cooldownScale, eggOff, lunchAlways, lunchNever, rollPinned } from './flags.ts';
+import { eggOff, lunchAlways, lunchNever, rollPinned } from './flags.ts';
 import { DEER_BEATS, DEER_END, DEER_STOP, SURVEY_BEATS, SURVEY_END, SURVEY_LINES, TOUR_BEATS, TOUR_END, TOUR_HER, TOUR_HIM, deerPose, surveyPose, tourPose } from './sign-gags.ts';
 import { BULL_BEATS, BULL_END, COW_REST, SHIFT as PRIMP_SHIFT, T_BACK, T_GRAZE, T_HOME, bullPose } from './bull.ts';
 import { A_BEATS, A_END, A_SHAKE, BIFFY_SIZE, B_BEATS, B_END, B_OFF, B_ROLL_OFF, B_SHAKE, B_SHUT, biffy } from './biffy.ts';
@@ -25,9 +25,9 @@ describe('gag triggers: one settings file for every gag', () => {
     expect(Object.keys(GAG_TRIGGERS).slice(0, 9)).toEqual(['magpie', 'worker', 'moose', 'nearMiss', 'landowner', 'biffyA', 'biffyB', 'marshmallow', 'geese']);
     expect(GAG_TRIGGERS.marshmallow.flareTaps).toBe(3);
     expect(GAG_TRIGGERS.geese.undosInARow).toBe(3);
-    expect(GAG_TRIGGERS.magpie.idleMs).toBe(10_000);
-    expect(GAG_TRIGGERS.worker.idleMs).toBe(20_000);
-    expect(GAG_TRIGGERS.worker.truckBumps).toBe(2);
+    // No gag comes from waiting: the magpie on a truck tapped (not dragged), the worker on a truck sliding into a truck, each 1 in 2.
+    expect(GAG_TRIGGERS.magpie).toEqual({ truckTap: true, chance: 1 / 2 });
+    expect(GAG_TRIGGERS.worker).toEqual({ truckBump: true, chance: 1 / 2 });
     expect(GAG_TRIGGERS.moose).toEqual({ region: 'duvernay', topBermBumps: 2 });
     expect(GAG_TRIGGERS.nearMiss.region).toBe('cardium');
     expect(GAG_TRIGGERS.landowner.backAndForth).toBe(4);
@@ -113,7 +113,7 @@ describe('Near Miss, landowner and biffy: the references, as approved', () => {
 });
 
 describe('the bottom strip: the permanent biffy', () => {
-  it('is about 60 px tall at 390 (a fifth smaller than the reference) and stands up by the berm', () => {
+  it('is about 60 px tall at 390 (a fifth smaller than the reference) and stands in the corner, right up at the berm', () => {
     const strip = { top: 548, bottom: 730 };
     const g = biffyStand(390, strip);
     expect(g.scale).toBe(1);
@@ -123,6 +123,10 @@ describe('the bottom strip: the permanent biffy', () => {
     expect(tall).toBeLessThan(66);
     // Its roof is BIFFY_GAP below the berm's foot: close to the berm, never on it.
     expect(g.ground - tall).toBeCloseTo(strip.top + BIFFY_GAP, 6);
+    expect(BIFFY_GAP).toBe(2);
+    expect(BIFFY_X).toBe(0.08);
+    // In the corner, but wholly on screen at every width.
+    for (const w of [375, 390, 430]) expect(biffyBox(w, strip).x).toBeGreaterThan(4);
     expect(g.ground).toBeLessThan(stripGeom(390, strip).ground - 40);
   });
 
@@ -130,16 +134,17 @@ describe('the bottom strip: the permanent biffy', () => {
     const strip = { top: 428, bottom: 496 };
     const g = biffyStand(375, strip);
     expect(g.scale).toBeLessThan(1);
-    expect(g.ground - g.width * 1.26).toBeGreaterThanOrEqual(strip.top + 6);
+    expect(g.ground - g.width * 1.26).toBeGreaterThanOrEqual(strip.top + BIFFY_GAP);
     expect(g.ground).toBeLessThanOrEqual(strip.bottom);
   });
 
-  it("stands clear of the sleepy worker's clearing", () => {
-    for (const [w, strip] of [[390, { top: 548, bottom: 730 }], [375, { top: 428, bottom: 496 }], [430, { top: 612, bottom: 810 }]] as const) {
+  it("stands above the sleepy worker's clearing where the strip is tall enough for both", () => {
+    for (const [w, strip] of [[390, { top: 548, bottom: 730 }], [430, { top: 612, bottom: 810 }]] as const) {
       const box = biffyBox(w, strip);
-      const worker = workerSpot(w, strip);
+      const worker = workerSpot(w, strip)!;
       expect(Math.abs(box.x + box.width / 2 - BIFFY_X * w)).toBeLessThan(0.01);
-      if (worker) expect(box.x).toBeGreaterThan(worker.x + worker.w * 0.3);
+      // Both are in the corner: the biffy up at the berm, the worker down by the tip line.
+      expect(box.y + box.height).toBeLessThan(worker.clearing.y);
     }
   });
 
@@ -321,13 +326,11 @@ describe('gag rules and the gag bush', () => {
     expect(mustWait('geese', ['geese'])).toBe(true);
   });
 
-  it('the idle gags still take turns, with a cooldown between them; tests can scale it and leave gags out', () => {
-    expect(IDLE_GAGS).toEqual(['magpie', 'worker', 'tongue']);
-    expect(GAG_RULES.idleCooldownMs).toBe(60_000);
-    expect(cooldownScale('')).toBe(1);
-    expect(cooldownScale('?cooldown=0')).toBe(0);
-    expect(cooldownScale('?cooldown=0.05')).toBe(0.05);
-    expect(cooldownScale('?cooldown=x')).toBe(1);
+  it('NO GAG COMES FROM WAITING: no trigger but the night has an idle time, and nothing queues idle gags any more', () => {
+    for (const [name, t] of Object.entries(GAG_TRIGGERS)) if (name !== 'night') expect('idleMs' in t, name).toBe(false);
+    expect(GAG_TRIGGERS.night.idleMs).toBe(30_000);
+    expect(rollPinned('bird', '?bird=1')).toBe(true);
+    expect(rollPinned('nap', '?nap=0')).toBe(false);
     expect(eggOff('lunch', '?off=lunch,porcupine')).toBe(true);
     expect(eggOff('lunch', '')).toBe(false);
   });
@@ -399,7 +402,6 @@ describe('the porcupine (gag 12)', () => {
 describe('gopher lunch (gag 13)', () => {
   it('is set off by a press of Hint in Cardium, one time in two (always in demo mode); no longer an idle gag', () => {
     expect(GAG_TRIGGERS.gopherLunch).toEqual({ region: 'cardium', onHint: true, chance: 1 / 2 });
-    expect(IDLE_GAGS).not.toContain('gopherLunch');
     expect(lunchComes(false, () => 0.49)).toBe(true);
     expect(lunchComes(false, () => 0.5)).toBe(false);
     expect(lunchComes(true, () => 0.99)).toBe(true);
@@ -500,7 +502,8 @@ describe('Safety Sam (gag 14)', () => {
 
 describe('the frozen tongue (gag 15)', () => {
   it('is set off by 30 s with no moves, on winter levels', () => {
-    expect(GAG_TRIGGERS.tongue).toEqual({ theme: 'winter', idleMs: 30_000 });
+    expect(GAG_TRIGGERS.tongue).toEqual({ theme: 'winter', riserTaps: 3 });
+    expect(RISER_TAP).toBeGreaterThanOrEqual(44);
   });
 
   it('plays the reference beats, ending as it began: the buddy comes back with hot coffee, THWIP, and both walk off their own ways', () => {

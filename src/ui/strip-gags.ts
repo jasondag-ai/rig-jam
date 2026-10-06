@@ -31,10 +31,10 @@ export function stripGeom(screenW: number, strip: { top: number; bottom: number 
   const full = BIFFY_FRAC * screenW * 1.34;
   return { ground: strip.bottom - 4, scale: Math.max(0.36, Math.min(1, (strip.bottom - strip.top - 12) / full)) };
 }
-/** Where the biffy stands across the screen (a share of its width): right of the worker's clearing. */
-export const BIFFY_X = 0.3;
-/** The biffy stands up by the berm: this much grass (px) between the berm's foot and its roof. */
-export const BIFFY_GAP = 12;
+/** Where the biffy stands across the screen (a share of its width): in the corner of the bottom strip. */
+export const BIFFY_X = 0.08;
+/** The biffy stands right up at the berm: this much grass (px) between the berm's foot and its roof. */
+export const BIFFY_GAP = 2;
 /** How wide the biffy is drawn (px), and the line it stands on: up by the berm, never below the strip's own ground line. */
 export function biffyStand(screenW: number, strip: { top: number; bottom: number }): { ground: number; scale: number; width: number } {
   const { ground, scale } = stripGeom(screenW, strip);
@@ -75,7 +75,14 @@ export class BiffyProp {
   layout(): void {
     const screen = this.host.screen.getBoundingClientRect();
     if (!screen.height) return;
-    const { ground, scale } = biffyStand(screen.width, this.host.strip());
+    const strip = this.host.strip();
+    const { scale, width } = biffyStand(screen.width, strip);
+    // Right up at the berm, but never on a gate: where a bottom gate hangs over its corner, it
+    // stands just under that gate's posts instead.
+    const [left, right] = [BIFFY_X * screen.width - width / 2, BIFFY_X * screen.width + width / 2];
+    const under = [...this.host.board.querySelectorAll('.gate')].map((g) => g.getBoundingClientRect()).filter((g) => g.right - screen.left > left && g.left - screen.left < right && g.bottom - screen.top > strip.top - 2);
+    const top = Math.max(strip.top, ...under.map((g) => g.bottom - screen.top));
+    const ground = Math.min(stripGeom(screen.width, strip).ground, top + BIFFY_GAP + width * 1.26);
     this.pup.frac = BIFFY_FRAC * BIFFY_SIZE * scale;
     this.pup.spot = { x: BIFFY_X, y: ground / screen.height };
     this.rest();
@@ -238,7 +245,17 @@ export class RiserProp {
   get fits(): boolean {
     return this.layer.style.visibility !== 'hidden';
   }
+
+  /** Is this point (client px) on the riser? Its tap target is at least `RISER_TAP` px each way, about its middle. */
+  hit(x: number, y: number): boolean {
+    const r = (this.pup.svg.querySelector('g') ?? this.pup.svg).getBoundingClientRect();
+    const w = Math.max(RISER_TAP, r.width + 8), h = Math.max(RISER_TAP, r.height + 8);
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    return Math.abs(x - cx) <= w / 2 && Math.abs(y - cy) <= h / 2;
+  }
 }
+/** The riser's tap target is at least this big (px). */
+export const RISER_TAP = 44;
 
 /** Where the cow grazes across the screen (a share of its width): the right of the strip, the bull stopping between her and the biffy. */
 export const COW_X = 0.79;

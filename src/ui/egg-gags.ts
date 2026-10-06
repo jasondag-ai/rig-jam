@@ -2,6 +2,7 @@
 // the magpie: each on a layer over the whole game screen that takes no touches. The worker walks in
 // from past the screen's left edge and leaves past it. The moose's layer sits UNDER the board and is
 // cut off at the board's top line, so he rises from behind the top berm and nothing else clips him.
+import { biffyBox } from './strip-gags.ts';
 import type { BubbleSide } from './bubble.ts';
 import { SIZE, type GameState } from '../engine/index.ts';
 import { MOOSE, MOOSE_FRAC, MOOSE_LINE, M_END, T_STARE, mBeatAt, mPose, mooseColumn, mooseFrame, snowChunks } from './moose.ts';
@@ -58,12 +59,17 @@ export class WorkerGag {
 
   /** Is there room for him in the bottom strip on this screen? */
   canPlay(): boolean {
-    return workerSpot(this.host.screen.getBoundingClientRect().width, this.host.strip()) !== null;
+    return this.spot() !== null;
+  }
+
+  /** His spot (see `workerPlace`), or null where the strip is too short for him. */
+  private spot(): ReturnType<typeof workerSpot> {
+    return workerPlace(this.host.screen.getBoundingClientRect().width, this.host.strip());
   }
 
   play(): Promise<EggResult> {
     if (this.run) return Promise.resolve('none');
-    const spot = workerSpot(this.host.screen.getBoundingClientRect().width, this.host.strip());
+    const spot = this.spot();
     if (!spot) return Promise.resolve('none');
     const layer = document.createElement('div');
     layer.className = 'scene-layer puppet-layer worker-layer';
@@ -302,6 +308,19 @@ export class MooseGag {
 }
 
 /** Where the worker's clearing is on this screen (scenery keeps trees out of it), or null if he has no room. */
-export const workerClearing = (screenW: number, strip: { top: number; bottom: number }) => workerSpot(screenW, strip)?.clearing ?? null;
+/**
+ * Where the sleepy worker sits: by the left edge (worker.ts `workerSpot`). The biffy stands in that
+ * corner too, up at the berm; on a strip so short that he would sit on it, he sits just to its
+ * right instead. (His peek, reach and yank are measured from the screen's edge, wherever he sits.)
+ */
+export function workerPlace(screenW: number, strip: { top: number; bottom: number }): ReturnType<typeof workerSpot> {
+  const s = workerSpot(screenW, strip);
+  if (!s) return null;
+  const b = biffyBox(screenW, strip), c = s.clearing;
+  if (!(c.x < b.x + b.width && c.x + c.width > b.x && c.y < b.y + b.height && c.y + c.height > b.y)) return s;
+  const shift = b.x + b.width + 4 - (s.x - s.w * 0.45);
+  return { ...s, x: s.x + shift, clearing: { ...c, x: 0, width: c.width + shift } };
+}
+export const workerClearing = (screenW: number, strip: { top: number; bottom: number }) => workerPlace(screenW, strip)?.clearing ?? null;
 /** Columns across the top berm. */
 export const TOP_COLUMNS = SIZE;
