@@ -2,6 +2,7 @@
 // the magpie: each on a layer over the whole game screen that takes no touches. The worker walks in
 // from past the screen's left edge and leaves past it. The moose's layer sits UNDER the board and is
 // cut off at the board's top line, so he rises from behind the top berm and nothing else clips him.
+import { setGround } from './puppet-stage.ts';
 import { sound } from '../audio/engine.ts';
 import { markBeat } from './gag-beat.ts';
 import { biffyBox } from './strip-gags.ts';
@@ -80,6 +81,8 @@ export class WorkerGag {
     (this.host.mount ?? ((el: HTMLElement) => this.host.screen.append(el)))(layer);
     const svg = layer.querySelector<SVGSVGElement>('svg.pup')!;
     Object.assign(svg.style, { width: `${spot.w}px`, height: `${spot.w}px`, left: `${spot.x - 0.5 * spot.w}px`, top: `${spot.y - 0.9 * spot.w}px` });
+    // DEPTH: he sits on his spot's ground line.
+    setGround(layer, spot.y, 'set');
     return new Promise((resolve) => {
       // The screen's left edge, in puppet units.
       const run: WorkerRun = { layer, svg, z: layer.querySelector<HTMLElement>('.pup-z')!, spot, edge: 60 - spot.x / (spot.w / 120), start: performance.now(), frame: 0, cancel: null, asleep: false, done: resolve };

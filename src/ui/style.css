@@ -143,7 +143,8 @@ input,
 }
 
 /* Scenery pieces (scenery.ts; art in trees.ts). */
-.trees .sc {
+.trees .sc,
+.depth-strip > .sc {
   position: absolute;
   display: block;
   pointer-events: none;
@@ -3162,7 +3163,8 @@ img.hat { width: 100%; height: auto; }
 
 /* Permanent gag anchors in the scenery (scenery.ts): the gopher's dirt mound (Cardium). The bear's
    willow bush is an ordinary scenery sprite. */
-.trees .mound { position: absolute; display: block; overflow: visible; pointer-events: none; }
+.trees .mound,
+.depth-strip > .mound { position: absolute; display: block; overflow: visible; pointer-events: none; }
 
 /* ---------- Montney's level list: spring breakup ----------
    The same place as its levels: the pad's mud showing through the dull spring grass in soft
@@ -3183,7 +3185,8 @@ img.hat { width: 100%; height: auto; }
 }
 
 /* ---------- Job 4b: base polish ---------- */
-.trees svg.sc { overflow: visible; }
+.trees svg.sc,
+.depth-strip > svg.sc { overflow: visible; }
 .trees .tree-defs { position: absolute; }
 
 /* The gear sits on a cream plate, so it shows against the trees. */
@@ -3328,6 +3331,12 @@ img.hat { width: 100%; height: auto; }
 /* The strip's gags are put on the screen UNDER the night's shade (`mount`), so they dim exactly like
    the scenery; only what must lie over the lease itself (the marshmallow stick) stays above the board. */
 .puppet-layer.strip-layer { z-index: 0; overflow: visible; }
+/* THE DEPTH STRIP (STANDING_RULES 1; game-view.ts `mount`, puppet-stage.ts `setGround`): every
+   prop, every tree below the lease and every strip gag is one of its children, and a child's
+   z-index is its ground line in px, so what stands lower on the screen draws in front. */
+.puppet-layer.depth-strip { z-index: 0; overflow: hidden; }
+/* (The trees that moved here from the scenery keep the scenery's soft shadow.) */
+.depth-strip > .depth-tree { filter: drop-shadow(3px 4px 3px rgba(30, 25, 20, 0.26)); }
 .puppet-layer.strip-layer.over-lease { z-index: 9; }
 /* The gopher comes up out of his hole: his layer ends at the hole line and sits just over the scenery. */
 .puppet-layer.gopher-layer { z-index: 0; bottom: auto; overflow: hidden; }

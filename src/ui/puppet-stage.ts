@@ -29,6 +29,29 @@ export function makePup(host: HTMLElement, markup: string, o: PupOptions): Pup {
   return Object.assign({ svg, host, parent: host, q: (s: string) => svg.querySelector(s) }, o);
 }
 
+/**
+ * THE DEPTH RULE (STANDING_RULES 1): everything in the bottom strip, scenery, props and gag
+ * characters alike, is one child (a UNIT) of the game screen's `.depth-strip`, and a unit's
+ * z-index IS its ground line in px down the screen: what stands lower draws in front, what stands
+ * higher draws behind; equal ground lines keep the order they were put on screen. This sets the
+ * ground line of the unit `el` belongs to. `max`: the lowest ground line of anything in the unit
+ * (a gag layer with several puppets); `set`: exactly this.
+ */
+export function setGround(el: Element | null, y: number, how: 'max' | 'set' = 'max'): void {
+  const strip = el?.closest('.depth-strip');
+  if (!el || !strip || !Number.isFinite(y)) return;
+  let unit = el as HTMLElement;
+  while (unit.parentElement && unit.parentElement !== strip) unit = unit.parentElement;
+  // (A unit laid out again at another size starts over: its old ground line means nothing there.)
+  const size = `${strip.clientWidth}x${strip.clientHeight}`;
+  const have = unit.dataset.groundAt === size ? Number(unit.dataset.ground) : NaN;
+  const ground = Math.round(how === 'max' && Number.isFinite(have) ? Math.max(have, y) : y);
+  if (unit.dataset.ground === String(ground) && unit.dataset.groundAt === size) return;
+  unit.dataset.ground = String(ground);
+  unit.dataset.groundAt = size;
+  unit.style.zIndex = String(ground);
+}
+
 /** Sizes and places a puppet (shifted `dxUnits` of its own drawing units sideways). */
 export function place(p: Pup, dxUnits = 0): { r: DOMRect; w: number; u: number } {
   const r = p.host.getBoundingClientRect();
@@ -39,6 +62,10 @@ export function place(p: Pup, dxUnits = 0): { r: DOMRect; w: number; u: number }
   p.svg.style.height = `${h}px`;
   p.svg.style.left = `${p.spot.x * r.width - p.ax * u + dxUnits * u}px`;
   p.svg.style.top = `${p.spot.y * r.height - p.ay * u}px`;
+  // Its anchor stands on its ground line: that is its unit's depth. (`data-foot`: for the depth test.)
+  const foot = String(Math.round(p.spot.y * r.height));
+  if (p.svg.dataset.foot !== foot) p.svg.dataset.foot = foot;
+  setGround(p.host, p.spot.y * r.height);
   return { r, w, u };
 }
 

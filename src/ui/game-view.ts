@@ -24,7 +24,7 @@ import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts
 import { BackAndForth, GAG_TRIGGERS, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump, type GagId } from './gag-triggers.ts';
 import { BakkenProp, MANN_SIGN_X, MannProp, auroraDef, sceneDef } from './scene-stage.ts';
 import { BALE_LINE } from './lines.ts';
-import { setSignX, BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, SignProp, deerDef, signLane, surveyorDef, touristsDef, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
+import { setSignX, stageBox, WINTER_SIGN_X, BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, SignProp, deerDef, signLane, surveyorDef, touristsDef, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
 import { companyLine, tierFor } from './company.ts';
@@ -56,6 +56,9 @@ const MOON_ROOM = 40;
 const AURORA_SKY = 62;
 /** The hint button's count: up to 9, then "9+" (it has room for one figure). */
 export const hintCountText = (hints: number): string => (hints > 9 ? '9+' : String(Math.max(0, hints)));
+
+/** Layers `mount` leaves out of the depth strip: they do not stand in the bottom strip. */
+const SKY_LAYERS = ['over-lease', 'magpie-layer', 'geese-layer', 'moose-layer', 'aurora-layer'];
 
 /** The perfect-solve confetti: how long the whole burst lasts, and how many pieces. */
 
@@ -121,6 +124,7 @@ export class GameView {
   private nightSeen = false;
   private nudged = false;
   private nightShade: HTMLElement | null = null;
+  private depth: HTMLElement | null = null;
   /** The bottom-strip gags (strip-gags.ts): Near Miss, the landowner, Biffy A and B. Each null if it cannot play here. */
   private strips: Partial<Record<GagId, TimelineGag>> = {};
   /** The biffy: permanent scenery in the bottom strip of every level. */
@@ -256,6 +260,11 @@ export class GameView {
     this.board.setLevel(level);
     this.board.setGround(theme.ground);
     sound.setGround(theme.ground);
+    // The depth strip: every prop, every bottom-strip tree and every strip gag is a child of it, drawn by its ground line. Under the night's shade.
+    this.depth = document.createElement('div');
+    this.depth.className = 'scene-layer puppet-layer depth-strip';
+    this.depth.setAttribute('aria-hidden', 'true');
+    this.el.append(this.depth);
     if (magpieOn() || this.eggForced === 'magpie') this.magpie = new MagpieGag({ mount: (el) => this.mount(el), screen: this.el, truckElement: (id) => board.truckElement(id), state: () => this.state, say: (anchor, text, prefer) => board.say(anchor, text, prefer) });
     {
       const egg: EggHost = {
@@ -280,7 +289,8 @@ export class GameView {
       // every strip gag's characters) and the four gags that play on it.
       const mannGag = (['muskeg', 'catTrain', 'beaver', 'aurora'] as GagId[]).includes(this.eggForced as GagId);
       const inMann = this.regionId === GAG_TRIGGERS.muskeg.region || mannGag;
-      setSignX(inMann ? MANN_SIGN_X : undefined);
+      // (Mannville's sign stands left of the lane aspen; Duvernay's left of the stage, clear of the sitting bear.)
+      setSignX(inMann ? MANN_SIGN_X : theme.season === 'winter' ? WINTER_SIGN_X : undefined);
       if (inMann) this.mann = new MannProp(egg, theme.season);
       // Bakken: the round bale, in the same spot of every level's bottom strip, and its four gags.
       const bakkenGag = (['tumbleweed', 'pdogs', 'bale', 'cloud'] as GagId[]).includes(this.eggForced as GagId);
@@ -537,8 +547,9 @@ export class GameView {
     }
     // Kept clear of trees: the sleepy worker's spot by the left edge, and the biffy's.
     const strip = { top: box.y + box.height, bottom: controlsTop };
-    const clearings = [this.bakken ? this.bakken.box() : null, this.bakken ? this.bakken.lane() : null, this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.biffy ? biffyLane(screen.width, strip) : null, this.sign ? signLane(screen.width, strip) : null, this.bush ? (this.bush.x === BUSH_X ? bearBox(screen.width, strip) : bushBox(this.bush.x, screen.width, strip)) : null, this.cow ? cowBox(screen.width, strip) : null, this.riser ? riserBox(screen.width, strip) : null].filter((c) => c !== null);
+    const clearings = [this.bakken ? this.bakken.box() : null, this.bakken ? this.bakken.lane() : null, this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.biffy ? biffyLane(screen.width, strip) : null, this.sign ? signLane(screen.width, strip) : null, this.bush ? (this.bush.x === BUSH_X ? bearBox(screen.width, strip) : bushBox(this.bush.x, screen.width, strip)) : null, this.cow ? cowBox(screen.width, strip) : null, this.riser ? riserBox(screen.width, strip) : null, stageBox(screen.width, strip)].filter((c) => c !== null);
     this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, below: !this.mann, anchors: { bush: !this.bush && !this.mann, mound: this.regionId === 'cardium' }, moundAt: this.strips.gopherLunch || this.strips.nearMiss ? moundSpot(screen.width, strip) : undefined, clearings });
+    this.depthTrees(box.y + box.height);
     this.mann?.layout();
     this.bakken?.layout();
     this.biffy?.layout();
@@ -807,14 +818,36 @@ export class GameView {
     return i < 0 ? null : trucks[i];
   }
 
+  /**
+   * THE DEPTH RULE for the scenery: every tree, bush and mound standing BELOW the lease (its base
+   * under the board's foot) leaves the scenery's own layer and becomes a unit of the depth strip,
+   * at its own ground line, so a character walking the strip passes in front of the ones behind
+   * his lane and behind the ones in front of it. (Trees above the lease stay where they are.)
+   */
+  private depthTrees(floor: number): void {
+    if (!this.depth) return;
+    this.depth.querySelectorAll(':scope > .depth-tree').forEach((el) => el.remove());
+    for (const el of this.scenery.querySelectorAll<SVGElement>('.trees > svg.sc, .trees > svg.mound')) {
+      const top = parseFloat(el.style.top), h = parseFloat(el.style.height);
+      if (!(top + h > floor)) continue;
+      // (A tree stands on the foot of its box; the mound's base line is 29.5 of its drawing's 34 units down.)
+      const ground = Math.round(el.classList.contains('mound') ? top + (h * 29.5) / 34 : top + h);
+      el.classList.add('depth-tree');
+      el.dataset.ground = String(ground);
+      el.style.zIndex = String(ground);
+      this.depth.append(el);
+    }
+  }
+
   /** Puts a gag's layer on the screen UNDER the night's shade, so the strip's gags dim exactly like the scenery. */
   private mount(el: HTMLElement): void {
-    this.el.insertBefore(el, this.nightShade);
-    // What stands IN FRONT of the strip's characters (Mannville's lane aspen) stays over every gag
-    // layer put on later; only a gag's own sound words go over that.
-    if (el.classList.contains('scene-front') || el.classList.contains('scene-over')) return;
-    for (const top of this.el.querySelectorAll<HTMLElement>(':scope > .scene-front')) this.el.insertBefore(top, this.nightShade);
-    for (const top of this.el.querySelectorAll<HTMLElement>(':scope > .scene-over')) this.el.insertBefore(top, this.nightShade);
+    // What is not standing in the bottom strip keeps its own place: the sky's layers (geese, the
+    // moose behind the top berm) and what must lie over the lease itself (the magpie, `over-lease`).
+    if (!this.depth || SKY_LAYERS.some((c) => el.classList.contains(c))) return void this.el.insertBefore(el, this.nightShade);
+    // THE DEPTH RULE: everything else is a unit of the depth strip, drawn in the order of its
+    // ground line (puppet-stage.ts `setGround`). A gag's own sound words go over them all.
+    this.depth.append(el);
+    if (el.classList.contains('scene-over')) el.style.zIndex = '100000';
   }
 
   /** Is a tap at (x, y) on the night sky's moon? (A tap target of at least 44 px.) */

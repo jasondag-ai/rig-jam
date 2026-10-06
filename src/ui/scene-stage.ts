@@ -9,6 +9,7 @@
 // trees in the board's own tree drawings, its three muskeg puddles, and the lane aspen drawn IN
 // FRONT of every strip gag's characters), and the timeline definitions that play the ported gags.
 import type { EggHost } from './egg-gags.ts';
+import { setGround } from './puppet-stage.ts';
 import type { Season } from './trees.ts';
 import { BOX, sizeFor, treeArt, type Species } from './trees.ts';
 import type { TimelineDef } from './strip-gags.ts';
@@ -71,7 +72,8 @@ export const MANN_TREES: { species: Species; x: number; base: number; h: number 
   { species: 'spruce', x: 80, base: 124, h: 62 },
   { species: 'aspen', x: 110, base: 126, h: 58 },
   { species: 'willow', x: 138, base: 128, h: 24 },
-  { species: 'willow', x: 238, base: 128, h: 22 },
+  // (The reference stands this willow at x 238, where the landowner stops his quad: it stands right of that here, clear of the stage.)
+  { species: 'willow', x: 268, base: 128, h: 22 },
   { species: 'aspen', x: 334, base: 126, h: 56 },
   { species: 'spruce', x: 366, base: 124, h: 64 },
 ];
@@ -145,6 +147,10 @@ export class MannProp {
   layout(): void {
     const g = (this.g = sceneGeom(this.host.screen.clientWidth, this.host.strip()));
     for (const el of [this.layer, this.front]) place(el.firstElementChild as SVGSVGElement, g);
+    // DEPTH: the back trees stand behind the walking lane (their bases are higher up the screen),
+    // the lane aspen in front of it (its base is the strip's floor).
+    setGround(this.layer, toScreen(g, 0, Math.max(...MANN_TREES.map((t) => t.base))).y, 'set');
+    setGround(this.front, toScreen(g, 0, LANE_ASPEN.base).y, 'set');
     const key = viewBox(g);
     if (key === this.drawn) return;
     this.drawn = key;
@@ -205,6 +211,8 @@ export class BakkenProp {
   layout(): void {
     this.g = sceneGeom(this.host.screen.clientWidth, this.host.strip());
     place(this.layer.firstElementChild as SVGSVGElement, this.g);
+    // DEPTH: the bale stands on the walking lane's ground line.
+    setGround(this.layer, toScreen(this.g, 0, SCENE.ground).y, 'set');
     // (On a strip with no room for the scene there is no bale: it would stand on the berm.)
     this.layer.style.display = this.g.s >= 0.3 ? '' : 'none';
   }
@@ -271,6 +279,8 @@ export function sceneDef(name: string, key: string, geom: () => SceneGeom | null
       };
       // `overLease`: drawn over the board and its berm (the personal cloud floats up at the berm; it must never go behind it).
       const main = svgIn(layer(opts.overLease ? 'scene-gag over-lease' : 'scene-gag'));
+      // DEPTH: its characters walk the lane's ground line (in front of the back trees, behind the lane aspen).
+      setGround(main, toScreen(g, 0, SCENE.ground).y, 'set');
       const over = gag.over ? svgIn(layer('scene-gag scene-over')) : null;
       let last = '', lastOver = '';
       // A prop the gag takes over (the bale): the gag draws it while it plays, in the very same place.

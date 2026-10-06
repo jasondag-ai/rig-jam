@@ -44,6 +44,9 @@ const piece = (season: Season, { x, y, h, art, flip, front }: Item, anchor = '')
   );
 };
 
+/** The bottom strip's walking lane is this far above the strip's floor (strip-gags.ts `stripGeom`: its ground line). */
+export const LANE_UP = 4;
+
 export interface SceneryOptions {
   /** Trees below the box too (the game's bottom strip). */
   below?: boolean;
@@ -178,6 +181,10 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
   }
   // Nothing below may stand lower than the strip's floor line (the buttons start there).
     for (const it of items) if (it.y > height - 1) it.y = height - 1;
+    // DEPTH (STANDING_RULES 1): the strip's walking lane is `LANE_UP` above its floor. A tree whose
+    // base would fall on the lane (or a hair either side of it) stands on the floor instead, clearly
+    // IN FRONT of whoever walks by; every other tree is clearly behind the lane.
+    for (const it of items) if (it.y > floor && Math.abs(it.y - (height - LANE_UP)) <= 3) it.y = height - 1;
   }
 
   // The berm keeps clear grass round it: no tree may reach into the box (grown by BERM_CLEAR)
