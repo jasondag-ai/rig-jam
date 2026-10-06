@@ -318,3 +318,154 @@ WAVE3.aurora = { name:'Aurora Howl', dur:11.6, still:4.4, H:140,
   if(t>5.02&&t<5.6){const k=seg(t,5.02,5.6);s+=`<g transform="translate(${r2(x+26)} ${r2(70-k*8)}) rotate(${r2(Math.sin(t*40)*14)})">${note(0,0,1-k*.4,'#f6b0b8')}</g>`;}
   if(t>6.4&&t<6.75){const k=seg(t,6.4,6.75);s+=`<circle cx="${r2(x+24+k*6)}" cy="${r2(100-k*4)}" r="${r2(2+k*3)}" fill="#cfd6e6" opacity="${r2(1-k)}"/>`;}
   return s;}};
+
+/* ================= Bakken ================= */
+
+/* 5. Tumbleweed */
+const FAM_V=660/5.8;
+WAVE3.tumbleweed = { name:'Tumbleweed', dur:11.2, still:7.4,
+ beats:[[0,'bounces-in','One tumbleweed bounces in.'],[2.2,'stops','Stops in the middle. Rocks. A little hop.'],[3.2,'rolls-back','Rolls back off the way it came.'],[4.2,'empty','Beat. Empty prairie.'],[5.0,'family','It comes back with the whole family.'],[6.0,'falls-behind','The littlest one falls behind.'],[7.8,'leap','Big leap to catch up.'],[9.5,'rolls-off','Family rolls off. The little one is last out.']],
+ // It bounces in slowing down (its speed at t = 0 is 2 x 230 / 2.2) and rolls back speeding up (490 at the edge).
+ lead:E=>E/(460/2.2), tail:E=>E/FAM_V,
+ one(t){return t<0?-30+(460/2.2)*t:t<2.2?kf(t,[[0,-30],[2.2,200,'out']]):t>4.2?-45-490*(t-4.2):kf(t,[[2.2,200],[3.2,200],[4.2,-45,'in']]);},
+ fam(t){return -40+FAM_V*(t-5.0);},
+ focus(t){if(t<4.3)return{x:clamp(this.one(t),40,350),y:120};const xf=this.fam(t);return{x:clamp(xf-90,40,350),y:120};},
+ render(t,E=0){
+  let s='';
+  const draw=(x,r,bh,nb,spin,prog,sq=0)=>{const by=Math.abs(Math.sin(prog*Math.PI*nb))*bh;const contact=1-Math.min(1,by/4);const sqv=sq||.14*contact*(bh>0?1:0);const y=GY-r-by+r*sqv*.5;return`<ellipse cx="${r2(x)}" cy="${GY+1}" rx="${r2(r*.8)}" ry="2.4" fill="${OL}" opacity="${r2(.12*contact)}"/><g transform="translate(${r2(x)} ${r2(y)}) scale(${r2(1+sqv)} ${r2(1-sqv)}) rotate(${r2(spin)})">${tweed(r)}</g>`;};
+  // the one on its own: until it is out of sight again
+  if(t<4.2+E/490+.1){const x=this.one(t);let bh=0,nb=0,prog=0;
+   if(t<2.2){prog=t/2.2;bh=14*(1-Math.max(0,prog)*.7);nb=4;}
+   else if(t<3.2){if(t>2.7&&t<2.95){bh=6;nb=1;prog=seg(t,2.7,2.95);}}
+   else{prog=(t-3.2);bh=10;nb=3;}
+   let rot=(x/13)*57.3;if(inr(t,2.2,2.7))rot+=Math.sin((t-2.2)*14)*8*Math.exp(-(t-2.2)*3);
+   if(x>-30-E)s+=draw(x,13,bh,nb,rot,prog);}
+  // the family: from the screen's edge, at the reference's speed
+  if(t>=5.0-E/FAM_V){const xf=this.fam(t);
+   const lag=40*es(t,6.0,7.6)-40*es(t,7.8,8.6);
+   const F=[[0,20,9],[-55,16,10],[-100,13,12],[-140,10,13],[-178-lag,7,9]];
+   F.forEach(([off,r,bh],i)=>{const x=xf+off;if(x<-30-E||x>420+E)return;let b=bh,nb=Math.round((640)/(r*7));let prog=(x+40)/460;
+    if(i===4&&t>7.8&&t<8.6){b=26;nb=1;prog=seg(t,7.8,8.6);}
+    s+=draw(x,r,b,nb,(x/r)*57.3,prog);});}
+  return s;}};
+
+/* 6. Prairie Dog Wave */
+const MX=[40,92,144,196,248,300];
+WAVE3.pdogs = { name:'Prairie Dog Wave', dur:10.2, still:6.0,
+ beats:[[0,'plain','Plain prairie. No holes.'],[0.6,'first-dog','Fresh dirt pushes up. One prairie dog pops out and looks around.'],[1.6,'spots-player','Spots the player.'],[1.8,'wave','Stadium wave! Left to right.'],[3.3,'missed-cue','The last one misses his cue.'],[4.2,'late','He pops up late, arms up, all alone.'],[5.0,'nobody','Looks around. Nobody.'],[5.5,'solo-wave','Sad, slow solo wave.'],[6.8,'stare','Everyone pops up and stares at him.'],[7.3,'awkward','Awkward grin.'],[7.8,'duck','All duck at once. The dirt settles flat.'],[8.4,'tiny-wave','He pops up for one tiny wave. Gone. Ground is plain again.']],
+ lead:()=>0, tail:()=>0,
+ up(i,t){if(i===0)return kf(t,[[0.6,0],[0.85,1,'out'],[2.6,1],[2.85,0,'in'],[6.8,0],[7.0,1,'out'],[7.8,1],[8.0,0,'in']]);
+  if(i<5){const w=1.8+.3*i;return kf(t,[[w-.25,0],[w,1,'out'],[w+.6,1],[w+.85,0,'in'],[6.8,0],[7.0,1,'out'],[7.8,1],[8.0,0,'in']]);}
+  return kf(t,[[4.2,0],[4.45,1,'out'],[7.8,1],[8.0,0,'in'],[8.4,0],[8.6,1,'out'],[8.85,1],[9.05,0,'in']]);},
+ arms(i,t){if(i===0)return kf(t,[[1.8,0],[2.0,1],[2.3,1],[2.5,0]]);if(i<5){const w=1.8+.3*i;return kf(t,[[w,0],[w+.15,1],[w+.4,1],[w+.55,0]]);}
+  return kf(t,[[4.5,0],[4.7,1],[5.0,1],[5.15,.25],[5.5,.25],[6.0,1],[6.3,1],[6.8,.1],[8.55,.1],[8.65,1],[8.85,0]]);},
+ focus(t){if(t<1.8)return{x:60,y:126};if(t<4.0)return{x:clamp(60+(t-1.8)/.3*55,60,280),y:126};if(t<6.8||t>8.1)return{x:310,y:126};return{x:250,y:126};},
+ render(t){
+  let s=`<defs>${MX.map((m,i)=>`<clipPath id="pd${i}"><rect x="${m-30}" y="0" width="60" height="${GY-6}"/></clipPath>`).join('')}</defs>`;
+  let any=false;
+  MX.forEach((m,i)=>{
+   // fresh dirt: the mound pushes up just before the dog, then settles back flat after he is gone
+   const dug=Math.max(...[-0.18,-0.08,0,0.15,0.3,0.45,0.6].map(o=>this.up(i,t-o)));
+   if(dug>0.01){any=true;const k=io(clamp(dug)),w=r2(17*(.55+.45*k)),hgt=r2(7*k);
+    s+=`<path d="M${m-w} ${GY+1} Q${m-w*.45} ${GY+1-hgt*1.3} ${m} ${GY+1-hgt*1.15} Q${m+w*.45} ${GY+1-hgt*1.3} ${m+w} ${GY+1} z" fill="#b9935f" stroke="${OL}" stroke-width="${r2(2*k)}" stroke-linejoin="round" opacity="${r2(clamp(k*1.6))}"/><path d="M${r2(m-w*.5)} ${r2(GY-hgt*.6)} q${r2(w*.3)} ${r2(-hgt*.5)} ${r2(w*.6)} ${r2(-hgt*.35)}" fill="none" stroke="#d2b07a" stroke-width="${r2(1.8*k)}" stroke-linecap="round"/><ellipse cx="${m}" cy="${r2(GY-hgt+1)}" rx="${r2(8*k)}" ry="${r2(2.8*k)}" fill="#3b2a1c"/>`;}
+   const u=this.up(i,t),du=u-this.up(i,t-.06);
+   if(du>0.01&&u<0.85){for(let f=0;f<5;f++){const a=(-.5+f/4)*2.2,d=5+u*16;s+=`<circle cx="${r2(m+Math.sin(a)*d)}" cy="${r2(GY-7-Math.cos(a)*d*.9+u*u*10)}" r="${r2(1.6-u)}" fill="#a07d4e" ${sw(.8)}/>`;}}
+   if(u<=0.01)return;
+   let o={x:m,y:GY-6+(1-u)*44,arms:this.arms(i,t),mouth:'smile'};
+   if(i===0&&inr(t,0.9,1.6)){o.px=t<1.25?-2:2;o.mouth='flat';}
+   if(i===0&&inr(t,1.6,1.8)){o.py=.6;o.mouth='grin';}
+   if(i<5&&o.arms>.3&&t<4)o.mouth='O';
+   if(i<5&&inr(t,6.8,7.8)){o.eye='half';o.px=i===4?2:2;o.mouth='flat';}
+   if(i===5){if(inr(t,4.45,5.0)){o.mouth='grin';}else if(inr(t,5.0,5.5)){o.px=-2;o.mouth='flat';}else if(inr(t,5.5,6.8)){o.mouth='frown';o.eye='half';o.sway=Math.sin(t*5)*6;}else if(inr(t,6.8,7.8)){o.px=-2;o.mouth=t>7.25?'grin':'flat';o.blush=t>7.25?.8:0;}else if(t>8.4){o.mouth='grin';}}
+   s+=`<g clip-path="url(#pd${i})">${pdog(o)}</g>`;});
+  // (Nothing dug: the prairie is plain, and nothing at all is drawn.)
+  return any?s:'';}};
+
+/* 7. Runaway Bale (the bale is permanent Bakken scenery: scene-stage.ts hides its own while this one plays) */
+const BALE_X=352, RANCH_V=500/2.4, RANCH_OFF_V=327/2.1;
+WAVE3.bale = { name:'Runaway Bale', dur:11.8, still:5.4, line:{from:1.25,to:2.4},
+ beats:[[0,'jolt','Bump! The bale jolts.'],[0.5,'rolls-away','It rolls away, off the right side.'],[1.0,'chase','The landowner runs after it. "Hey!"'],[3.4,'empty','Beat. Empty field.'],[4.0,'pushes-back','The bale rolls back in from the left. He is pushing it.'],[6.6,'got-it','Got it. Leans on it, wipes his brow.'],[7.2,'thumbs-up','Steps back. Thumbs up.'],[7.6,'one-more-inch','The bale rolls one more inch.'],[8.2,'sigh','Long sigh. Shoulders drop.'],[9.0,'walks-off','Hop-turn and walks off.']],
+ // He runs in from the left at t = 1.0: on a wide screen he sets off a little sooner (never before the bump).
+ lead:()=>0, tail:E=>E/RANCH_OFF_V,
+ // When the two of them are out of sight on the right, and when they come back in on the left.
+ swap(E){return Math.min(3.9,Math.max(3.4+E/RANCH_V,2.0+E/157.3))+.02;},
+ bx(t,E=0){
+  if(t<0.5)return BALE_X+1.6*Math.sin(t*70)*(1-Math.max(0,t)/.5);
+  if(t<this.swap(E))return t<2.0?kf(t,[[0.5,BALE_X],[2.0,470,'in']]):470+157.3*(t-2.0);
+  if(t<7.6){const back=kf(t,[[4.0,-60],[6.6,344,'out']]);return t<4.0?Math.max(-60-E-40,-60-(4.0-t)*(808/2.6)):back;}
+  return kf(t,[[7.6,344],[8.2,BALE_X]]);},
+ rx(t,E=0){
+  if(t<this.swap(E))return -40+RANCH_V*(t-1.0);
+  if(t<6.6)return this.bx(t,E)-45;
+  return t>11.4?-40-RANCH_OFF_V*(t-11.4):kf(t,[[6.6,299],[7.2,299],[7.6,287],[9.3,287],[11.4,-40,'lin']]);},
+ focus(t){if(t<1.2)return{x:340,y:120};if(t<3.6)return{x:clamp(this.rx(t),40,350),y:115};if(t<6.6)return{x:clamp(this.bx(t)-25,40,350),y:115};if(t<9.3)return{x:320,y:115};return{x:clamp(this.rx(t),40,350),y:115};},
+ // Where his line's bubble points: just over his head.
+ mouth(t,E=0){return{x:this.rx(t,E)+14,y:GY-72};},
+ render(t,E=0){
+  let s='';
+  const bx=this.bx(t,E);const hopB=t>=0&&t<0.5?-3*Math.sin(Math.PI*t/.5):0;
+  const rot=((bx-BALE_X)/27)*57.3;
+  if(bx>-40-E&&bx<430+E)s+=bale(bx,GY-26+hopB,rot);
+  const x=this.rx(t,E);const sw0=this.swap(E);
+  if(x>-45-E&&x<440+E&&(t>=1.0-E/RANCH_V)){
+   const face=t<9.15?1:-1;
+   let p={x,face,suit:[C.plaid,C.plaidD],plaid:true,legs:[C.jean,C.jeanD],hat:'cowboy',tache:true,glove:C.skin,brow:0};
+   if(t<sw0){Object.assign(p,walk(x/9,42));p.lean=12;p.mouth='O';p.armF=(p.armF||0)*1.3-20;}
+   else if(t<6.6){Object.assign(p,walk(x/7,30));p.lean=22;p.armF=-78;p.armB=-62;p.mouth='grit';p.brow=4;}
+   else if(t<7.2){p.lean=4;p.armF=kf(t,[[6.6,-60],[6.8,-158],[7.1,-158],[7.2,-60]]);p.armB=-55;p.mouth='pant';p.eye='closed';}
+   else if(t<7.6){p.armF=-100;p.mouth='grin';p.eye='happy';}
+   else if(t<8.2){p.px=2;p.mouth='flat';p.armF=-30;}
+   else if(t<9.3){p.bob=3*es(t,8.2,8.5);p.armF=6;p.armB=-6;p.eye='half';p.mouth='flat';p.headRot=8;}
+   else{Object.assign(p,walk(x/8.5,24));p.eye='half';p.mouth='flat';}
+   p.bob=(p.bob||0)+hop(t,9.0,9.3);
+   s+=worker(p);
+   if(t>6.65&&t<7.2){for(let k=0;k<2;k++){const ph=seg(t,6.65+k*.12,7.1+k*.12);s+=`<path d="M${r2(x-6-k*6)} ${r2(GY-64+ph*14)} q-2 3 0 4 q2 -1 0 -4 z" fill="#8fc6ef" ${sw(1.2)}/>`;}}
+   if(t>8.25&&t<8.9){const k=seg(t,8.25,8.9);s+=`<ellipse cx="${r2(x+22+k*10)}" cy="${r2(GY-46-k*4)}" rx="${r2(3+k*4)}" ry="${r2(2+k*2.4)}" fill="#fff" opacity="${r2(.9*(1-k))}" ${sw(1.2)}/>`;}}
+  return s;}};
+export const BALE_AT = { x: BALE_X, y: GY-26, r: 27 };
+/** The bale at rest: the scenery's own. */
+export const baleAtRest = () => bale(BALE_X, GY-26, 0);
+
+/* 8. Personal Cloud */
+const WALK_IN=210/2.0, WALK_OFF=280/1.8, CLOUD_OFF=280/1.85;
+WAVE3.cloud = { name:'Personal Cloud', dur:12.4, still:9.0,
+ beats:[[0,'strolls-in','A worker strolls in, whistling. A tiny cloud tags along.'],[2.3,'rains','It parks over his head and rains on him.'],[3.4,'sidestep','He sidesteps. It follows.'],[4.4,'steps-back','He steps back. It follows again.'],[5.2,'deadpan','Deadpan look at the player.'],[6.0,'umbrella','Pulls out an umbrella. Pop! Rain stops.'],[6.4,'smug','Smug grin. The cloud is not happy.'],[8.0,'closes-it','He closes the umbrella. Looks up, pleased.'],[8.6,'downpour','Downpour. Flattened.'],[9.8,'opens-again','Sighs, opens the umbrella again.'],[10.2,'walks-off','Walks off. The cloud follows, still raining.']],
+ lead:E=>E/WALK_IN, tail:E=>E/CLOUD_OFF+.1,
+ wx(t){return t<0?-40+WALK_IN*t:t>12.0?440+WALK_OFF*(t-12.0):kf(t,[[0,-40],[2.0,170,'lin'],[3.4,170],[3.7,220],[4.4,220],[4.6,160],[10.2,160],[12.0,440,'lin']]);},
+ // (The cloud drifts in slowing down: 2 x 260 / 2.3 at t = 0.)
+ cx(t){return t<0?-90+(520/2.3)*t:t>12.1?440+CLOUD_OFF*(t-12.1):kf(t,[[0,-90],[2.3,170,'out'],[3.75,170],[4.1,220],[4.6,220],[4.78,160,'out'],[10.25,160],[12.1,440,'lin']]);},
+ focus(t){return{x:clamp(this.wx(t),40,350),y:96};},
+ render(t,E=0){
+  let s='';
+  const x=this.wx(t),cx=this.cx(t),cy=42+Math.sin(t*2.2)*1.5;
+  const umb=kf(t,[[6.15,0],[6.4,1,'out'],[8.0,1],[8.35,0],[9.85,0],[10.15,1,'out']]);
+  const umbUp=inr(t,6.0,8.45)||t>=9.8;
+  const pour=inr(t,8.6,9.8);
+  const raining=inr(t,2.3,3.5)||inr(t,4.1,4.4)||inr(t,4.75,6.4)||pour||t>=10.2;
+  const walking=t<2.0||t>=10.2;
+  let p={x};
+  if(walking)Object.assign(p,walk(x/8.5,24));
+  if(t<2.0){p.eye='happy';p.mouth='o';}
+  else if(t<3.4){p.headRot=-14;p.py=-3;p.mouth='frown';p.eye='n';}
+  else if(t<4.4){p.mouth='flat';p.headRot=-10;p.py=-3;p.bob=hop(t,3.4,3.7,5);}
+  else if(t<5.2){p.mouth='flat';p.headRot=-10;p.py=-3;p.bob=hop(t,4.4,4.6,4);}
+  else if(t<6.0){p.eye='half';p.px=2;p.mouth='flat';}
+  else if(t<8.0){p.mouth=t>6.4?'grin':'O';p.eye=t>6.4?'happy':'wide';}
+  else if(t<8.6){p.headRot=-14;p.py=-3;p.mouth='smile';}
+  else if(t<9.8){p.sq=.12*es(t,8.6,8.8);p.eye='half';p.mouth='flat';}
+  else{p.eye='half';p.mouth='flat';}
+  if(umbUp){p.armB=t<6.15&&t>=6.0?kf(t,[[6.0,30],[6.15,-160]]):(t>=9.8&&t<9.85?-160:-172);p.handB=umbrella(umb);}
+  else if(t>=8.35&&t<9.8){p.armB=6;p.handB=umbrella(0);}
+  const seen=x>-45-E&&x<445+E, cloudSeen=cx>-45-E&&cx<445+E;
+  if(seen)s+=worker(p);
+  // rain
+  const headTop=GY-66+(p.sq?6:0), umbTop=GY-92;
+  if(raining&&cloudSeen){const stop=umbUp&&umb>.6?umbTop:headTop;s+=rain(cx,cy+12,stop,t,pour?10:6,pour?260:160);
+   if(pour)s+=rain(cx+3,cy+12,stop,t+.13,9,240);
+   // splashes on hat or umbrella
+   const sy=stop;for(let k=0;k<3;k++){const ph=(t*3+k/3)%1;s+=`<circle cx="${r2(cx-10+k*10+ph*4*(k-1))}" cy="${r2(sy-ph*5)}" r="1.4" fill="#4f8fd8" opacity="${r2(1-ph)}"/>`;}}
+  const mood=inr(t,6.4,8.6)?'mad':(pour||t>=9.8)?'grin':'smug';
+  if(cloudSeen)s+=cloud(cx,cy,mood);
+  if(t<2.0&&seen){for(let k=0;k<2;k++){const ph=((((t*1.4+k*.5)%1)+1)%1);s+=note(x+16+ph*10,GY-62-ph*18,1-ph);}}
+  if(t>6.3&&t<6.6)s+=sfx(x+8,GY-102,'pop!',12,-8,'#fff');
+  return s;}};
