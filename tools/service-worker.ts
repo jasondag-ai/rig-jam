@@ -19,7 +19,7 @@ export const CACHE_GENERATION = 'g3';
 export function serviceWorkerSource(files: string[], version: string): string {
   return `// Generated at build time. Do not edit.
 const CACHE = 'rhr-${CACHE_GENERATION}-${version}';
-const FILES = ${JSON.stringify(['./', ...files])};
+const FILES = ${JSON.stringify(['./', ...files.filter((f) => f !== 'version.json')])};
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -36,6 +36,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  // What version is live is always asked of the network (an open copy uses it to see it is out of date).
+  if (new URL(req.url).pathname.endsWith('/version.json')) return;
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req)
