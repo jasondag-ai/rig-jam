@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GAG_TRIGGERS, PREVIEWS } from './gag-triggers.ts';
-import { ASPEN_BOX, BIG_PUDDLE, LANE_ASPEN, MANN_SIGN_X, MANN_TREES, SCENE, SCENE_MIN, mannFront, mannScene, sceneDef, sceneGeom, skyGeom, tapBox, toScreen, wave3Still } from './scene-stage.ts';
-import { WAVE3 } from './wave3.ts';
+import { BALE_BOX, ASPEN_BOX, BIG_PUDDLE, LANE_ASPEN, MANN_SIGN_X, MANN_TREES, SCENE, SCENE_MIN, mannFront, mannScene, sceneDef, sceneGeom, skyGeom, tapBox, toScreen, wave3Still } from './scene-stage.ts';
+import { BALE_AT, WAVE3, baleAtRest } from './wave3.ts';
 import { LOG_ENTRIES } from './wildlife-log.ts';
 
 type Gag = { name: string; dur: number; still: number; beats: [number, string, string][]; lead: (E: number) => number; tail: (E: number) => number; render: (t: number, E: number) => string; over?: (t: number, E: number) => string };
@@ -172,5 +172,70 @@ describe('Mannville gags: triggers, previews and the log', () => {
       expect(still.length).toBeGreaterThan(1500);
       expect(still).not.toMatch(/Gradient|filter=/);
     }
+  });
+});
+
+describe('the four Bakken gags (ported: wave3.ts) and the standard Bakken scene', () => {
+  const BAKKEN = ['tumbleweed', 'pdogs', 'bale', 'cloud'];
+  const xs = (svg: string) => [...svg.matchAll(/translate\((-?[\d.]+) -?[\d.]+\) scale\(/g)].map((m) => Number(m[1]));
+
+  it("keep the reference's beats and lengths", () => {
+    expect(BAKKEN.map((k) => [gags[k].name, gags[k].dur, gags[k].beats.length])).toEqual([['Tumbleweed', 11.2, 8], ['Prairie Dog Wave', 10.2, 12], ['Runaway Bale', 11.8, 10], ['Personal Cloud', 12.4, 11]]);
+    expect(gags.tumbleweed.beats.map((b) => b[0])).toEqual([0, 2.2, 3.2, 4.2, 5.0, 6.0, 7.8, 9.5]);
+    expect(gags.pdogs.beats.map((b) => b[0])).toEqual([0, 0.6, 1.6, 1.8, 3.3, 4.2, 5.0, 5.5, 6.8, 7.3, 7.8, 8.4]);
+    expect(gags.bale.beats.map((b) => b[0])).toEqual([0, 0.5, 1.0, 3.4, 4.0, 6.6, 7.2, 7.6, 8.2, 9.0]);
+    expect(gags.cloud.beats.map((b) => b[0])).toEqual([0, 2.3, 3.4, 4.4, 5.2, 6.0, 6.4, 8.0, 8.6, 9.8, 10.2]);
+  });
+
+  it('the round bale is permanent scenery where the reference has it, and the Runaway Bale starts and ends with it exactly there', () => {
+    expect(BALE_AT).toEqual({ x: 352, y: 124, r: 27 });
+    expect(BALE_BOX).toEqual({ x: 325, y: 97, w: 54, h: 54 });
+    for (const E of [0, 75, 172]) {
+      const g = gags.bale;
+      // Its first and last frames draw the bale just as the scenery does, and nobody else.
+      expect(g.render(0, E)).toBe(baleAtRest());
+      expect(g.render(g.dur + g.tail(E), E)).toBe(baleAtRest());
+      expect(g.lead(E)).toBe(0);
+    }
+    const b = gags.bale as unknown as { bx: (t: number, E: number) => number; rx: (t: number, E: number) => number; swap: (E: number) => number };
+    // The two of them are out of sight on the right before they come back in on the left, however wide the screen.
+    for (const E of [0, 60]) {
+      const t = b.swap(E);
+      expect(b.bx(t - 0.03, E)).toBeGreaterThan(390 + E + 27);
+      expect(b.rx(t - 0.03, E)).toBeGreaterThan(390 + E + 12);
+      expect(b.bx(t + 0.001, E)).toBeLessThan(-E - 27);
+    }
+    expect(b.bx(6.6, 0)).toBe(344);
+    expect(b.bx(9, 0)).toBe(352);
+  });
+
+  it.each(BAKKEN.filter((k) => k !== 'bale'))('%s: nothing is in view on its first or its last frame, at every strip size', (k) => {
+    for (const E of [0, 75, 172]) {
+      const g = gags[k];
+      for (const t of [-g.lead(E), g.dur + g.tail(E)]) {
+        const s = g.render(t, E);
+        expect(s, `${k} ${E} ${t}`).not.toMatch(/NaN|undefined|<text/);
+        for (const x of xs(s)) expect(x <= -E - 12 || x >= 390 + E + 12, `${k} E ${E} t ${t.toFixed(2)}: something at x ${x}`).toBe(true);
+      }
+    }
+  });
+
+  it('the prairie dogs leave plain prairie: no mound before the first dog digs or after the last one has gone', () => {
+    expect(gags.pdogs.render(0, 0)).toBe('');
+    expect(gags.pdogs.render(0.3, 0)).toBe('');
+    expect(gags.pdogs.render(10.2, 0)).toBe('');
+    expect(gags.pdogs.render(2.4, 0)).toContain('clip-path="url(#pd0)"');
+    expect(gags.pdogs.lead(100) + gags.pdogs.tail(100)).toBe(0);
+  });
+
+  it('triggers, previews, log cards', () => {
+    expect(GAG_TRIGGERS.tumbleweed).toEqual({ region: 'bakken', fullLength: true });
+    expect(GAG_TRIGGERS.pdogs).toEqual({ region: 'bakken', sameSpotTaps: 3, withinPx: 24 });
+    expect(GAG_TRIGGERS.bale).toEqual({ region: 'bakken', bottomBermBump: true, withinCells: 1 });
+    expect(GAG_TRIGGERS.cloud).toEqual({ region: 'bakken', skyTaps: 3 });
+    for (const name of BAKKEN) expect(PREVIEWS[name]).toMatchObject({ gag: name, region: 'bakken' });
+    const by = Object.fromEntries(LOG_ENTRIES.map((e) => [e.id, e]));
+    expect(BAKKEN.map((k) => by[k].name)).toEqual(['Tumbleweed', 'Prairie Dog Wave', 'Runaway Bale', 'Personal Cloud']);
+    for (const [k, t] of [['tumbleweed', 7.4], ['pdogs', 7.4], ['bale', 5.4], ['cloud', 9.0]] as const) expect(wave3Still(k, t, [0, 0, 100, 80]).length).toBeGreaterThan(1500);
   });
 });

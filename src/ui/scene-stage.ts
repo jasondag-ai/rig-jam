@@ -12,7 +12,7 @@ import type { EggHost } from './egg-gags.ts';
 import type { Season } from './trees.ts';
 import { BOX, sizeFor, treeArt, type Species } from './trees.ts';
 import type { TimelineDef } from './strip-gags.ts';
-import { MUSKEG, WAVE3, rng, tuft } from './wave3.ts';
+import { BALE_AT, MUSKEG, WAVE3, baleAtRest, rng, tuft } from './wave3.ts';
 
 /** The reference's strip, in its own units. */
 export const SCENE = { w: 390, top: 30, floor: 168, ground: 150 } as const;
@@ -167,6 +167,60 @@ export class MannProp {
   }
 }
 
+// ---------- The standard Bakken scene ----------
+
+/** The round bale's box in the world (the reference's spot: x 352, standing on the lane's ground line). */
+export const BALE_BOX = { x: BALE_AT.x - BALE_AT.r, y: BALE_AT.y - BALE_AT.r, w: BALE_AT.r * 2, h: BALE_AT.r * 2 };
+
+/**
+ * THE STANDARD BAKKEN SCENE: the round bale, permanent scenery in the same spot of every Bakken
+ * level's bottom strip. One layer that takes no touches. The Runaway Bale gag draws the bale
+ * itself while it plays (`show(false)` meanwhile), and leaves it exactly where it stood.
+ */
+export class BakkenProp {
+  readonly layer: HTMLElement;
+  private host: EggHost;
+  private g: SceneGeom | null = null;
+
+  constructor(host: EggHost) {
+    this.host = host;
+    this.layer = document.createElement('div');
+    this.layer.className = 'scene-layer puppet-layer scene-prop bakken-layer';
+    this.layer.setAttribute('aria-hidden', 'true');
+    this.layer.innerHTML = `<svg class="scene-svg" preserveAspectRatio="none">${baleAtRest()}</svg>`;
+    (host.mount ?? ((el: HTMLElement) => host.screen.append(el)))(this.layer);
+    this.layout();
+  }
+
+  geom(): SceneGeom {
+    return (this.g ??= sceneGeom(this.host.screen.clientWidth, this.host.strip()));
+  }
+
+  layout(): void {
+    this.g = sceneGeom(this.host.screen.clientWidth, this.host.strip());
+    place(this.layer.firstElementChild as SVGSVGElement, this.g);
+    // (On a strip with no room for the scene there is no bale: it would stand on the berm.)
+    this.layer.style.display = this.g.s >= 0.3 ? '' : 'none';
+  }
+
+  /** The bale's box on the screen (px from the screen's left and top). */
+  box(): { x: number; y: number; width: number; height: number } {
+    const g = this.geom(), a = toScreen(g, BALE_BOX.x, BALE_BOX.y);
+    return { x: a.x, y: a.y, width: BALE_BOX.w * g.s, height: BALE_BOX.h * g.s };
+  }
+
+  /** The walking lane across the strip (screen px): the scenery keeps its trees out of it, so nobody walks through one. */
+  lane(): { x: number; y: number; width: number; height: number } {
+    const g = this.geom(), top = toScreen(g, 0, SCENE.ground - 62).y;
+    return { x: 0, y: top, width: g.screenW, height: g.strip.bottom - top };
+  }
+
+  /** The scenery's own bale, shown or (while the gag draws it) hidden. */
+  show(on: boolean): void {
+    (this.layer.firstElementChild as SVGSVGElement).style.visibility = on ? '' : 'hidden';
+  }
+}
+
 /** Puts a scene's SVG over the strip, showing the world at the strip's scale. */
 function place(svg: SVGSVGElement, g: SceneGeom): void {
   Object.assign(svg.style, { position: 'absolute', left: '0px', top: `${g.strip.top}px`, width: `${g.screenW}px`, height: `${g.strip.bottom - g.strip.top}px` });
@@ -184,7 +238,7 @@ const gagOf = (key: string) => (WAVE3 as Record<string, Wave3>)[key];
  * touches. The clock runs from `lead` seconds before the reference's t = 0 (its walk-in from the
  * screen's real edge) to `tail` seconds after its end; every beat keeps the reference's time.
  */
-export function sceneDef(name: string, key: string, geom: () => SceneGeom | null): TimelineDef {
+export function sceneDef(name: string, key: string, geom: () => SceneGeom | null, opts: { prop?: { show: (on: boolean) => void }; line?: string } = {}): TimelineDef {
   const gag = gagOf(key);
   const lead = () => gag.lead(geom()?.E ?? 0);
   return {
@@ -211,6 +265,17 @@ export function sceneDef(name: string, key: string, geom: () => SceneGeom | null
       const main = svgIn(layer('scene-gag'));
       const over = gag.over ? svgIn(layer('scene-gag scene-over')) : null;
       let last = '', lastOver = '';
+      // A prop the gag takes over (the bale): the gag draws it while it plays, in the very same place.
+      opts.prop?.show(false);
+      // A line said in the game's own bubble: its tail follows the speaker (an anchor moved every frame).
+      const said = (gag as Wave3 & { line?: { from: number; to: number }; mouth?: (t: number, E: number) => { x: number; y: number } }).line;
+      const mouth = (gag as Wave3 & { mouth?: (t: number, E: number) => { x: number; y: number } }).mouth?.bind(gag);
+      let anchor: HTMLElement | null = null;
+      if (opts.line && said && mouth) {
+        anchor = document.createElement('i');
+        Object.assign(anchor.style, { position: 'absolute', width: '0', height: '0' });
+        main.ownerSVGElement!.parentElement!.append(anchor);
+      }
       return {
         apply(t) {
           const now = gag.render(t - l, E);
@@ -219,7 +284,14 @@ export function sceneDef(name: string, key: string, geom: () => SceneGeom | null
             const o = gag.over!(t - l, E);
             if (o !== lastOver) over.innerHTML = lastOver = o;
           }
+          if (anchor && mouth) {
+            const at = toScreen(g, mouth(t - l, E).x, mouth(t - l, E).y);
+            anchor.style.left = `${at.x}px`;
+            anchor.style.top = `${at.y}px`;
+          }
         },
+        ...(anchor && said ? { bubble: { from: l + said.from, to: l + said.to, text: opts.line!, at: () => toScreen(g, mouth!(said.from, E).x, mouth!(said.from, E).y), who: () => anchor } } : {}),
+        done: () => opts.prop?.show(true),
       };
     },
   };

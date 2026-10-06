@@ -3890,6 +3890,9 @@ svg.dig-tunnel {
   overflow: hidden;
   pointer-events: none;
 }
+/* (A gag may reach over its strip's edge: the personal cloud floats right up at the berm's foot.) */
+.scene-gag svg.scene-svg { overflow: visible; }
+.strip-layer.aurora-layer svg.scene-svg { overflow: hidden; }
 
 /* The lane aspen, tapped: a small shake about its foot. */
 .scene-front svg.scene-svg.shake {
