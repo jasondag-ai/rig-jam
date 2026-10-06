@@ -38,6 +38,12 @@ export interface SceneGeom {
 
 /** How the reference's strip lies in the game's bottom strip (see the top of this file). */
 export function sceneGeom(screenW: number, strip: { top: number; bottom: number }): SceneGeom {
+  // A screen that is not laid out yet (0 wide, or a strip nobody has measured): the reference's own
+  // view at scale 1, which does not fit, so nothing plays and NO NaN is ever written to a viewBox.
+  if (!(screenW > 0) || !Number.isFinite(strip.top) || !Number.isFinite(strip.bottom)) {
+    const worldH = SCENE.floor - SCENE.top;
+    return { s: 1, left: 0, worldW: SCENE.w, worldH, top: SCENE.top, E: 0, strip: { top: 0, bottom: 0 }, screenW: 0, fits: false };
+  }
   const h = Math.max(1, strip.bottom - strip.top);
   const s = Math.min(screenW / SCENE.w, h / (SCENE.floor - SCENE.top));
   const worldW = screenW / s, worldH = h / s;
@@ -224,7 +230,8 @@ export class BakkenProp {
 /** Puts a scene's SVG over the strip, showing the world at the strip's scale. */
 function place(svg: SVGSVGElement, g: SceneGeom): void {
   Object.assign(svg.style, { position: 'absolute', left: '0px', top: `${g.strip.top}px`, width: `${g.screenW}px`, height: `${g.strip.bottom - g.strip.top}px` });
-  svg.setAttribute('viewBox', viewBox(g));
+  // (Never a NaN or an empty view: a scene with no screen yet keeps the view it had.)
+  if ([g.left, g.top, g.worldW, g.worldH].every(Number.isFinite) && g.worldW > 0 && g.worldH > 0) svg.setAttribute('viewBox', viewBox(g));
 }
 
 // ---------- Playing a ported gag ----------
@@ -305,6 +312,10 @@ export const SKY_SCENE = { w: 390, top: 8, floor: 144 } as const;
 
 /** How the reference's sky band lies in the game's (HUD's foot to the board's top). */
 export function skyGeom(screenW: number, sky: { top: number; height: number }): SceneGeom {
+  if (!(screenW > 0) || !Number.isFinite(sky.top) || !Number.isFinite(sky.height)) {
+    const worldH = SKY_SCENE.floor - SKY_SCENE.top;
+    return { s: 1, left: 0, worldW: SKY_SCENE.w, worldH, top: SKY_SCENE.top, E: 0, strip: { top: 0, bottom: 0 }, screenW: 0, fits: false };
+  }
   const h = Math.max(1, sky.height);
   const s = Math.min(screenW / SKY_SCENE.w, h / (SKY_SCENE.floor - SKY_SCENE.top));
   const worldW = screenW / s, worldH = h / s;

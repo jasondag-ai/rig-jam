@@ -64,7 +64,19 @@ export function showTutorial(host: HTMLElement): () => void {
     el.querySelectorAll('.t-card').forEach((c, k) => c.classList.toggle('on', k === at));
     el.querySelector<HTMLElement>('[data-t="next"]')!.textContent = at === n - 1 ? 'Got it' : 'Next';
   };
-  const close = () => el.remove();
+  const onKey = (e: KeyboardEvent) => {
+    if (!el.isConnected) document.removeEventListener('keydown', onKey);
+    else if (e.key === 'Escape') close();
+  };
+  const close = () => {
+    document.removeEventListener('keydown', onKey);
+    el.remove();
+  };
+  // Escape closes it, and so does a tap on the dimmed backdrop round the card (never one on the card).
+  document.addEventListener('keydown', onKey);
+  onTap(el, '.overlay.tutorial', (b, e) => {
+    if (e.target === b) close();
+  });
   onTap(el, '[data-t]', (b) => {
     if (b.dataset.t === 'close' || at === n - 1) close();
     else show(at + 1);

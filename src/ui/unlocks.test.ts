@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } from './unlocks.ts';
+import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen, nextField } from './unlocks.ts';
 
 const region = (id: string, name: string) => ({ id, name, levels: Array.from({ length: 10 }, (_, i) => ({ id: `${id}${i + 1}` })) });
 const R = [region('c', 'Cardium'), region('m', 'Montney'), region('v', 'Duvernay')];
@@ -57,5 +57,17 @@ describe('NEW LEASE OPEN banner', () => {
     expect(newlyOpened(R, clears('c', 4), [])).toEqual([]);
     expect(newlyOpened(R, clears('c', 5), []).map((r) => r.name)).toEqual(['Montney']);
     expect(newlyOpened(R, clears('c', 5), ['m'])).toEqual([]);
+  });
+
+  it('after the last level of a field: on to the next field if it is open, else what would open it', () => {
+    const regions = [
+      { id: 'a', name: 'Cardium', levels: Array.from({ length: 10 }, (_, i) => ({ id: `a${i}` })) },
+      { id: 'b', name: 'Montney', levels: Array.from({ length: 10 }, (_, i) => ({ id: `b${i}` })) },
+    ];
+    const best = (n: number) => Object.fromEntries(regions[0].levels.slice(0, n).map((l) => [l.id, 3]));
+    expect(nextField(regions, 0, best(10), false)).toEqual({ open: true, index: 1, name: 'Montney', label: 'Next field: Montney' });
+    expect(nextField(regions, 0, best(3), false)).toEqual({ open: false, text: 'Clear 2 more in Cardium to open Montney' });
+    expect(nextField(regions, 0, {}, true)).toMatchObject({ open: true, label: 'Next field: Montney' });
+    expect(nextField(regions, 1, best(10), false)).toBeNull();
   });
 });

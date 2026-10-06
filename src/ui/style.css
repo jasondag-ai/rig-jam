@@ -328,6 +328,10 @@ input,
   font-weight: 700;
 }
 
+/* A window wide enough for every tab at full size (a desktop): all of them side by side, no swipe. */
+.regions.all-fit .regions-track { overflow-x: hidden; scroll-snap-type: none; }
+.regions.all-fit .region-tab { flex: 1 1 0; }
+
 .region-tab[aria-selected='true'] {
   background: var(--accent);
   box-shadow: inset 0 0 0 2.5px var(--outline), inset 0 -4px 0 rgba(0, 0, 0, 0.15);
@@ -1554,9 +1558,10 @@ canvas.lease-detail {
   padding-right: 108px;
 }
 
+/* (8 px between rows: with the feedback row and the version, Settings must still fit 844 px with no scroll.) */
 .settings .step {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .settings .step[hidden] {
@@ -2077,6 +2082,15 @@ canvas.lease-detail {
 }
 
 /* Music style picker: the styles side by side, the chosen one lit. */
+/* A small label over the three style buttons, so they are not three unexplained words. */
+.styles-label {
+  margin: 2px 2px -6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-dim);
+  text-align: left;
+}
+
 .music-styles {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -3219,7 +3233,7 @@ img.hat { width: 100%; height: auto; }
   text-shadow: none;
   order: 2;
 }
-.settings .step:not(.confirm) { display: grid; }
+.settings .step:not(.confirm):not([hidden]) { display: grid; }
 .settings .btn[data-act='close'] { --btn: #2fcf5f; order: 1; }
 
 /* Undo wears a neutral stone button (blue belongs to the blue trucks and gates). Disabled, it is
@@ -4139,8 +4153,7 @@ svg.dig-tunnel {
 }
 
 /* ---------- Beta readiness (Job O) ---------- */
-/* A hidden Settings step stays hidden (the Credits step was showing under the others). */
-.settings .step[hidden] { display: none !important; }
+/* (A hidden Settings step stays hidden: the rule that lays the steps out, `.settings .step:not(.confirm):not([hidden])`, leaves hidden ones alone.) */
 
 /* The update bar (update.ts): one button across the top of the screen. Not over a level being
    played: it waits on the level list. */
@@ -4169,8 +4182,8 @@ body:has(.screen.cover) .update-bar { display: none; }
 /* Settings: the feedback row and the version at the very bottom. */
 .settings .feedback {
   display: grid;
-  gap: 6px;
-  padding: 10px 12px 12px;
+  gap: 4px;
+  padding: 8px 12px 10px;
   border: 3px solid var(--outline);
   border-radius: 14px;
   background: #fff;
@@ -4191,3 +4204,30 @@ body:has(.screen.cover) .update-bar { display: none; }
 .settings .feedback small { font-size: 13px; line-height: 1.3; color: var(--ink-dim); }
 .settings .card .feedback button.btn { min-height: 48px; padding-top: 8px; padding-bottom: 10px; font-size: 16px; }
 .settings .app-version { order: 9; margin: 2px 0 0; font-size: 13px; font-weight: 600; color: var(--ink-dim); text-align: center; -webkit-user-select: text; user-select: text; }
+
+/* ---------- The one-time "Tap for sound" chip on the first win card (sound-nudge.ts) ---------- */
+.overlay.win .sound-nudge {
+  position: absolute;
+  top: max(8px, var(--safe-top));
+  left: max(10px, var(--safe-left));
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 4px 14px 4px 8px;
+  border: 2.5px solid var(--outline);
+  border-radius: 999px;
+  background: var(--cream);
+  box-shadow: 0 3px 0 var(--outline);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  touch-action: manipulation;
+  animation: pop 220ms ease-out;
+}
+.overlay.win .sound-nudge img { width: 26px; height: 26px; }
+@media (prefers-reduced-motion: reduce) {
+  .overlay.win .sound-nudge { animation: none; }
+}

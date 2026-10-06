@@ -37,6 +37,19 @@ export function regionLockText(regions: RegionLike[], index: number, best: Best)
   return `Clear ${left} more in ${prev.name} to unlock`;
 }
 
+/**
+ * After the LAST level of region `index` is cleared, where the win card points: the next region
+ * if it is open ("Next field: Montney"), else how many more levels here would open it; null after
+ * the last region of all.
+ */
+export function nextField(regions: RegionLike[], index: number, best: Best, demo: boolean): { open: true; index: number; name: string; label: string } | { open: false; text: string } | null {
+  const next = regions[index + 1];
+  if (!next) return null;
+  if (regionOpen(regions, index + 1, best, demo)) return { open: true, index: index + 1, name: next.name, label: `Next field: ${next.name}` };
+  const left = Math.max(1, REGION_UNLOCK - cleared(best, regions[index]));
+  return { open: false, text: `Clear ${left} more in ${regions[index].name} to open ${next.name}` };
+}
+
 /** Text for a locked level. */
 export function levelLockText(regions: RegionLike[], region: number, level: number, best: Best): string {
   if (!regionEarned(regions, region, best)) return regionLockText(regions, region, best);

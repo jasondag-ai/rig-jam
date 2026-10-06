@@ -617,7 +617,7 @@ something, give exact clicks and one command at a time.
 
 ## Cover (title screen)
 - `src/ui/cover.ts`: shown on every app open (never between levels). Hero image `public/cover.webp`
-  (1080x1920, under 300 KB, preloaded in index.html) fills the screen (`object-fit: cover`);
+  (1080x1920, under 300 KB; NOT preloaded in index.html any more: the preload went unused whenever the cover is skipped, and the browser warned) fills the screen (`object-fit: cover`);
   "RUSH HOUR RIGS" slams down into the sky with a bounce and a dust puff; 8s push-in; two soft
   clouds drift (blurred white puffs with a pale blue underside at about half opacity, matched to the
   image's own clouds; on wide screens they sit up in the thin strip of sky); TAP TO START pulses. One tap anywhere (`onTap`, no ghost click) opens the level list. If the
@@ -862,6 +862,30 @@ something, give exact clicks and one command at a time.
   built files (a new build replaces the old by itself) and `CACHE_GENERATION` (bump it to make
   every phone drop its cache). Not
   registered in dev.
+
+## Playthrough quick wins (Job R, Oct 6)
+- SETTINGS: a hidden step stays hidden because the rule that lays the steps out is
+  `.settings .step:not(.confirm):not([hidden])` (Credits used to show on every visit). The whole
+  panel, down to the version line, is on a 390x844 screen without scrolling (8 px between rows; the
+  feedback row is compact): keep it so when adding a row. A small "Music style" label
+  (`.styles-label`) sits over the three style buttons.
+- `sceneGeom` / `skyGeom` (scene-stage.ts) return a plain view that does not fit when the screen is
+  not laid out yet (0 wide, or a strip nobody measured), and `place` never writes a viewBox that
+  is not finite: NO NaN viewBox, a clean console on all 50 levels.
+- A FIELD'S LAST LEVEL (`nextField` in unlocks.ts, `GameViewHandlers.onNextField`): the win card's
+  primary button is "Next field: <name>" (it opens that field's level list) when the next region
+  is open; if it is not, the card says "Clear N more in <region> to open <next>"; after the last
+  region, the old "That was the last level in this field."
+- THE HOW-TO closes with Escape and with a tap on its dimmed backdrop (never one on its card).
+- REGION TABS: where every tab fits side by side at full size (`allFit`, `TAB_MIN` 96 px: a
+  desktop window, five tabs in the 528 px bar) they are all shown and nothing swipes
+  (`.regions.all-fit`); on phones the bar stays the swipeable strip.
+- "TAP FOR SOUND" (`src/audio/sound-nudge.ts`, `GameView.soundNudge`): one small chip in the top
+  corner of the FIRST win card of a player whose sound is all off (never in the card's column); a
+  tap turns effects and music on. Offered once per phone (`rush-hour-rigs-sound-nudge`). Automated
+  browsers skip it unless `?soundnudge=1`; `?soundnudge=0` never.
+- The Hint button's count reads up to 9, then "9+" (`hintCountText`).
+- `npm run test:e2e:quick` checks all of the above (start the dev server first).
 
 ## Stack
 - TypeScript + Vite, DOM + CSS transforms, Pointer Events. No game engine, no frameworks. GSAP (free

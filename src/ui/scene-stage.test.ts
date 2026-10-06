@@ -11,6 +11,16 @@ const MANN = ['muskeg', 'catTrain', 'beaver', 'aurora'];
 const STRIPS: [number, { top: number; bottom: number }][] = [[390, { top: 587, bottom: 737 }], [390, { top: 537, bottom: 637 }], [375, { top: 489, bottom: 560 }], [430, { top: 652, bottom: 825 }]];
 
 describe('the stage for gag wave 3', () => {
+  it('a screen that is not laid out yet (0 wide) gives a plain view that does not fit: never a NaN', () => {
+    for (const g of [sceneGeom(0, { top: 0, bottom: 0 }), sceneGeom(0, { top: 500, bottom: 600 }), sceneGeom(NaN, { top: 0, bottom: 100 }), sceneGeom(390, { top: NaN, bottom: NaN }), skyGeom(0, { top: 0, height: 0 }), skyGeom(0, { top: 60, height: 120 }), skyGeom(390, { top: NaN, height: NaN })]) {
+      expect(g.fits).toBe(false);
+      for (const v of [g.s, g.left, g.top, g.worldW, g.worldH, g.E]) expect(Number.isFinite(v)).toBe(true);
+      expect(g.worldW).toBeGreaterThan(0);
+      expect(g.worldH).toBeGreaterThan(0);
+      expect(JSON.stringify(toScreen(g, 100, 100))).not.toMatch(/NaN|null/);
+    }
+  });
+
   it('shows the reference strip at the scale the strip allows, centred, standing on the strip floor', () => {
     const g = sceneGeom(390, { top: 587, bottom: 737 });
     expect(g.s).toBe(1);

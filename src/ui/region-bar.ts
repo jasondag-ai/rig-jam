@@ -8,6 +8,15 @@ import { regionOpen, type RegionLike } from './unlocks.ts';
 /** How many tabs show at once: two whole ones and about a third of the next (the peek). */
 export const TABS_IN_VIEW = 2.34;
 
+/** A tab is never squeezed narrower than this (px): the width "Mannville" and its hard hats need at full size. */
+export const TAB_MIN = 96;
+/**
+ * Do ALL the tabs fit side by side at full size (a desktop window)? Then they are all shown, with
+ * no swipe. On a phone they never do, and the bar stays a swipeable strip. `viewW` is the strip's
+ * width on screen, `gap` the space between tabs, `pad` the strip's padding each side.
+ */
+export const allFit = (count: number, viewW: number, gap = 6, pad = 5): boolean => count > 0 && viewW >= count * TAB_MIN + (count - 1) * gap + pad * 2;
+
 /** The furthest region the player has unlocked (0 = the first, always open). */
 export function furthestOpen(regions: RegionLike[], best: Record<string, number>, demo: boolean): number {
   let last = 0;
@@ -62,6 +71,8 @@ export function runRegionBar(frame: HTMLElement, track: HTMLElement, active: num
   };
   const place = () => {
     if (!tabs.length || !track.clientWidth) return;
+    // A window wide enough for every tab at full size shows them all: nothing to swipe.
+    frame.classList.toggle('all-fit', allFit(tabs.length, frame.clientWidth));
     track.scrollLeft = barScroll(tabs.map((t) => t.offsetLeft), tabs[0].offsetWidth, track.clientWidth, track.scrollWidth - track.clientWidth, active, remembered);
     remembered = track.scrollLeft;
     fades();
@@ -73,6 +84,8 @@ export function runRegionBar(frame: HTMLElement, track: HTMLElement, active: num
   // In the page now or later: place it once it has a size.
   if (track.isConnected && track.clientWidth) place();
   else requestAnimationFrame(place);
+  // (A desktop window dragged wider or narrower: all the tabs, or the strip again.)
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(place).observe(frame);
   return {
     tapped: () => {
       // (No finger went down: a keyboard or a screen reader pressed the tab. That always counts.)

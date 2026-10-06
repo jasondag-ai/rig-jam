@@ -12,7 +12,8 @@ import { copyText } from './clipboard.ts';
 import { shareText, streak, zeroIncident } from './daily.ts';
 import { hardHats, loadProgress, type Progress, recordDailyClear, recordWin, saveProgress, spendHint } from './progress.ts';
 import { streakSignHtml } from './sign.ts';
-import { sound } from '../audio/engine.ts';
+import { audio, sound } from '../audio/engine.ts';
+import { NUDGE_TEXT, markNudgeOffered, nudgeDue, nudgeOffered } from '../audio/sound-nudge.ts';
 import { toast } from './toast.ts';
 import { uiImg } from './ui-art.ts';
 import { preloadSprites } from './sprites.ts';
@@ -53,11 +54,16 @@ const TREE_RISE = 70;
 const MOON_ROOM = 40;
 /** The least sky band (px, HUD's foot to the board) in which Mannville's moon is always shown: about what Aurora Howl needs. */
 const AURORA_SKY = 62;
+/** The hint button's count: up to 9, then "9+" (it has room for one figure). */
+export const hintCountText = (hints: number): string => (hints > 9 ? '9+' : String(Math.max(0, hints)));
+
 /** The perfect-solve confetti: how long the whole burst lasts, and how many pieces. */
 
 export interface GameViewHandlers {
   onLevels: () => void;
   onNext: (() => void) | null;
+  /** Only on the last level of a field: where the win card points next (a button to the next field, or what would open it). */
+  onNextField?: (() => { label: string; go: () => void } | { note: string } | null) | null;
 }
 
 /** Set when this game is today's Daily Pad. */
@@ -466,6 +472,35 @@ export class GameView {
     }
   }
 
+  /**
+   * The one-time "Tap for sound" chip (sound-nudge.ts): on the first win card of a player whose
+   * sound is all off, in the overlay's top corner (never in the card's column, which must fit a
+   * short phone with no scroll). A tap turns the effects and the music on; it is never offered again.
+   */
+  private soundNudge(): void {
+    if (!nudgeDue(audio.settings, nudgeOffered(), location.search, navigator.webdriver)) return;
+    markNudgeOffered();
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'sound-nudge';
+    chip.innerHTML = `${uiImg('icon_speaker_off', 'spk')}<span>${NUDGE_TEXT}</span>`;
+    this.winEl.append(chip);
+    onTap(this.winEl, '.sound-nudge', () => {
+      audio.setSettings({ sfx: true, music: true });
+      chip.remove();
+    });
+  }
+
+  private nextFieldGo: (() => void) | null = null;
+  /** The win card's last line on a field's last level: "Next field: <name>", or what would open it, or a plain well done. */
+  private lastOfField(): string {
+    const to = this.handlers.onNextField?.() ?? null;
+    this.nextFieldGo = to && 'go' in to ? to.go : null;
+    if (to && 'go' in to) return `<button class="btn primary next-field" data-act="field">${to.label} ›</button>`;
+    if (to) return `<p class="verdict next-field-note">${to.note}</p>`;
+    return '<p class="verdict">That was the last level in this field. Nice work!</p>';
+  }
+
   private act(el: HTMLElement): void {
     const act = el.dataset.act;
     if (act === 'levels') this.handlers.onLevels();
@@ -473,6 +508,7 @@ export class GameView {
     if (act === 'hint') this.onHint();
     if (act === 'restart') this.restart();
     if (act === 'next') this.handlers.onNext?.();
+    if (act === 'field') this.nextFieldGo?.();
     if (act === 'share') void this.share(el);
   }
 
@@ -913,7 +949,8 @@ export class GameView {
     this.undoBtn.disabled = !canUndo(this.state) || won;
     const hints = loadProgress().hints;
     if (this.hintStep === 1) this.hintBtn.textContent = 'Where?';
-    else this.hintBtn.innerHTML = `Hint <span class="count">${hints}</span>`;
+    // (The count never grows past one figure: more than nine reads "9+".)
+    else this.hintBtn.innerHTML = `Hint <span class="count" aria-label="${hints} left">${hintCountText(hints)}</span>`;
     this.hintBtn.disabled = won || this.hintStep === 2;
     this.hintBtn.classList.toggle('empty', hints === 0 && this.hintStep === 0);
   }
@@ -950,7 +987,7 @@ export class GameView {
       ? ''
       : this.handlers.onNext
         ? '<button class="btn primary" data-act="next">Next level ›</button>'
-        : '<p class="verdict">That was the last level in this field. Nice work!</p>';
+        : this.lastOfField();
 
     this.winMotion.forEach((t) => t.kill());
     this.winMotion = [];
@@ -982,6 +1019,7 @@ export class GameView {
     const tier = tierFor(moves, par);
     const perfect = moves <= par;
     this.winEl.hidden = false;
+    this.soundNudge();
     // Once the card is laid out: fit the medal's lettering to its ribbon.
     fitRibbon(this.winEl.querySelector<HTMLElement>('.zero-incident span'));
     const bossBox = this.winEl.querySelector<HTMLElement>('.company-man')!;

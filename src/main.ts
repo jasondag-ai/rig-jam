@@ -20,7 +20,7 @@ import { GameView } from './ui/game-view.ts';
 import { streakSignHtml } from './ui/sign.ts';
 import { hatsHtml } from './ui/hats.ts';
 import { hardHats, loadProgress, resetProgress, saveProgress } from './ui/progress.ts';
-import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } from './ui/unlocks.ts';
+import { levelLockText, levelOpen, newlyOpened, nextField, regionLockText, regionOpen } from './ui/unlocks.ts';
 import { onTap } from './ui/tap.ts';
 import { copyText } from './ui/clipboard.ts';
 import { feedbackEmail, feedbackNow, rememberLevel } from './ui/feedback.ts';
@@ -296,6 +296,13 @@ function showGame(regionIndex: number, index: number, force: GagId | null = null
     {
       onLevels: () => showLevels(regionIndex),
       onNext: hasNext ? () => showGame(regionIndex, index + 1) : null,
+      // The last level of a field: on to the next field if it is open (asked when the card is made, so this win counts).
+      onNextField: hasNext
+        ? null
+        : () => {
+            const p = loadProgress(), to = nextField(REGIONS, regionIndex, p.best, p.demo);
+            return !to ? null : to.open ? { label: to.label, go: () => showLevels(to.index) } : { note: to.text };
+          },
     },
     null,
     { regionId: region.id, levelIndex: index, force },
@@ -322,7 +329,8 @@ function showSettings(screen: HTMLElement): void {
           <span class="track" aria-hidden="true"><span class="knob"></span></span>
           <span class="switch-label">Music</span>
         </label>
-        <div class="music-styles" role="radiogroup" aria-label="Music style">
+        <p class="styles-label" id="styles-label">Music style</p>
+        <div class="music-styles" role="radiogroup" aria-labelledby="styles-label">
           ${MUSIC_STYLES.map(
             (m) => `<button class="btn style-pick" role="radio" data-style="${m.id}" aria-checked="${audio.settings.style === m.id}">${m.name}</button>`,
           ).join('')}
@@ -338,7 +346,7 @@ function showSettings(screen: HTMLElement): void {
           <span class="switch-label">Unlock everything (demo mode)</span>
         </label>
         <button class="btn quiet" data-act="credits">Credits</button>
-        ${feedbackEmail() ? `<div class="feedback"><b>Send feedback</b><span class="feedback-mail">${esc(feedbackEmail())}</span><button class="btn quiet" data-act="copy-feedback">Copy address and details</button><small>Paste it into an email. It adds your app version, phone and level.</small></div>` : ''}
+        ${feedbackEmail() ? `<div class="feedback"><b>Send feedback</b><span class="feedback-mail">${esc(feedbackEmail())}</span><button class="btn quiet" data-act="copy-feedback">Copy address and details</button><small>Adds your app version, phone and level.</small></div>` : ''}
         <button class="btn danger" data-act="reset">Reset progress</button>
         <button class="btn" data-act="close">Done</button>
         <p class="app-version">${esc(versionText())}</p>

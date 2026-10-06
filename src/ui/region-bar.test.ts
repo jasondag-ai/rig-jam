@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { REGIONS } from '../levels/regions.ts';
-import { SETTLE_MS, TABS_IN_VIEW, barScroll, fakeRegions, furthestOpen, moreEdges } from './region-bar.ts';
+import { SETTLE_MS, TABS_IN_VIEW, barScroll, fakeRegions, furthestOpen, moreEdges, TAB_MIN, allFit } from './region-bar.ts';
 
 // A bar like the real one at 390: a 348 px strip, tabs 144 wide with 6 px between them.
 const W = 144, GAP = 6, VIEW = 348;
@@ -61,5 +61,16 @@ describe('the region bar', () => {
     expect(fakeRegions(5, '?tabs=8')).toEqual(['Viking', 'Leduc', 'Nisku']);
     expect(fakeRegions(5, '?tabs=99')).toHaveLength(7);
     expect(SETTLE_MS).toBeGreaterThanOrEqual(100);
+  });
+
+  it('shows every tab with no swipe only where they all fit at full size (a desktop window), never on a phone', () => {
+    expect(TAB_MIN).toBeGreaterThanOrEqual(96);
+    // The level list is at most 560 px wide with 16 px margins: 528 px of bar.
+    expect(allFit(5, 528)).toBe(true);
+    expect(allFit(6, 528)).toBe(false);
+    expect(allFit(8, 528)).toBe(false);
+    for (const phone of [360, 375, 390, 430]) expect(allFit(5, phone - 32), `${phone}`).toBe(false);
+    expect(allFit(0, 528)).toBe(false);
+    expect(allFit(3, 343)).toBe(true);
   });
 });
