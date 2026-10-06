@@ -215,7 +215,7 @@ export function stageBox(screenW: number, strip: { top: number; bottom: number }
   return { x: STAGE.from * screenW, y: strip.top, width: (STAGE.to - STAGE.from) * screenW, height: strip.bottom - strip.top };
 }
 /** Where the lease sign stands on a Duvernay level: left of the stage (the sitting bear would cover it at its usual spot). */
-export const WINTER_SIGN_X = 0.3;
+export const WINTER_SIGN_X = 0.345;
 /** The patch of the strip a gag bush stands on (scenery keeps trees off it). */
 export function bushBox(x: number, screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
   const { ground, scale } = stripGeom(screenW, strip);
