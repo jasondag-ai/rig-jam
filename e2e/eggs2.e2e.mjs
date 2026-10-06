@@ -219,8 +219,8 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
           if (!s) return null;
           const r = s.getBoundingClientRect(), R = (q) => document.querySelector(q).getBoundingClientRect();
           const biffy = R('.biffy-layer svg.pup .root');
-          const trees = [...document.querySelectorAll('.scenery .sc')].filter((t) => { const q = t.getBoundingClientRect(); const m = q.width * 0.25; return q.left + m < r.right && q.right - m > r.left && q.top < r.bottom && q.bottom > r.bottom - 4; }).length;
-          return { ok: r.top >= R('.board').bottom && r.bottom <= R('.note').top + 1 && r.right <= innerWidth && r.left > biffy.right, trees, old: document.querySelectorAll('.scenery [data-anchor="bush"]').length, touch: getComputedStyle(document.querySelector('.bush-layer')).pointerEvents };
+          const trees = [...document.querySelectorAll('.scenery .sc, .depth-strip > .sc')].filter((t) => { const q = t.getBoundingClientRect(); const m = q.width * 0.25; return q.left + m < r.right && q.right - m > r.left && q.top < r.bottom && q.bottom > r.bottom - 4; }).length;
+          return { ok: r.top >= R('.board').bottom && r.bottom <= R('.note').top + 1 && r.right <= innerWidth && r.left > biffy.right, trees, old: document.querySelectorAll('[data-anchor="bush"]').length, touch: getComputedStyle(document.querySelector('.bush-layer')).pointerEvents };
         });
         check(b?.ok && b.old === 0 && b.touch === 'none' && b.trees === 0, `Duvernay ${li + 1}: his snowy bush stands in the strip, clear of the lease, the tip line, the biffy and the trees`);
         await context.close();
@@ -289,7 +289,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
           const s = document.querySelector('.cow-layer svg.pup .root');
           const r = s.getBoundingClientRect(), R = (q) => document.querySelector(q).getBoundingClientRect();
           const biffy = R('.biffy-layer svg.pup .root');
-          const trees = [...document.querySelectorAll('.scenery .sc')].filter((t) => { const q = t.getBoundingClientRect(); const m = q.width * 0.25; return q.left + m < r.right && q.right - m > r.left && q.top < r.bottom && q.bottom > r.bottom - 4; }).length;
+          const trees = [...document.querySelectorAll('.scenery .sc, .depth-strip > .sc')].filter((t) => { const q = t.getBoundingClientRect(); const m = q.width * 0.25; return q.left + m < r.right && q.right - m > r.left && q.top < r.bottom && q.bottom > r.bottom - 4; }).length;
           return { ok: r.top >= R('.board').bottom && r.bottom <= R('.note').top + 1 && r.bottom <= R('.controls').top && r.right <= innerWidth && r.left > biffy.right, trees, touch: getComputedStyle(document.querySelector('.cow-layer')).pointerEvents, html: document.querySelector('.cow-layer').innerHTML, w: r.width };
         });
         const a = await look();
@@ -376,7 +376,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
         // The board's own bush: the willow symbol the scenery draws from (summer leaves).
         const defs = document.querySelector('.tree-defs');
         const board = fills(defs.querySelector('symbol[id^="t-willow-summer-2"]') ?? document.createElement('i'));
-        return { gag: [...gag], board: [...board], stems: !!document.querySelector('.bush-layer svg.pup path[stroke="#5a3d22"]'), old: document.querySelectorAll('.scenery [data-anchor="bush"]').length };
+        return { gag: [...gag], board: [...board], stems: !!document.querySelector('.bush-layer svg.pup path[stroke="#5a3d22"]'), old: document.querySelectorAll('[data-anchor="bush"]').length };
       });
       const leaves = ['#6f9638', '#95bf4a', '#4f7426'];
       check(leaves.every((c) => b.gag.includes(c)) && b.stems && b.old === 0, `${r} ${li + 1}: olive green, light blobs, darker underside, brown stems (the board willow's own colours); it stands in for the scenery's bush`);
@@ -433,7 +433,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     }
     const { context, page } = await open(browser, { query: QUIET.replace('&off=lunch,sam,tongue', '&off=sam,tongue') + '&lunch=1', level: [region('cardium'), 5] });
     const geo = await page.evaluate(() => {
-      const m = document.querySelector('.scenery [data-anchor="mound"]').getBoundingClientRect(), note = document.querySelector('.note').getBoundingClientRect(), board = document.querySelector('.board').getBoundingClientRect();
+      const m = document.querySelector('[data-anchor="mound"]').getBoundingClientRect(), note = document.querySelector('.note').getBoundingClientRect(), board = document.querySelector('.board').getBoundingClientRect();
       return { base: m.top + (29.5 / 34) * m.height, heap: (m.width * 59) / 64, ground: note.top - 4, holeY: m.top + (17 / 34) * m.height, left: m.left, right: m.right, top: m.top, clear: m.top > board.bottom };
     });
     check(Math.abs(geo.base - geo.ground) < 1.5 && Math.abs(geo.heap - 0.13 * W * 0.92) < 2.5 && geo.clear, `the board's mound stands on the strip's ground line at the reference's size (heap ${geo.heap.toFixed(1)}px)`);

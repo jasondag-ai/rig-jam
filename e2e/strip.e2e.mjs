@@ -126,7 +126,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
           if (!s) return null;
           const r = s.querySelector('.root').getBoundingClientRect();
           const R = (q) => document.querySelector(q).getBoundingClientRect();
-          const trees = [...document.querySelectorAll('.scenery .sc, .scenery .mound')].filter((t) => { const q = t.getBoundingClientRect(); const m = q.width * 0.2; return q.left + m < r.right && q.right - m > r.left && q.top < r.bottom && q.bottom > r.top; }).length;
+          const trees = [...document.querySelectorAll('.scenery .sc, .scenery .mound, .depth-strip > .sc, .depth-strip > .mound')].filter((t) => { const q = t.getBoundingClientRect(); const m = q.width * 0.2; return q.left + m < r.right && q.right - m > r.left && q.top < r.bottom && q.bottom > r.top; }).length;
           return { n: document.querySelectorAll('.biffy-layer').length, h: r.height, gap: r.top - R('.board').bottom, left: r.left, clearGates: [...document.querySelectorAll('.gate')].every((g) => { const q = g.getBoundingClientRect(); return q.right <= r.left || q.left >= r.right || q.bottom <= r.top || q.top >= r.bottom; }), clearHud: r.top > R('.hud').bottom, clearBoard: r.top >= R('.board').bottom, clearNote: r.bottom <= R('.note').top + 1, clearButtons: r.bottom <= R('.controls').top, onScreen: r.left >= 0 && r.right <= innerWidth, trees, touch: getComputedStyle(document.querySelector('.biffy-layer')).pointerEvents, old: document.querySelectorAll('.gag.biffy').length };
         });
         check(!!b && b.n === 1 && b.onScreen && b.old === 0, `${REGIONS[ri].name} ${li + 1}: one biffy, always on screen (no old one that comes and goes)`);
@@ -305,7 +305,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       const clip = page.waitForFunction(() => [...document.querySelectorAll('.strip-layer[data-gag="nearMiss"]')].at(-1)?.dataset.beat === 'stretch', null, { timeout: 12000 }).then(() =>
         page.evaluate(() => {
           const layer = document.querySelector('.gopher-layer');
-          const mound = document.querySelector('.scenery [data-anchor="mound"]').getBoundingClientRect();
+          const mound = document.querySelector('[data-anchor="mound"]').getBoundingClientRect();
           const g = layer.querySelector('.root').getBoundingClientRect();
           const hole = mound.top + (17.5 / 34) * mound.height;
           return { cut: Math.abs(layer.getBoundingClientRect().bottom - hole) < 1.5 && getComputedStyle(layer).overflow === 'hidden', inHole: Math.abs(g.left + g.width / 2 - (mound.left + (33 / 64) * mound.width)) < 3, below: g.bottom > hole };
@@ -324,7 +324,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     }
     {
       const { context, page } = await open(browser, { level: [1, 0] });
-      check((await page.$$('.scenery [data-anchor="mound"]')).length === 0, 'Cardium only: no mound, no gopher, elsewhere');
+      check((await page.$$('[data-anchor="mound"]')).length === 0, 'Cardium only: no mound, no gopher, elsewhere');
       await context.close();
     }
 

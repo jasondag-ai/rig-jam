@@ -138,7 +138,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       const space = await page.evaluate(() => {
         const s = document.querySelector('.worker-layer svg.pup').getBoundingClientRect();
         const box = { l: s.left, r: s.left + s.width * 0.7, t: s.top + s.height * 0.07, b: s.top + s.height * 0.9 };
-        const trees = [...document.querySelectorAll('.scenery .sc, .scenery .mound')].filter((t) => { const r = t.getBoundingClientRect(); const w = r.width * 0.2; return r.left + w < box.r && r.right - w > box.l && r.top < box.b && r.bottom > box.t; }).length;
+        const trees = [...document.querySelectorAll('.scenery .sc, .scenery .mound, .depth-strip > .sc, .depth-strip > .mound')].filter((t) => { const r = t.getBoundingClientRect(); const w = r.width * 0.2; return r.left + w < box.r && r.right - w > box.l && r.top < box.b && r.bottom > box.t; }).length;
         const R = (q) => document.querySelector(q).getBoundingClientRect();
         return { trees, clearNote: box.b <= R('.note').top + 1, clearButtons: box.b <= R('.controls').top, belowBoard: box.t >= R('.board').bottom, touch: getComputedStyle(document.querySelector('.worker-layer')).pointerEvents, others: document.querySelectorAll('.magpie-layer, .moose-layer, .gag').length };
       });

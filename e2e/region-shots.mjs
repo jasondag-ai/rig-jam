@@ -39,7 +39,7 @@ for (const [i, region] of REGIONS.entries()) {
     await page.evaluate(() => {
       const s = document.querySelector('.screen.levels');
       const cs = getComputedStyle(s);
-      return { photos: s.querySelectorAll('.scenery img').length, theme: s.dataset.theme, sky: cs.getPropertyValue('--sky-top').trim(), ground: cs.getPropertyValue('--ground').trim(), trees: [...new Set([...s.querySelectorAll('.scenery .sc')].map((t) => t.getAttribute('class').replace('sc ', '')))].sort().join(','), mud: (cs.backgroundImage.match(/radial-gradient/g) ?? []).length, rows: [...s.querySelectorAll('.level-btn')].every((b) => getComputedStyle(b).backgroundColor !== 'rgba(0, 0, 0, 0)') };
+      return { photos: s.querySelectorAll('.scenery img').length, theme: s.dataset.theme, sky: cs.getPropertyValue('--sky-top').trim(), ground: cs.getPropertyValue('--ground').trim(), trees: [...new Set([...s.querySelectorAll('.scenery .sc, .depth-strip > .sc')].map((t) => t.getAttribute('class').replace('sc ', '')))].sort().join(','), mud: (cs.backgroundImage.match(/radial-gradient/g) ?? []).length, rows: [...s.querySelectorAll('.level-btn')].every((b) => getComputedStyle(b).backgroundColor !== 'rgba(0, 0, 0, 0)') };
     }),
   );
 }
