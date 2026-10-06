@@ -127,9 +127,14 @@ console.log('\nwebkit 390x844: a driver reacts while a gag is on screen');
   await drag(page, pick.mover, pick.step, 600);
   check(!(await bubble(page))?.witness, 'a move with no gag on screen: nobody remarks on anything');
   // (Three moves of this truck in all: a fourth back-and-forth would bring the landowner, and a remark about him.)
+  // (Waited for by what is on the page, not by the clock: the bump on the near-miss counter, Biffy A's
+  // layer, then the witness's own bubble. A busy machine made the old fixed waits miss now and then.)
+  const misses = () => page.$eval('.hud .misses b', (b) => Number(b.textContent));
   await drag(page, pick.bumper, 2, 200);
-  await page.waitForSelector('.strip-layer[data-gag="biffyA"]', { state: 'attached', timeout: 5000 });
-  await drag(page, pick.mover, -pick.step, 700);
+  if ((await misses()) === 0) await drag(page, pick.bumper, 2, 200);
+  await page.waitForSelector('.strip-layer[data-gag="biffyA"]', { state: 'attached', timeout: 9000 });
+  await drag(page, pick.mover, -pick.step, 200);
+  await page.waitForSelector('.bubble[data-witness]', { timeout: 4000 }).catch(() => {});
   const w = await bubble(page);
   check(w?.witness === 'biffyA' && w.text === WITNESS_LINES.biffyA, `with Biffy A on screen, a driver says "${w?.text}"`);
   // The driver of the truck NEAREST the biffy speaks (not simply the one just moved): the bubble is at that truck's cab.

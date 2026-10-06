@@ -622,8 +622,12 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     {
       // The default rules (no test flags for the cooldown): a bump brings Biffy A; three more blocked moves bring Sam while A is still on.
       const { context, page } = await open(browser, { query: '?cover=0&magpie=0&worker=0&moose=0&off=lunch,tongue', level: [region('cardium'), li] });
+      // (Not on a fixed wait: the bump is seen on the near-miss counter first, and tried once more if a
+      // busy machine swallowed the drag; then Biffy A has its 1.4 s wait for a second bump, and time to spare.)
+      const misses = () => page.$eval('.hud .misses b', (b) => Number(b.textContent));
       await drag(page, id, 2);
-      await page.waitForSelector('.strip-layer[data-gag="biffyA"]', { state: 'attached', timeout: 5000 });
+      if ((await misses()) === 0) await drag(page, id, 2);
+      await page.waitForSelector('.strip-layer[data-gag="biffyA"]', { state: 'attached', timeout: 9000 });
       const t0 = Date.now();
       await drag(page, id, 2, 150);
       await drag(page, id, 2, 150);
