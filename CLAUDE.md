@@ -88,7 +88,6 @@ something, give exact clicks and one command at a time.
   one piece changed at a time, kept if still sound and par did not drop, solver capped at
   `MAX_STATES` 2 million, done when par is in the window and it stands at least 4 trucks apart
   from the others). Mannville 1 was climbed from Mannville 2 (convoy and equipment taken off).
-  The region tabs: all five share ONE row (small lettering; a locked tab's padlock sits over its name).
 - Both go dark after 30 s idle like Montney and Duvernay (`GAG_TRIGGERS.night.themes`). A theme
   has a `season` (which drawing of the trees: `fall` is new in trees.ts) and a `trees` density.
   Their outside ground tiles (`grass-fall`, `grass-prairie`) are made from the summer grass by
@@ -471,6 +470,21 @@ something, give exact clicks and one command at a time.
   (the spring theme's cooler grey sky and dull wet grass, spring aspens, plus soft patches of the
   pad's mud and a few low-contrast puddles in the grass: `.screen.levels[data-theme='spring']`).
   Duvernay: snow. `node e2e/region-shots.mjs` checks and saves all three side by side.
+- REGION BAR (Job N; `src/ui/region-bar.ts` pure and tested, styles under "Region bar"): the region
+  tabs are ONE row of FULL-SIZE tabs (18 px names, the padlock beside the name) in a strip the
+  player swipes left and right, so regions can be added without shrinking anything: `.regions`
+  is the cream frame, `.regions-track` the scroller (native momentum, `scroll-snap-type: x
+  mandatory`, a snap at each tab, no scrollbar, `touch-action: pan-x` so a swipe on it never
+  moves the page). `TABS_IN_VIEW` (2.34, `--tabs`): two tabs show whole and the next peeks about
+  a third in at the right edge; an edge fades (`.more-left` / `.more-right`) where there is more
+  that way. On open the bar is scrolled so the region the player was last on is wholly in view
+  (with none remembered yet, the furthest one unlocked: `furthestOpen`), and it stays where it
+  was if that already shows it (`barScroll`). Locked tabs keep the padlock and can be swiped to;
+  a tap only shakes them. A SWIPE IS NEVER A TAP: `runRegionBar(...).tapped()` refuses a touch
+  if the bar moved under it, or was still moving when the finger went down (`SETTLE_MS`); a
+  keyboard or scripted press (no pointerdown) always counts. `?tabs=8` pads the bar with made-up
+  locked regions (`fakeRegions`) for tests and previews. `npm run test:e2e:tabs` (WebKit, DPR 3,
+  375 and 390, 5 and 8 tabs).
 - Main page (the level list screen): everything stays inside the screen width with 16px side
   margins at 375 to 430px (`.daily-block` is one `minmax(0, 1fr)` column; the sign is `width: 100%`,
   never sized from its height). The intro paragraph shows only until the first level is cleared.
@@ -952,6 +966,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)
 - `npm run test:e2e:dig` – the Wildlife Log's dig: the cross-section, pills, buried things and their bubbles, reduced motion, scroll frame rate (start the dev server first)
 - `npm run test:e2e:wave3` – gag wave 3: the standard Mannville scene and its four gags (`ONLY=beaver` runs one; start the dev server first)
+- `npm run test:e2e:tabs` – the region bar: full-size text, the peek, the fades, the active tab in view, swipes never tap, 5 tabs and a made-up 8 (start the dev server first)
 - `npm run test:e2e:audio` – sound: lazy loading, every cue, gag sounds, the three music styles, gapless loops, Credits (start the dev server first)
 
 ## Out of scope (M2)

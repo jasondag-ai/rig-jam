@@ -86,7 +86,7 @@ async function audit(page, screen, small) {
         return { label: (el.getAttribute('aria-label') || el.textContent).trim().replace(/\s+/g, ' ').slice(0, 24), w: Math.round(r.width), h: Math.round(r.height), ta: getComputedStyle(el).touchAction };
       }),
   );
-  for (const f of found) if (f.w < MIN || f.h < MIN || !/manipulation|none/.test(f.ta)) small.push(`${screen}: "${f.label}" ${f.w}x${f.h} ${f.ta}`);
+  for (const f of found) if (f.w < MIN || f.h < MIN || !/manipulation|none|pan-x/.test(f.ta)) small.push(`${screen}: "${f.label}" ${f.w}x${f.h} ${f.ta}`);
 }
 
 const onList = (page) => page.evaluate(() => !!document.querySelector('.screen.levels') && !document.querySelector('.screen.game'));
@@ -116,6 +116,9 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
     check(!!(await page.$('.settings')), 'one tap on the gear opens Settings');
     await audit(page, 'settings', small);
     await page.$eval('[data-act="close"]', (b) => b.click());
+    await wait(300);
+    // (The region bar is swiped sideways: bring the tab into view and let the bar come to rest, as a finger would, before the tap.)
+    await page.locator('.region-tab:nth-child(2)').scrollIntoViewIfNeeded();
     await wait(300);
     await page.locator('.region-tab:nth-child(2)').tap();
     await wait(250);

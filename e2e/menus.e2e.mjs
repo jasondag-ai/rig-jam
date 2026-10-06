@@ -50,7 +50,8 @@ const offScreen = (page, root) =>
   page.evaluate((sel) => {
     const vw = innerWidth;
     return [...document.querySelectorAll(`${sel} *`)]
-      .filter((e) => !e.closest('.scenery'))
+      // (The region bar scrolls sideways inside its frame: its tabs beyond the frame are not off the screen.)
+      .filter((e) => !e.closest('.scenery') && !e.closest('.regions-track'))
       .filter((e) => {
         const r = e.getBoundingClientRect();
         return r.width > 0 && r.height > 0 && (r.right > vw + 0.5 || r.left < -0.5);
