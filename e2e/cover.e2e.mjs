@@ -101,7 +101,8 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }
   check(/no-image/.test(fb.cls ?? '') && /gradient/.test(fb.sky) && fb.title === 'visible' && at < 2200, `after a second: the title over a sky gradient (${Math.round(at)}ms after opening)`);
   await tap(195, 420);
   await wait(500);
-  check(!!(await page.$('.screen.levels')), 'and one tap still gets you in');
+  // (A fresh install goes from the cover straight into level 1: Job O.)
+  check(!!(await page.$('.screen.levels, .screen.game')) && !(await page.$('.screen.cover')), 'and one tap still gets you in');
   await context.close();
 }
 

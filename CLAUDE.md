@@ -613,6 +613,36 @@ something, give exact clicks and one command at a time.
   all still. Skipped for `?gag=` links and automated browsers (`navigator.webdriver`) unless
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
+## Beta readiness (Job O)
+- VERSION: `package.json` `version` (0.9.0) and a BUILD id (the first 7 of the commit's hash:
+  `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
+  (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
+  `versionText`). Shown at the very bottom of Settings ("Version 0.9.0 (a1b2c3d)") and copied into
+  feedback. The build also writes `version.json`.
+- UPDATES (`src/ui/update.ts`, tested): an open or installed copy asks the server for
+  `version.json` (never from a cache: the service worker lets that file through) when it opens,
+  whenever it comes back to the front, and every 15 minutes (`CHECK_MS`). A different build id
+  (`isNewer`), or a new service worker taking the page over, shows ONE bar across the top,
+  "New version, tap to update" (`showUpdateBar`, `.update-bar`): it never reloads by itself, it
+  keeps off a level being played and the cover (it waits on the level list), and a tap reloads
+  the page. A reload never touches progress (localStorage). Production builds only;
+  `?update=test` shows the bar anywhere, for tests.
+- FEEDBACK (`src/ui/feedback.ts`, tested): a "Send feedback" row in Settings: a plain address to
+  copy, and a Copy button that copies the address with the app version, the phone
+  (`phoneModel`, from the user agent) with its screen size, and the level last opened
+  (`rememberLevel`, its own storage key). No accounts, no links, no forms. THE ADDRESS IS ONE
+  CONSTANT, `FEEDBACK_EMAIL`: while it is empty the row is not shown. `?feedback=a@b.c` shows it
+  with that address (tests).
+- FIRST RUN: a brand-new player (no level cleared, no Daily Pad, demo off) goes from the cover's
+  one tap STRAIGHT INTO LEVEL 1, which teaches itself with the ghost finger; everyone else gets
+  the level list. Playable well inside 3 s of opening.
+- SMALL PHONES: `npm run test:e2e:beta` walks a fresh install on an iPhone SE (WebKit 375x667) and
+  a mid Android (Chromium 360x800, a Pixel's user agent): nothing cut off, no sideways scroll,
+  no tap target under 44 px on the level, win card, list, Settings and the log. Fixed on the way:
+  the home page's title and how-to paragraph ran under the three round buttons at 360 to 375
+  (the title now keeps to its own part of the top row, which is as tall as the buttons), and
+  the Credits list showed under Settings without being asked for (`.settings .step[hidden]`).
+
 ## Progression
 - Levels open in order within a region (clear one to open the next). A region opens after clearing
   5 of the previous region's 10 (`REGION_UNLOCK` in `src/ui/unlocks.ts`). Cardium is always open;
@@ -978,6 +1008,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:dig` – the Wildlife Log's dig: the cross-section, pills, buried things and their bubbles, reduced motion, scroll frame rate (start the dev server first)
 - `npm run test:e2e:wave3` – gag wave 3: the standard Mannville scene and its four gags (`ONLY=beaver` runs one; start the dev server first)
 - `npm run test:e2e:tabs` – the region bar: full-size text, the peek, the fades, the active tab in view, swipes never tap, 5 tabs and a made-up 8 (start the dev server first)
+- `npm run test:e2e:beta` – beta readiness: first run, small phones (iPhone SE, 360x800 Android), Settings version and feedback, the update bar (start the dev server first)
 - `npm run test:e2e:audio` – sound: lazy loading, every cue, gag sounds, the three music styles, gapless loops, Credits (start the dev server first)
 
 ## Out of scope (M2)

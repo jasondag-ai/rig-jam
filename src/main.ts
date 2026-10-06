@@ -22,6 +22,10 @@ import { hatsHtml } from './ui/hats.ts';
 import { hardHats, loadProgress, resetProgress, saveProgress } from './ui/progress.ts';
 import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } from './ui/unlocks.ts';
 import { onTap } from './ui/tap.ts';
+import { copyText } from './ui/clipboard.ts';
+import { feedbackEmail, feedbackNow, rememberLevel } from './ui/feedback.ts';
+import { showUpdateBar, watchForUpdates } from './ui/update.ts';
+import { versionText } from './ui/version.ts';
 import { fakeRegions, furthestOpen, runRegionBar } from './ui/region-bar.ts';
 import { shouldShowCover, showCover } from './ui/cover.ts';
 import { applyUiArt, uiImg } from './ui/ui-art.ts';
@@ -284,6 +288,7 @@ function showGame(regionIndex: number, index: number, force: GagId | null = null
   const region = REGIONS[regionIndex];
   const hasNext = index + 1 < region.levels.length;
   game?.leave();
+  rememberLevel(`${region.name} ${index + 1} "${region.levels[index].name}"`);
   game = new GameView(
     region.levels[index],
     `${region.name} ${index + 1}`,
@@ -333,8 +338,10 @@ function showSettings(screen: HTMLElement): void {
           <span class="switch-label">Unlock everything (demo mode)</span>
         </label>
         <button class="btn quiet" data-act="credits">Credits</button>
+        ${feedbackEmail() ? `<div class="feedback"><b>Send feedback</b><span class="feedback-mail">${esc(feedbackEmail())}</span><button class="btn quiet" data-act="copy-feedback">Copy address and details</button><small>Paste it into an email. It adds your app version, phone and level.</small></div>` : ''}
         <button class="btn danger" data-act="reset">Reset progress</button>
         <button class="btn" data-act="close">Done</button>
+        <p class="app-version">${esc(versionText())}</p>
       </div>
       <div class="step credits" hidden>
         <div class="credits-list">
@@ -359,6 +366,13 @@ function showSettings(screen: HTMLElement): void {
     const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
     if (act === 'reset') [ask.hidden, confirm.hidden] = [true, false];
     if (act === 'credits') [ask.hidden, creditsStep.hidden] = [true, false];
+    if (act === 'copy-feedback') {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-act]')!;
+      void copyText(feedbackNow(feedbackEmail())).then((ok) => {
+        btn.textContent = ok ? 'Copied! Paste it into an email' : 'Could not copy. Press and hold the address';
+        window.setTimeout(() => (btn.textContent = 'Copy address and details'), 2600);
+      });
+    }
     if (act === 'cancel') [ask.hidden, confirm.hidden, creditsStep.hidden] = [false, true, true];
     if (act === 'close' || e.target === panel) {
       panel.remove();
@@ -491,6 +505,7 @@ function showDaily(): void {
   const level = { ...DAILY_LEVELS[padLevelIndex(pad, DAILY_LEVELS.length)], name: `Daily Pad #${pad}` };
   const theme = THEMES[themeOverride(location.search) ?? dailyTheme(pad)];
   game?.leave();
+  rememberLevel(level.name);
   game = new GameView(level, "Today's pad", theme, { onLevels: () => showLevels(), onNext: null }, { pad, day });
   app.replaceChildren(game.el);
   game.fit();
@@ -502,7 +517,14 @@ document.fonts?.ready.then(() => game?.fit());
 // Offline play and Add to Home Screen. Only in the built site, so dev reloads stay simple.
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => void navigator.serviceWorker.register('./sw.js'));
+  // A new service worker taking this page over (not the first one ever installed) means a new version is in.
+  const had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (had) showUpdateBar(); });
 }
+// UPDATES (update.ts): an open or installed copy is told when a new version is live, with a bar to
+// tap; nothing reloads by itself. (`?update=test` shows the bar, for tests and previews.)
+if (import.meta.env.PROD) watchForUpdates(() => showUpdateBar());
+if (new URLSearchParams(location.search).get('update') === 'test') showUpdateBar();
 /**
  * Test/preview links: ?gag=bear (Montney), ?gag=moose (Duvernay), ?gag=gopher|geese|pumper (Cardium)
  * or ?gag=biffy (a level with the biffy below the board) opens that level and plays the scene straight away, over and over.
@@ -516,7 +538,13 @@ function forcedGag(): boolean {
 }
 
 if (!forcedGag()) {
-  if (shouldShowCover(location.search, navigator.webdriver === true)) showCover(app, () => showLevels());
+  // FIRST RUN (Job O): a brand-new player goes from the cover straight into level 1, which teaches
+  // itself with the ghost finger: one tap and they are playing. Everyone else gets the level list.
+  const firstRun = (): boolean => {
+    const p = loadProgress();
+    return !p.demo && Object.keys(p.best).length === 0 && p.dailyCleared.length === 0;
+  };
+  if (shouldShowCover(location.search, navigator.webdriver === true)) showCover(app, () => (firstRun() ? showGame(0, 0) : showLevels()));
   else showLevels();
 }
 // Every truck sprite, quietly, once the first screen is up (each level also warms its own first).
