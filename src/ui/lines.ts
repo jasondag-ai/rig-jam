@@ -238,13 +238,13 @@ export const WITNESS_LINES = {
   surveyor: 'It was fine where it was.',
   deer: "Somebody's itchy.",
   tourists: 'Should have brought the bug spray.',
-  // (Wave 3: stand-ins until Jay writes his own.)
-  muskeg: 'That boot is gone for good.',
-  catTrain: 'Now that is a cat train.',
-  beaver: 'Give him a hard hat.',
-  aurora: 'Nobody heard that.',
-  tumbleweed: 'Whole family came out.',
-  pdogs: 'They do that at hockey games too.',
-  bale: 'Not our bale. Keep driving.',
-  cloud: 'Glad that one is his.',
+  // Wave 3 (Jay's own, Oct 6).
+  muskeg: 'The muskeg always collects its toll.',
+  catTrain: "Now that's a cat train.",
+  beaver: "That pipe's not going to spec.",
+  aurora: "He'll get that high note someday.",
+  tumbleweed: "The whole family's moving out.",
+  pdogs: 'Tough crowd.',
+  bale: 'That bale had places to be.',
+  cloud: 'Forecast says sunny. Not for him.',
 };

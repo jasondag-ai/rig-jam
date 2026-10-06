@@ -337,7 +337,7 @@ something, give exact clicks and one command at a time.
     fallen, `onMoon`; in the sky band: its layer goes OVER the night's shade, `.aurora-layer`, and
     fades with the night; Mannville's moon is always shown where the sky band has room,
     `AURORA_SKY`). `?gag=muskeg|cattrain|beaver|aurora` (the aurora's preview pins the night).
-    Log cards: `wave3Still`. No sounds yet (`GAG_SOUNDS` rows are empty). Witness lines are stand-ins.
+    Log cards: `wave3Still`. No sounds yet (`GAG_SOUNDS` rows are empty). Witness lines are Jay's own.
   - THE STANDARD BAKKEN SCENE (`BakkenProp`, every Bakken level): the round bale at the reference's
     spot (`BALE_AT`, world x 352, on the lane's ground line), `.bakken-layer`. The generic prairie
     scenery stays, with the bale's box and the walking lane (`lane()`) kept clear of trees.

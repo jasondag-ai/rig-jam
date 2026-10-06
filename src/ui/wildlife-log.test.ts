@@ -87,7 +87,7 @@ describe('log hints and Night Shift', () => {
 
   it('Night Shift is a log entry like any other: found when the lease goes fully dark', () => {
     const night = LOG_ENTRIES.find((e) => e.id === 'night')!;
-    expect(night).toMatchObject({ name: 'Night Shift', caption: 'Lights out on the lease.', hint: 'Leave a Montney or Duvernay level alone for a while.' });
+    expect(night).toMatchObject({ name: 'Night Shift', caption: 'Lights out on the lease.', hint: 'Leave any lease alone until it goes dark.' });
     expect(sightingToast('night', 4)).toBe(`New sighting! Night Shift (4/${LOG_ENTRIES.length})`);
     expect(LOG_ENTRIES).toHaveLength(28);
   });

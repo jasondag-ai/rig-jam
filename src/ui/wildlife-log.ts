@@ -46,7 +46,7 @@ export const LOG_ENTRIES: LogEntry[] = [
   { id: 'pdogs', name: 'Prairie Dog Wave', caption: 'One always misses his cue.', hint: "In Bakken, tap the same spot on the prairie three times." },
   { id: 'bale', name: 'Runaway Bale', caption: 'It rolled one more inch.', hint: "In Bakken, bump a truck into the bottom berm beside the round bale." },
   { id: 'cloud', name: 'Personal Cloud', caption: 'Some days are like that.', hint: "In Bakken, tap the sky three times." },
-  { id: 'night', name: 'Night Shift', caption: 'Lights out on the lease.', hint: "Leave a Montney or Duvernay level alone for a while." },
+  { id: 'night', name: 'Night Shift', caption: 'Lights out on the lease.', hint: "Leave any lease alone until it goes dark." },
   { id: 'bull', name: 'Bull and Cow', caption: 'Spring in the Montney.', hint: "In Montney, tap the cow." },
   // Not a gag: found by scrolling the log's own dig right through the Earth (log-deep.ts). Its card shows the player's best time.
   { id: 'dug', name: 'Dug Through', caption: 'Alberta to Kerguelen, the short way.', hint: "Scroll this log down. Keep going. All the way down.", hidden: true },
