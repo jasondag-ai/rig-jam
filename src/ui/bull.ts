@@ -54,20 +54,26 @@ export const BULL = `
   <path d="M70 90 Q86 96 104 88 Q104 82 96 82 Q84 86 72 84 Z" fill="#f2efe6"/>
   ${leg('lFN', 122, 84, RB, '#2a2420')}${leg('lBN', 54, 84, RB, '#2a2420')}
   <g class="head">
+    <!-- TRUE SIDE PROFILE, facing right (Jay, Oct 6): one eye on the side of the head, the muzzle
+         pointing forward, the near horn in front of the far one, the nose ring seen edge on. -->
     <path d="M118 40 Q126 30 136 34 L140 54 Q128 56 118 50 Z" fill="${RB}" stroke="${O}" stroke-width="2.6" stroke-linejoin="round"/>
-    <path d="M128 38 Q122 26 130 20 Q126 30 134 36 Z" fill="#efe4c8" stroke="${O}" stroke-width="2" stroke-linejoin="round"/>
+    <path class="hornFar" d="M143 33 Q142 19 155 12 Q149 22 152 33 Z" fill="#d9cdaa" stroke="${O}" stroke-width="2" stroke-linejoin="round"/>
     <ellipse cx="126" cy="44" rx="9" ry="4.5" transform="rotate(-20 126 44)" fill="${RB}" stroke="${O}" stroke-width="2"/>
-    <rect x="128" y="34" width="32" height="38" rx="14" fill="#f2efe6" stroke="${O}" stroke-width="2.8"/>
-    <path d="M128 40 Q132 34 140 34 L140 46 Q132 46 128 40 Z" fill="${RB}"/>
-    <path d="M150 36 Q160 24 168 30 Q160 30 156 40 Z" fill="#efe4c8" stroke="${O}" stroke-width="2" stroke-linejoin="round"/>
-    <rect x="138" y="58" width="26" height="17" rx="8.5" fill="#e3a596" stroke="${O}" stroke-width="2.4"/>
-    <ellipse cx="148" cy="65" rx="1.9" ry="2.5" fill="${O}"/><ellipse cx="157" cy="65" rx="1.9" ry="2.5" fill="${O}"/>
-    <circle cx="152.5" cy="74" r="4.2" fill="none" stroke="#d9a520" stroke-width="2.4"/>
+    <path class="skull" d="M129 40 Q133 31 146 32 Q153 33 158 41 L168 52 Q174 58 173 65 Q172 74 163 75 L141 75 Q129 72 128 56 Z" fill="#f2efe6" stroke="${O}" stroke-width="2.8" stroke-linejoin="round"/>
+    <path d="M130 41 Q134 34 141 34 L142 46 Q141 60 134 68 Q130 63 129.6 55 Z" fill="${RB}"/>
+    <path class="muzzle" d="M163 50 Q173 56 173 65 Q172 74 163 75 L156 75 Q153 62 163 50 Z" fill="#e3a596" stroke="${O}" stroke-width="2.4" stroke-linejoin="round"/>
+    <ellipse cx="167.4" cy="61.5" rx="1.9" ry="2.6" transform="rotate(-18 167.4 61.5)" fill="${O}"/>
+    <ellipse class="ring" cx="170.4" cy="70.5" rx="1.9" ry="4.4" transform="rotate(-12 170.4 70.5)" fill="none" stroke="${O}" stroke-width="3.6"/>
+    <ellipse cx="170.4" cy="70.5" rx="1.9" ry="4.4" transform="rotate(-12 170.4 70.5)" fill="none" stroke="#d9a520" stroke-width="2"/>
+    <path class="hornNear" d="M136 35 Q133 19 147 10 Q142 21 146 33 Z" fill="#efe4c8" stroke="${O}" stroke-width="2" stroke-linejoin="round"/>
     <circle class="eye" cx="148" cy="48" r="4.6" fill="#fff" stroke="${O}" stroke-width="1.8"/><circle class="pup" cx="149.5" cy="48.5" r="2.2" fill="${O}"/>
     <path class="lid" d="M143 43 L153 43 L153 44 L143 44 Z" fill="#f2efe6" stroke="${O}" stroke-width="1.2"/>
     <path class="brow" d="M142 41 Q148 38 155 40" stroke="#4a2a18" stroke-width="3.4" fill="none" stroke-linecap="round"/>
-    <path class="mouth" d="M142 70 Q146 72 150 71" stroke="${O}" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-    <path class="tongue" d="M150 72 Q156 76 160 72 Q158 80 151 77 Z" fill="#e86f86" stroke="${O}" stroke-width="1.4" style="display:none"/>
+    <!-- (The mouth and the tongue keep the reference's own paths, moved forward to the muzzle.) -->
+    <g transform="translate(14 0)">
+      <path class="mouth" d="M142 70 Q146 72 150 71" stroke="${O}" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path class="tongue" d="M150 72 Q156 76 160 72 Q158 80 151 77 Z" fill="#e86f86" stroke="${O}" stroke-width="1.4" style="display:none"/>
+    </g>
     <path class="lockCurl" d="M134 34 Q132 26 138 26 Q136 20 143 22 Q144 16 150 20 Q156 18 156 26 Q152 30 146 30 Q140 34 134 34 Z" fill="#6e3a20" stroke="${O}" stroke-width="1.8" stroke-linejoin="round"/>
     <path class="lockSlick" d="M132 34 Q140 24 156 26 Q160 27 162 32 Q150 29 144 32 Q138 34 132 34 Z" fill="#6e3a20" stroke="${O}" stroke-width="1.8" stroke-linejoin="round" style="display:none"/>
     <path class="shine" d="M146 27 L148 24 M150 27 L153 25" stroke="#fff" stroke-width="1.4" stroke-linecap="round" style="display:none"/>
@@ -220,7 +226,7 @@ export function bullApply(sc: any, P: any, realT: number): void {
       html += HEART(headPt.x + Math.sin(life*7 + i)*8*u, headPt.y - life*55*u, Math.max(.7, u*1.1)*(.7 + life*.6), (b.hearts === 1 ? 1 : b.hearts)*(life < .8 ? 1 : (1-life)*5)); } }
   if (b.hearts === 2){ for (let i = 0; i < 3; i++){ const life = ((t*1.2 + i/3) % 1);
       html += HEART(headPt.x - 40*u - life*70*u, headPt.y + 10*u - life*22*u, Math.max(.6, u)*(.8 + life*.4), 1 - life); } }
-  if (b.snort >= 0 && b.snort < 1){ const nx = B.spot.x*r.width + (166 - 85)*u, ny = B.spot.y*r.height + (66 - 114)*u, k = b.snort;
+  if (b.snort >= 0 && b.snort < 1){ const nx = B.spot.x*r.width + (174 - 85)*u, ny = B.spot.y*r.height + (61 - 114)*u, k = b.snort;
     html += `<circle cx="${nx + k*14*u}" cy="${ny + k*3*u}" r="${(2 + k*5)*u}" fill="#eef3f8" stroke="${O}" stroke-width="1" opacity="${1-k}"/>`; }
   if (t > 9.0 && t < 9.9){ const k = seg(t,9.0,9.6), px = sc.popX ?? r.width*.5, py = B.spot.y*r.height - 70*u - k*30*u;
     if (t < 9.6) html += HEART(px, py, Math.max(.8, u*1.3)*(1 + k*.3), 1);

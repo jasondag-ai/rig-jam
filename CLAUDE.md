@@ -234,7 +234,7 @@ something, give exact clicks and one command at a time.
     hoof, a rubber-stretched leg slicks his curly forelock back and it stays slicked, chest puff
     with a sparkle), dreamy eyes and floating red hearts (NO speech bubble); her eyes go huge,
     hop-turn, she bolts off the right; eyebrow waggle, snort, paws the ground, charges after her
-    trailing hearts; a last heart pops. The primp is the reference's own (re-sent Oct 5; it
+    trailing hearts; a last heart pops. HIS HEAD IS A TRUE SIDE PROFILE (Jay, Oct 6; it read as a front view with one eye): the eye on the side of the head, the muzzle forward with one nostril, the near horn in front of the far one, the nose ring edge on at the muzzle's tip, the forelock kept; the reference's eye, lid, brow and forelock paths are untouched and its mouth and tongue paths are moved forward 14 units to the muzzle. The primp is the reference's own (re-sent Oct 5; it
     takes `SHIFT` 1.6 s, the later beats are that much later). THE COW COMES BACK (authored, not in
     the reference): from `T_BACK` she wanders in from the right edge, the one she left by, a little
     out of breath (puffs at her muzzle), and from `T_GRAZE` grazes in her spot exactly as at the
