@@ -16,13 +16,62 @@ export function hashOf(text: string): string {
  */
 export const CACHE_GENERATION = 'g3';
 
-export function serviceWorkerSource(files: string[], version: string): string {
+/** Files are fetched this many at a time when the cache is filled, and a file that fails is tried this many times. */
+export const PRECACHE_BATCH = 6;
+export const PRECACHE_TRIES = 3;
+
+/**
+ * The worker's source. `core`: the files the game cannot start without (the page, its script and
+ * its styles); `rest`: everything else (sprites, sounds, icons, fonts).
+ *
+ * EVERY PATH IS RELATIVE TO THE WORKER'S OWN ADDRESS (`self.registration.scope`), so the same
+ * worker serves the site at `/` and under `/rush-hour-rigs/` on GitHub Pages.
+ *
+ * THE INSTALL CANNOT BE SUNK BY ONE BAD FETCH. (It used to ask for all two hundred files at once
+ * with `cache.addAll`, which fails as a whole if any one of them fails: on a slow line or a host
+ * that turns a burst away, the worker never installed, "load failed", and nothing worked offline.)
+ * Now the core is fetched first; the rest in small batches, each file retried; a file that still
+ * will not come is left for later (it is cached the first time the game asks for it).
+ */
+export function serviceWorkerSource(files: string[], version: string, core: string[] = files): string {
+  const all = files.filter((f) => f !== 'version.json');
+  const first = ['./', ...all.filter((f) => core.includes(f))];
+  const rest = all.filter((f) => !core.includes(f));
   return `// Generated at build time. Do not edit.
 const CACHE = 'rhr-${CACHE_GENERATION}-${version}';
-const FILES = ${JSON.stringify(['./', ...files.filter((f) => f !== 'version.json')])};
+const SCOPE = self.registration.scope;
+const at = (path) => new URL(path, SCOPE).href;
+const CORE = ${JSON.stringify(first)};
+const REST = ${JSON.stringify(rest)};
+
+async function keep(cache, path) {
+  for (let i = 0; i < ${PRECACHE_TRIES}; i++) {
+    try {
+      const res = await fetch(at(path), { cache: 'no-cache' });
+      if (res.ok) { await cache.put(at(path), res); return true; }
+    } catch (e) { /* try again */ }
+    await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+  }
+  return false;
+}
+async function fill(cache, paths) {
+  let missed = 0;
+  for (let i = 0; i < paths.length; i += ${PRECACHE_BATCH}) {
+    const got = await Promise.all(paths.slice(i, i + ${PRECACHE_BATCH}).map((p) => keep(cache, p)));
+    missed += got.filter((ok) => !ok).length;
+  }
+  return missed;
+}
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+    // The game itself must be in: without it there is nothing to show offline.
+    if (await fill(cache, CORE)) throw new Error('the page or its script could not be fetched');
+    // Everything else: as much as will come now; the rest when it is first asked for.
+    await fill(cache, REST);
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', (event) => {
@@ -35,22 +84,35 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  const url = new URL(req.url);
+  if (req.method !== 'GET' || url.origin !== self.location.origin || !url.href.startsWith(SCOPE)) return;
   // What version is live is always asked of the network (an open copy uses it to see it is out of date).
-  if (new URL(req.url).pathname.endsWith('/version.json')) return;
+  if (url.pathname.endsWith('/version.json')) return;
   if (req.mode === 'navigate') {
-    event.respondWith(
-      fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put('./', copy));
-          return res;
-        })
-        .catch(() => caches.match('./')),
-    );
+    // Pages: the network first (so a reload brings the new version), the cached page when there is none.
+    event.respondWith((async () => {
+      try {
+        const res = await fetch(req);
+        if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(at('./'), copy)); return res; }
+        return (await caches.match(at('./'))) || res;
+      } catch (e) {
+        return (await caches.match(at('./'))) || Response.error();
+      }
+    })());
     return;
   }
-  event.respondWith(caches.match(req, { ignoreSearch: true }).then((hit) => hit || fetch(req)));
+  // Everything else: the cache first; what is not in it yet is fetched, and kept for next time.
+  event.respondWith((async () => {
+    const hit = await caches.match(req, { ignoreSearch: true });
+    if (hit) return hit;
+    try {
+      const res = await fetch(req);
+      if (res.ok && res.status === 200) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
+      return res;
+    } catch (e) {
+      return Response.error();
+    }
+  })());
 });
 `;
 }

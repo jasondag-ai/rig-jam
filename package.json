@@ -37,6 +37,7 @@
     "test:e2e:tabs": "node e2e/tabs.e2e.mjs",
     "test:e2e:beta": "node e2e/beta.e2e.mjs",
     "test:e2e:quick": "node e2e/quick.e2e.mjs",
+    "test:e2e:offline": "node e2e/offline.e2e.mjs",
     "test:e2e:depth": "node e2e/depth.e2e.mjs",
     "test:e2e:gagsounds": "node e2e/gag-sounds.e2e.mjs"
   },

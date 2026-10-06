@@ -38,7 +38,8 @@ function serviceWorker(): Plugin {
       this.emitFile({
         type: 'asset',
         fileName: 'sw.js',
-        source: serviceWorkerSource([...built, ...pub], hashOf(fingerprint.join('|'))),
+        // (The page, its script and its styles are the core: the install waits on those; the rest fills in.)
+        source: serviceWorkerSource([...built, ...pub], hashOf(fingerprint.join('|')), [...built.filter((f) => /\.(js|css|html)$/.test(f)), 'index.html']),
       });
     },
   };

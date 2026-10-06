@@ -189,6 +189,71 @@ console.log('\nwebkit: the "Tap for sound" chip and the hint count');
   check(nine === '9' && first && !second, `9 hints reads "${nine}"; the chip is offered on the first win card only, never again`);
   await context.close();
 }
+// ---------- Job U: final-pass fixes ----------
+console.log('\nwebkit 390x844 @3x: the update bar never covers the header');
+{
+  const context = await wk.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, hasTouch: true });
+  const page = await context.newPage();
+  await page.goto(`${ROOT}?${QUIET}&update=test`, { waitUntil: 'networkidle' });
+  await page.evaluate((p) => { localStorage.clear(); localStorage.setItem('rush-hour-rigs:v2', p); }, UNLOCKED);
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForSelector('.update-bar');
+  const tap = async (sel) => { const b = await page.locator(sel).first().boundingBox(); await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2); await wait(350); };
+  /** Is the middle of `sel` really that element (not the bar lying over it), and is it wholly below the bar? */
+  const clear = (sel) => page.evaluate((sel) => { const el = document.querySelector(sel), r = el.getBoundingClientRect(), bar = document.querySelector('.update-bar').getBoundingClientRect(), top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return { hit: el === top || el.contains(top), below: r.top >= bar.bottom - 0.5, h: Math.round(r.height) }; }, sel);
+  const bar = await page.evaluate(() => { const r = document.querySelector('.update-bar').getBoundingClientRect(); return { top: r.top, bottom: r.bottom, shown: getComputedStyle(document.querySelector('.update-bar')).display !== 'none' }; });
+  const heads = {};
+  for (const sel of ['.brand .help', '.brand .binoculars', '.brand .gear']) heads[sel] = await clear(sel);
+  check(bar.shown && Object.values(heads).every((h) => h.hit && h.below && h.h >= 44), `with the bar showing (to ${Math.round(bar.bottom)} px), How to play, the Wildlife Log and Settings all sit below it and take their own taps`);
+  // Each one, tapped with a finger: it opens, and its own way back is clear of the bar too.
+  await tap('.brand .help');
+  const help = await page.evaluate(() => !!document.querySelector('.overlay.tutorial'));
+  const helpX = help ? await clear('.overlay.tutorial .t-x') : null;
+  if (help) await tap('.overlay.tutorial .t-x');
+  check(help && helpX.hit && helpX.below && !(await page.evaluate(() => !!document.querySelector('.overlay.tutorial'))), 'How to play opens under the bar, and its X closes it');
+  await tap('.brand .gear');
+  const set = await page.evaluate(() => !!document.querySelector('.overlay.settings'));
+  const setTop = set ? await page.evaluate(() => { const c = document.querySelector('.overlay.settings h2, .overlay.settings .card').getBoundingClientRect(), b = document.querySelector('.update-bar').getBoundingClientRect(); return c.top >= b.bottom - 0.5; }) : false;
+  if (set) { await page.locator('.overlay.settings [data-act="close"], .overlay.settings .btn.primary').first().scrollIntoViewIfNeeded(); await page.locator('.overlay.settings [data-act="close"], .overlay.settings .btn.primary').first().click(); await wait(300); }
+  check(set && setTop && !(await page.evaluate(() => !!document.querySelector('.overlay.settings'))), 'Settings opens with its panel starting under the bar, and Done closes it');
+  await tap('.brand .binoculars');
+  await page.waitForSelector('.screen.log', { timeout: 4000 }).catch(() => {});
+  const log = await page.evaluate(() => !!document.querySelector('.screen.log'));
+  const back = log ? await clear('.log-head .back') : null;
+  if (log) await tap('.log-head .back');
+  await wait(300);
+  check(log && back.hit && back.below && (await page.evaluate(() => !!document.querySelector('.screen.levels'))), 'the Wildlife Log opens with its header under the bar, and "Levels" brings the list back');
+  // Without the bar nothing is pushed down.
+  const pad = await page.evaluate(() => { const before = document.querySelector('.brand').getBoundingClientRect().top; document.querySelector('.update-bar').remove(); return [before, document.querySelector('.brand').getBoundingClientRect().top]; });
+  check(pad[0] - pad[1] > 40, `the room is the bar's own: the header stands ${Math.round(pad[0] - pad[1])} px higher once the bar is gone`);
+  await context.close();
+}
+
+console.log('\nwebkit @3x: the region bar says "more this way"; the LEGENDARY card is the bear');
+{
+  const context = await wk.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, hasTouch: true });
+  const page = await context.newPage();
+  await page.goto(`${ROOT}?${QUIET}`, { waitUntil: 'networkidle' });
+  await page.evaluate((p) => { localStorage.clear(); localStorage.setItem('rush-hour-rigs:v2', p); }, progress({}));
+  await page.reload({ waitUntil: 'networkidle' });
+  await wait(400);
+  const more = () => page.evaluate(() => { const f = document.querySelector('.regions'), c = f.querySelector('.regions-more'), cs = getComputedStyle(c), fr = f.getBoundingClientRect(), r = c.getBoundingClientRect(), fade = getComputedStyle(f, '::after'); return { right: f.classList.contains('more-right'), chevron: +cs.opacity, in: r.right <= fr.right && r.left > fr.right - 30, fadeW: parseFloat(fade.width), fadeOn: +fade.opacity, touch: cs.pointerEvents }; });
+  const start = await more();
+  check(start.right && start.chevron > 0.5 && start.in && start.fadeW >= 40 && start.fadeOn > 0.5 && start.touch === 'none', `where the next tab is cut off, the edge fades out over ${start.fadeW} px under a small chevron (it takes no touches)`);
+  await page.evaluate(() => { const t = document.querySelector('.regions-track'); t.scrollLeft = t.scrollWidth; });
+  await wait(500);
+  const end = await more();
+  check(!end.right && end.chevron < 0.1, 'at the end of the bar the chevron and the fade are gone');
+  await page.locator('.brand .binoculars').click();
+  await page.waitForSelector('.log-card');
+  const legend = await page.evaluate(() => [...document.querySelectorAll('.log-card.legendary')].map((c) => ({ id: c.dataset.id, tag: c.querySelector('.legend-tag')?.textContent, bear: !!c.querySelector('.art svg') })));
+  await page.goto(`${ROOT}?${QUIET}&log=all`, { waitUntil: 'networkidle' });
+  await page.locator('.brand .binoculars').click();
+  await page.waitForSelector('.log-card');
+  const found = await page.evaluate(() => [...document.querySelectorAll('.log-card.legendary')].map((c) => ({ id: c.dataset.id, name: c.querySelector('h2').textContent, tag: c.querySelector('.legend-tag')?.textContent })));
+  check(legend.length === 1 && legend[0].id === 'bear' && legend[0].tag === 'LEGENDARY' && found.length === 1 && found[0].id === 'bear' && found[0].name === 'Bear', `the one LEGENDARY card is the bear, unfound ("${legend[0]?.tag}") and found ("${found[0]?.name}")`);
+  await context.close();
+}
 await wk.close();
 
 console.log('\nchromium: a clean console on all 50 levels');

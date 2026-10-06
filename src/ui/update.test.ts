@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { serviceWorkerSource } from '../../tools/service-worker.ts';
+import { PRECACHE_BATCH, PRECACHE_TRIES, serviceWorkerSource } from '../../tools/service-worker.ts';
 import { CHECK_MS, UPDATE_TEXT, fetchLive, isNewer, watchForUpdates } from './update.ts';
 import { APP, versionText } from './version.ts';
 
@@ -92,10 +92,27 @@ describe('knowing a new version is out', () => {
 
   it('the service worker never answers version.json from its cache, nor keeps a copy of it', () => {
     const sw = serviceWorkerSource(['index.html', 'assets/app.js', 'version.json'], 'abc');
-    expect(sw).toContain("pathname.endsWith('/version.json')) return;");
+    expect(sw).toContain("url.pathname.endsWith('/version.json')) return;");
     expect(sw).toContain('"assets/app.js"');
     expect(sw).not.toContain('"version.json"');
     // Pages still load from the network first, so a reload brings the new version.
     expect(sw).toContain("req.mode === 'navigate'");
+  });
+
+  it('the install cannot be sunk by one bad fetch: the core first, the rest in small batches, every path beside the worker', () => {
+    const sw = serviceWorkerSource(['index.html', 'assets/app.js', 'assets/app.css', 'sprites/a.webp', 'audio/sfx/tap.mp3', 'version.json'], 'abc', ['index.html', 'assets/app.js', 'assets/app.css']);
+    // No all-or-nothing addAll any more.
+    expect(sw).not.toContain('addAll');
+    expect(sw).toContain('const CORE = ["./","index.html","assets/app.js","assets/app.css"]');
+    expect(sw).toContain('const REST = ["sprites/a.webp","audio/sfx/tap.mp3"]');
+    expect(PRECACHE_BATCH).toBeLessThanOrEqual(8);
+    expect(PRECACHE_TRIES).toBeGreaterThanOrEqual(2);
+    // Under /rush-hour-rigs/ as at the root: every address comes from the worker's own scope, never from "/".
+    expect(sw).toContain('const SCOPE = self.registration.scope;');
+    expect(sw).not.toMatch(/['"]\/(assets|sprites|audio|index)/);
+    // Only a good page is kept as the offline copy; a failed fetch answers with the cached page.
+    expect(sw).toContain('if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(at(\'./\'), copy)); return res; }');
+    // The worker itself is valid JavaScript.
+    expect(() => new Function('self', 'caches', 'fetch', sw)).not.toThrow();
   });
 });
