@@ -29,6 +29,13 @@ export interface Truck {
    * only accepts the lowest number still on the pad; for the other it acts as a wall.
    */
   convoy?: 1 | 2;
+  /**
+   * A tanker that must LOAD before it may leave: its gate is a wall for it until it has stopped on
+   * a load rack cell (ended a move with any part of it over one). Tankers are 3 cells long.
+   */
+  load?: true;
+  /** Set during play once a `load` truck has stopped on a rack. Never in a level file. */
+  loaded?: true;
 }
 
 export interface Gate {
@@ -36,6 +43,17 @@ export interface Gate {
   side: Side;
   /** Row for left/right gates, column for top/bottom gates. */
   index: number;
+  /**
+   * A shift-change gate: it only lets its truck out on EVEN move numbers (the move that drives out
+   * must be the 2nd, 4th, 6th... of the game). On an odd move it is a wall, like the berm.
+   */
+  shift?: true;
+}
+
+/** A cell of the pad's floor with something about it (muskeg, a load rack). Trucks drive over it. */
+export interface FloorCell {
+  row: number;
+  col: number;
 }
 
 export const OBSTACLE_KINDS = ['pumpjack', 'tank', 'wellhead', 'flare'] as const;
@@ -62,6 +80,15 @@ export interface Level {
   gates: Gate[];
   /** Pumpjacks. Empty when the level has none. */
   obstacles: Cell[];
+  /**
+   * MUSKEG cells (Mannville). A truck that drives ONTO muskeg (covers a muskeg cell it did not
+   * cover before the move) cannot stop: it keeps sliding the way it was going until it hits
+   * something (the berm, a truck, equipment), or out through its gate if that is where the slide
+   * ends and the gate is open to it. Driving off muskeg it was parked on is an ordinary move.
+   */
+  muskeg: FloorCell[];
+  /** LOAD RACK cells (Bakken): where a `load` truck must stop before its gate will take it. */
+  racks: FloorCell[];
 }
 
 export interface GameState {

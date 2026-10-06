@@ -13,6 +13,8 @@ export interface MoveRange {
 export interface MoveResult {
   state: GameState;
   exited: boolean;
+  /** How far the truck really went: the delta asked for, or the whole slide if it drove onto muskeg. */
+  delta: number;
 }
 
 export function newGame(level: Level): GameState {
@@ -67,9 +69,49 @@ export function convoyWaitingFor(state: GameState, color: Truck['color']): 1 | 2
   return numbers.length ? (Math.min(...numbers) as 1 | 2) : null;
 }
 
-/** Whether a truck's gate will let it out now. Only convoy order can close a gate. */
+/** A shift-change gate is open to the move about to be made only if that move's number is even. */
+export function shiftOpen(state: GameState): boolean {
+  return (state.moves + 1) % 2 === 0;
+}
+
+/**
+ * Whether a truck's gate will let it out on the next move. A gate is closed to a convoy truck out
+ * of its turn, to a tanker that has not loaded yet, and (a shift-change gate) on odd moves.
+ */
 export function gateOpen(state: GameState, truck: Truck): boolean {
-  return !truck.convoy || convoyWaitingFor(state, truck.color) === truck.convoy;
+  if (truck.convoy && convoyWaitingFor(state, truck.color) !== truck.convoy) return false;
+  if (truck.load && !truck.loaded) return false;
+  if (gateFor(state.level, truck).shift && !shiftOpen(state)) return false;
+  return true;
+}
+
+const has = (cells: readonly { row: number; col: number }[], row: number, col: number) => cells.some((c) => c.row === row && c.col === col);
+
+/**
+ * Where a move of `delta` really ends. Ordinarily at `delta`. But a truck that drives ONTO muskeg
+ * (its leading end enters a muskeg cell) cannot stop: it slides on the same way until it hits
+ * something, which is the end of its range that way (out through its gate, if that is the end).
+ */
+export function slideEnd(state: GameState, truck: Truck, delta: number, range: MoveRange): number {
+  const muskeg = state.level.muskeg;
+  if (!muskeg.length) return delta;
+  const h = truck.orient === 'h';
+  const dir = Math.sign(delta);
+  const pos = h ? truck.col : truck.row;
+  for (let step = 1; step <= Math.abs(delta); step++) {
+    // The cell its leading end moves onto at this step.
+    const lead = dir > 0 ? pos + truck.length - 1 + step : pos - step;
+    if (lead < 0 || lead >= SIZE) break; // out through the gate: no cell there
+    if (has(muskeg, h ? truck.row : lead, h ? lead : truck.col)) return dir > 0 ? range.max : range.min;
+  }
+  return delta;
+}
+
+/** Is any part of the truck over a load rack? */
+export function onRack(level: Level, truck: Truck): boolean {
+  if (!level.racks.length) return false;
+  for (let i = 0; i < truck.length; i++) if (has(level.racks, truck.orient === 'h' ? truck.row : truck.row + i, truck.orient === 'h' ? truck.col + i : truck.col)) return true;
+  return false;
 }
 
 /** Slides a truck by delta cells. Returns null if the move is illegal or zero. */
@@ -77,16 +119,22 @@ export function tryMove(state: GameState, id: string, delta: number): MoveResult
   const range = getMoveRange(state, id);
   if (!range || !Number.isInteger(delta) || delta === 0 || delta < range.min || delta > range.max) return null;
 
-  const exited = delta === range.exitDelta;
+  const truck = state.trucks.find((t) => t.id === id)!;
+  const end = slideEnd(state, truck, delta, range);
+  const exited = end === range.exitDelta;
   const trucks = exited
     ? state.trucks.filter((t) => t.id !== id)
-    : state.trucks.map((t) =>
-        t.id !== id ? t : t.orient === 'h' ? { ...t, col: t.col + delta } : { ...t, row: t.row + delta },
-      );
+    : state.trucks.map((t) => {
+        if (t.id !== id) return t;
+        const moved: Truck = t.orient === 'h' ? { ...t, col: t.col + end } : { ...t, row: t.row + end };
+        // A tanker that comes to rest on a load rack is loaded from then on.
+        return moved.load && !moved.loaded && onRack(state.level, moved) ? { ...moved, loaded: true as const } : moved;
+      });
 
   return {
     state: { ...state, trucks, moves: state.moves + 1, history: [...state.history, state.trucks] },
     exited,
+    delta: end,
   };
 }
 
