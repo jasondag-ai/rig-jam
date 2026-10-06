@@ -10,6 +10,7 @@
 //    decodes to exactly its loop's length (no padding left in the loop) and meets itself at the seam
 //  - the Credits screen
 // Run with the dev server up: npm run test:e2e:audio
+import { CORE_KEYS, LAZY_KEYS } from '../src/audio/pack.ts';
 import { UNLOCKED } from './progress.mjs';
 import { chromium, devices, webkit } from 'playwright';
 import { REGIONS } from '../src/levels/regions.ts';
@@ -103,14 +104,14 @@ console.log('\nchromium iPhone 13: sound is off until asked for');
   const log = await heard(page);
   check(fetched.length === 0 && log.filter((n) => n !== 'unlock').length === 0, `with both switches off, a drag plays nothing and nothing is fetched from /audio/ (${fetched.length} requests)`);
 
-  // Sound effects on: the 42 effects load, and no music.
+  // Sound effects on: the game's own effects load (not the wave 3 gags' own: a level fetches those), and no music.
   await page.evaluate(() => document.querySelector('.hud [data-act="levels"]').click());
   await wait(200);
   await tapOn(page, cdp, '.brand .gear');
   await page.$eval('[data-act="sfx"]', (i) => i.click());
-  await page.waitForFunction((n) => window.__rhrAudio.log.filter((x) => x.startsWith('loaded:sfx/')).length >= n, Object.keys(pack.sfx).length, { timeout: 15000 }).catch(() => {});
+  await page.waitForFunction((n) => window.__rhrAudio.log.filter((x) => x.startsWith('loaded:sfx/')).length >= n, CORE_KEYS.length, { timeout: 15000 }).catch(() => {});
   const loaded = await page.evaluate(() => window.__rhrAudio.log.filter((x) => x.startsWith('loaded:')).length);
-  check(loaded === Object.keys(pack.sfx).length && fetched.every((f) => f.startsWith('sfx/')), `Sound effects on: its ${loaded} files load, and no music (${fetched.filter((f) => f.startsWith('music/')).length} music requests)`);
+  check(loaded === CORE_KEYS.length && fetched.every((f) => f.startsWith('sfx/')), `Sound effects on: its ${loaded} files load, and no music (${fetched.filter((f) => f.startsWith('music/')).length} music requests)`);
 
   // Music on: ONE loop is fetched (Country's menu loop), and it plays.
   await page.$eval('[data-act="music"]', (i) => i.click());
@@ -156,7 +157,7 @@ console.log('\nchromium iPhone 13: every cue, at its moment (Sound effects on)')
 {
   const { context, page, cdp } = await open({ audio: ON });
   await touch(cdp, 5, 5);
-  await page.waitForFunction((n) => window.__rhrAudio.log.filter((x) => x.startsWith('loaded:sfx/')).length >= n, Object.keys(pack.sfx).length, { timeout: 15000 });
+  await page.waitForFunction((n) => window.__rhrAudio.log.filter((x) => x.startsWith('loaded:sfx/')).length >= n, CORE_KEYS.length, { timeout: 15000 });
   await heard(page);
   // UI pops.
   await tapOn(page, cdp, '.brand .help');
@@ -203,9 +204,9 @@ console.log('\nchromium iPhone 13: every cue, at its moment (Sound effects on)')
   for (const m of sol) await drag(page, cdp, m.id, m.delta + Math.sign(m.delta) * 0.4);
   await wait(1500);
   log = await heard(page);
-  check(count(log, 'gate') === lv.trucks.length && count(log, 'exit') === lv.trucks.length, `each truck out: the gate's ratchet and ding, and a whoosh (${count(log, 'gate')} gates, ${count(log, 'exit')} whooshes)`);
+  check(count(log, 'clack') === lv.trucks.length && count(log, 'gate') === 0 && count(log, 'exit') === 0, `each truck out: one light wooden clack at the gate (${count(log, 'clack')}), and nothing of the old ratchet or whoosh`);
   check(count(log, 'horn') >= 1 && count(log, 'horn-chord') === count(log, 'horn') * 2, `back-to-back exits sound the toy horn as a chord, three pitches at once (${count(log, 'horn') + count(log, 'horn-chord')} horns)`);
-  check(count(log, 'hat') === 3 && log.includes('win') && !log.includes('lose'), `cleared at par: a pop for each of the three hard hats, then the toy whistle (${list(log)})`);
+  check(count(log, 'hat') === 3 && log.includes('tada') && !log.includes('win') && !log.includes('lose'), `cleared at par: a pop for each of the three hard hats, then the xylophone ta-da (${list(log)})`);
 
   // Well over par: the wah-wah horn.
   await page.evaluate(() => document.querySelector('.win [data-act="restart"], .win [data-act="again"]')?.click());
@@ -221,7 +222,7 @@ console.log('\nchromium iPhone 13: every cue, at its moment (Sound effects on)')
       for (const m of sol) await drag(page, cdp, m.id, m.delta + Math.sign(m.delta) * 0.4);
       await wait(1500);
       log = await heard(page);
-      check(log.includes('lose') && !log.includes('win'), `cleared four over par: the wah-wah horn (${list(log.filter((n) => ['win', 'lose', 'hat'].includes(n)))})`);
+      check(log.includes('lose') && !log.includes('tada'), `cleared four over par: the wah-wah horn (${list(log.filter((n) => ['tada', 'lose', 'hat'].includes(n)))})`);
     } else console.log(`   (no spare move on ${lv.name} from the start: over-par sound not checked here; ${t.id} ${r.min}..${r.max})`);
   }
   // Effects off: silence, and the running sounds stop.
@@ -237,7 +238,7 @@ console.log('\nchromium iPhone 13: every cue, at its moment (Sound effects on)')
 // ---------- 3. Gag sounds follow the gag's beats ----------
 console.log('\nchromium iPhone 13: gag sounds');
 for (const [gag, want, loops, secs] of [
-  ['biffya', ['rattle', 'outhouse', 'poke', 'camera'], [], 6.5],
+  ['biffya', ['knock', 'outhouse', 'poke', 'camera'], [], 6.5],
   ['tourists', ['camera', 'slap', 'scurry', 'wind'], ['tourists:steps', 'tourists:mosquito'], 10.5],
   ['landowner', ['quad_start', 'scurry', 'hop', 'wind', 'poke'], ['landowner:quad_idle', 'landowner:quad_rev'], 9.8],
   ['lunch', ['gopher', 'thwip', 'chomp', 'poke', 'burp'], ['gopherLunch:steps'], 19],
@@ -245,7 +246,7 @@ for (const [gag, want, loops, secs] of [
   const { context, page, cdp } = await open({ query: `?audiolog&gag=${gag}&night=0`, audio: ON });
   // (The first tap, somewhere that is not a button: low in the sky above the lease.)
   await touch(cdp, 195, 150);
-  await page.waitForFunction((n) => window.__rhrAudio.log.filter((x) => x.startsWith('loaded:sfx/')).length >= n, Object.keys(pack.sfx).length, { timeout: 15000 });
+  await page.waitForFunction((n) => window.__rhrAudio.log.filter((x) => x.startsWith('loaded:sfx/')).length >= n, CORE_KEYS.length, { timeout: 15000 });
   // The preview plays again and again: listen to one whole run from its start.
   await page.waitForSelector('.strip-layer', { state: 'detached', timeout: 30000 });
   await heard(page);
@@ -269,7 +270,7 @@ console.log('\nchromium iPhone 13: the pumpjack stops with the level');
   const lv = REGIONS[montney].levels[li];
   const { context, page, cdp } = await open({ audio: ON });
   await touch(cdp, 195, 150);
-  await page.waitForFunction((n) => window.__rhrAudio.log.filter((x) => x.startsWith('loaded:sfx/')).length >= n, Object.keys(pack.sfx).length, { timeout: 15000 });
+  await page.waitForFunction((n) => window.__rhrAudio.log.filter((x) => x.startsWith('loaded:sfx/')).length >= n, CORE_KEYS.length, { timeout: 15000 });
   await enter(page, montney + 1, li);
   await heard(page);
   // (A stroke takes about 8.6 s, so 10 s always holds one.)

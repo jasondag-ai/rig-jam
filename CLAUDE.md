@@ -690,12 +690,12 @@ something, give exact clicks and one command at a time.
   under the effects and the in-play loop is quieter than the menu loop (`MUSIC_VOLUME`).
 - `src/audio/engine.ts`: the AudioContext is made on the first tap (iOS rule); `navigator.
   audioSession.type = 'ambient'` where supported, so the iPhone's silent switch mutes it. NOTHING is
-  fetched before that tap, nor while its switch is off: the effects (0.9 MB) load when Sound
+  fetched before that tap, nor while its switch is off: the game's own effects (0.9 MB; not gag wave 3's, see LAZY below) load when Sound
   effects is on, ONE music loop only when Music is on. The UI only calls `sound.*` cues; every
   button pops by itself (`tap`, and `back` for Back/Close: a pointer listener in `install`).
   `sound.quiet()` when leaving the game screen; `GameView.leave()` stops its gags (and their sounds).
 - Cues: drag (`drag` + the `motor` loop, pitched with speed), backing up (`reverse` loop), bump then
-  `radio` before the bubble, an exit (`gate` + `exit`; exits within `CHAIN_MS` add the toy `horn` as
+  `radio` before the bubble, an exit (`clack`; exits within `CHAIN_MS` add the toy `horn` as
   a three-pitch chord, `HORN_CHORD`, two semitones higher per exit in the chain, `chordLift`), win
   (a pop per hard hat, then `win` at par or `lose` at par + 4 or worse, `winCue`), `streak`, a
   pumpjack's stroke (`pumpjack`, once a stroke for the lease, very quiet).
@@ -716,17 +716,34 @@ something, give exact clicks and one command at a time.
   engine maps to its nearest (`synth` > retro, `lofi` > chill). Settings has both switches, the
   style picker and a CREDITS screen (`src/audio/credits.ts`: the six loops by title, the effects
   gathered by source and licence; nothing picked needs an attribution licence).
-- SOUND PASS (Job S, Oct 6), STEP 1: THE PICKS BOARD. `python3 tools/sound-picks.py` (ffmpeg and
-  numpy) writes ONE self-contained page, audio inside it, to `~/Desktop/RHR Art Inbox/sound_picks.html`
-  and `public/sound-picks.html` (live at `/sound-picks.html`; not in the service worker's precache):
-  22 cues, three options each (alternates from the cartoon pack, trimmed like the game's picks, and
-  clean synthesized ones), each with its loudness measured as `audio-pack.py` measures (mean, peak).
-  Jay picks by ear and sends "Copy my picks". NOTHING NEW IS WIRED UNTIL HE PICKS, except: the
-  bear's business uses the magpie's dropping sound (`bear.relief`: `splat`, then `puff`). The audit:
-  the 8 wave 3 gags are silent; the sign "dingle" is the `rattle` key, used 10 times in 6 gags (deer,
-  surveyor, both biffys, the worker's pail, Sam's scribble); the cue list on the board names the
-  game events with no sound of their own. The synthesized options were made blind (nobody has
-  listened): Jay's ear decides.
+- SOUND PASS (Job S, Oct 6): JAY PICKED BY EAR, AND HIS PICKS ARE WIRED. The picks board
+  (`python3 tools/sound-picks.py`: 22 cues, three options each, written to
+  `~/Desktop/RHR Art Inbox/sound_picks.html` only; it is NOT on the live site) is how the next
+  round would be picked too. His picks: the synthesized ones are exported as WAV sources by
+  `tools/sound-picks.py --export` (`PICKED`) into `tools/sfx-art/`, the pack ones are named in
+  `audio-pack.py`'s `SFX` table; `audio-pack.py` builds both and LEVELS them (`LEVELLED`: each
+  brought to about -19 dB average, peak never past -1.5 dB), so the mix table only gives each
+  its place. 60 effects now.
+  - REPLACED, files and code gone: the old "dingle" (`rattle`) is `knock`, a wooden
+    knock-and-wobble, in all its 11 uses (deer 4, surveyor 2, Runaway Roll 2, Occupied, the
+    worker's pail, Sam's scribble); the old win whistle is `tada` (a xylophone flourish); the
+    gate's ratchet-and-ding and its whoosh (`gate`, `exit`) are ONE light wooden `clack`.
+  - GAG WAVE 3 HAS SOUND, each cue on its beat (`GAG_SOUNDS`, with the reasons beside each gag):
+    a cue may be delayed (`@0.3`) and pitched by semitones (`squeak^3`); the BONKs land on the
+    hits, one squeak a prairie dog rises along the wave, the howl cracks on the squeak beat, the
+    downpour starts when the umbrella is closed. What runs on (`GAG_LOOPS`: squelch, pats,
+    rustle, rumble, rain, downpour) is its file played again before the last has died away, and
+    stopping it FADES what is still sounding (`repeatOff`).
+  - THE MIX (`VOLUME`): gag sounds sit under the truck's bump and the win; what runs on (rain,
+    rumble, rustle, the shimmer) lies lowest.
+  - LAZY (`LAZY_KEYS`, `CORE_KEYS`): the 19 sounds only wave 3 uses are NOT fetched with the
+    rest when Sound effects goes on; a level fetches its own gags' sounds as it opens
+    (`sound.warm`, `gagKeys`). Sound stays off by default.
+  - `npm run test:e2e:gagsounds` plays ALL 26 gags through `?gag=` with sound on in WebKit at
+    iPhone DPR 3: cues fire, files are loaded, sound really goes out and never clips (a meter on
+    the output under `?audiolog`: `__rhrAudio.peak()`), the new cues land on their beats, the
+    lazy loading holds. NOBODY HAS LISTENED in these tests: the levels are measured, not heard.
+  - The bear's business uses the magpie's dropping sound (`bear.relief`: `splat`, then `puff`).
 - Test hook: `?audiolog` exposes `window.__rhrAudio` (its `log` lists cues as they fire and files as
   they load; `musicState()`, `loopRunning(name)`). `npm run test:e2e:audio` checks the lazy loading,
   every cue, gag sounds, the styles, and that every loop file decodes (Chromium and WebKit) to
@@ -1066,6 +1083,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:wave3` – gag wave 3: the standard Mannville scene and its four gags (`ONLY=beaver` runs one; start the dev server first)
 - `npm run test:e2e:tabs` – the region bar: full-size text, the peek, the fades, the active tab in view, swipes never tap, 5 tabs and a made-up 8 (start the dev server first)
 - `npm run test:e2e:beta` – beta readiness: first run, small phones (iPhone SE, 360x800 Android), Settings version and feedback, the update bar (start the dev server first)
+- `npm run test:e2e:gagsounds` – every gag (all 26) with sound on in WebKit: cues, timing, output level, lazy loading (`ONLY=beaver` runs one; start the dev server first)
 - `npm run test:e2e:audio` – sound: lazy loading, every cue, gag sounds, the three music styles, gapless loops, Credits (start the dev server first)
 
 ## Out of scope (M2)

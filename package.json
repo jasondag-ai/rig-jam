@@ -36,7 +36,8 @@
     "test:e2e:wave3": "node e2e/wave3.e2e.mjs",
     "test:e2e:tabs": "node e2e/tabs.e2e.mjs",
     "test:e2e:beta": "node e2e/beta.e2e.mjs",
-    "test:e2e:quick": "node e2e/quick.e2e.mjs"
+    "test:e2e:quick": "node e2e/quick.e2e.mjs",
+    "test:e2e:gagsounds": "node e2e/gag-sounds.e2e.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
