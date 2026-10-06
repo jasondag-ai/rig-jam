@@ -19,7 +19,8 @@ function serviceWorker(): Plugin {
     apply: 'build',
     generateBundle(_options, bundle) {
       const built = Object.keys(bundle).filter((f) => !f.endsWith('.map'));
-      const pub = publicFiles().filter((f) => !f.endsWith('.DS_Store'));
+      // (Music is fetched only when the player turns it on, never ahead of time: it is not precached.)
+      const pub = publicFiles().filter((f) => !f.endsWith('.DS_Store') && !f.startsWith('audio/music/'));
       const fingerprint = [...built, ...pub.map((f) => `${f}:${hashOf(readFileSync(join('public', f), 'latin1'))}`)];
       this.emitFile({
         type: 'asset',

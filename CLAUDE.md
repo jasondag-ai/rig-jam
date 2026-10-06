@@ -526,17 +526,53 @@ something, give exact clicks and one command at a time.
 - `?gag=<name>` previews (`PREVIEWS` in gag-triggers.ts) open a suitable level and play that gag at
   once, again and again. `?idle=0.1` makes idle times 10x shorter.
 
-## Sound (M4)
+## Sound
 
-- `src/audio`, Web Audio only, no audio files. `synth.ts` (tone/noise building blocks), `sfx.ts` (every
-  effect as a recipe; diesel and quad are held sounds), `music.ts` (80s Synth, Chill Lo-fi
-  as 16-step patterns + a lookahead Sequencer), `cues.ts` (pure timing rules: exit chain, win jingle),
-  `settings.ts` (localStorage `rush-hour-rigs-audio`, separate so Reset progress keeps it), `engine.ts`.
-- `engine.ts`: the AudioContext is made on the first tap (iOS rule); `navigator.audioSession.type =
-  'ambient'` where supported so the iPhone silent switch mutes it. Music bus sits under effects.
-  The UI only calls `sound.*` cues. `sound.quiet()` when leaving the game screen.
-- Defaults: effects ON, music OFF, 80s Synth. Settings panel has both switches and the style picker.
-- Test hook: `?audiolog` exposes `window.__rhrAudio` (its `log` lists cues as they fire).
+- REAL FILES, no synth (the old synth engine, `synth.ts` / `sfx.ts` / `music.ts`, is DELETED: do not
+  bring it back). Jay's picked cartoon sounds and music live in `public/audio/` (`sfx/<key>.mp3`, 42
+  of them; `music/<style>_<menu|play>.{ogg|opus,mp3}`, six loops), built by
+  `python3 tools/audio-pack.py` from the packs in `~/Desktop/RHR Art Inbox/Sound files/`
+  (`rhr_cartoon_sounds`, `rhr_music_styles`; needs ffmpeg). The script copies ONLY the picks, trims
+  leading silence, cuts long files to the part the game uses, fades every one-shot's end, and writes
+  `src/audio/pack.json` (length and measured loudness of each file) and `credits.json`. To change a
+  pick, edit its `SFX` / `MUSIC` table and run it again.
+- `src/audio/pack.ts` (pure, tested): THE MIX. `VOLUME` is one number per sound (its place in the
+  game: the player's own sounds on top, engines and loops low, the pumpjack lowest); `gainFor`
+  first evens out each file's own loudness from `pack.json`, so nothing jumps out. Music sits well
+  under the effects and the in-play loop is quieter than the menu loop (`MUSIC_VOLUME`).
+- `src/audio/engine.ts`: the AudioContext is made on the first tap (iOS rule); `navigator.
+  audioSession.type = 'ambient'` where supported, so the iPhone's silent switch mutes it. NOTHING is
+  fetched before that tap, nor while its switch is off: the effects (0.9 MB) load when Sound
+  effects is on, ONE music loop only when Music is on. The UI only calls `sound.*` cues; every
+  button pops by itself (`tap`, and `back` for Back/Close: a pointer listener in `install`).
+  `sound.quiet()` when leaving the game screen; `GameView.leave()` stops its gags (and their sounds).
+- Cues: drag (`drag` + the `motor` loop, pitched with speed), backing up (`reverse` loop), bump then
+  `radio` before the bubble, an exit (`gate` + `exit`; exits within `CHAIN_MS` add the toy `horn` as
+  a three-pitch chord, `HORN_CHORD`, two semitones higher per exit in the chain, `chordLift`), win
+  (a pop per hard hat, then `win` at par or `lose` at par + 4 or worse, `winCue`), `streak`, a
+  pumpjack's stroke (`pumpjack`, once a stroke for the lease, very quiet).
+- GAG SOUNDS: one table, `src/audio/gag-sounds.ts` (`GAG_SOUNDS`: gag > beat > cues; `'poke'`,
+  `'poke@0.4'` delayed, `'+steps'` / `'-steps'` start and stop a loop: steps, snore, mosquito,
+  quad_idle, quad_rev). Every gag runner marks its beats through `markBeat` (`src/ui/gag-beat.ts`),
+  which sets `data-beat` and plays that beat's cues; a gag's loops stop when it ends (`gagEnd`). To
+  move or change a gag's sound, edit the table only.
+- Music: three styles, Country (default), 80s Retro, Chill (`MUSIC_STYLES`), each with a menu loop
+  and an in-play loop (`Scene`); changing scene or style fades over `MUSIC_FADE`. Loops are played
+  as decoded buffers with their loop points set past any MP3 padding (`loopPoints`), gapless format
+  first (`pickFormat`: the delivered Ogg Vorbis, or Ogg Opus where the script re-cut the loop), MP3
+  as the fallback. Bitstream Dreams, Chill Beat and the two Country songs have a 2 s crossfade of
+  tail into head baked in by the script (`crossfaded`). Music files are NOT in the service worker's
+  precache (vite.config.ts).
+- Settings (`settings.ts`, localStorage `rush-hour-rigs-audio`, separate so Reset progress keeps
+  it): SOUND IS OFF BY DEFAULT (effects off, music off), style Country; a style saved under the old
+  engine maps to its nearest (`synth` > retro, `lofi` > chill). Settings has both switches, the
+  style picker and a CREDITS screen (`src/audio/credits.ts`: the six loops by title, the effects
+  gathered by source and licence; nothing picked needs an attribution licence).
+- Test hook: `?audiolog` exposes `window.__rhrAudio` (its `log` lists cues as they fire and files as
+  they load; `musicState()`, `loopRunning(name)`). `npm run test:e2e:audio` checks the lazy loading,
+  every cue, gag sounds, the styles, and that every loop file decodes (Chromium and WebKit) to
+  exactly its loop's length with a clean seam. Nobody has LISTENED in these tests: the mix and the
+  crossfades want an ear check on a phone.
 
 ## Wildlife Log
 - `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game (18:
@@ -722,7 +758,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)
-- `npm run test:e2e:audio` – sound cues, settings and music-style distinctness (start the dev server first)
+- `npm run test:e2e:audio` – sound: lazy loading, every cue, gag sounds, the three music styles, gapless loops, Credits (start the dev server first)
 
 ## Out of scope (M2)
 Daily puzzle, sound, haptics, confetti, skins, Company Man character, magpie.

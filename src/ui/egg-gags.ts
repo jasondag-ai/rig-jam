@@ -2,6 +2,8 @@
 // the magpie: each on a layer over the whole game screen that takes no touches. The worker walks in
 // from past the screen's left edge and leaves past it. The moose's layer sits UNDER the board and is
 // cut off at the board's top line, so he rises from behind the top berm and nothing else clips him.
+import { sound } from '../audio/engine.ts';
+import { markBeat } from './gag-beat.ts';
 import { biffyBox } from './strip-gags.ts';
 import type { BubbleSide } from './bubble.ts';
 import { SIZE, type GameState } from '../engine/index.ts';
@@ -109,7 +111,7 @@ export class WorkerGag {
     const c = run.cancel;
     const p = c ? cancelPose(t - c.at, c.t0)! : wPose(t);
     this.apply(run, p);
-    run.layer.dataset.beat = c ? 'cancel' : wBeatAt(t);
+    markBeat(run.layer, 'worker', c ? 'cancel' : wBeatAt(t));
     run.layer.dataset.off = String(workerOff(p, run.edge));
     if (!c && t >= T_ASLEEP) run.asleep = true;
     if (c ? t - c.at >= CANCEL.gone : t >= W_END) this.finish(run, c ? 'cancelled' : 'seen');
@@ -164,6 +166,7 @@ export class WorkerGag {
   }
 
   private finish(run: WorkerRun, result: EggResult): void {
+    sound.gagEnd('worker');
     cancelAnimationFrame(run.frame);
     run.layer.remove();
     if (this.run === run) this.run = null;
@@ -237,7 +240,7 @@ export class MooseGag {
   private draw(run: MooseRun, t: number): void {
     const p = mPose(t);
     this.apply(run, t);
-    run.layer.dataset.beat = mBeatAt(t);
+    markBeat(run.layer, 'moose', mBeatAt(t));
     // Hidden behind the berm: his antler tips (12 units down his box) are below the cut.
     run.layer.dataset.off = String(p.y >= 97);
     if (p.bub && !run.spoke) {
@@ -299,6 +302,7 @@ export class MooseGag {
   }
 
   private finish(run: MooseRun, result: EggResult): void {
+    sound.gagEnd('moose');
     cancelAnimationFrame(run.frame);
     run.bubble?.remove();
     run.layer.remove();

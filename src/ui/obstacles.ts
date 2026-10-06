@@ -276,13 +276,20 @@ export const phaseFor = (seed: number) => ((seed * 137.5) % 360) * (Math.PI / 18
  * following by the linkage). One animation frame loop for the whole board. Returns a stop function.
  * With reduced motion nothing runs: each pumpjack holds the pose it was drawn in.
  */
-export function runPumpjacks(root: HTMLElement, reducedMotion: boolean): () => void {
+export function runPumpjacks(root: HTMLElement, reducedMotion: boolean, onStroke: () => void = () => {}): () => void {
   const jacks = [...root.querySelectorAll<SVGElement>('.obstacle.pumpjack svg.equip')].map((svg) => ({ svg, phase: Number(svg.parentElement?.dataset.phase ?? 0) }));
   if (reducedMotion || !jacks.length) return () => {};
   let frame = 0;
+  let strokes = -1;
   const start = performance.now();
   const tick = (now: number) => {
     const turn = ((now - start) / STROKE_MS) * Math.PI * 2;
+    // Once a stroke (of the first pumpjack: one squeak for the lease, not one per pumpjack).
+    const n = Math.floor((jacks[0].phase + turn) / (Math.PI * 2));
+    if (n !== strokes) {
+      if (strokes >= 0) onStroke();
+      strokes = n;
+    }
     for (const j of jacks) applyPumpjackPose(j.svg, pumpjackPose(j.phase + turn));
     frame = requestAnimationFrame(tick);
   };

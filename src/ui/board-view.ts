@@ -169,7 +169,7 @@ export class BoardView {
       this.equip.append(ob);
     }
     this.stopPumpjacks();
-    this.stopPumpjacks = runPumpjacks(this.equip, reducedMotion());
+    this.stopPumpjacks = runPumpjacks(this.equip, reducedMotion(), () => sound.pumpjack());
     this.layout();
   }
 

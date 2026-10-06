@@ -550,6 +550,12 @@ export class GameView {
     return { top: this.board.el.getBoundingClientRect().bottom - screen.top, bottom: this.el.querySelector('.note')!.getBoundingClientRect().top - screen.top };
   }
 
+  /** The player has left this level: every gag stops where it is (and its sounds with it). */
+  leave(): void {
+    this.clearEggs();
+    window.clearInterval(this.eggTimer);
+  }
+
   private clearEggs(): void {
     this.magpie?.clear();
     this.worker?.clear();

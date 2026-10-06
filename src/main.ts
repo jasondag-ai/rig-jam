@@ -1,4 +1,5 @@
 import { bearStill } from './ui/bear.ts';
+import { musicCredits, sfxCredits } from './audio/credits.ts';
 import { bullStill } from './ui/bull.ts';
 import { tongueStill } from './ui/frozen-tongue.ts';
 import { geeseStill } from './ui/geese.ts';
@@ -62,6 +63,9 @@ const LOG_ART: Record<Sighting, () => string> = {
   bear: () => bearStill(),
 };
 
+/** Text made safe to put in markup. */
+const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
 /** The region's season, unless ?theme=… overrides it for previewing. */
 const themeFor = (regionIndex: number) => THEMES[themeOverride(location.search) ?? REGIONS[regionIndex].theme];
 
@@ -90,6 +94,7 @@ function savedRegion(): number {
 }
 
 function showLevels(requested = savedRegion()): void {
+  game?.leave();
   game = null;
   sound.quiet();
   const progress = loadProgress();
@@ -229,6 +234,7 @@ function showLevels(requested = savedRegion()): void {
 function showGame(regionIndex: number, index: number, force: GagId | null = null): void {
   const region = REGIONS[regionIndex];
   const hasNext = index + 1 < region.levels.length;
+  game?.leave();
   game = new GameView(
     region.levels[index],
     `${region.name} ${index + 1}`,
@@ -277,8 +283,19 @@ function showSettings(screen: HTMLElement): void {
           <span class="track" aria-hidden="true"><span class="knob"></span></span>
           <span class="switch-label">Unlock everything (demo mode)</span>
         </label>
+        <button class="btn quiet" data-act="credits">Credits</button>
         <button class="btn danger" data-act="reset">Reset progress</button>
         <button class="btn" data-act="close">Done</button>
+      </div>
+      <div class="step credits" hidden>
+        <div class="credits-list">
+          <h3>Music</h3>
+          <ul>${musicCredits().map((c) => `<li><b>${esc(c.title)}</b> by ${esc(c.author)}<small>${esc(c.licence)}</small></li>`).join('')}</ul>
+          <h3>Sound effects</h3>
+          <ul>${sfxCredits().map((c) => `<li><b>${esc(c.author)}</b> (${c.count})<small>${esc(c.licence)}</small></li>`).join('')}</ul>
+          <p>Sounds from Pixabay, Mixkit, OpenGameArt and Kenney, trimmed and mixed for the game.</p>
+        </div>
+        <button class="btn" data-act="cancel">Back</button>
       </div>
       <div class="step confirm" hidden>
         <p class="warn">This wipes your levels, hard hats and streak. Sure?</p>
@@ -288,10 +305,12 @@ function showSettings(screen: HTMLElement): void {
     </div>`;
   const ask = panel.querySelector<HTMLElement>('.ask')!;
   const confirm = panel.querySelector<HTMLElement>('.confirm')!;
+  const creditsStep = panel.querySelector<HTMLElement>('.step.credits')!;
   panel.addEventListener('click', (e) => {
     const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
     if (act === 'reset') [ask.hidden, confirm.hidden] = [true, false];
-    if (act === 'cancel') [ask.hidden, confirm.hidden] = [false, true];
+    if (act === 'credits') [ask.hidden, creditsStep.hidden] = [true, false];
+    if (act === 'cancel') [ask.hidden, confirm.hidden, creditsStep.hidden] = [false, true, true];
     if (act === 'close' || e.target === panel) {
       panel.remove();
       showLevels(); // redraw with the current locks
@@ -329,6 +348,7 @@ function showSettings(screen: HTMLElement): void {
 
 /** The Wildlife Log: a card per gag. Found ones show the character and a caption; the rest a silhouette and a hint. */
 function showLog(regionIndex: number): void {
+  game?.leave();
   game = null;
   sound.quiet();
   // Demo mode shows its own log; the real one comes back when demo mode is switched off.
@@ -382,6 +402,7 @@ function showDaily(): void {
   const pad = padNumber(day);
   const level = { ...DAILY_LEVELS[padLevelIndex(pad, DAILY_LEVELS.length)], name: `Daily Pad #${pad}` };
   const theme = THEMES[themeOverride(location.search) ?? dailyTheme(pad)];
+  game?.leave();
   game = new GameView(level, "Today's pad", theme, { onLevels: () => showLevels(), onNext: null }, { pad, day });
   app.replaceChildren(game.el);
   game.fit();

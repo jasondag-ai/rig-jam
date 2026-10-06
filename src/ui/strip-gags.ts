@@ -3,6 +3,9 @@
 // Each gag is a timeline ported from its approved reference; `TimelineGag` runs one: its layers
 // cover the whole game screen and take no touches, so characters enter from fully off screen and
 // leave until fully off screen, never clipped (the gopher alone is cut off at his hole).
+import { markBeat } from './gag-beat.ts';
+import { sound } from '../audio/engine.ts';
+import type { GagId } from './gag-triggers.ts';
 import { BEAR_BEATS, BEAR_END, BEAR_FRAC, BEAR_GAP, bPose, bearApply, bearScene } from './bear.ts';
 import { BUSH_BOX, BUSH_FRAC, bushMarkup } from './gag-bush.ts';
 import { LUNCH_BEATS, LUNCH_END, LUNCH_GAP, lunchApply, lunchPose, lunchScene, moundWidthFor } from './gopher-lunch.ts';
@@ -396,7 +399,7 @@ export class TimelineGag {
         if (this.run !== run) return;
         const t = (performance.now() - start) / 1000;
         built.apply(t);
-        mark.dataset.beat = beatAt(this.def.beats, t);
+        markBeat(mark, this.def.name as GagId, beatAt(this.def.beats, t));
         const b = [...(built.bubble ? [built.bubble] : []), ...(built.lines ?? [])].find((x) => t >= x.from && t < x.to) ?? null;
         if (b !== run.said) {
           run.bubble?.remove();
@@ -469,6 +472,7 @@ export class TimelineGag {
   }
 
   private finish(result: EggResult): void {
+    sound.gagEnd(this.def.name as GagId);
     const run = this.run;
     if (!run) return;
     this.run = null;

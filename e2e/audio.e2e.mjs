@@ -1,18 +1,23 @@
-// Sound test (Playwright, iPhone 13, Chromium with real touch events). Uses ?audiolog to read which
-// cues fired, and checks each one plays at the right moment: first-tap start, diesel, backup beeper,
-// bump thud + horn with the radio squelch before the bubble, gate clank + air hiss, exit horn chords,
-// win clinks, ditty and sad trombone, the streak stamp, ground sounds, and the Settings switches.
-// On the dev server it also renders the three music styles offline and checks they sound different.
-// Run: npm run dev -- --host   (in one terminal), then:  npm run test:e2e:audio
+// Sound test (Playwright). Chromium as an iPhone 13 with real touch events, using ?audiolog to read
+// which cues fired; WebKit for what Safari decodes.
+//  - sound is OFF by default and NOTHING is fetched from /audio/ until a switch is turned on, and
+//    never before the first tap; the effects load when Sound effects goes on, one music loop only
+//    when Music goes on
+//  - each game event plays its picked sound: drag and motor, the beeper backing up, bump then radio,
+//    gate and whoosh on an exit, the horn chord on a chain (three pitches), win and lose, UI pops
+//  - gag sounds come from the gag's beats, and its loops stop when it ends
+//  - music: three styles, a menu loop and a quieter in-play loop, remembered; every loop file
+//    decodes to exactly its loop's length (no padding left in the loop) and meets itself at the seam
+//  - the Credits screen
+// Run with the dev server up: npm run test:e2e:audio
 import { UNLOCKED } from './progress.mjs';
-import { chromium, devices } from 'playwright';
-import { DAILY_LEVELS, REGIONS } from '../src/levels/regions.ts';
-import { cabSide, getMoveRange, newGame, solve, tryMove } from '../src/engine/index.ts';
-import { dayKey, padLevelIndex, padNumber } from '../src/ui/daily.ts';
-import { hardHats } from '../src/ui/progress.ts';
+import { chromium, devices, webkit } from 'playwright';
+import { REGIONS } from '../src/levels/regions.ts';
+import { cabSide, getMoveRange, newGame, solve } from '../src/engine/index.ts';
+import pack from '../src/audio/pack.json' with { type: 'json' };
 
-const LIVE = !!process.env.URL;
-const BASE = (process.env.URL ?? 'http://localhost:5173/') + '?audiolog&wild=0'; // wildlife sounds are checked in the gags test
+const BASE = process.env.URL ?? 'http://localhost:5173/';
+const Q = '?audiolog&cover=0&night=0&bird=0&nap=0&surveyor=0&tourists=0&lunch=0&off=sam';
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;
 const check = (ok, text) => {
@@ -21,268 +26,285 @@ const check = (ok, text) => {
 };
 
 const browser = await chromium.launch();
-const context = await browser.newContext({ ...devices['iPhone 13'] });
-const page = await context.newPage();
-await page.goto(BASE, { waitUntil: 'networkidle' });
-await page.evaluate((p) => {
-  localStorage.clear();
-  localStorage.setItem('rush-hour-rigs:v2', p);
-}, UNLOCKED);
-await page.reload({ waitUntil: 'networkidle' });
-const cdp = await context.newCDPSession(page);
+async function open({ query = Q, audio = null } = {}) {
+  const context = await browser.newContext({ ...devices['iPhone 13'] });
+  const page = await context.newPage();
+  page.on('pageerror', (e) => console.log('ERR', e.message));
+  const fetched = [];
+  // (The game's own sound files, not the code under src/audio/.)
+  page.on('request', (r) => { const m = r.url().match(/\/audio\/((?:sfx|music)\/[^?]+)/); if (m && !r.url().includes('/src/')) fetched.push(m[1]); });
+  await page.goto(BASE + query, { waitUntil: 'networkidle' });
+  await page.evaluate(([p, a]) => {
+    localStorage.clear();
+    localStorage.setItem('rush-hour-rigs:v2', p);
+    if (a) localStorage.setItem('rush-hour-rigs-audio', a);
+  }, [UNLOCKED, audio && JSON.stringify(audio)]);
+  fetched.length = 0;
+  await page.reload({ waitUntil: 'networkidle' });
+  const cdp = await context.newCDPSession(page);
+  return { context, page, cdp, fetched };
+}
 const tp = (x, y) => [{ x, y, id: 1, radiusX: 4, radiusY: 4, force: 1 }];
-async function drag(id, cellsPath) {
+const touch = async (cdp, x, y) => {
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: tp(x, y) });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+};
+const tapOn = async (page, cdp, sel) => {
+  const b = await (await page.$(sel)).boundingBox();
+  await touch(cdp, b.x + b.width / 2, b.y + b.height / 2);
+  await wait(250);
+};
+async function drag(page, cdp, id, cells) {
   const el = await page.$(`.truck[data-id="${id}"]:not(.exiting)`);
   const b = await el.boundingBox();
   const h = b.width > b.height;
   const cell = await page.$eval('.board', (e) => parseFloat(e.style.getPropertyValue('--cell')));
-  let x = b.x + b.width / 2;
-  let y = b.y + b.height / 2;
+  let x = b.x + b.width / 2, y = b.y + b.height / 2;
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: tp(x, y) });
-  for (const cells of cellsPath) {
-    for (let k = 0; k < 8; k++) {
-      if (h) x += (cells * cell) / 8;
-      else y += (cells * cell) / 8;
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: tp(x, y) });
-      await wait(16);
-    }
+  for (let k = 0; k < 8; k++) {
+    if (h) x += (cells * cell) / 8;
+    else y += (cells * cell) / 8;
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: tp(x, y) });
+    await wait(16);
   }
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await wait(450);
 }
-/** Cues played since the last call, then clears the log. */
-const heard = () => page.evaluate(() => { const a = window.__rhrAudio; const l = a ? [...a.log] : []; if (a) a.log.length = 0; return l; });
+/** Cues played since the last call (loads left out), then clears the log. */
+const heard = (page) => page.evaluate(() => { const a = window.__rhrAudio; const l = a ? a.log.filter((n) => !n.startsWith('loaded:')) : []; if (a) a.log.length = 0; return l; });
 const count = (log, name) => log.filter((n) => n === name).length;
 const list = (log) => [...new Set(log)].join(' ');
-async function enter(tab, index) {
+const enter = async (page, tab, index) => {
   await page.evaluate(() => (document.querySelector('.win:not([hidden]) [data-act="levels"]') ?? document.querySelector('.hud [data-act="levels"]'))?.click());
   await wait(200);
   await page.$eval(`.region-tab:nth-child(${tab})`, (t) => t.click());
   await wait(150);
   await page.$eval(`.level-btn[data-index="${index}"]`, (b) => b.click());
-  await wait(500);
-}
-async function playOut(level, moves) {
-  for (const m of moves) await drag(m.id, [m.delta]);
-  await wait(1300); // the win card comes up 900ms after the last exit
-}
+  await page.waitForSelector('.board .truck');
+  await wait(400);
+};
+const ON = { sfx: true, music: false, style: 'country' };
 
-console.log('\nchromium iPhone 13 (real touch events)');
+// ---------- 1. Off by default; nothing fetched; nothing before the first tap ----------
+console.log('\nchromium iPhone 13: sound is off until asked for');
+{
+  const { context, page, cdp, fetched } = await open();
+  check(await page.evaluate(() => window.__rhrAudio && window.__rhrAudio.ctx === null), 'no audio before the first tap');
+  const defaults = await page.evaluate(() => window.__rhrAudio.settings);
+  check(defaults.sfx === false && defaults.music === false && defaults.style === 'country', `defaults: effects off, music off, Country (${JSON.stringify(defaults)})`);
+  await touch(cdp, 5, 5);
+  await wait(300);
+  check((await page.evaluate(() => window.__rhrAudio.ctx?.state)) === 'running', 'the first tap starts the audio');
+  await enter(page, 1, 0);
+  const lv = REGIONS[0].levels[0];
+  const first = solve(lv)[0];
+  await drag(page, cdp, first.id, first.delta);
+  await wait(400);
+  const log = await heard(page);
+  check(fetched.length === 0 && log.filter((n) => n !== 'unlock').length === 0, `with both switches off, a drag plays nothing and nothing is fetched from /audio/ (${fetched.length} requests)`);
 
-// 1. Nothing before the first tap (iOS rule); the first tap starts the audio.
-check(await page.evaluate(() => window.__rhrAudio && window.__rhrAudio.ctx === null), 'no audio before the first tap');
-await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: tp(5, 5) });
-await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-await wait(200);
-check((await page.evaluate(() => window.__rhrAudio.ctx?.state)) === 'running', 'the first tap starts it');
-const defaults = await page.evaluate(() => window.__rhrAudio.settings);
-check(defaults.sfx === true && defaults.music === false && defaults.style === 'synth', `defaults: effects on, music off, 80s Synth (${JSON.stringify(defaults)})`);
-
-// 2. Cardium 1: birds, diesel, beeper, bump with radio before the bubble.
-await enter(1, 0);
-const card = REGIONS[0].levels[0];
-check(count(await heard(), 'birds') >= 1, 'Cardium: birdsong');
-let state = newGame(card);
-const sol = solve(card);
-// Find a truck that can back up (away from its gate) and one that can push into something.
-let reverse = null;
-let blocked = null;
-for (const t of state.trucks) {
-  const r = getMoveRange(state, t.id);
-  const side = cabSide(card, t);
-  const fwd = side === 'right' || side === 'bottom' ? 1 : -1;
-  const back = fwd === 1 ? r.min : r.max;
-  if (!reverse && back !== 0) reverse = { id: t.id, back };
-  const hiBlocked = r.max !== r.exitDelta;
-  if (!blocked && hiBlocked) blocked = { id: t.id, push: r.max + 0.8 };
-  else if (!blocked && r.min !== r.exitDelta) blocked = { id: t.id, push: r.min - 0.8 };
-}
-// Cardium 1 may have nothing that can back up yet: look through the next few levels.
-for (let i = 1; !reverse && i < REGIONS[0].levels.length; i++) {
-  const lv = REGIONS[0].levels[i];
-  const s0 = newGame(lv);
-  for (const t of s0.trucks) {
-    const r = getMoveRange(s0, t.id);
-    const back = cabSide(lv, t) === 'right' || cabSide(lv, t) === 'bottom' ? r.min : r.max;
-    if (back !== 0) {
-      reverse = { id: t.id, back, level: i };
-      break;
-    }
-  }
-}
-if (reverse) {
-  if (reverse.level) await enter(1, reverse.level);
-  await heard();
-  await drag(reverse.id, [reverse.back]);
-  const log = await heard();
-  check(log.includes('diesel') && log.includes('beeper'), `drag: diesel, and backing up sets off the beeper (${list(log)})`);
-  await drag(reverse.id, [-reverse.back]);
-  const fwd = await heard();
-  check(fwd.includes('diesel') && !fwd.includes('beeper'), `pulling forward: diesel, no beeper (${list(fwd)})`);
-} else check(false, 'found a truck that can back up');
-if (blocked) {
-  await enter(1, 0);
-  await page.evaluate(() => {
-    window.__bubbleAt = null;
-    window.__radioAt = null;
-    const a = window.__rhrAudio;
-    const push = a.log.push.bind(a.log);
-    a.log.push = (n) => { if (n === 'radio' && !window.__radioAt) window.__radioAt = performance.now(); return push(n); };
-    new MutationObserver(() => { if (!window.__bubbleAt && document.querySelector('.bubble')) window.__bubbleAt = performance.now(); }).observe(document.querySelector('.board'), { childList: true });
-  });
-  await drag(blocked.id, [blocked.push]);
-  const log = await heard();
-  const gap = await page.evaluate(() => window.__bubbleAt - window.__radioAt);
-  check(log.includes('thud') && log.includes('horn'), `bump: thud and horn (${list(log)})`);
-  check(log.includes('radio') && gap > 60, `radio squelch first, then the bubble ${Math.round(gap)}ms later`);
-} else check(false, 'found a truck to bump');
-
-// 3. Solve at par: clank + hiss per exit, horn chord on quick back-to-back exits, 3 clinks + ditty.
-await enter(1, 0);
-await heard();
-await playOut(card, sol);
-let log = await heard();
-const exits = card.trucks.length;
-check(count(log, 'clank') >= 1 && count(log, 'hiss') === count(log, 'clank'), `every exit: gate clank + air-brake hiss (${count(log, 'clank')} exits)`);
-check(count(log, 'clink') === 3 && log.includes('ditty') && !log.includes('trombone'), `at par: 3 hard-hat clinks and the ditty (${list(log)})`);
-
-// Horn chords: some level clears trucks back to back within a few seconds.
-let chords = count(log, 'horn-chord');
-for (let i = 1; i < 6 && chords === 0; i++) {
-  await enter(1, i);
-  await heard();
-  await playOut(REGIONS[0].levels[i], solve(REGIONS[0].levels[i]));
-  chords += count(await heard(), 'horn-chord');
-}
-check(chords > 0, `back-to-back exits climb a horn chord (${chords} heard)`);
-
-// 4. Par +4: sad trombone, one clink.
-await enter(1, 0);
-state = newGame(card);
-const wiggle = state.trucks.map((t) => ({ t, r: getMoveRange(state, t.id) })).find(({ r }) => (r.max > 0 && r.max !== r.exitDelta) || (r.min < 0 && r.min !== r.exitDelta));
-const d = wiggle.r.max > 0 && wiggle.r.max !== wiggle.r.exitDelta ? 1 : -1;
-for (let i = 0; i < 2; i++) {
-  await drag(wiggle.t.id, [d]);
-  await drag(wiggle.t.id, [-d]);
-}
-await heard();
-await playOut(card, sol);
-log = await heard();
-const hats = hardHats(sol.length + 4, card.par);
-check(log.includes('trombone') && !log.includes('ditty') && count(log, 'clink') === hats, `par +4: sad trombone and ${hats} clink (${list(log)})`);
-
-// 5. Ground sounds: mud squelch in Montney, snow crunch in Duvernay, no birds there.
-for (const [tab, name, cue] of [[2, 'Montney', 'squelch'], [3, 'Duvernay', 'crunch']]) {
-  await enter(tab, 0);
-  const lv = REGIONS[tab - 1].levels[0];
-  const s0 = newGame(lv);
-  const t = s0.trucks.find((x) => { const r = getMoveRange(s0, x.id); return r.max - r.min >= 2 && r.exitDelta !== r.max && r.exitDelta !== r.min; })
-    ?? s0.trucks.find((x) => { const r = getMoveRange(s0, x.id); return (r.max > 0 && r.max !== r.exitDelta) || (r.min < 0 && r.min !== r.exitDelta); });
-  const r = getMoveRange(s0, t.id);
-  const go = r.max > 0 && r.max !== r.exitDelta ? r.max : r.min;
-  await heard();
-  await drag(t.id, [go, -go, go, -go]);
-  const g = await heard();
-  check(count(g, cue) >= 2 && !g.includes('birds'), `${name}: ${cue} under the wheels, no birds (${count(g, cue)} ${cue}es)`);
-}
-
-// 6. Daily Pad: the streak sign ticks up with a stamp.
-await page.evaluate(() => document.querySelector('.hud [data-act="levels"]')?.click());
-await wait(300);
-const daily = DAILY_LEVELS[padLevelIndex(padNumber(dayKey(new Date())), DAILY_LEVELS.length)];
-await page.$eval('.daily-btn', (b) => b.click());
-await wait(500);
-await heard();
-await playOut(daily, solve(daily));
-log = await heard();
-check(!log.includes('quad'), 'no stray quad engine from an earlier level');
-check(log.includes('stamp'), `Daily cleared: the streak sign stamps (${list(log)})`);
-
-// 7. Settings: switches save, effects off silences cues, music styles switch.
-await page.evaluate(() => (document.querySelector('.win:not([hidden]) [data-act="levels"]') ?? document.querySelector('.hud [data-act="levels"]'))?.click());
-await wait(300);
-await page.$eval('.gear', (g) => g.click());
-await wait(200);
-const sw = (act) => page.$eval(`[data-act="${act}"]`, (i) => i.click());
-await sw('music');
-await wait(200);
-log = await heard();
-check(log.includes('music:synth'), `Music on: 80s Synth plays (${list(log)})`);
-check((await page.$$eval('.style-pick', (b) => b.map((x) => x.textContent))).join(',') === '80s Synth,Chill Lo-fi', 'Settings offers 80s Synth and Chill Lo-fi only (no Country Twang)');
-for (const [id, name] of [['lofi', 'Chill Lo-fi']]) {
-  const label = await page.$eval(`.style-pick[data-style="${id}"]`, (b) => b.textContent);
-  const box = await (await page.$(`.style-pick[data-style="${id}"]`)).boundingBox();
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: tp(box.x + box.width / 2, box.y + box.height / 2) });
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  // Sound effects on: the 42 effects load, and no music.
+  await page.evaluate(() => document.querySelector('.hud [data-act="levels"]').click());
   await wait(200);
-  const l = await heard();
-  check(label === name && l.includes(`music:${id}`) && (await page.$eval(`.style-pick[data-style="${id}"]`, (b) => b.getAttribute('aria-checked'))) === 'true', `tap "${label}": it plays and is ticked`);
-}
-await sw('sfx');
-const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('rush-hour-rigs-audio')));
-check(saved.sfx === false && saved.music === true && saved.style === 'lofi', `saved: ${JSON.stringify(saved)}`);
-await page.$eval('[data-act="close"]', (b) => b.click());
-await enter(1, 1);
-await heard();
-const lv1 = REGIONS[0].levels[1];
-await drag(solve(lv1)[0].id, [solve(lv1)[0].delta]);
-log = await heard();
-check(!log.some((n) => !n.startsWith('music')), `effects off: no effect sounds (${list(log) || 'silence'})`);
-await page.reload({ waitUntil: 'networkidle' });
-await page.$eval('.gear', (g) => g.click());
-const after = await page.evaluate(() => ({
-  sfx: document.querySelector('[data-act="sfx"]').checked,
-  music: document.querySelector('[data-act="music"]').checked,
-  style: document.querySelector('.style-pick[aria-checked="true"]')?.dataset.style,
-}));
-check(!after.sfx && after.music && after.style === 'lofi', `settings survive a reload (${JSON.stringify(after)})`);
-await page.evaluate(() => localStorage.clear());
+  await tapOn(page, cdp, '.brand .gear');
+  await page.$eval('[data-act="sfx"]', (i) => i.click());
+  await page.waitForFunction((n) => window.__rhrAudio.log.filter((x) => x.startsWith('loaded:sfx/')).length >= n, Object.keys(pack.sfx).length, { timeout: 15000 }).catch(() => {});
+  const loaded = await page.evaluate(() => window.__rhrAudio.log.filter((x) => x.startsWith('loaded:')).length);
+  check(loaded === Object.keys(pack.sfx).length && fetched.every((f) => f.startsWith('sfx/')), `Sound effects on: its ${loaded} files load, and no music (${fetched.filter((f) => f.startsWith('music/')).length} music requests)`);
 
-// 8. The two music styles sound clearly different (rendered offline, dev server only).
-if (!LIVE) {
-  const feats = await page.evaluate(async () => {
-    const m = await import(`${location.origin}/src/audio/music.ts`);
-    const out = {};
-    for (const id of ['synth', 'lofi']) {
-      const rate = 22050;
-      const ctx = new OfflineAudioContext(1, rate * 8, rate);
-      m.renderStyle(ctx, ctx.destination, m.STYLES[id], 8);
-      const d = (await ctx.startRendering()).getChannelData(0);
-      let sum = 0, zc = 0, low = 0, lp = 0;
-      for (let i = 0; i < d.length; i++) {
-        sum += d[i] * d[i];
-        if (i && d[i - 1] < 0 !== d[i] < 0) zc++;
-        lp += 0.03 * (d[i] - lp); // one-pole lowpass ~100 Hz
-        low += lp * lp;
-      }
-      // Onsets: 20ms frames whose energy jumps well above the previous frame.
-      const frame = rate * 0.02;
-      let prev = 0, onsets = 0;
-      for (let f = 0; f + frame < d.length; f += frame) {
-        let e = 0;
-        for (let i = f; i < f + frame; i++) e += d[i] * d[i];
-        if (e > prev * 2 && e > 0.02) onsets++;
-        prev = e;
-      }
-      out[id] = { rms: Math.sqrt(sum / d.length), zcr: zc / 8, lowShare: low / sum, onsetsPerSec: onsets / 8 };
-    }
-    return out;
-  });
-  for (const [id, f] of Object.entries(feats)) console.log(`        ${id.padEnd(8)} rms ${f.rms.toFixed(3)}  crossings/s ${Math.round(f.zcr)}  bass share ${f.lowShare.toFixed(2)}  onsets/s ${f.onsetsPerSec.toFixed(1)}`);
-  const ids = Object.keys(feats);
-  for (let i = 0; i < ids.length; i++)
-    for (let j = i + 1; j < ids.length; j++) {
-      const a = feats[ids[i]];
-      const b = feats[ids[j]];
-      const rel = (x, y) => Math.abs(x - y) / Math.max(x, y);
-      const diff = Math.max(rel(a.zcr, b.zcr), rel(a.lowShare, b.lowShare), rel(a.onsetsPerSec, b.onsetsPerSec));
-      check(diff > 0.25, `${ids[i]} vs ${ids[j]}: clearly different (${Math.round(diff * 100)}% apart on the biggest feature)`);
-    }
-  const loudest = Math.max(...Object.values(feats).map((f) => f.rms));
-  const quietest = Math.min(...Object.values(feats).map((f) => f.rms));
-  check(loudest / quietest < 3, `similar loudness, so no style jumps out (${(loudest / quietest).toFixed(1)}x)`);
+  // Music on: ONE loop is fetched (Country's menu loop), and it plays.
+  await page.$eval('[data-act="music"]', (i) => i.click());
+  await page.waitForFunction(() => window.__rhrAudio.musicState(), null, { timeout: 15000 }).catch(() => {});
+  let music = await page.evaluate(() => window.__rhrAudio.musicState());
+  const musicFiles = () => fetched.filter((f) => f.startsWith('music/'));
+  check(music?.key === 'country_menu' && musicFiles().length === 1, `Music on: one loop is fetched and plays, Country's menu loop (${musicFiles().join(', ')})`);
+  check(Math.abs(music.loopEnd - music.loopStart - pack.music.country_menu.seconds) < 0.03, `it loops over exactly its ${pack.music.country_menu.seconds} s (${(music.loopEnd - music.loopStart).toFixed(3)} s between its loop points)`);
+
+  // The three styles switch in Settings; each has its own menu loop.
+  const names = await page.$$eval('.style-pick', (bs) => bs.map((b) => b.textContent));
+  check(names.join() === 'Country,80s Retro,Chill', `Settings offers a Music style: ${names.join(', ')}`);
+  for (const [style, key] of [['retro', 'retro_menu'], ['chill', 'chill_menu']]) {
+    await tapOn(page, cdp, `.style-pick[data-style="${style}"]`);
+    await page.waitForFunction((k) => window.__rhrAudio.musicState()?.key === k, key, { timeout: 15000 }).catch(() => {});
+    music = await page.evaluate(() => window.__rhrAudio.musicState());
+    check(music?.key === key && (await page.$eval(`.style-pick[data-style="${style}"]`, (b) => b.getAttribute('aria-checked'))) === 'true', `${style}: its menu loop plays (${music?.key})`);
+  }
+  // Credits.
+  await tapOn(page, cdp, '[data-act="credits"]');
+  const credits = await page.evaluate(() => { const c = document.querySelector('.step.credits'); return { shown: !c.hidden, music: [...c.querySelectorAll('ul')][0].children.length, sfx: [...c.querySelectorAll('ul')][1].children.length, text: c.textContent }; });
+  check(credits.shown && credits.music === 6 && credits.sfx >= 5 && /Chill Beat/.test(credits.text) && /Pixabay Content License/.test(credits.text) && /Mixkit/.test(credits.text) && /CC0/.test(credits.text), `Credits lists the ${credits.music} music loops and the effects' ${credits.sfx} sources, with their licences`);
+  await tapOn(page, cdp, '.step.credits [data-act="cancel"]');
+  await tapOn(page, cdp, '.settings [data-act="close"]');
+  // Into a level: the same style's in-play loop, quieter than the menu's.
+  const menuGain = music.gain;
+  await enter(page, 1, 1);
+  await page.waitForFunction(() => window.__rhrAudio.musicState()?.key === 'chill_play', null, { timeout: 15000 }).catch(() => {});
+  music = await page.evaluate(() => window.__rhrAudio.musicState());
+  check(music?.key === 'chill_play' && music.gain < menuGain * 0.8, `in a level the in-play loop takes over, quieter than the menu loop (${music?.gain.toFixed(3)} against ${menuGain.toFixed(3)})`);
+  await page.evaluate(() => document.querySelector('.hud [data-act="levels"]').click());
+  await page.waitForFunction(() => window.__rhrAudio.musicState()?.key === 'chill_menu', null, { timeout: 8000 }).catch(() => {});
+  check((await page.evaluate(() => window.__rhrAudio.musicState()?.key)) === 'chill_menu', 'back on the level list the menu loop returns');
+  // Remembered.
+  await page.reload({ waitUntil: 'networkidle' });
+  const saved = await page.evaluate(() => window.__rhrAudio.settings);
+  check(saved.sfx && saved.music && saved.style === 'chill' && (await page.evaluate(() => window.__rhrAudio.ctx === null)), `the choices are remembered (${JSON.stringify(saved)}), and after a reload nothing plays or loads until the first tap`);
+  await context.close();
 }
 
+// ---------- 2. Each game event plays its picked sound ----------
+console.log('\nchromium iPhone 13: every cue, at its moment (Sound effects on)');
+{
+  const { context, page, cdp } = await open({ audio: ON });
+  await touch(cdp, 5, 5);
+  await page.waitForFunction((n) => window.__rhrAudio.log.filter((x) => x.startsWith('loaded:sfx/')).length >= n, Object.keys(pack.sfx).length, { timeout: 15000 });
+  await heard(page);
+  // UI pops.
+  await tapOn(page, cdp, '.brand .help');
+  await tapOn(page, cdp, '.tutorial [data-t="next"]');
+  await tapOn(page, cdp, '.tutorial [data-t="close"]');
+  let log = await heard(page);
+  check(count(log, 'tap') === 2 && count(log, 'back') === 1, `buttons pop when tapped, and Close has the softer pop (${list(log)})`);
+
+  // A level where a truck can back up, and one that is blocked.
+  let pick = null;
+  for (let i = 0; !pick && i < REGIONS[0].levels.length; i++) {
+    const lv = REGIONS[0].levels[i];
+    const s0 = newGame(lv);
+    let reverse = null, blocked = null;
+    for (const t of s0.trucks) {
+      const r = getMoveRange(s0, t.id);
+      const fwd = cabSide(lv, t) === 'right' || cabSide(lv, t) === 'bottom';
+      const back = fwd ? r.min : r.max;
+      if (!reverse && back !== 0) reverse = { id: t.id, back };
+      if (!blocked && r.max === 0 && r.exitDelta !== 1) blocked = { id: t.id, push: 1.2 };
+      else if (!blocked && r.min === 0 && r.exitDelta !== -1) blocked = { id: t.id, push: -1.2 };
+    }
+    if (reverse && blocked) pick = { i, reverse, blocked };
+  }
+  await enter(page, 1, pick.i);
+  await heard(page);
+  await drag(page, cdp, pick.reverse.id, pick.reverse.back);
+  log = await heard(page);
+  check(log.includes('drag') && log.includes('motor') && log.includes('beeper'), `a drag: the engine starts and runs, and backing up sets off the beeper (${list(log)})`);
+  check((await page.evaluate(() => window.__rhrAudio.loopRunning('motor') || window.__rhrAudio.loopRunning('beeper'))) === false, 'the truck let go: the engine and the beeper stop');
+  await drag(page, cdp, pick.reverse.id, -pick.reverse.back);
+  log = await heard(page);
+  check(log.includes('motor') && !log.includes('beeper'), 'driving forward: no beeper');
+  await drag(page, cdp, pick.blocked.id, pick.blocked.push);
+  await wait(500);
+  log = await heard(page);
+  check(log.includes('bump') && log.indexOf('radio') > log.indexOf('bump') && !!(await page.$('.bubble')), `a bump: the thud, then the radio squelch with the driver's line (${list(log)})`);
+
+  // Exits: the gate and the whoosh; a chain of exits adds the horn chord, at three pitches.
+  const lv = REGIONS[0].levels[0];
+  await enter(page, 1, 0);
+  await heard(page);
+  const sol = solve(lv);
+  for (const m of sol) await drag(page, cdp, m.id, m.delta + Math.sign(m.delta) * 0.4);
+  await wait(1500);
+  log = await heard(page);
+  check(count(log, 'gate') === lv.trucks.length && count(log, 'exit') === lv.trucks.length, `each truck out: the gate's ratchet and ding, and a whoosh (${count(log, 'gate')} gates, ${count(log, 'exit')} whooshes)`);
+  check(count(log, 'horn') >= 1 && count(log, 'horn-chord') === count(log, 'horn') * 2, `back-to-back exits sound the toy horn as a chord, three pitches at once (${count(log, 'horn') + count(log, 'horn-chord')} horns)`);
+  check(count(log, 'hat') === 3 && log.includes('win') && !log.includes('lose'), `cleared at par: a pop for each of the three hard hats, then the toy whistle (${list(log)})`);
+
+  // Well over par: the wah-wah horn.
+  await page.evaluate(() => document.querySelector('.win [data-act="restart"], .win [data-act="again"]')?.click());
+  await wait(500);
+  await heard(page);
+  {
+    const t = lv.trucks[0], r = getMoveRange(newGame(lv), t.id);
+    // Waste four moves (two trucks back and forth), then solve.
+    const idle = newGame(lv).trucks.map((x) => ({ x, r: getMoveRange(newGame(lv), x.id) })).find(({ r: q }) => (q.max > 0 && q.exitDelta !== q.max) || (q.min < 0 && q.exitDelta !== q.min));
+    if (idle) {
+      const by = idle.r.max > 0 && idle.r.exitDelta !== idle.r.max ? 1 : -1;
+      for (const d of [by, -by, by, -by]) await drag(page, cdp, idle.x.id, d);
+      for (const m of sol) await drag(page, cdp, m.id, m.delta + Math.sign(m.delta) * 0.4);
+      await wait(1500);
+      log = await heard(page);
+      check(log.includes('lose') && !log.includes('win'), `cleared four over par: the wah-wah horn (${list(log.filter((n) => ['win', 'lose', 'hat'].includes(n)))})`);
+    } else console.log(`   (no spare move on ${lv.name} from the start: over-par sound not checked here; ${t.id} ${r.min}..${r.max})`);
+  }
+  // Effects off: silence, and the running sounds stop.
+  await page.evaluate(() => window.__rhrAudio.setSettings({ sfx: false }));
+  await heard(page);
+  await page.evaluate(() => document.querySelector('.win:not([hidden]) [data-act="levels"]')?.click());
+  await wait(300);
+  log = await heard(page);
+  check(log.length === 0, 'Sound effects off: nothing plays');
+  await context.close();
+}
+
+// ---------- 3. Gag sounds follow the gag's beats ----------
+console.log('\nchromium iPhone 13: gag sounds');
+for (const [gag, want, loops, secs] of [
+  ['biffya', ['rattle', 'outhouse', 'poke', 'camera'], [], 6.5],
+  ['tourists', ['camera', 'slap', 'scurry', 'wind'], ['tourists:steps', 'tourists:mosquito'], 10.5],
+  ['landowner', ['quad_start', 'scurry', 'hop', 'wind', 'poke'], ['landowner:quad_idle', 'landowner:quad_rev'], 9.8],
+  ['lunch', ['gopher', 'thwip', 'chomp', 'poke', 'burp'], ['gopherLunch:steps'], 19],
+]) {
+  const { context, page, cdp } = await open({ query: `?audiolog&gag=${gag}&night=0`, audio: ON });
+  // (The first tap, somewhere that is not a button: low in the sky above the lease.)
+  await touch(cdp, 195, 150);
+  await page.waitForFunction((n) => window.__rhrAudio.log.filter((x) => x.startsWith('loaded:sfx/')).length >= n, Object.keys(pack.sfx).length, { timeout: 15000 });
+  // The preview plays again and again: listen to one whole run from its start.
+  await page.waitForSelector('.strip-layer', { state: 'detached', timeout: 30000 });
+  await heard(page);
+  await page.waitForSelector('.strip-layer', { state: 'attached', timeout: 10000 });
+  await wait(secs * 1000);
+  const log = await heard(page);
+  const missing = [...want, ...loops].filter((n) => !log.includes(n));
+  check(missing.length === 0, `${gag}: ${[...want, ...loops].join(', ')}${missing.length ? ` (missing: ${missing.join(', ')}; heard ${list(log)})` : ''}`);
+  if (loops.length) {
+    await page.waitForSelector('.strip-layer', { state: 'detached', timeout: 15000 }).catch(() => {});
+    const running = await page.evaluate((ls) => ls.filter((l) => window.__rhrAudio.loopRunning(l)), loops);
+    check(running.length === 0, `${gag}: its loops stop when it ends`);
+  }
+  await context.close();
+}
 await browser.close();
+
+// ---------- 4. Every loop file decodes to exactly its loop: no gap, no click ----------
+for (const [engine, type] of [['chromium', chromium], ['webkit', webkit]]) {
+  console.log(`\n${engine}: the music loops, as this browser decodes them`);
+  const b = await type.launch();
+  const page = await (await b.newContext()).newPage();
+  await page.goto(BASE + '?cover=0', { waitUntil: 'networkidle' });
+  for (const [key, info] of Object.entries(pack.music)) {
+    const out = await page.evaluate(async ([formats, maxPad]) => {
+      const ctx = new (window.AudioContext ?? window.webkitAudioContext)();
+      const results = [];
+      for (const f of formats) {
+        const can = new Audio().canPlayType(f.type);
+        try {
+          const data = await (await fetch(`./audio/music/${f.file}`)).arrayBuffer();
+          const buf = await new Promise((ok, no) => { const p = ctx.decodeAudioData(data, ok, no); if (p) p.then(ok, no); });
+          const x = buf.getChannelData(0), rate = buf.sampleRate, max = Math.floor(maxPad * rate);
+          // The game's own rule (pack.ts loopPoints): true silence at the head and tail is skipped.
+          let a = 0; while (a < max && Math.abs(x[a]) <= 0.0008) a++;
+          let z = x.length; while (x.length - z < max && z > a && Math.abs(x[z - 1]) <= 0.0008) z--;
+          // The seam: the loop's last sample against its first, and against the steps just before and after.
+          const jump = Math.abs(x[z - 1] - x[a]);
+          let step = 0; for (let i = 1; i < 400; i++) step = Math.max(step, Math.abs(x[a + i] - x[a + i - 1]), Math.abs(x[z - i] - x[z - i - 1]));
+          results.push({ file: f.file, can, seconds: (z - a) / rate, raw: x.length / rate, jump, step });
+        } catch (e) {
+          results.push({ file: f.file, can, error: String(e).slice(0, 60) });
+        }
+      }
+      await ctx.close();
+      return results;
+    }, [info.formats, 0.08]);
+    for (const r of out) {
+      if (r.error) {
+        // A format this browser says it cannot play is never asked for (the MP3 is); one it claims but cannot decode falls back to the MP3.
+        check(r.file.endsWith('.mp3') === false, `${key}: ${r.file} does not decode here (canPlayType "${r.can}"): the game falls back to the MP3`);
+        continue;
+      }
+      check(Math.abs(r.seconds - info.seconds) < 0.03 && r.jump <= Math.max(0.12, r.step * 2.5), `${key}: ${r.file} loops over ${r.seconds.toFixed(3)} s of its ${r.raw.toFixed(3)} s (the loop is ${info.seconds} s); at the seam the wave steps ${r.jump.toFixed(3)} (its own steps there: up to ${r.step.toFixed(3)})`);
+    }
+    check(out.some((r) => !r.error), `${key}: at least one format plays in ${engine}`);
+  }
+  await b.close();
+}
+
 console.log(failures ? `\nFAILED: ${failures} check(s)` : '\nPASS');
 process.exit(failures ? 1 : 0);

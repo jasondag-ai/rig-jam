@@ -2,6 +2,7 @@
 // (not inside the board), so he is never clipped by the board, the berm or any container: he flies
 // in from fully off screen and out until he is fully off screen. The layer takes no touches. The
 // splat and its drip belong to the truck, so they stay on it and move with it.
+import { markBeat } from './gag-beat.ts';
 import type { BubbleSide } from './bubble.ts';
 import type { GameState, Side } from '../engine/index.ts';
 import { sound } from '../audio/engine.ts';
@@ -134,7 +135,7 @@ export class MagpieGag {
     const p = run.startle ? startlePose(t - run.startle.at, run.startle.from, run.startle.out) : pose(t, run.travel);
     const screenW = this.host.screen.getBoundingClientRect().width;
     this.apply(run, p, spot);
-    run.layer.dataset.beat = run.startle ? 'startle' : beatAt(t);
+    markBeat(run.layer, 'magpie', run.startle ? 'startle' : beatAt(t));
     run.layer.dataset.off = String(!p.show || offScreen(p, spot, run.w, screenW));
 
     if (!run.startle) {
@@ -258,6 +259,7 @@ export class MagpieGag {
   }
 
   private finish(run: Run, splatted: boolean): void {
+    sound.gagEnd('magpie');
     cancelAnimationFrame(run.frame);
     if (run.drip && splatted) run.drip.style.height = `${DRIP_FULL * run.w * MARK}px`;
     run.layer.remove();
