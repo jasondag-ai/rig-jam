@@ -4025,7 +4025,8 @@ svg.dig-tunnel {
 .dig-arrival {
   position: absolute;
   left: 50%;
-  top: 214px;
+  /* (Under the penguin's and the seal's speech bubbles.) */
+  top: 240px;
   z-index: 2;
   display: grid;
   justify-items: center;

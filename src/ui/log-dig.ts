@@ -129,7 +129,15 @@ const ART: Record<BuriedId, () => string> = {
       `<ellipse cx="70" cy="68" rx="40" ry="5" fill="#b2473e"/><ellipse cx="70" cy="68" rx="30" ry="3" fill="#e0a13c"/>` +
       `<g ${thin}><rect x="24" y="44" width="26" height="22" rx="6" fill="#4f7d5b"/><rect x="20" y="52" width="8" height="15" rx="3.5" fill="#5f9069"/><rect x="46" y="52" width="8" height="15" rx="3.5" fill="#5f9069"/><rect x="27" y="54" width="20" height="8" rx="3" fill="#77a882"/></g>` +
       `<g ${thin}><path d="M100 66 L100 40" /><path d="M92 40 L108 40 L104 28 L96 28 Z" fill="#ffd66b"/><path d="M95 66 L105 66"/></g>` +
-      `<g ${thin}><rect x="60" y="22" width="18" height="14" rx="1.5" fill="#f3e8cf"/><path d="M63 33 L67 27 L70 31 L72 29 L75 33 Z" fill="#7fb069"/></g>` +
+      // On the wall: the family portrait, framed (two parents and a pup, all ears and front teeth).
+      `<path d="M69 17 L64 21 M69 17 L74 21" stroke="${O}" stroke-width="1" fill="none"/><circle cx="69" cy="17" r="1" fill="${O}"/>` +
+      `<g ${thin}><rect x="56" y="20.5" width="26" height="18" rx="2" fill="#b9853f"/><rect x="58.6" y="23" width="20.8" height="13" rx="0.8" fill="#bfe0ea"/></g>` +
+      [[63.3, 31, 3.3], [74.7, 31, 3.3], [69, 33, 2.4]].map(([x, y, r]) =>
+        `<g stroke="${O}" stroke-width="0.9"><circle cx="${x - r * 0.72}" cy="${y - r * 0.8}" r="${r * 0.36}" fill="#a9763f"/><circle cx="${x + r * 0.72}" cy="${y - r * 0.8}" r="${r * 0.36}" fill="#a9763f"/>` +
+        `<path d="M${x - r * 1.25} 36 Q${x - r * 1.3} ${y + r * 0.9} ${x} ${y + r * 0.8} Q${x + r * 1.3} ${y + r * 0.9} ${x + r * 1.25} 36 Z" fill="#b98548"/><circle cx="${x}" cy="${y}" r="${r}" fill="#c9995c"/></g>` +
+        `<ellipse cx="${x}" cy="${y + r * 0.42}" rx="${r * 0.55}" ry="${r * 0.4}" fill="#f0dcb4"/><circle cx="${x - r * 0.4}" cy="${y - r * 0.2}" r="0.55" fill="${O}"/><circle cx="${x + r * 0.4}" cy="${y - r * 0.2}" r="0.55" fill="${O}"/>` +
+        `<circle cx="${x}" cy="${y + r * 0.22}" r="0.5" fill="#5a3320"/><rect x="${x - 0.55}" y="${y + r * 0.5}" width="1.1" height="1.1" fill="#fff" stroke="${O}" stroke-width="0.3"/>`).join('') +
+      `<rect x="58.6" y="23" width="20.8" height="13" rx="0.8" fill="none" stroke="${O}" stroke-width="1.2"/>` +
       `<g ${thin}><path d="M62 56 L88 56 L88 59 L62 59 Z" fill="#c98f52"/><path d="M66 59 L66 67 M84 59 L84 67"/>` +
       `<ellipse cx="75" cy="54" rx="9" ry="2.6" fill="#f7f4ec"/><path d="M69 53 L81 53 L75 47.5 Z" fill="#e0a13c"/><path d="M71.5 52 L78.5 52" stroke="#f7e3a8" stroke-width="1.2"/></g>`),
   phone: () =>

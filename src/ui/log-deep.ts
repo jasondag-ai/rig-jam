@@ -334,8 +334,20 @@ export function kerguelenSvg(width: number): string {
   body += `<g transform="translate(${n(cx - 58)} ${sea + 58}) scale(1.15 -1.15)"><ellipse cx="0" cy="-22" rx="12" ry="20" fill="#2b2f3a" ${ol}/><ellipse cx="1" cy="-19" rx="7.5" ry="15" fill="#fbfbf6"/><path d="M-5 -34 Q1 -30 7 -34" fill="none" stroke="#f2a51e" stroke-width="3" stroke-linecap="round"/><circle cx="0" cy="-42" r="8" fill="#2b2f3a" ${ol}/><path d="M5 -43 l11 2 l-11 3 z" fill="#f08a24" ${thin}/><circle cx="2" cy="-44" r="1.4" fill="#fff"/><path d="M-12 -26 q-6 8 -3 16 M12 -26 q6 8 3 16" fill="none" stroke="${O}" stroke-width="4" stroke-linecap="round"/><path d="M-7 -2 h6 M2 -2 h6" stroke="#f08a24" stroke-width="3.4" stroke-linecap="round"/></g>`;
   // an elephant seal, flopped beside him
   body += `<g transform="translate(${n(cx + 58)} ${sea + 60}) scale(1.15 -1.15)"><path d="M-38 0 Q-44 -14 -24 -20 Q4 -30 26 -22 Q40 -18 40 -6 Q40 0 30 0 Z" fill="#8b7d6f" ${ol}/><path d="M-38 0 l-10 -7 l2 9 l-6 4 z" fill="#8b7d6f" ${thin}/><circle cx="30" cy="-14" r="1.8" fill="${O}"/><path d="M38 -10 Q48 -10 46 0 Q42 4 38 -2 Z" fill="#7a6d60" ${thin}/><path d="M-8 -2 q8 -6 18 -2" fill="none" stroke="#6f6358" stroke-width="2" stroke-linecap="round"/></g>`;
+  // What they say (Jay, Oct 6). The words are the right way up for US, so we can read them: each
+  // bubble's tail goes up to its speaker's head.
+  const say = (x: number, y: number, w: number, lines: string[], tipX: number, tipY: number) => {
+    const bh = 12 + lines.length * 13, left = Math.max(4, Math.min(width - w - 4, x)), tx = Math.max(left + 12, Math.min(left + w - 12, tipX));
+    return `<g class="kerg-say"><path d="M${n(tx - 7)} ${y + 2} L${n(tipX)} ${tipY} L${n(tx + 7)} ${y + 2} Z" fill="#fffdf6" ${thin}/><rect x="${n(left)}" y="${y}" width="${w}" height="${bh}" rx="9" fill="#fffdf6" ${ol}/><path d="M${n(tx - 5.6)} ${y + 1.4} L${n(tx + 5.6)} ${y + 1.4}" stroke="#fffdf6" stroke-width="3.2"/>` +
+      lines.map((t, i) => `<text x="${n(left + w / 2)}" y="${y + 17 + i * 13}" text-anchor="middle" font-size="11.5" font-weight="700" fill="${O}">${t}</text>`).join('') + `</g>`;
+  };
+  body += say(cx - 150, sea + 120, 92, KERGUELEN_SAYS.penguin, cx - 60, sea + 110);
+  body += say(cx + 66, sea + 104, 88, KERGUELEN_SAYS.seal, cx + 100, sea + 82);
   return `<svg class="deep-surface" viewBox="0 0 ${width} ${h}" width="${width}" height="${h}" preserveAspectRatio="none" aria-hidden="true">${body}</svg>`;
 }
+
+/** The far side's two locals, each sure it is the other who is upside down (bubble lines). */
+export const KERGUELEN_SAYS = { penguin: ["You're upside", 'down.'], seal: ['No, YOU are.'] };
 
 /** The Dug Through card's picture: the Earth cut in half, the hole straight through it, a derrick on top and a penguin underneath. */
 export function dugStill(): string {
