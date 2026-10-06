@@ -78,10 +78,10 @@ for (const [width, height] of [[390, 844], [375, 667]]) {
   check(dig.wide && dig.top < 1 && Math.abs(dig.tall) < 2 && !dig.scrollX, 'it spans the whole screen width, and with the deep layers under it the whole height of the log, with no gap and no sideways scroll');
   check(dig.deep.join() === DEEP.map((l) => l.id).join(), `past the reservoir it goes right through the Earth: ${DEEP.map((l) => l.name).join(', ')}`);
   {
-    // Groups of four; a window after each of the first four groups; every later group, then the deep formations.
+    // Groups of four; a window after each of the first six groups; then the deep formations under the last group.
     const groups = Math.ceil(SHOWN / 4), wins = FORMATIONS.filter((f) => f.window).map((f) => f.id), want = [];
-    for (let g = 1; g <= groups; g++) { want.push('cards'); if (g <= 4 && g < groups) want.push(wins[g - 1]); }
-    want.push(...wins.slice(Math.min(4, groups - 1)));
+    for (let g = 1; g <= groups; g++) { want.push('cards'); if (g <= 6 && g < groups) want.push(wins[g - 1]); }
+    want.push(...wins.slice(Math.min(6, groups - 1)));
     check(dig.cards === SHOWN && dig.groups.every((n, i) => n === Math.min(4, dig.cards - i * 4)) && dig.order.join() === want.join() && dig.below > 500, `the ${dig.cards} cards stand over it in groups of four with a window on the rock between them (${dig.order.join(' ')}); below the last card it keeps going down another ${Math.round(dig.below)} px`);
   }
   check(dig.wellhead && dig.boreTop <= 16 && dig.td > dig.reef.top + 40 && dig.td < dig.reef.bottom, 'a wellbore runs from a wellhead at the surface down into the reservoir');
@@ -102,7 +102,7 @@ for (const [width, height] of [[390, 844], [375, 667]]) {
     const grassy = tones.filter((t) => t.mean[1] > t.mean[0] + 18 && t.mean[1] > t.mean[2] + 18);
     const far = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
     const alike = tones.slice(1).filter((t, i) => far(t.mean, tones[i].mean) < 14);
-    check(tones.length === 9 && grassy.length === 0 && alike.length === 0, `in the page's margin, rock at every depth and a different rock in each formation (${tones.map((t) => `${t.id} ${t.mean.join(' ')}`).join('; ')})`);
+    check(tones.length === FORMATIONS.filter((f) => f.window).length && grassy.length === 0 && alike.length === 0, `in the page's margin, rock at every depth and a different rock in each formation (${tones.map((t) => `${t.id} ${t.mean.join(' ')}`).join('; ')})`);
   }
 
   // Pills.
@@ -117,7 +117,7 @@ for (const [width, height] of [[390, 844], [375, 667]]) {
     return out;
   });
   check(pills.map((p) => p.text).join() === [...FORMATIONS.map((f) => f.name), ...DEEP.flatMap((l) => (l.id === 'innerCore' ? [l.name, 'Centre of the Earth'] : [l.name]))].join() && pills.every((p) => p.seen && p.h <= 30), `a small pill names every formation, none covered: ${pills.map((p) => p.text).join(', ')}`);
-  check(pills.filter((p) => p.locked).map((p) => p.id).join() === 'mannville,montney,bakken,duvernay' && new Set(pills.filter((p) => p.locked).map((p) => p.bg)).size === 1 && pills.find((p) => p.id === 'cardium').bg !== pills.find((p) => p.id === 'montney').bg,
+  check(pills.filter((p) => p.locked).map((p) => p.id).join() === 'mannville,montney,exshaw,duvernay' && new Set(pills.filter((p) => p.locked).map((p) => p.bg)).size === 1 && pills.find((p) => p.id === 'cardium').bg !== pills.find((p) => p.id === 'montney').bg,
     `a new player: Cardium's pill is live, the locked regions' pills are greyed (${pills.filter((p) => p.locked).map((p) => p.text).join(', ')})`);
 
   if (width === 390) {
@@ -284,7 +284,7 @@ console.log('\nwebkit 390x844: the depth gauge, the stopwatch and Dug Through');
 console.log('\nwebkit: every region unlocked');
 {
   const { context, page } = await open(wk, { progress: UNLOCKED });
-  check((await page.$$eval('.dig-pill.locked', (p) => p.length)) === 0 && (await page.$$eval('.dig-pill', (p) => p.length)) === 21, 'no pill is greyed once every region is open');
+  check((await page.$$eval('.dig-pill.locked', (p) => p.length)) === 0 && (await page.$$eval('.dig-pill', (p) => p.length)) === FORMATIONS.length + DEEP.length + 1, 'no pill is greyed once every region is open');
   await context.close();
 }
 

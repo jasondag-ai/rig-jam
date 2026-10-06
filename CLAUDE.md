@@ -741,8 +741,11 @@ something, give exact clicks and one command at a time.
   toast and card as a gag. Its art is `nightStill()` (night.ts): the pad at night, the flare glowing.
 - Every card's art is a still of the gag's own PUPPET (`LOG_ART` in main.ts: `magpieStill`,
   `workerStill`, `mooseStill`, `nearMissStill`, ...). No sprites. Found: in colour with its caption;
-  unfound: a dark silhouette (CSS brightness(0)) and, in DEMO mode only, the gag's hint
-  (`cardHint`); the game says "Not seen yet." NO STRETCH: `fitArt` (main.ts) gives every card's
+  unfound: a dark silhouette (CSS brightness(0)) and a RIDDLE (`LogEntry.riddle`: a nudge that
+  points the way without giving it away); a tap turns the card over to the plain hint and back
+  (`.log-card.riddle` / `.plain`, `cardHint(e, plain)`); DEMO mode shows the plain hint at once.
+  EVERY STILL IS CUT TO ITS CARD: `.log-card .art` is `overflow: hidden`, and a wave 3 still is
+  cut at its own view (`.wave3-still`), which must hold whole figures. NO STRETCH: `fitArt` (main.ts) gives every card's
   picture a px width and height from its own viewBox, inside `ART_BOX` (104 x 84), so a tall
   drawing (the biffy) is never squeezed. Occupied is the biffy at its true shape; The Runaway Roll
   is one big toilet roll with a short tail of paper (`biffyBStill`, drawn for the card). The
@@ -755,19 +758,25 @@ something, give exact clicks and one command at a time.
 - THE DIG (Log v2, Jay Oct 6; `src/ui/log-dig.ts` pure and tested, `log-dig-view.ts` on the page,
   styles under "The dig"): the log is a deep dig. Behind the cards lies ONE continuous
   cross-section drawn in code (`strataSvg`, one static SVG, seeded, no filters or gradients):
-  grass, topsoil, glacial till, badlands, Cardium, Mannville (coal seams), Montney, Bakken,
-  Duvernay shale, reef reservoir with oil (`FORMATIONS`, in that order). The cards stand in groups
-  of four (`GROUP`); after each group a WINDOW (`.dig-window`) opens on the formation at that depth,
-  and below the last card the section keeps going down to the reef (and on through the Earth: Log v3 below). A
+  ONE REAL WELL COLUMN, west-central Alberta near Fox Creek (Jay, Oct 6; `FORMATIONS`, top down,
+  each with the real depth at its foot, `km`): grass, topsoil, glacial till, Wapiti Fm,
+  Puskwaskau marine shale, Cardium Fm sandstone, Colorado Group shale, Mannville Group (coal
+  seams), Fernie Fm, Montney Fm, Belloy / Debolt carbonates, Exshaw Fm (pill "Exshaw (Alberta
+  Bakken)"), Wabamun Group, Ireton shale, Duvernay shale wrapped round a LEDUC REEF (the
+  glistening oil reservoir, `reef`), Beaverhill Lake, Elk Point Group with salt, Cambrian
+  sandstone; then the Precambrian crystalline basement (the first deep layer, Log v3). Region
+  pills: Cardium, Mannville, Montney, Exshaw (region `bakken`) and Duvernay. The cards stand in groups
+  of four (`GROUP`); after each of the first six groups (`BETWEEN`) a WINDOW (`.dig-window`) opens on the formation at that depth,
+  and below the last card the section keeps going down through the rest (and on through the Earth: Log v3 below). A
   wellbore runs from a wellhead on the grass, down the gutter between the two columns of cards,
   into the reservoir. `mountDig` measures where each window ends and draws the layers to match
   (again whenever the column changes size). Each formation has a pill (`.dig-pill`); a region's
   pill is greyed (`.locked`, `pillLocked`) until that region is unlocked.
   BURIED THINGS (`BURIED`, 15; NOT log entries: no count, no toast, nothing saved): car keys, TV
   remote, one sock, golf ball, the gopher's den with the crust on a plate, a dropped phone in his
-  tunnel (topsoil); pirate chest, mammoth tusk, vintage silver plane (till); dinosaur egg and
-  skeleton and ammonite (badlands, where ammolite comes from); plesiosaur (Cardium); the lost drill bit and fishing
-  tool (Bakken); trilobite (Duvernay). Each is a button of at least 44 px in its own half of its
+  tunnel (topsoil; a framed gopher family portrait hangs on the den's wall); pirate chest, mammoth tusk, vintage silver plane (till); dinosaur egg and
+  skeleton (Wapiti); ammonite (Puskwaskau marine shale); plesiosaur (Cardium); the lost drill bit and fishing
+  tool (Exshaw); trilobite (Cambrian). A find lies in rock of its own age: keep it so. Each is a button of at least 44 px in its own half of its
   window, clear of the wellbore and the pill (unit-tested at 375, 390 and 430). A tap wiggles it
   and shows its ONE line (`BURIED_LINES` in lines.ts, 40 characters at most) in `.dig-bubble`
   above it, one bubble at a time; the egg cracks, one eye peeks and blinks, and it closes
@@ -785,7 +794,7 @@ something, give exact clicks and one command at a time.
     mantle, outer core, inner core (the CENTRE OF THE EARTH is the dashed line across its middle),
     then mirrored back up: outer core, mantle, ocean crust, seafloor, the Southern Ocean (ten screens deep); then the
     surface at the Kerguelen Islands (`SURFACE_PX`, one picture, `kerguelenSvg`). THE FAR SIDE IS
-    UPSIDE DOWN (we come up underneath it): the seabed is above the sea, the island hangs from
+    UPSIDE DOWN (we come up underneath it; the penguin says "You're upside down." and the seal "No, YOU are.", `KERGUELEN_SAYS`, in bubbles drawn the right way up for us): the seabed is above the sea, the island hangs from
     the waterline with a king penguin and an elephant seal on it, sky and clouds below.
   - THE DIRT IS PROCEDURAL AND ONLY NEAR THE SCREEN: each layer is a block in its own slowly
     changing colour (`layerBackground`, one long CSS gradient: the only gradient in the dig); its

@@ -1,6 +1,6 @@
 // Log v3: the dig goes on past the reservoir, through the whole Earth, and out the other side at
-// Alberta's opposite point, the Kerguelen Islands in the Southern Ocean. Below the reef: the
-// Precambrian basement, the mantle, the molten outer core, the inner core with the centre of the
+// Alberta's opposite point, the Kerguelen Islands in the Southern Ocean. Below the Cambrian: the
+// Precambrian crystalline basement, the mantle, the molten outer core, the inner core with the centre of the
 // Earth in its middle; then the same layers mirrored back up, ocean crust, the seafloor, the sea,
 // and the surface. THE FAR SIDE IS UPSIDE DOWN: we come up underneath it, so its sea floor is
 // above its sea on the page and the island hangs from the waterline with its sky below.
@@ -9,12 +9,13 @@
 // near the screen are ever on the page), the depth gauge's arithmetic in real km, the
 // oddities buried on the way, and the stopwatch's text. log-dig-view.ts puts it on the page.
 import { mulberry32 } from '../engine/rng.ts';
+import { FORMATIONS } from './log-dig.ts';
 
 /** Real depths (km): the centre of the Earth and the far surface (the Earth's mean diameter). */
 export const EARTH = { centre: 6371, far: 12742 } as const;
 
-/** Where each formation of the upper dig ENDS (km below the grass). Real ballpark depths for central Alberta. */
-export const UPPER_KM: Record<string, number> = { grass: 0, topsoil: 0.002, till: 0.05, badlands: 0.4, cardium: 1.8, mannville: 2.4, montney: 2.9, bakken: 3.2, duvernay: 3.6, reef: 4 };
+/** Where each formation of the upper dig ENDS (km below the grass): the real well column's own depths (log-dig.ts `FORMATIONS`). */
+export const UPPER_KM: Record<string, number> = Object.fromEntries(FORMATIONS.map((f) => [f.id, f.km]));
 
 export type DeepId = 'granite' | 'mantle' | 'outerCore' | 'innerCore' | 'outerCoreUp' | 'mantleUp' | 'oceanCrust' | 'seafloor' | 'ocean' | 'kerguelen';
 
@@ -38,7 +39,7 @@ export const DIG = { screens: 60, screenPx: 844, tile: 422 } as const;
 
 /** Each layer's share of the dig (about 1 in all), and the depth at its foot (km, straight through the Earth). */
 const PLAN: { id: DeepId; name: string; share: number; km: number }[] = [
-  { id: 'granite', name: 'Basement granite', share: 0.05, km: 35 },
+  { id: 'granite', name: 'Precambrian basement', share: 0.05, km: 35 },
   { id: 'mantle', name: 'Mantle', share: 0.2, km: 2890 },
   { id: 'outerCore', name: 'Outer core', share: 0.12, km: 5150 },
   { id: 'innerCore', name: 'Inner core', share: 0.1, km: EARTH.far - 5150 },

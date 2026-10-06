@@ -2,7 +2,7 @@
 // to an oil reservoir, drawn in code in the board's toy look (flat fills, the dark outline, no
 // photo textures). The cards stand in groups of four; between the groups a WINDOW opens on the
 // formation at that depth, with its label (a small pill) and the things buried in it. Below the
-// last card the section keeps going down to the reef. A wellbore runs from the surface, down the
+// last card the section keeps going down, through the Leduc reef, to the Cambrian. A wellbore runs from the surface, down the
 // gutter between the two columns of cards, into the reservoir.
 //
 // This file is pure (no DOM): the formations, the buried objects and their drawings, and the SVG of
@@ -10,7 +10,9 @@
 // lines.ts (`BURIED_LINES`). Buried objects are NOT log entries.
 import { mulberry32 } from '../engine/rng.ts';
 
-export type FormationId = 'grass' | 'topsoil' | 'till' | 'badlands' | 'cardium' | 'mannville' | 'montney' | 'bakken' | 'duvernay' | 'reef';
+export type FormationId =
+  | 'grass' | 'topsoil' | 'till' | 'wapiti' | 'puskwaskau' | 'cardium' | 'colorado' | 'mannville' | 'fernie' | 'montney' | 'belloy'
+  | 'exshaw' | 'wabamun' | 'ireton' | 'duvernay' | 'reef' | 'beaverhill' | 'elkpoint' | 'cambrian';
 
 export interface Formation {
   id: FormationId;
@@ -20,24 +22,43 @@ export interface Formation {
   region?: string;
   /** Height of its window (px): the open band where its pill and buried objects show. 0 = none. */
   window: number;
-  /** Its window comes after this many groups of cards (the last formations lie below every card). */
+  /** Its window comes after this many groups of cards (the deep formations lie below every card). */
   after: number;
+  /** Where it ENDS in the real well (km below the grass): the depth gauge reads these. */
+  km: number;
 }
 
 /** How many cards stand between two windows (two rows of two). */
 export const GROUP = 4;
-/** Top to bottom. The first four windows open between the groups of cards; the rest lie below them. */
+/** Windows with `after` up to this open between the groups of cards; the rest lie below the last card. */
+export const BETWEEN = 6;
+/**
+ * ONE REAL WELL COLUMN, top to bottom: west-central Alberta near Fox Creek (the Kaybob country),
+ * the rock a Duvernay well there drills through. Depths are ballpark for that area. The first six
+ * windows open between the groups of cards; the rest lie below them. Under the Cambrian the dig
+ * goes on into the Precambrian basement (log-deep.ts). The five game regions keep their pills:
+ * Cardium, Mannville, Montney, Exshaw (the Alberta Bakken) and Duvernay.
+ */
 export const FORMATIONS: Formation[] = [
-  { id: 'grass', name: 'Grass', window: 0, after: 0 },
-  { id: 'topsoil', name: 'Topsoil', window: 178, after: 1 },
-  { id: 'till', name: 'Glacial till', window: 134, after: 2 },
-  { id: 'badlands', name: 'Badlands', window: 150, after: 3 },
-  { id: 'cardium', name: 'Cardium', region: 'cardium', window: 126, after: 4 },
-  { id: 'mannville', name: 'Mannville', region: 'mannville', window: 122, after: 5 },
-  { id: 'montney', name: 'Montney', region: 'montney', window: 126, after: 5 },
-  { id: 'bakken', name: 'Bakken', region: 'bakken', window: 152, after: 5 },
-  { id: 'duvernay', name: 'Duvernay shale', region: 'duvernay', window: 126, after: 5 },
-  { id: 'reef', name: 'Reef reservoir', window: 210, after: 5 },
+  { id: 'grass', name: 'Grass', window: 0, after: 0, km: 0 },
+  { id: 'topsoil', name: 'Topsoil', window: 178, after: 1, km: 0.002 },
+  { id: 'till', name: 'Glacial till', window: 134, after: 2, km: 0.03 },
+  { id: 'wapiti', name: 'Wapiti Fm', window: 150, after: 3, km: 0.7 },
+  { id: 'puskwaskau', name: 'Puskwaskau shale', window: 120, after: 4, km: 1.1 },
+  { id: 'cardium', name: 'Cardium Fm', region: 'cardium', window: 126, after: 5, km: 1.25 },
+  { id: 'colorado', name: 'Colorado Group shale', window: 96, after: 6, km: 1.9 },
+  { id: 'mannville', name: 'Mannville Group', region: 'mannville', window: 122, after: 7, km: 2.3 },
+  { id: 'fernie', name: 'Fernie Fm', window: 84, after: 7, km: 2.4 },
+  { id: 'montney', name: 'Montney Fm', region: 'montney', window: 120, after: 7, km: 2.7 },
+  { id: 'belloy', name: 'Belloy / Debolt', window: 96, after: 7, km: 2.9 },
+  { id: 'exshaw', name: 'Exshaw (Alberta Bakken)', region: 'bakken', window: 176, after: 7, km: 2.95 },
+  { id: 'wabamun', name: 'Wabamun Group', window: 96, after: 7, km: 3.2 },
+  { id: 'ireton', name: 'Ireton shale', window: 84, after: 7, km: 3.35 },
+  { id: 'duvernay', name: 'Duvernay shale', region: 'duvernay', window: 110, after: 7, km: 3.4 },
+  { id: 'reef', name: 'Leduc reef', window: 220, after: 7, km: 3.5 },
+  { id: 'beaverhill', name: 'Beaverhill Lake', window: 96, after: 7, km: 3.7 },
+  { id: 'elkpoint', name: 'Elk Point Group', window: 110, after: 7, km: 4.0 },
+  { id: 'cambrian', name: 'Cambrian sandstone', window: 124, after: 7, km: 4.3 },
 ];
 /** The grass is this thick (px) at the very top of the section. */
 export const GRASS = 16;
@@ -47,6 +68,7 @@ export const BORE_CLEAR = 9;
 /** True if a formation's pill is greyed: it is named after a region that is still locked. */
 export const pillLocked = (f: Formation, open: (regionId: string) => boolean): boolean => !!f.region && !open(f.region);
 
+/** (The Wapiti's dinosaurs, the Puskwaskau sea's ammonite, the Cardium sea's plesiosaur, a Cambrian trilobite.) */
 export type BuriedId = 'keys' | 'remote' | 'sock' | 'golf' | 'den' | 'phone' | 'chest' | 'tusk' | 'plane' | 'dino' | 'egg' | 'plesiosaur' | 'ammonite' | 'bit' | 'trilobite';
 
 export interface Buried {
@@ -73,13 +95,13 @@ export const BURIED: Buried[] = [
   { id: 'chest', label: 'Pirate chest', in: 'till', x: 0.15, y: 86, w: 66, h: 56 },
   { id: 'tusk', label: 'Mammoth tusk', in: 'till', x: 0.36, y: 84, w: 70, h: 52 },
   { id: 'plane', label: 'Vintage silver plane', in: 'till', x: 0.765, y: 76, w: 124, h: 66 },
-  { id: 'egg', label: 'Dinosaur egg', in: 'badlands', x: 0.17, y: 96, w: 44, h: 54 },
-  { id: 'dino', label: 'Dinosaur skeleton', in: 'badlands', x: 0.765, y: 86, w: 148, h: 88 },
+  { id: 'egg', label: 'Dinosaur egg', in: 'wapiti', x: 0.17, y: 96, w: 44, h: 54 },
+  { id: 'dino', label: 'Dinosaur skeleton', in: 'wapiti', x: 0.765, y: 86, w: 148, h: 88 },
   { id: 'plesiosaur', label: 'Plesiosaur skeleton', in: 'cardium', x: 0.25, y: 76, w: 150, h: 70 },
-  // (In the badlands: that is where Alberta's ammolite comes from.)
-  { id: 'ammonite', label: 'Ammonite', in: 'badlands', x: 0.375, y: 96, w: 54, h: 54 },
-  { id: 'bit', label: 'Lost drill bit and fishing tool', in: 'bakken', x: 0.66, y: 78, w: 50, h: 110 },
-  { id: 'trilobite', label: 'Trilobite', in: 'duvernay', x: 0.76, y: 72, w: 46, h: 60 },
+  // (A sea shell: it lies in the marine shale, not with the dinosaurs.)
+  { id: 'ammonite', label: 'Ammonite', in: 'puskwaskau', x: 0.78, y: 72, w: 54, h: 54 },
+  { id: 'bit', label: 'Lost drill bit and fishing tool', in: 'exshaw', x: 0.74, y: 104, w: 50, h: 110 },
+  { id: 'trilobite', label: 'Trilobite', in: 'cambrian', x: 0.76, y: 74, w: 46, h: 60 },
 ];
 
 /** A buried object's box inside its window, for cards `width` px wide: the drawing and the (at least 44 px) tap target. */
@@ -275,8 +297,9 @@ export function layersFrom(ends: Record<Exclude<FormationId, 'grass'>, number>):
 }
 
 const FILL: Record<FormationId, string> = {
-  grass: '#5fae3f', topsoil: '#5a3d25', till: '#8b7b67', badlands: '#c39a62', cardium: '#d9b877',
-  mannville: '#82765f', montney: '#6f808c', bakken: '#b9a37c', duvernay: '#3b3442', reef: '#cfc19c',
+  grass: '#5fae3f', topsoil: '#5a3d25', till: '#8b7b67', wapiti: '#c39a62', puskwaskau: '#6b6d78', cardium: '#d9b877', colorado: '#575b64',
+  mannville: '#82765f', fernie: '#4b4a54', montney: '#6f808c', belloy: '#cdc5ad', exshaw: '#b9a37c', wabamun: '#d8cfb2', ireton: '#6f7f6c',
+  duvernay: '#3b3442', reef: '#3b3442', beaverhill: '#a79d83', elkpoint: '#b0584b', cambrian: '#c9a074',
 };
 
 /** A formation's wavy top edge across the section, as SVG path steps starting at x = 0. */
@@ -303,6 +326,17 @@ export function strataSvg(width: number, layers: Layer[], bore: number, boreTop 
     const top = l.id === 'grass' ? `M0 ${l.top}L${width} ${l.top}` : edge(l.top, width, rng);
     let body = `<path class="st-fill" d="${top} L${width} ${l.bottom + 8} L0 ${l.bottom + 8} Z" fill="${FILL[l.id]}"/>`;
     const count = (per: number, cap: number) => Math.min(cap, Math.round((width * h) / per));
+    // Shale: thin wavy partings and short flakes. Carbonate: a mason's wall of blocks.
+    const shale = (line: string, flake: string) => {
+      for (let y = l.top + 12; y < l.bottom - 4; y += r(10, 16)) body += `<path d="${edge(y, width, rng, 2)}" fill="none" stroke="${line}" stroke-width="1.2"/>`;
+      for (let i = count(5200, 40); i > 0; i--) body += `<path d="M${n(r(0, width))} ${n(r(l.top + 8, l.bottom - 4))} h${n(r(6, 14))}" stroke="${flake}" stroke-width="1.2" stroke-linecap="round"/>`;
+    };
+    const blocks = (line: string, rowH: number) => {
+      for (let y = l.top + rowH, i = 0; y < l.bottom + 4; y += rowH, i++) {
+        body += `<path d="M0 ${n(y)} H${width}" stroke="${line}" stroke-width="1.3"/>`;
+        for (let x = (i % 2 ? 18 : 44) + r(-6, 6); x < width; x += r(48, 70)) body += `<path d="M${n(x)} ${n(y - rowH)} V${n(y)}" stroke="${line}" stroke-width="1.3"/>`;
+      }
+    };
     if (l.id === 'grass') {
       for (let x = 4; x < width; x += r(9, 15)) body += `<path d="M${n(x)} ${l.bottom + 3} l${n(r(1.5, 3))} ${n(-r(6, 10))} l${n(r(1.5, 3))} ${n(r(6, 10))} Z" fill="#3f8f33"/>`;
     } else if (l.id === 'topsoil') {
@@ -310,8 +344,8 @@ export function strataSvg(width: number, layers: Layer[], bore: number, boreTop 
       for (let i = count(9000, 40); i > 0; i--) body += `<ellipse cx="${n(r(0, width))}" cy="${n(r(l.top + 10, l.bottom - 4))}" rx="${n(r(2, 4.5))}" ry="${n(r(1.6, 3))}" fill="#3f2a18"/>`;
     } else if (l.id === 'till') {
       for (let i = count(2600, 110); i > 0; i--) { const big = rng() < 0.25; body += `<ellipse cx="${n(r(0, width))}" cy="${n(r(l.top + 10, l.bottom - 6))}" rx="${n(big ? r(7, 12) : r(2.5, 6))}" ry="${n(big ? r(5, 8) : r(2, 4.5))}" fill="${['#a59783', '#6f6253', '#b9ad9a', '#7d8087'][Math.floor(rng() * 4)]}"${big ? ` stroke="#2a1a0c" stroke-width="1.6"` : ''} transform="rotate(${n(r(-25, 25))} 0 0)" style="transform-box: fill-box; transform-origin: center"/>`; }
-    } else if (l.id === 'badlands') {
-      // Banded like the coulees: rust, grey, cream and tan stripes.
+    } else if (l.id === 'wapiti') {
+      // River sands and muds, banded like the coulees they weather into: rust, grey, cream and tan stripes.
       const bands = ['#a8623a', '#d8c39a', '#8d857a', '#c98a52', '#e2d2ae', '#9a6b47'];
       const bh = Math.max(14, h / Math.max(6, Math.round(h / 64)));
       for (let y = l.top + bh * 0.7, i = 0; y < l.bottom - 4; y += bh, i++) body += `<path d="${edge(y, width, rng, 3)} L${width} ${n(y + bh * 0.48)} L0 ${n(y + bh * 0.48)} Z" fill="${bands[i % bands.length]}"/>`;
@@ -325,17 +359,41 @@ export function strataSvg(width: number, layers: Layer[], bore: number, boreTop 
       for (let i = count(3600, 60); i > 0; i--) body += `<path d="M${n(r(0, width))} ${n(r(l.top + 8, l.bottom - 4))} h${n(r(8, 20))}" stroke="#6a5f4b" stroke-width="1.3" stroke-linecap="round"/>`;
     } else if (l.id === 'montney') {
       for (let i = count(1900, 110); i > 0; i--) body += `<path d="M${n(r(0, width))} ${n(r(l.top + 8, l.bottom - 4))} h${n(r(6, 16))}" stroke="${rng() < 0.5 ? '#596872' : '#8a9aa6'}" stroke-width="1.3" stroke-linecap="round"/>`;
-    } else if (l.id === 'bakken') {
-      // Three members: black shale, the pale middle, black shale.
+    } else if (l.id === 'exshaw') {
+      // The Alberta Bakken: black shale, the pale middle, black shale.
       const t = h * 0.24;
       body += `<path d="${edge(l.top + 6, width, rng, 2)} L${width} ${n(l.top + t)} L0 ${n(l.top + t)} Z" fill="#231f24"/><path d="${edge(l.bottom - t, width, rng, 3)} L${width} ${l.bottom + 8} L0 ${l.bottom + 8} Z" fill="#231f24"/>`;
       for (let i = count(2400, 60); i > 0; i--) body += `<circle cx="${n(r(0, width))}" cy="${n(r(l.top + t + 5, l.bottom - t - 5))}" r="${n(r(1, 2))}" fill="#9a8560"/>`;
-    } else if (l.id === 'duvernay') {
-      for (let y = l.top + 12; y < l.bottom - 4; y += r(9, 15)) body += `<path d="${edge(y, width, rng, 2)}" fill="none" stroke="#55495f" stroke-width="1.2"/>`;
+    } else if (l.id === 'puskwaskau') shale('#565862', '#868994');
+    else if (l.id === 'colorado') shale('#43474f', '#6f747e');
+    else if (l.id === 'ireton') shale('#586857', '#8a9a84');
+    else if (l.id === 'duvernay') shale('#55495f', '#55495f');
+    else if (l.id === 'fernie') {
+      shale('#3a3942', '#65636f');
+      // (One thin limy band across it.)
+      const y = l.top + h * 0.56;
+      body += `<path d="${edge(y, width, rng, 2)} L${width} ${n(y + 9)} L0 ${n(y + 9)} Z" fill="#b9b3a0"/>`;
+    } else if (l.id === 'belloy') blocks('#a69d83', 22);
+    else if (l.id === 'wabamun') blocks('#b3a984', 26);
+    else if (l.id === 'beaverhill') blocks('#857b63', 20);
+    else if (l.id === 'elkpoint') {
+      // Red beds with salt: pale crystals in beds.
+      for (const f of [0.3, 0.68]) { const y = l.top + h * f, t = r(14, 18); body += `<path d="${edge(y, width, rng, 2)} L${width} ${n(y + t)} L0 ${n(y + t)} Z" fill="#f3e6e0"/>`;
+        for (let x = r(4, 14); x < width; x += r(13, 22)) { const sz = r(5, 8); body += `<rect x="${n(x)}" y="${n(y + r(3, t - sz - 2))}" width="${n(sz)}" height="${n(sz)}" fill="${rng() < 0.5 ? '#ffffff' : '#f6c9c0'}" stroke="#c99a90" stroke-width="1" transform="rotate(${n(r(-20, 20))} ${n(x)} ${n(y + 8)})"/>`; } }
+      for (let i = count(4200, 40); i > 0; i--) body += `<path d="M${n(r(0, width))} ${n(r(l.top + 8, l.bottom - 4))} h${n(r(8, 18))}" stroke="#8f4338" stroke-width="1.3" stroke-linecap="round"/>`;
+    } else if (l.id === 'cambrian') {
+      for (let i = count(1500, 140); i > 0; i--) body += `<circle cx="${n(r(0, width))}" cy="${n(r(l.top + 8, l.bottom - 3))}" r="${n(r(0.9, 1.7))}" fill="${rng() < 0.5 ? '#a67c50' : '#e6c9a0'}"/>`;
+      for (let i = count(14000, 22); i > 0; i--) { const x = r(0, width), y = r(l.top + 14, l.bottom - 8); body += `<path d="M${n(x)} ${n(y)} q${n(r(14, 24))} ${n(r(4, 8))} ${n(r(30, 50))} ${n(r(8, 14))}" fill="none" stroke="#a67c50" stroke-width="1.3" stroke-linecap="round"/>`; }
     } else if (l.id === 'reef') {
-      // A reef: rounded heads of limestone with pores full of oil, and oil pooled dark below.
-      for (let i = count(2400, 46); i > 0; i--) { const x = r(0, width), y = r(l.top + 16, l.top + h * 0.6), rx = r(8, 18); body += `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(rx)}" ry="${n(rx * r(0.6, 0.85))}" fill="#e3d7b6" stroke="#a8996f" stroke-width="1.4"/>`; }
-      for (let i = count(1500, 80); i > 0; i--) { const x = r(0, width), y = r(l.top + 14, l.top + h * 0.66), s = r(2.2, 5); body += `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(s)}" ry="${n(s * 0.8)}" fill="#2a1608" stroke="#c9861a" stroke-width="1.2"/>`; }
+      // A LEDUC REEF with the Duvernay shale wrapped round it: the layer is shale; the reef rises
+      // through it as a mound (its shoulders fall away to the screen's edges), rounded heads of
+      // limestone with pores full of oil, and the oil pooled dark across its foot.
+      shale('#55495f', '#55495f');
+      const sh = l.top + h * 0.46, cr = l.top + 12;
+      body += `<path d="M0 ${n(sh)} Q${n(width * 0.08)} ${n(sh - 6)} ${n(width * 0.14)} ${n(l.top + h * 0.2)} Q${n(width * 0.2)} ${n(cr)} ${n(width * 0.32)} ${n(cr)} L${n(width * 0.68)} ${n(cr)} Q${n(width * 0.8)} ${n(cr)} ${n(width * 0.86)} ${n(l.top + h * 0.2)} Q${n(width * 0.92)} ${n(sh - 6)} ${width} ${n(sh)} L${width} ${l.bottom + 8} L0 ${l.bottom + 8} Z" fill="#cfc19c" stroke="#2a1a0c" stroke-width="2.4" stroke-linejoin="round"/>`;
+      const inside = (y: number): [number, number] => (y > sh ? [0, width] : [width * 0.2, width * 0.8]);
+      for (let i = count(2400, 46); i > 0; i--) { const y = r(l.top + 26, l.top + h * 0.6), [a, b] = inside(y - 14), x = r(a + 14, b - 14), rx = r(8, 16); body += `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(rx)}" ry="${n(rx * r(0.6, 0.85))}" fill="#e3d7b6" stroke="#a8996f" stroke-width="1.4"/>`; }
+      for (let i = count(1500, 80); i > 0; i--) { const y = r(l.top + 22, l.top + h * 0.66), [a, b] = inside(y - 6), x = r(a + 6, b - 6), sz = r(2.2, 5); body += `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(sz)}" ry="${n(sz * 0.8)}" fill="#2a1608" stroke="#c9861a" stroke-width="1.2"/>`; }
       const py = l.top + h * 0.66;
       body += `<path d="${edge(py, width, rng, 5)} L${width} ${l.bottom} L0 ${l.bottom} Z" fill="#1c0f06" stroke="#2a1a0c" stroke-width="2"/><path d="${edge(py + 7, width, rng, 3)}" fill="none" stroke="#c9861a" stroke-width="2" stroke-linecap="round" opacity="0.8"/>`;
       // The oil's sheen: a few soft amber streaks lying on the pool.
@@ -346,7 +404,7 @@ export function strataSvg(width: number, layers: Layer[], bore: number, boreTop 
     out += `<g class="stratum" data-layer="${l.id}">${body}</g>`;
   }
   // The wellbore: surface casing, then the hole down to the reservoir, with perforations at the bottom.
-  const reef = layers.at(-1)!;
+  const reef = layers.find((l) => l.id === 'reef')!;
   const td = reef.top + (reef.bottom - reef.top) * 0.74;
   const shoe = layers[2].top + 30;
   out +=

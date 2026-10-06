@@ -1,15 +1,13 @@
 // The Wildlife Log's deep dig on the page (log-dig.ts is the pure part): the cards in groups of
 // four with a window on the formation between the groups, the strata drawn behind everything
 // once the page is laid out, the formation pills, the buried objects and what they say.
-import { BURIED, FORMATIONS, GLINTS, GRASS, GROUP, buriedArt, buriedBox, layersFrom, pillLocked, strataSvg, tunnelSvg, type FormationId } from './log-dig.ts';
+import { BETWEEN, BURIED, FORMATIONS, GLINTS, GRASS, GROUP, buriedArt, buriedBox, layersFrom, pillLocked, strataSvg, tunnelSvg, type FormationId } from './log-dig.ts';
 import { DEEP as DEEP_LAYERS, DIG, ODDITIES, clockText, depthKm, gaugeLine, kerguelenSvg, kmText, layerBackground, layerEdge, marksFrom, oddityArt, oddityBox, seabedSvg, tileSvg, tilesNear, type DeepId, type Mark } from './log-deep.ts';
 import { BURIED_LINES } from './lines.ts';
 import { onTap } from './tap.ts';
 import { confettiBurst } from './confetti.ts';
 
 const BUBBLE_MS = 2600;
-/** Formations whose `after` is more than this lie below every card. */
-const DEEP = 4;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
@@ -59,8 +57,8 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
     col.append(ul);
     if (g === groups - 1) col.append(reward);
     // (Whatever the number of cards, every formation gets its window: the deep ones after the last group.)
-    // The first four windows open between the groups; the deep ones all lie below the LAST group.
-    for (const f of FORMATIONS) if (f.window && (f.after <= DEEP ? f.after === g + 1 && g < groups - 1 : g === groups - 1)) col.append(windowFor(f.id, f.window));
+    // The first six windows open between the groups; the deep ones all lie below the LAST group.
+    for (const f of FORMATIONS) if (f.window && Math.min(f.after <= BETWEEN ? f.after : groups, groups) === g + 1) col.append(windowFor(f.id, f.window));
   }
 
   // Past the reservoir: right through the Earth and out the other side (log-deep.ts). One block a

@@ -6,7 +6,7 @@ import { BURIED_LINES } from './lines.ts';
 import { LOG_ENTRIES, complete, parseLog, record, recordDig, shownEntries, type Sighting } from './wildlife-log.ts';
 
 // A page like the real one: the upper formations end at these heights, the deep layers start at 3,800.
-const upper = { grass: 16, topsoil: 560, till: 1040, badlands: 1530, cardium: 2000, mannville: 2900, montney: 3030, bakken: 3180, duvernay: 3310, reef: 3800 };
+const upper = { grass: 16, topsoil: 560, till: 1040, wapiti: 1530, puskwaskau: 1800, cardium: 2000, colorado: 2500, mannville: 2900, fernie: 2960, montney: 3030, belloy: 3100, exshaw: 3180, wabamun: 3240, ireton: 3280, duvernay: 3310, reef: 3500, beaverhill: 3600, elkpoint: 3700, cambrian: 3800 };
 const marks = marksFrom(upper, 3800);
 const deepTop = (id: string) => 3800 + DEEP.slice(0, DEEP.findIndex((l) => l.id === id)).reduce((s, l) => s + l.height, 0);
 const DIRT = DEEP.filter((l) => l.id !== 'kerguelen');
@@ -24,7 +24,7 @@ describe('the dig through the Earth: how long, and what layers', () => {
   });
 
   it('granite, mantle, outer core, inner core, then mirrored back up, ocean crust, seafloor, the Southern Ocean, and the Kerguelen Islands', () => {
-    expect(DEEP.map((l) => l.name)).toEqual(['Basement granite', 'Mantle', 'Outer core', 'Inner core', 'Outer core', 'Mantle', 'Ocean crust', 'Seafloor', 'Southern Ocean', 'Kerguelen Islands']);
+    expect(DEEP.map((l) => l.name)).toEqual(['Precambrian basement', 'Mantle', 'Outer core', 'Inner core', 'Outer core', 'Mantle', 'Ocean crust', 'Seafloor', 'Southern Ocean', 'Kerguelen Islands']);
     // Mirrored: the same heights either side of the inner core.
     expect(DEEP[4].height).toBe(DEEP[2].height);
     expect(DEEP[5].height).toBe(DEEP[1].height);
@@ -38,7 +38,7 @@ describe('the dig through the Earth: how long, and what layers', () => {
     for (let i = 1; i < DEEP.length; i++) expect(DEEP[i].km).toBeGreaterThanOrEqual(DEEP[i - 1].km);
     expect(DEEP.at(-1)!.km).toBe(12742);
     expect(Object.keys(UPPER_KM)).toEqual(FORMATIONS.map((f) => f.id));
-    expect(UPPER_KM.reef).toBeLessThan(DEEP[0].km);
+    expect(UPPER_KM.cambrian).toBeLessThan(DEEP[0].km);
   });
 
   it('each layer changes colour slowly from its top to its foot; where two layers mirror each other so do their colours', () => {
@@ -111,7 +111,7 @@ describe('the depth pill, in real km', () => {
     expect(depthKm(deepTop('kerguelen'), marks)).toBe(12742);
     expect(depthKm(999999, marks)).toBe(12742);
     // Layer boundaries read their real depths.
-    expect(depthKm(3800, marks)).toBe(4);
+    expect(depthKm(3800, marks)).toBe(4.3);
     expect(depthKm(deepTop('mantle'), marks)).toBe(35);
     expect(depthKm(deepTop('outerCore'), marks)).toBe(2890);
     expect(depthKm(deepTop('innerCore'), marks)).toBe(5150);
