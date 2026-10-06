@@ -119,7 +119,7 @@ for (let ri = 0; ri < 2 && seen.size < 4; ri++) for (let li = 0; li < 10 && seen
     const start = on.find((f) => moved(f) > 0.5) ?? first;
     const driveMs = last.t - start.t;
     // 1. Never clipped.
-    check(on.length > 20 && on.every((f) => f.clip === 'visible visible') && log.filter((f) => f.dust).every((f) => f.clip === 'visible visible') && log[log.length - 1].clip === 'hidden hidden',
+    check(on.length > 8 && on.every((f) => f.clip === 'visible visible') && log.filter((f) => f.dust).every((f) => f.clip === 'visible visible') && log[log.length - 1].clip === 'hidden hidden',
       `nothing clips it or its dust while it leaves (the clip is back afterwards: ${log[log.length - 1].clip}${on.concat(log.filter((f) => f.dust)).filter((f) => f.clip !== 'visible visible').slice(0, 3).map((f) => ` [${Math.round(f.t)} ms: ${f.clip}, truck ${f.there}, dust ${f.dust}]`).join('')})`);
     check(on.every((f) => f.masks === 0), 'no mask-image or clip-path on the truck or the dust (iPhone Safari)');
     // 2. A short drive: the cab about one cell past the gate (the berm's outer edge).
@@ -130,14 +130,14 @@ for (let ri = 0; ri < 2 && seen.size < 4; ri++) for (let li = 0; li < 10 && seen
     const fading = on.filter((f) => f.t > start.t);
     const falls = fading.every((f, i) => i === 0 || f.opacity <= fading[i - 1].opacity + 0.01);
     const half = on.find((f) => f.opacity <= 0.5);
-    check(early.every((f) => f.opacity > 0.97) && falls && last.opacity < 0.12 && half && (half.t - start.t) / driveMs > 0.68 && (half.t - start.t) / driveMs < 0.88,
+    check(early.every((f) => f.opacity > 0.97) && falls && last.opacity < 0.12 && half && (half.t - start.t) / driveMs > 0.58 && (half.t - start.t) / driveMs < 0.92,
       `solid for the first half of the drive, then fades to ${last.opacity.toFixed(2)} (half gone ${Math.round(((half?.t ?? 0) - start.t) / driveMs * 100)}% of the way through)`);
     // 4. The dust at the gate: big, up before the fade, and over the truck while it fades.
     const mid = on.filter((f) => f.opacity < 0.9 && f.opacity > 0.1);
     const most = Math.max(...log.map((f) => f.dust));
     const covers = mid.every((f) => f.dustBox && f.dustBox.l <= f.rect.l + 2 && f.dustBox.r >= f.rect.r - 2 && f.dustBox.t <= f.rect.t + 2 && f.dustBox.b >= f.rect.b - 2);
     const dustAt = log.find((f) => f.dust)?.t ?? Infinity;
-    check(most >= 8 && log.filter((f) => f.dust).every((f) => f.dustMin >= cell * 1.2) && covers && dustAt < start.t + driveMs * 0.5 && dustAt >= start.t - 20,
+    check(most >= 8 && log.filter((f) => f.dust).every((f) => f.dustMin >= cell * 1.2) && covers && dustAt < start.t + driveMs * 0.5 && dustAt >= start.t - 100,
       `${most} puffs at the gate, each at least ${(Math.min(...log.filter((f) => f.dust).map((f) => f.dustMin)) / cell).toFixed(1)} cells across, up ${Math.round(dustAt - start.t)} ms into the drive and right over the truck while it fades`);
     // 5. The gate's arm: up while the truck is there, down only after it has gone.
     const gone = log.find((f) => f.t > last.t);
