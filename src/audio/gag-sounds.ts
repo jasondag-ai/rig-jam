@@ -5,7 +5,8 @@
 //   '+steps'      start a loop; '-steps' stop it. Loops: steps (footsteps), snore, mosquito,
 //                 quad_idle, quad_rev. Every loop a gag started stops when the gag ends.
 // The magpie's squawk, splat and the driver's radio are played by the gag itself (they follow what
-// the player does); the rest of his sounds are here.
+// the player does); the rest of his sounds are here. The bear's business lands with the magpie's
+// own dropping sound (`splat`), then his sigh of relief (Jay, Oct 6).
 import type { GagId } from '../ui/gag-triggers.ts';
 
 export const GAG_SOUNDS: Record<GagId, Record<string, string[]>> = {
@@ -27,7 +28,7 @@ export const GAG_SOUNDS: Record<GagId, Record<string, string[]>> = {
   },
   geese: { 'v-flies': ['geese'], honk: ['geese'], 'snap-turn': ['hop'], chase: ['scurry'], feather: ['twinkle'] },
   bear: {
-    'bear-in': ['+steps'], sniff: ['-steps', 'bull'], sit: ['puff'], strain: ['moose'], relief: ['puff'], 'spots-ears': ['poke'], snatch: ['thwip'], wipe: ['scurry', 'scurry@0.7'],
+    'bear-in': ['+steps'], sniff: ['-steps', 'bull'], sit: ['puff'], strain: ['moose'], relief: ['splat', 'puff@0.3'], 'spots-ears': ['poke'], snatch: ['thwip'], wipe: ['scurry', 'scurry@0.7'],
     'set-down': ['hop'], violated: ['gopher'], 'bear-leaves': ['+steps'], gone: ['-steps'],
   },
   bull: {

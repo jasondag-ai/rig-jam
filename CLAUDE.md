@@ -716,6 +716,17 @@ something, give exact clicks and one command at a time.
   engine maps to its nearest (`synth` > retro, `lofi` > chill). Settings has both switches, the
   style picker and a CREDITS screen (`src/audio/credits.ts`: the six loops by title, the effects
   gathered by source and licence; nothing picked needs an attribution licence).
+- SOUND PASS (Job S, Oct 6), STEP 1: THE PICKS BOARD. `python3 tools/sound-picks.py` (ffmpeg and
+  numpy) writes ONE self-contained page, audio inside it, to `~/Desktop/RHR Art Inbox/sound_picks.html`
+  and `public/sound-picks.html` (live at `/sound-picks.html`; not in the service worker's precache):
+  22 cues, three options each (alternates from the cartoon pack, trimmed like the game's picks, and
+  clean synthesized ones), each with its loudness measured as `audio-pack.py` measures (mean, peak).
+  Jay picks by ear and sends "Copy my picks". NOTHING NEW IS WIRED UNTIL HE PICKS, except: the
+  bear's business uses the magpie's dropping sound (`bear.relief`: `splat`, then `puff`). The audit:
+  the 8 wave 3 gags are silent; the sign "dingle" is the `rattle` key, used 10 times in 6 gags (deer,
+  surveyor, both biffys, the worker's pail, Sam's scribble); the cue list on the board names the
+  game events with no sound of their own. The synthesized options were made blind (nobody has
+  listened): Jay's ear decides.
 - Test hook: `?audiolog` exposes `window.__rhrAudio` (its `log` lists cues as they fire and files as
   they load; `musicState()`, `loopRunning(name)`). `npm run test:e2e:audio` checks the lazy loading,
   every cue, gag sounds, the styles, and that every loop file decodes (Chromium and WebKit) to

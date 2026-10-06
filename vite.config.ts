@@ -32,7 +32,8 @@ function serviceWorker(): Plugin {
     generateBundle(_options, bundle) {
       const built = Object.keys(bundle).filter((f) => !f.endsWith('.map'));
       // (Music is fetched only when the player turns it on, never ahead of time: it is not precached.)
-      const pub = publicFiles().filter((f) => !f.endsWith('.DS_Store') && !f.startsWith('audio/music/'));
+      // (Nor is the sound picks board, a page for Jay with its audio inside it: tools/sound-picks.py.)
+      const pub = publicFiles().filter((f) => !f.endsWith('.DS_Store') && !f.startsWith('audio/music/') && f !== 'sound-picks.html');
       const fingerprint = [...built, ...pub.map((f) => `${f}:${hashOf(readFileSync(join('public', f), 'latin1'))}`)];
       this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: VERSION, build: BUILD }) });
       this.emitFile({
