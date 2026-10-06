@@ -138,7 +138,7 @@ function winterStalks(rng: Rng, width: number, from: number, to: number): string
 export function sceneryItems(theme: Theme, width: number, height: number, box: Box, options: SceneryOptions = {}): { items: Item[]; anchors: Anchor[] } {
   const { below = true, maxTree = 96, depth = 0 } = options;
   const rng: Rng = mulberry32((options.seed ?? 0) ^ (theme.id.length * 7919 + 13));
-  const art = seasonArt(theme.id);
+  const art = seasonArt(theme.season);
   let items: Item[] = [];
   const anchors: Anchor[] = [];
   const pick = (): WorldArt => (art.aspen && rng() >= theme.spruceShare ? art.aspen : art.spruce);
@@ -169,7 +169,12 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
     for (const a of art.accents) {
       if (rng() < (a === 'cattails' ? 0.8 : 0.5)) items.push({ x: width * (0.2 + rng() * 0.6), y: floor + bandBelow - 2, h: h * (a === 'cattails' ? 0.42 : 0.5), art: a, flip: a === 'cattails' && rng() < 0.5 });
     }
-    // Nothing below may stand lower than the strip's floor line (the buttons start there).
+    // Open country (the prairie): only a share of the trees stand, the same ones every time for a seed.
+  if (theme.trees < 1) {
+    const thin: Rng = mulberry32((options.seed ?? 0) ^ 0x7ee5);
+    items = items.filter(() => thin() < theme.trees);
+  }
+  // Nothing below may stand lower than the strip's floor line (the buttons start there).
     for (const it of items) if (it.y > height - 1) it.y = height - 1;
   }
 
@@ -237,7 +242,7 @@ const mound = (a: Anchor, season: Season) => {
 /** The scenery layer as HTML (see sceneryItems). */
 export function sceneryHtml(theme: Theme, width: number, height: number, box: Box, options: SceneryOptions = {}): string {
   const { items, anchors } = sceneryItems(theme, width, height, box, options);
-  const season = theme.id as Season;
+  const season = theme.season;
   const depth = options.depth ?? 0;
   // Winter: a few dry tan grass stalks poke through the snow, here and there, never in a row.
   const stalks = season === 'winter' ? winterStalks(mulberry32((options.seed ?? 0) ^ 0x5a17), width, box.y - depth + 4, height) : '';

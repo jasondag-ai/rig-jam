@@ -83,6 +83,8 @@ describe('escalation: the same truck, the same kind of hit, again in the same le
       tank: ['Again?!', "I'm just gonna sit here."],
       wellhead: ['Again?!', "I'm just gonna sit here."],
       flare: ['Again?!', "I'm just gonna sit here."],
+      load: ['Still empty. Rack first.', '...'],
+      shift: ['Still the wrong shift.', '...'],
     });
   });
 });

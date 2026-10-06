@@ -161,7 +161,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       const d = await count();
       seen++;
       if (d.layers !== 1 || d.biffies !== 1 || d.others !== 0 || !d.shown) wrong.push(`Daily Pad: ${JSON.stringify(d)}`);
-      check(seen === 31 && wrong.length === 0, `all ${seen} (30 levels and the Daily Pad): one biffy each, on screen, and no other${wrong.length ? ': ' + wrong.join(' | ') : ''}`);
+      check(seen === REGIONS.reduce((n, r) => n + r.levels.length, 0) + 1 && wrong.length === 0, `all ${seen} (every level of every region, and the Daily Pad): one biffy each, on screen, and no other${wrong.length ? ': ' + wrong.join(' | ') : ''}`);
       await context.close();
     }
 

@@ -3,7 +3,6 @@ import { seedFrom } from '../engine/rng.ts';
 import { BoardView } from './board-view.ts';
 import { sceneryHtml } from './scenery.ts';
 import { applyTheme, type Theme } from './themes.ts';
-import type { Season } from './trees.ts';
 import { WITNESS_REACH, nearestWitness } from './bubble.ts';
 import { ghostFinger } from './tutorial.ts';
 import { NUDGE_LINE, nightComes, nightForced, nightRgba, nightSky } from './night.ts';
@@ -273,7 +272,7 @@ export class GameView {
       // Cardium: the porcupine's bush (the board's own bush, at the gags' size) and gopher lunch at the mound.
       if (this.regionId === GAG_TRIGGERS.porcupine.region || this.eggForced === 'porcupine' || this.eggForced === 'gopherLunch') {
         if (!eggOff('porcupine')) {
-          this.bush = new BushProp(egg, PORC_BUSH_X, theme.id as Season);
+          this.bush = new BushProp(egg, PORC_BUSH_X, theme.season);
           this.strips.porcupine = new TimelineGag(egg, porcupineDef(this.bush));
         }
         if (!eggOff('lunch')) this.strips.gopherLunch = new TimelineGag(egg, lunchDef);

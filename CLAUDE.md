@@ -48,6 +48,20 @@ something, give exact clicks and one command at a time.
   always leave first, so the order would never matter.) Convoy gates show the number they're
   waiting for; convoy trucks carry a small number tag on the cab. Generator rule: the convoy order must raise
   par (`convoyRaisesPar`). Out-of-order bumps use only the `convoy` line pool; truck 1 speaks.
+- MUSKEG (Mannville; level `muskeg` cells; `slideEnd`): floor a truck may stand on. A truck that
+  drives ONTO muskeg (its leading end enters a muskeg cell it did not cover) cannot stop: it slides
+  on the same way until it hits something (the end of its range that way), out through its gate if
+  that is where the slide ends and the gate is open to it. One drag, one move. Driving off muskeg it
+  is parked on is an ordinary move.
+- LOAD RACKS (Bakken; level `racks` cells, truck `load: true`; `onRack`): a tanker (3 cells) must
+  STOP on a load rack (end a move with any part of it over one) before its gate will take it;
+  until then its gate is a wall for it. `loaded` is play state (never in a level file); Undo
+  unloads. A tanker has a rack in its own lane and never starts on one. On a level with tankers
+  the trucks that must load are the water hauler and the vac truck, and every other 3-cell truck
+  is a frac unit (`tankerKinds` in gen-levels), so nothing that looks like a tanker leaves empty.
+- SHIFT-CHANGE GATES (Bakken; gate `shift: true`; `shiftOpen`): open only on EVEN move numbers:
+  the move that drives out must be the 2nd, 4th, 6th... of the game. On an odd move the gate is a
+  wall. The gate's clock shows whether the NEXT move may leave by it.
 - Clear all trucks to win. Score = moves vs par (par = optimal move count from the solver).
 - Rating is hard hats: at par = 3, up to par + 3 = 2, otherwise 1.
 - Hints: first tap marks the truck to move (`.hinted`: a bright rim in its own colour hugging the
@@ -61,6 +75,17 @@ something, give exact clicks and one command at a time.
 - Cardium: 10 levels, trucks and gates only. Theme: summer.
 - Montney: 10 levels, adds obstacles (pumpjacks, 400 bbl tanks, wellheads). Theme: spring mud.
 - Duvernay: 10 levels, adds convoys. Theme: winter. Preview any theme with `?theme=winter` etc.
+- Mannville: 10 levels, adds MUSKEG (with obstacles and convoys). EVERY level is par 14 to 20, the
+  first included (Jay, Oct 5: nothing below the floor); level 1 has muskeg and nothing else new.
+  8 to 9 trucks. Theme: `fall` (late fall: dry tan grass, gold aspen
+  thinning among the spruce, pale overcast sky). Opens after 5 of Duvernay.
+- Bakken: 10 levels, adds LOAD RACKS and SHIFT-CHANGE GATES. EVERY level is par 18 to 24, the
+  first included; level 1 has racks and no clock gate, level 2 brings in one. 8 to 9 trucks. Theme: `prairie` (canola stubble in rows to a flat
+  horizon, a big blue sky, hardly a tree: `Theme.trees` 0.14). Opens after 5 of Mannville.
+- Both go dark after 30 s idle like Montney and Duvernay (`GAG_TRIGGERS.night.themes`). A theme
+  has a `season` (which drawing of the trees: `fall` is new in trees.ts) and a `trees` density.
+  Their outside ground tiles (`grass-fall`, `grass-prairie`) are made from the summer grass by
+  `tools/ground-tiles.py` (`fall_grass`, `prairie_stubble` + `stubble_rows`).
 
 ## Look
 - Bright, chunky toy style: dark outlines (`--outline`), light top edge, darker bottom lip, soft
@@ -698,6 +723,21 @@ something, give exact clicks and one command at a time.
     one. Bubbles stay on screen; there is one bubble at a time.
   - `npm run test:e2e:lines` checks own lines for tank, wellhead and flare, escalation, a witness
     line and the Company Man in WebKit.
+- Regions 4 and 5 on the board (`src/ui/floor-art.ts`, drawn in code; styles under "Regions 4 and
+  5" in style.css): `.floor.muskeg` (a ragged patch of dark peat with a wet sheen and sedge tufts,
+  seeded by its cell, filling the cell so neighbours read as one bog) and `.floor.rack` (a steel
+  platform with a yellow safety edge, a riser with a red valve and a hose, lying across its
+  tanker's lane) sit in the pad UNDER the tracks and trucks and take no touches. A shift-change
+  gate (`.shift-gate`) wears a `.clock` on its latch post: ring green (`.shift-open`) when the
+  next move may leave, red when not. A tanker (`.truck.tanker`) wears a `.load-tag` beside its
+  symbol badge: a hollow dashed drop on a dark chip until loaded, then a full blue drop
+  (`.loaded`). Pushing at a gate that is shut for one of these reasons makes the truck's own
+  driver say why (`BumpHit` `load` / `shift`, pools used alone like `convoy`).
+- THE SOLVER (`src/engine/solver.ts`): `solve` is a breadth-first search on packed numbers (each
+  truck's place along its lane, a bit per loaded tanker, the move's parity where a shift gate
+  cares): about 13x faster than the plain search on the game's own rules, which is kept as
+  `solveSlow`, the reference the tests hold it to. Its moves carry the delta really travelled (a
+  slide included). `nextMove(state)` counts the moves already made.
 - `src/levels/cardium.json`, `montney.json` – GENERATED. Never hand-edit; `src/levels/regions.ts`
   loads them.
 - `tools/generator.ts` – generator core (random layouts hill-climbed toward a target par, proven by
@@ -718,6 +758,8 @@ something, give exact clicks and one command at a time.
   "obstacles": [{ "row": 4, "col": 4, "kind": "tank" }]
 }
 ```
+- Optional, regions 4 and 5: `"muskeg": [{row, col}]`, `"racks": [{row, col}]`, a truck's
+  `"load": true` (3 cells long), a gate's `"shift": true`.
 - `row`/`col` are 0-5 and mark the truck's top-left cell. `orient` is `h` or `v`.
 - Gate `index` is the row for `left`/`right` gates and the column for `top`/`bottom` gates.
 - Colors: red, blue, yellow, green, orange, purple.
@@ -743,6 +785,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
 - `npm run test:e2e:gags` – every puppet gag suite in turn: magpie, eggs, strip, eggs2 (start the dev server first)
 - `npm run test:e2e:bubbles` – every speech bubble's tail on its speaker, following it, clear of the HUD and buttons; witness lines (start the dev server first)
+- `npm run test:e2e:regions` – Mannville and Bakken: the tabs, the three new rules taught by doing, and all 20 levels cleared at par by dragging (start the dev server first)
 - `npm run test:e2e:signs` – the permanent lease sign and gags 16 to 18: surveyor, back scratcher, tourists (start the dev server first)
 - `npm run test:e2e:tutorial` – the "?" button, the three how-to cards, level 1's ghost finger (start the dev server first)
 - `npm run test:e2e:lines` – bump lines by kind, escalation, witness lines, the Company Man (start the dev server first)

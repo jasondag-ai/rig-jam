@@ -1,11 +1,12 @@
 // Scenery art in the board's toy look (ART_BIBLE 1), drawn in code: white spruce, trembling aspen
-// and willow, each in three sizes and three seasons (summer, spring buds, winter snow), plus the
+// and willow, each in three sizes and four seasons (summer, spring buds, winter snow, and late
+// fall: gold aspen thinning out, rusty willow), plus the
 // cattail clump and the blank lease sign. Flat two-tone shapes (a lit left side), a small shadow
 // under each tier, and the trucks' dark outline at one weight whatever the tree's size on screen.
 // No photo sprites. scenery.ts places them; each drawing is a <symbol> used many times.
 
 export type Species = 'spruce' | 'aspen' | 'willow' | 'cattails' | 'sign';
-export type Season = 'summer' | 'spring' | 'winter';
+export type Season = 'summer' | 'spring' | 'winter' | 'fall';
 /** 0 small, 1 medium, 2 large: three different drawings, not one drawing scaled. */
 export type TreeSize = 0 | 1 | 2;
 
@@ -28,16 +29,19 @@ const SPRUCE: Record<Season, Tones> = {
   summer: { dark: '#2f8f4e', light: '#49b866', shade: '#1f6b39' },
   spring: { dark: '#33924a', light: '#58c064', shade: '#226d37' },
   winter: { dark: '#2c7a55', light: '#3f9a6c', shade: '#1d5a40' },
+  fall: { dark: '#2b7a4a', light: '#3f9c5e', shade: '#1c5936' },
 };
 const ASPEN: Record<Season, Tones> = {
   summer: { dark: '#5fb43c', light: '#8fd957', shade: '#3f8f2a' },
   spring: { dark: '#b9d46a', light: '#dcee9c', shade: '#93b04c' },
   winter: { dark: '#ffffff', light: '#ffffff', shade: '#b9cbe6' },
+  fall: { dark: '#e0a52c', light: '#f6cf55', shade: '#b97a1c' },
 };
 const WILLOW: Record<Season, Tones> = {
   summer: { dark: '#6f9638', light: '#95bf4a', shade: '#4f7426' },
   spring: { dark: '#a9c25a', light: '#cfe183', shade: '#869c40' },
   winter: { dark: '#ffffff', light: '#ffffff', shade: '#b9cbe6' },
+  fall: { dark: '#b8763a', light: '#d99a4e', shade: '#8a5326' },
 };
 const SNOW = '#ffffff';
 const SNOW_SHADE = '#b9cbe6';
@@ -108,8 +112,8 @@ function aspen(season: Season, size: TreeSize): string {
     out += `<ellipse cx="30" cy="12" rx="${5 + size}" ry="3.6" fill="${SNOW}" ${INK}/>`;
     return out;
   }
-  // Spring: the canopy is only coming in, so it is smaller and the buds show.
-  const k = season === 'spring' ? 0.84 : 1;
+  // Spring: the canopy is only coming in, so it is smaller and the buds show. Late fall: it is thinning out.
+  const k = season === 'spring' ? 0.84 : season === 'fall' ? 0.8 : 1;
   const list = ASPEN_LOBES[size].map(([x, y, r]) => [30 + (x - 30) * k, y + (1 - k) * 8, r * k] as [number, number, number]);
   out += lobes(list, t);
   if (season === 'spring') out += list.map(([x, y, r]) => `<circle cx="${r1(x + r * 0.3)}" cy="${r1(y - r * 0.2)}" r="1.6" fill="#f4f9c6"/><circle cx="${r1(x - r * 0.1)}" cy="${r1(y + r * 0.45)}" r="1.4" fill="#f4f9c6"/>`).join('');

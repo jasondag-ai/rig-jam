@@ -55,9 +55,10 @@ export const GAG_TRIGGERS = {
   /**
    * Not a gag. NIGHT: no level starts at night. After `idleMs` with no moves the lease fades to
    * night over `fadeInMs`; the next move brings the day back over `fadeOutMs`. Only where the
-   * season is one of `themes`: Montney (spring) and Duvernay (winter). Cardium (summer) never goes dark.
+   * season is one of `themes`: Montney (spring), Duvernay (winter), Mannville (late fall) and Bakken
+   * (prairie). Cardium (summer) never goes dark.
    */
-  night: { idleMs: 30_000, fadeInMs: 4000, fadeOutMs: 2000, themes: ['spring', 'winter'] },
+  night: { idleMs: 30_000, fadeInMs: 4000, fadeOutMs: 2000, themes: ['spring', 'winter', 'fall', 'prairie'] },
   /** Not a gag: this long after night has fully fallen, a truck says "While we're young, Sonny...". Once per level. */
   nightNudge: { afterNightMs: 15_000 },
 } as const;

@@ -1,6 +1,7 @@
-import { SIZE, cabSide, convoyWaitingFor, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
+import { shiftOpen, SIZE, cabSide, convoyWaitingFor, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
 import { bumpTarget, pickSpeaker } from './bump.ts';
 import { placeBubble, type BubbleSide } from './bubble.ts';
+import { CLOCK, DROP, muskegSvg, rackSvg } from './floor-art.ts';
 import { bumpLine, type BumpHit } from './lines.ts';
 import { equipFit, equipmentSvg, gateClearance, phaseFor, runPumpjacks } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
@@ -117,7 +118,7 @@ export class BoardView {
   setLevel(level: Level): void {
     this.level = level;
     this.drag = null;
-    this.el.querySelectorAll('.gate, .obstacle, .ghost, .bubble, .dust').forEach((n) => n.remove());
+    this.el.querySelectorAll('.gate, .obstacle, .floor, .ghost, .bubble, .dust').forEach((n) => n.remove());
     this.hitCounts.clear();
     this.trucks.forEach((t) => t.remove());
     this.trucks.clear();
@@ -125,6 +126,21 @@ export class BoardView {
     this.tracks.clear();
     this.spray.clear();
     this.pad.append(this.tracks.svg);
+    // The floor of regions 4 and 5, under the tracks and the trucks: muskeg patches and load racks.
+    const floor = (cls: string, c: { row: number; col: number }, art: string) => {
+      const f = document.createElement('div');
+      f.className = `floor ${cls}`;
+      f.dataset.row = String(c.row);
+      f.dataset.col = String(c.col);
+      f.innerHTML = art;
+      this.pad.insertBefore(f, this.tracks.svg);
+    };
+    for (const c of level.muskeg) floor('muskeg', c, muskegSvg(seedFrom(level.id) + c.row * SIZE + c.col));
+    for (const c of level.racks) {
+      // It lies across the lane of the tanker that loads there.
+      const tanker = level.trucks.find((t) => t.load && (t.orient === 'h' ? t.row === c.row : t.col === c.col));
+      floor('rack', c, rackSvg(tanker?.orient ?? 'h'));
+    }
     for (const gate of level.gates) {
       const g = document.createElement('div');
       g.className = `gate c-${gate.color}`;
@@ -142,6 +158,11 @@ export class BoardView {
       if (level.trucks.some((t) => t.color === gate.color && t.convoy)) {
         g.classList.add('convoy-gate');
         g.insertAdjacentHTML('beforeend', '<span class="wait" aria-label="waiting for convoy truck"></span>');
+      }
+      // A shift-change gate wears a small clock: green when the next move may leave by it (an even move), red when not.
+      if (gate.shift) {
+        g.classList.add('shift-gate');
+        g.insertAdjacentHTML('beforeend', `<span class="clock" aria-label="shift-change gate: opens on even moves">${CLOCK}</span>`);
       }
       // On the board, not in the yard: the yard clips trucks driving out, and the gate swings out past it.
       this.el.append(g);
@@ -204,6 +225,9 @@ export class BoardView {
       });
     });
     this.paintBerm();
+    this.el.querySelectorAll<HTMLElement>('.floor').forEach((f) => {
+      Object.assign(f.style, { width: `${cell}px`, height: `${cell}px`, transform: `translate(${Number(f.dataset.col) * cell}px, ${Number(f.dataset.row) * cell}px)` });
+    });
     this.el.querySelectorAll<HTMLElement>('.obstacle').forEach((ob) => {
       Object.assign(ob.style, {
         width: `${cell}px`,
@@ -241,6 +265,12 @@ export class BoardView {
       wait.setAttribute('aria-label', waiting ? `waiting for convoy truck ${waiting}` : 'convoy gone');
       g.classList.toggle('convoy-done', !waiting);
     });
+    // Shift-change gates: the clock shows whether the NEXT move may drive out (it must be an even one).
+    const open = shiftOpen(state);
+    this.el.querySelectorAll<HTMLElement>('.shift-gate').forEach((g) => {
+      g.classList.toggle('shift-open', open);
+      g.querySelector('.clock')!.setAttribute('aria-label', `shift-change gate: ${open ? 'open for this move' : 'shut for this move'}`);
+    });
     const alive = new Set(state.trucks.map((t) => t.id));
     for (const [id, el] of this.trucks) {
       if (alive.has(id)) continue;
@@ -257,6 +287,8 @@ export class BoardView {
         this.pad.append(el);
       }
       el.classList.toggle('no-anim', !animate || fresh);
+      // A tanker shows a hollow drop until it has stopped on a load rack, then a full one.
+      el.classList.toggle('loaded', !!t.loaded);
       this.place(el, t);
       if (fresh) void el.offsetWidth; // commit position before transitions resume
       el.classList.remove('no-anim');
@@ -265,7 +297,7 @@ export class BoardView {
 
   private createTruck(t: Truck): HTMLElement {
     const el = document.createElement('div');
-    el.className = `truck c-${t.color} ${t.orient === 'h' ? 'horiz' : 'vert'}`;
+    el.className = `truck c-${t.color} ${t.orient === 'h' ? 'horiz' : 'vert'}${t.load ? ' tanker' : ''}`;
     el.dataset.id = t.id;
     el.dataset.cab = cabSide(this.level!, t);
     const kind = t.kind ?? defaultKind(t.length);
@@ -279,7 +311,7 @@ export class BoardView {
     el.innerHTML =
       `<div class="ground-shadow"></div>` +
       `<div class="body"><div class="art">${spriteImg(kind, t.color)}${VEHICLE_SVG[kind]}<i class="coat"></i></div>` +
-      `<div class="bed"><span class="sym">${SYMBOL[t.color]}</span></div>` +
+      `<div class="bed"><span class="sym">${SYMBOL[t.color]}</span>${t.load ? `<span class="load-tag" aria-label="tanker: must load">${DROP}</span>` : ''}</div>` +
       `<i class="lamps"></i>` +
       `<div class="cab"><span class="driver-arm"></span>${t.convoy ? `<span class="convoy-no" aria-label="convoy ${t.convoy}">${t.convoy}</span>` : ''}</div></div>`;
     wireSprite(el);

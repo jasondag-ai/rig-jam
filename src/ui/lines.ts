@@ -12,7 +12,7 @@
 // ESCALATION: the same truck hitting the same kind of thing again in one level says the 2nd, then
 // the 3rd line of `ESCALATION` instead of a line from the pool.
 
-export type BumpHit = 'truck' | 'wall' | 'pumpjack' | 'tank' | 'wellhead' | 'flare' | 'convoy';
+export type BumpHit = 'truck' | 'wall' | 'pumpjack' | 'tank' | 'wellhead' | 'flare' | 'convoy' | 'load' | 'shift';
 
 export const BUMP_LINES = {
   any: [
@@ -67,6 +67,10 @@ export const BUMP_LINES = {
     "I'm first. It says so on my door.",
     "Convoy rules. Don't make me say it again.",
   ],
+  // A tanker driven at its gate before it has loaded (Bakken). Its own pool only: the line is the rule.
+  load: ["Can't leave empty. Rack first.", 'Load up, then the gate opens.', "I'm empty. Stop me on the rack."],
+  // A truck driven at a shift-change gate on an odd move (Bakken). Its own pool only.
+  shift: ['Wrong shift. Even moves only.', "Clock says no. It's open next move.", 'Shift change. Try on an even move.'],
   tank: [
     "That tank's full, by the way.",
     "Tank's not a bumper.",
@@ -99,15 +103,17 @@ export const ESCALATION: Record<BumpHit, [string, string]> = {
   truck: ['Again? Really?', "I'm calling dispatch."],
   pumpjack: ['Still undefeated.', '...'],
   convoy: ['Still not your turn.', '...'],
+  load: ['Still empty. Rack first.', '...'],
+  shift: ['Still the wrong shift.', '...'],
   tank: ['Again?!', "I'm just gonna sit here."],
   wellhead: ['Again?!', "I'm just gonna sit here."],
   flare: ['Again?!', "I'm just gonna sit here."],
 };
 
 
-/** Lines that fit a bump: the "any" pool plus the pool for what was hit (convoy: its own pool only). */
+/** Lines that fit a bump: the "any" pool plus the pool for what was hit (convoy, load, shift: their own pool only, so the line explains the rule). */
 export function linesFor(hit: BumpHit): string[] {
-  if (hit === 'convoy') return [...BUMP_LINES.convoy];
+  if (hit === 'convoy' || hit === 'load' || hit === 'shift') return [...BUMP_LINES[hit]];
   return [...BUMP_LINES.any, ...BUMP_LINES[hit]];
 }
 

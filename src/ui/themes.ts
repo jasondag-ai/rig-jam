@@ -1,7 +1,9 @@
+import type { Season } from './trees.ts';
+
 // Seasonal looks. A theme is a set of CSS variables plus a ground style for the pad.
 // To give a new region a season, add (or reuse) a theme here and set `theme` on the region.
 
-export type ThemeId = 'summer' | 'spring' | 'winter';
+export type ThemeId = 'summer' | 'spring' | 'winter' | 'fall' | 'prairie';
 
 /** The pad's surface: picks the base image, the ground detail (lease-detail.ts), the berm and the tracks. */
 export type Ground = 'gravel' | 'mud' | 'snow';
@@ -33,6 +35,10 @@ export interface Theme {
   ground: Ground;
   /** Share of spruce among border trees (the rest are aspen). */
   spruceShare: number;
+  /** Which drawing of the trees (trees.ts): leaf colour, snow. */
+  season: Season;
+  /** How much of the usual tree cover stands (1 = boreal forest; the prairie keeps a shelterbelt's worth). */
+  trees: number;
   vars: Record<ThemeVar, string>;
 }
 
@@ -44,6 +50,8 @@ export const THEMES: Record<ThemeId, Theme> = {
     name: 'Summer',
     ground: 'gravel',
     spruceShare: 0.5,
+    season: 'summer',
+    trees: 1,
     vars: {
       '--sky-top': '#4fb0ff',
       '--sky-bottom': '#c4ecff',
@@ -67,6 +75,8 @@ export const THEMES: Record<ThemeId, Theme> = {
     name: 'Spring mud',
     ground: 'mud',
     spruceShare: 0.55,
+    season: 'spring',
+    trees: 1,
     vars: {
       '--sky-top': '#7fa3bd',
       '--sky-bottom': '#d9e2e6',
@@ -90,6 +100,8 @@ export const THEMES: Record<ThemeId, Theme> = {
     name: 'Winter',
     ground: 'snow',
     spruceShare: 0.85,
+    season: 'winter',
+    trees: 1,
     vars: {
       '--sky-top': '#86b4dc',
       '--sky-bottom': '#e8f2fa',
@@ -106,6 +118,60 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--tree-bark': '#ece8dd',
       '--tree-frost': '#ffffff',
       '--ob-ground': 'rgba(60, 100, 150, 0.18)',
+    },
+  },
+  // Mannville, late fall: dry tan grass, gold aspen thinning out among the spruce, a pale overcast
+  // sky, and a pad of cold grey-brown dirt (muskeg country: the dark peat patches are the level's own).
+  fall: {
+    id: 'fall',
+    name: 'Late fall',
+    ground: 'gravel',
+    spruceShare: 0.45,
+    season: 'fall',
+    trees: 1,
+    vars: {
+      '--sky-top': '#8fa6b8',
+      '--sky-bottom': '#e3e6e2',
+      '--ground': '#82703f',
+      '--ground-dark': '#5e502b',
+      '--pad': '#a8977e',
+      '--pad-light': '#c7b79e',
+      '--pad-dark': '#6c5c48',
+      '--accent': '#ffc21a',
+      '--tree-spruce': '#2b7a4a',
+      '--tree-spruce-dark': '#1c5936',
+      '--tree-aspen': '#f6cf55',
+      '--tree-aspen-dark': '#e0a52c',
+      '--tree-bark': '#f1ede1',
+      '--tree-frost': NONE,
+      '--ob-ground': 'rgba(70, 50, 24, 0.24)',
+    },
+  },
+  // Bakken, flat prairie: canola stubble to the horizon under a big blue sky, hardly a tree (a
+  // shelterbelt's worth), and a pad of pale dry clay.
+  prairie: {
+    id: 'prairie',
+    name: 'Prairie',
+    ground: 'gravel',
+    spruceShare: 0.1,
+    season: 'summer',
+    trees: 0.14,
+    vars: {
+      '--sky-top': '#4f9fe6',
+      '--sky-bottom': '#dceefc',
+      '--ground': '#a99e62',
+      '--ground-dark': '#857a48',
+      '--pad': '#cdbb97',
+      '--pad-light': '#e3d4b6',
+      '--pad-dark': '#8c7a5c',
+      '--accent': '#ffc21a',
+      '--tree-spruce': '#2e9a52',
+      '--tree-spruce-dark': '#1d6e39',
+      '--tree-aspen': '#86d94e',
+      '--tree-aspen-dark': '#58ad30',
+      '--tree-bark': '#f4f1e6',
+      '--tree-frost': NONE,
+      '--ob-ground': 'rgba(110, 86, 40, 0.22)',
     },
   },
 };

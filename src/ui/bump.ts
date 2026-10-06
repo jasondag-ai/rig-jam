@@ -1,10 +1,10 @@
 // Who got bumped, and who complains about it. Pure: no DOM, so it can be unit-tested.
-import { SIZE, convoyWaitingFor, gateFor, gateOpen, type GameState, type MoveRange } from '../engine/index.ts';
+import { SIZE, convoyWaitingFor, gateFor, gateOpen, shiftOpen, type GameState, type MoveRange } from '../engine/index.ts';
 import type { BumpHit } from './lines.ts';
 
 export interface BumpTarget {
   hit: BumpHit;
-  /** The truck that got hit ('truck'), or the convoy truck the gate is waiting for ('convoy'). */
+  /** The truck that got hit ('truck'), the convoy truck the gate is waiting for ('convoy'), or the truck itself at its own shut gate ('load', 'shift'). */
   truckId: string | null;
 }
 
@@ -19,6 +19,10 @@ export function bumpTarget(state: GameState, id: string, range: MoveRange, direc
     const side = gateFor(state.level, t).side;
     const towardGate = direction > 0 ? side === 'right' || side === 'bottom' : side === 'left' || side === 'top';
     if (towardGate && !gateOpen(state, t)) {
+      // A tanker that has not loaded, or a shift-change gate on an odd move: its own driver says why.
+      if (t.load && !t.loaded) return { hit: 'load', truckId: t.id };
+      const waiting = t.convoy ? convoyWaitingFor(state, t.color) : null;
+      if (!(waiting && waiting !== t.convoy) && gateFor(state.level, t).shift && !shiftOpen(state)) return { hit: 'shift', truckId: t.id };
       const first = state.trucks.find((o) => o.color === t.color && o.convoy === convoyWaitingFor(state, t.color));
       return { hit: 'convoy', truckId: first?.id ?? null };
     }
