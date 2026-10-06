@@ -2224,6 +2224,16 @@ canvas.lease-detail {
   place-items: center;
   width: 100%;
   height: 84px;
+  /* EVERY STILL IS CUT TO ITS CARD'S ART BOX: nothing may hang out over the card's edge, its
+     neighbour or its caption. */
+  overflow: hidden;
+}
+
+/* A wave 3 still is a window on its gag's scene: scaled to fit the art box, cut at its own view. */
+.log-card .art .egg-still.wave3-still {
+  width: 100%;
+  height: 84px;
+  overflow: hidden;
 }
 
 .log-card .art svg {
