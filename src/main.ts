@@ -22,6 +22,7 @@ import { hatsHtml } from './ui/hats.ts';
 import { hardHats, loadProgress, resetProgress, saveProgress } from './ui/progress.ts';
 import { levelLockText, levelOpen, newlyOpened, regionLockText, regionOpen } from './ui/unlocks.ts';
 import { onTap } from './ui/tap.ts';
+import { fakeRegions, furthestOpen, runRegionBar } from './ui/region-bar.ts';
 import { shouldShowCover, showCover } from './ui/cover.ts';
 import { applyUiArt, uiImg } from './ui/ui-art.ts';
 import { preloadSprites } from './ui/sprites.ts';
@@ -116,20 +117,23 @@ const LIST_TREES = 24;
 const REGION_KEY = 'rush-hour-rigs:region';
 let game: GameView | null = null;
 
-function savedRegion(): number {
+/** The region the player was last on (-1: none is remembered yet). */
+function rememberedRegion(): number {
   try {
-    const i = REGIONS.findIndex((r) => r.id === localStorage.getItem(REGION_KEY));
-    return i >= 0 ? i : 0;
+    return REGIONS.findIndex((r) => r.id === localStorage.getItem(REGION_KEY));
   } catch {
-    return 0;
+    return -1;
   }
 }
+const savedRegion = (): number => Math.max(0, rememberedRegion());
 
 function showLevels(requested = savedRegion()): void {
   game?.leave();
   game = null;
   sound.quiet();
   const progress = loadProgress();
+  // The region bar opens on the region the player was last on; with none remembered yet, on the furthest one unlocked.
+  const barTarget = rememberedRegion() >= 0 ? -1 : furthestOpen(REGIONS, progress.best, progress.demo);
   // A remembered region that's locked (after a reset, or demo mode off) falls back to Cardium.
   const regionIndex = regionOpen(REGIONS, requested, progress.best, progress.demo) ? requested : 0;
   try {
@@ -151,12 +155,13 @@ function showLevels(requested = savedRegion()): void {
       ${Object.keys(progress.best).length ? '' : '<p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>'}
     </header>
     <div class="daily-block"></div>
-    <div class="regions" role="tablist"></div>
+    <div class="regions"><div class="regions-track" role="tablist"></div></div>
     <p class="region-blurb"></p>
     <ol class="level-list"></ol>
     <p class="hint-balance">Hints left: <strong>${progress.hints}</strong> · clear a level at par to earn one</p>`;
 
-  const tabs = screen.querySelector('.regions')!;
+  // The region bar: one row of full-size tabs, swiped left and right (region-bar.ts).
+  const tabs = screen.querySelector<HTMLElement>('.regions-track')!;
   REGIONS.forEach((r, i) => {
     const done = r.levels.filter((l) => progress.best[l.id] !== undefined).length;
     const open = regionOpen(REGIONS, i, progress.best, progress.demo);
@@ -175,11 +180,23 @@ function showLevels(requested = savedRegion()): void {
     }
     tabs.append(tab);
   });
-  // Tabs and the gear act on the first tap, even on iOS (see tap.ts).
-  onTap(tabs as HTMLElement, '.region-tab', (tab) => {
-    const i = Number(tab.dataset.index);
+  // (`?tabs=8`: made-up locked regions after the real ones, to try the bar with more tabs.)
+  for (const name of fakeRegions(REGIONS.length)) {
+    const tab = document.createElement('button');
+    tab.className = 'region-tab locked fake';
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-selected', 'false');
+    tab.setAttribute('aria-disabled', 'true');
+    tab.innerHTML = `<span class="rname">${PADLOCK}<span class="rtext"></span></span><span class="rlock">Coming soon</span>`;
+    tab.querySelector('.rtext')!.textContent = name;
+    tabs.append(tab);
+  }
+  const bar = runRegionBar(screen.querySelector<HTMLElement>('.regions')!, tabs, barTarget >= 0 ? barTarget : regionIndex);
+  // Tabs and the gear act on the first tap, even on iOS (see tap.ts). A swipe of the bar is never a tap.
+  onTap(tabs, '.region-tab', (tab) => {
+    if (!bar.tapped()) return;
     if (tab.classList.contains('locked')) shake(tab);
-    else showLevels(i);
+    else showLevels(Number(tab.dataset.index));
   });
   screen.querySelector('.region-blurb')!.textContent = region.blurb;
 

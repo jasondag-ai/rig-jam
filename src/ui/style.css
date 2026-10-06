@@ -258,22 +258,68 @@ input,
   line-height: 1.35;
 }
 
+/* Region bar (region-bar.ts): the cream frame, and inside it ONE row of full-size tabs that is
+   swiped left and right. Native momentum scrolling, a snap at each tab, no scrollbar. Two tabs
+   and about a third of the next show (--tabs), so there is always a peek of what comes next. */
 .regions {
-  display: grid;
-  grid-auto-columns: 1fr;
-  grid-auto-flow: column;
-  gap: 6px;
-  padding: 5px;
+  position: relative;
+  /* (A flex child that clips would otherwise be squeezed flat by the level list below it.) */
+  flex: none;
   margin: 26px 0 8px;
   border-radius: 18px;
+  overflow: hidden;
 }
+
+.regions-track {
+  --gap: 6px;
+  --tabs: 2.34;
+  display: flex;
+  gap: var(--gap);
+  padding: 5px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 5px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  /* A swipe on the bar moves the bar only: never the page up and down. */
+  touch-action: pan-x;
+  scrollbar-width: none;
+}
+
+.regions-track::-webkit-scrollbar { display: none; }
+
+/* An edge fades into the frame where there is more of the bar that way. */
+.regions::before,
+.regions::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms;
+}
+
+.regions::before { left: 0; background: linear-gradient(to right, var(--cream) 10%, rgba(255, 247, 230, 0)); }
+.regions::after { right: 0; background: linear-gradient(to left, var(--cream) 10%, rgba(255, 247, 230, 0)); }
+.regions.more-left::before,
+.regions.more-right::after { opacity: 0.92; }
 
 .region-tab {
   display: flex;
+  flex: 0 0 calc((100% - var(--gap) * 2) / var(--tabs));
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
+  min-width: 0;
   min-height: 54px;
+  padding: 3px 2px;
+  scroll-snap-align: start;
+  touch-action: pan-x;
   border: 0;
   border-radius: 13px;
   background: transparent;
@@ -3641,14 +3687,6 @@ canvas.berm-night { opacity: 0; transition: opacity var(--night-out) ease-in-out
   from { transform: scale(0.4); }
 }
 
-/* Five regions: the tabs share ONE row (a second row pushes the level list down the page), so
-   their lettering is small and a locked tab's padlock sits over its name. */
-.regions { grid-auto-flow: row; grid-template-columns: repeat(5, minmax(0, 1fr)); padding-left: 3px; padding-right: 3px; gap: 1px; }
-.region-tab { min-width: 0; font-size: clamp(12px, 3.35vw, 15px); padding-left: 0; padding-right: 0; letter-spacing: -0.01em; }
-.region-tab .rdone { font-size: 12px; }
-.region-tab .rlock { font-size: 9.5px; padding: 0 1px; }
-.region-tab.locked .rname { flex-direction: column; gap: 0; }
-.region-tab.locked img.padlock { width: 13px; height: 13px; flex: none; }
 
 /* ---------- The dig (Wildlife Log v2: log-dig.ts, log-dig-view.ts) ----------
    One continuous cross-section behind the cards, down to the oil. The strata are ONE static SVG
@@ -4047,4 +4085,9 @@ svg.dig-tunnel {
 @media (prefers-reduced-motion: reduce) {
   .oil-glint.deep-glow { animation: none; opacity: 0.6; }
   .dig-arrival { animation: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .regions::before,
+  .regions::after { transition: none; }
 }
