@@ -714,6 +714,9 @@ export const samDef: TimelineDef = {
  * NEAR screen edge (the right), where its visitors come from.
  */
 export const SIGN_X = 0.62;
+/** Where the sign stands on THIS level (Mannville stands it left of its lane aspen: scene-stage.ts). Set before the level's SignProp is made. */
+let signX: number = SIGN_X;
+export const setSignX = (x: number = SIGN_X): void => void (signX = x);
 /** The line the sign and its visitors stand on (screen px), and the strip's scale. */
 export function signStand(screenW: number, strip: { top: number; bottom: number }): { ground: number; scale: number } {
   const { ground, scale } = stripGeom(screenW, strip);
@@ -723,7 +726,7 @@ export function signStand(screenW: number, strip: { top: number; bottom: number 
 export function signLane(screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
   const { ground, scale } = signStand(screenW, strip);
   const u = (VISITOR_FRAC * scale * screenW) / 120;
-  const left = SIGN_X * screenW - 112 * u;
+  const left = signX * screenW - 112 * u;
   return { x: left, y: ground - 60 * u, width: screenW - left, height: 60 * u + 2 };
 }
 export class SignProp {
@@ -737,7 +740,7 @@ export class SignProp {
     this.layer.className = 'scene-layer puppet-layer prop-layer sign-layer';
     this.layer.setAttribute('aria-hidden', 'true');
     (host.mount ?? ((el: HTMLElement) => host.screen.append(el)))(this.layer);
-    this.pup = signPup(this.layer, 1, { x: SIGN_X, y: 0.8 });
+    this.pup = signPup(this.layer, 1, { x: signX, y: 0.8 });
     this.layout();
   }
 
@@ -750,7 +753,7 @@ export class SignProp {
     if (!screen.height) return;
     const { ground, scale } = signStand(screen.width, this.host.strip());
     this.pup.frac = SIGN_FRAC * scale;
-    this.pup.spot = { x: SIGN_X, y: ground / screen.height };
+    this.pup.spot = { x: signX, y: ground / screen.height };
     this.rest();
   }
 
@@ -774,13 +777,13 @@ function signStage(layer: (cls: string) => HTMLElement, host: EggHost, cls: stri
   const frame = layer(cls);
   const stage = document.createElement('div');
   stage.className = 'sign-stage';
-  stage.style.transformOrigin = `${SIGN_X * screen.width}px 50%`;
+  stage.style.transformOrigin = `${signX * screen.width}px 50%`;
   stage.style.transform = 'scaleX(-1)';
   frame.append(stage);
   const u = (VISITOR_FRAC * scale * screen.width) / 120;
-  const spot = { x: SIGN_X, y: ground / screen.height };
+  const spot = { x: signX, y: ground / screen.height };
   // How far from the sign (their units) a visitor is fully off the near edge, and off the far one.
-  const near = ((1 - SIGN_X) * screen.width) / u + 72, far = (SIGN_X * screen.width) / u + 80;
+  const near = ((1 - signX) * screen.width) / u + 72, far = (signX * screen.width) / u + 80;
   return { screen, frame, stage, scale, spot, near, far, strip: host.strip() };
 }
 

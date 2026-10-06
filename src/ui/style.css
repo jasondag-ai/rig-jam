@@ -3873,3 +3873,44 @@ svg.dig-tunnel {
   .buried-egg.peek .egg-peek { opacity: 1; }
   .oil-glint { opacity: 0.7; }
 }
+
+/* ---------- Gag wave 3: the standard scenes and their gags (scene-stage.ts, wave3.ts) ----------
+   Each is one SVG over the bottom strip (or the sky band) showing the reference's world at the
+   strip's scale. None takes a touch. The scenery is z 0 like every strip layer, so the night
+   dims it with the rest; the lane aspen (`.scene-front`) is kept over the strip's gag layers. */
+.scene-prop,
+.strip-layer.scene-gag {
+  z-index: 0;
+  pointer-events: none;
+}
+
+.scene-prop svg.scene-svg,
+.scene-gag svg.scene-svg {
+  display: block;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* The lane aspen, tapped: a small shake about its foot. */
+.scene-front svg.scene-svg.shake {
+  transform-origin: 74% 100%;
+  animation: aspen-shake 380ms ease-in-out;
+}
+
+@keyframes aspen-shake {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-1.6deg); }
+  60% { transform: rotate(1.2deg); }
+}
+
+/* Aurora Howl: over the night's shade, and gone with the night. */
+.strip-layer.aurora-layer {
+  opacity: 0;
+  transition: opacity var(--night-out) ease-in-out;
+}
+
+.screen.game.night .strip-layer.aurora-layer { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-front svg.scene-svg.shake { animation: none; }
+}
