@@ -895,16 +895,24 @@ export const landownerStill = () => still((h) => {
   const s = landownerScene(h, 1, 1);
   return () => lApply(s, lPose(4.6), 4.6);
 }, 'svg.pup', 'landowner-still', '0 0 160 130');
+/** Occupied: the biffy with its door open on him, framed on the biffy itself (its true shape: taller than wide). */
 export const biffyAStill = () => still((h) => {
   const p = biffyPup(h, { x: 0.5, y: 1 }, 1);
   return () => aApply({ p }, 2.2);
-}, 'svg.pup', 'biffy-still', '-24 0 148 140');
-export const biffyBStill = () => still((h) => {
-  const p = biffyPup(h, { x: 0.5, y: 1 }, 1);
-  (p.q('.occ') as SVGElement).style.display = 'none';
-  const s = runawayScene(p, h, 1);
-  return () => {
-    bApply(s, 4.2);
-    place(s.s, 6);
-  };
-}, 'svg.pup:nth-of-type(2)', 'shuffler-still', '4 26 104 90');
+}, 'svg.pup', 'biffy-still', '-10 2 106 136');
+/** The Runaway Roll: one big toilet paper roll, a short tail of paper trailing from it. */
+export const biffyBStill = () =>
+  '<svg class="egg-still roll-still" viewBox="0 0 120 84" aria-hidden="true">' +
+  '<ellipse cx="62" cy="76" rx="40" ry="5" fill="rgba(40,60,20,.2)"/>' +
+  // The tail of paper, lying behind the roll and curling at its end.
+  '<path d="M52 66 Q30 70 14 62 Q6 58 8 50" fill="none" stroke="#2b1e16" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>' +
+  '<path d="M52 66 Q30 70 14 62 Q6 58 8 50" fill="none" stroke="#fbfbf6" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>' +
+  '<path d="M40 68.5 L40 64 M28 67.5 L28 62.5" stroke="#d9d6cc" stroke-width="1.6" stroke-dasharray="1.5 2"/>' +
+  // The roll, seen a little from the side: its face and the tube in the middle.
+  '<circle cx="70" cy="40" r="32" fill="#fbfbf6" stroke="#2b1e16" stroke-width="3.4"/>' +
+  '<path d="M48 22 Q58 12 72 11" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>' +
+  '<circle cx="70" cy="40" r="22" fill="none" stroke="#e4e1d6" stroke-width="2"/><circle cx="70" cy="40" r="27" fill="none" stroke="#e4e1d6" stroke-width="1.6"/>' +
+  '<circle cx="70" cy="40" r="11.5" fill="#b9a98a" stroke="#2b1e16" stroke-width="2.8"/><circle cx="70" cy="40" r="6.5" fill="#6f6250"/>' +
+  // Speed lines: it is getting away.
+  '<path d="M106 26 L116 26 M108 40 L118 40 M106 54 L114 54" stroke="#2b1e16" stroke-width="3" stroke-linecap="round"/>' +
+  '</svg>';

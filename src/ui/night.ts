@@ -69,3 +69,32 @@ export function nightSky(w: number, h: number, moon: boolean): string {
     : '';
   return `<svg class="night-sky" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${stars}${art}</svg>`;
 }
+
+/**
+ * Wildlife Log card art for NIGHT SHIFT: the pad at night with the flare glowing. A small picture
+ * in the board's toy look: the dark blue shade, stars and a moon over the berm, a flare stack with
+ * its warm glow on the ground, and one truck's headlights.
+ */
+export function nightStill(): string {
+  const O = '#2a1a0c';
+  const stars = [[12, 9], [30, 5], [52, 12], [88, 6], [104, 14], [70, 4]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="${i % 2 ? 1.1 : 1.6}" fill="#fdf6d0"/>`).join('');
+  return (
+    '<svg class="egg-still night-still" viewBox="0 0 120 84" aria-hidden="true">' +
+    '<defs><radialGradient id="ns-glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ffb347" stop-opacity=".85"/><stop offset=".55" stop-color="#ff9a2e" stop-opacity=".3"/><stop offset="1" stop-color="#ff9a2e" stop-opacity="0"/></radialGradient>' +
+    '<radialGradient id="ns-lamp" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff6c8" stop-opacity=".9"/><stop offset="1" stop-color="#fff6c8" stop-opacity="0"/></radialGradient></defs>' +
+    `<rect x="2" y="2" width="116" height="80" rx="10" fill="#14203f" stroke="${O}" stroke-width="2.6"/>` +
+    stars +
+    `<circle cx="98" cy="20" r="7" fill="#f4efd2" stroke="${O}" stroke-width="1.6"/><circle cx="101" cy="18" r="6" fill="#14203f"/>` +
+    // The berm along the top of the pad, and the pad itself, under the night's shade.
+    `<path d="M2 40 Q20 32 40 36 Q64 31 86 36 Q104 33 118 39 L118 82 L2 82 Z" fill="#232b45" stroke="${O}" stroke-width="2"/>` +
+    '<path d="M8 50 L112 50 L116 80 L4 80 Z" fill="#3a4160"/>' +
+    // The flare's glow on the ground, then the stack and its flame.
+    '<ellipse cx="44" cy="62" rx="34" ry="17" fill="url(#ns-glow)"/><circle cx="44" cy="28" r="20" fill="url(#ns-glow)"/>' +
+    `<rect x="41.5" y="30" width="5" height="34" fill="#7d858f" stroke="${O}" stroke-width="1.8"/><rect x="38" y="62" width="12" height="5" rx="1.5" fill="#5d646d" stroke="${O}" stroke-width="1.6"/>` +
+    `<path d="M44 12 Q52 22 48 29 Q44 33 40 29 Q36 22 44 12 Z" fill="#ff8a1c" stroke="${O}" stroke-width="1.8" stroke-linejoin="round"/><path d="M44 19 Q48 24 46 28 Q44 30 42 28 Q40 24 44 19 Z" fill="#ffe27a"/>` +
+    // A truck parked in the dark, its headlights on.
+    '<ellipse cx="104" cy="66" rx="13" ry="8" fill="url(#ns-lamp)"/>' +
+    `<rect x="66" y="58" width="30" height="15" rx="4" fill="#a8362f" stroke="${O}" stroke-width="2"/><rect x="84" y="60" width="9" height="11" rx="2" fill="#7fa9c9" stroke="${O}" stroke-width="1.4"/>` +
+    '</svg>'
+  );
+}

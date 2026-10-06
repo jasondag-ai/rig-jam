@@ -699,11 +699,11 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       if (mode === 'game') check(by.bear?.art && by.bear.legendary && !!(await page.$('.log-card[data-id="bear"] .legend-tag')), 'the Bear has a LEGENDARY card with a gold frame and puppet art');
       if (mode === 'game') check(by.bull?.art && by.bull.text === 'Not seen yet.', 'Bull and Cow has a card with puppet art');
       if (mode === 'game') check(by.porcupine?.art && by.lunch?.art && by.porcupine.text === 'Not seen yet.', 'Porcupine and Gopher Lunch have cards with puppet art');
-      else check(by.porcupine.text === 'Tap the bush three times in Cardium.' && by.lunch.text === 'Press Hint in Cardium. One time in two.', 'demo mode shows the porcupine\'s and the lunch\'s hints');
+      else check(by.porcupine.text === 'In Cardium, tap the bush three times.' && by.lunch.text === 'In Cardium, press Hint. He may show up for lunch.', 'demo mode shows the porcupine\'s and the lunch\'s hints');
       if (mode === 'game') check(by.sam?.art && by.tongue?.art && by.sam.text === 'Not seen yet.', 'Safety Sam and Frozen Tongue have cards with puppet art');
-      else check(by.sam.text === 'Bump three times in a row, or push a truck at a wrong-colour gate.' && by.tongue.text === 'Tap the frosty riser three times on a winter level.', 'demo mode shows Sam\'s and the tongue\'s hints');
+      else check(by.sam.text === 'Bump three times in a row, or push a truck at a wrong-colour gate.' && by.tongue.text === 'On a winter level, tap the frosty pipe stand three times.', 'demo mode shows Sam\'s and the tongue\'s hints');
       if (mode === 'game') check(by.marshmallow?.art && by.geese?.art && by.marshmallow.text === 'Not seen yet.' && by.geese.text === 'Not seen yet.', `Marshmallow and Lost Goose have cards with puppet art; the game hides the hints (${cards.length} cards)`);
-      else check(by.marshmallow.text === 'Tap a flare stack three times.' && by.geese.text === 'Undo three times in a row.' && by.bear.text === 'Tap the snowy bush three times in Duvernay. One time in three.' && by.bull.text === 'Tap the cow in Montney.', 'demo mode shows each gag\'s hint');
+      else check(by.marshmallow.text === 'Tap a flare stack three times.' && by.geese.text === 'Press Undo three times in a row.' && by.bear.text === 'In Duvernay, tap the snowy bush three times. He comes one time in three.' && by.bull.text === 'In Montney, tap the cow.', 'demo mode shows each gag\'s hint');
       await context.close();
     }
   }

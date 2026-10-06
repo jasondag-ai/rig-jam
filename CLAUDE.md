@@ -258,7 +258,10 @@ something, give exact clicks and one command at a time.
     about the sign (`signStage`); the sign itself is the prop's own puppet, and BZZZZ is turned back.
     16 SURVEYOR (approved as it is): sights the sign, "Off a metre.", yanks it up, moves it a
     metre, sights again, "Huh.", carries it back exactly, stamps it in, "Perfect.", folds the
-    tripod, leaves. Trigger: the Restart button, 1 in 2, once a visit. Any region.
+    tripod, leaves. Trigger: the Restart button, 1 in 2, once a visit. Any region. THE TRIPOD
+    (Job I) never pops: it passes between his hand and the ground over `TRI_BLEND` (0.2 s) at
+    `T_PLANT` and `T_PICKUP`; carried, it rides folded at a fixed 6 degrees at his hand's height
+    without the walk's bob (his carry arm is still); `.legs` is rebuilt only when `spread` changes.
     17 BACK SCRATCHER (mule deer) and 18 TOURISTS were REVISED by Jay (bible, Oct 5) after the file
     was saved and no newer file has arrived, so their revised beats are AUTHORED from his words on
     the reference's drawings and clock: the deer rubs its CHEEK AND NECK on the sign's near corner
@@ -575,18 +578,27 @@ something, give exact clicks and one command at a time.
   crossfades want an ear check on a phone.
 
 ## Wildlife Log
-- `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game (18:
+- `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game plus Night Shift (19:
   Magpie, Sleepy Worker, Moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll,
   Marshmallow, Lost Goose, Porcupine, Gopher Lunch, Safety Sam, Frozen Tongue, Surveyor, Back
-  Scratcher, Tourists, Bull and Cow, Bear),
+  Scratcher, Tourists, Night Shift, Bull and Cow, Bear),
   each with a caption and a hint. No entries for gags that are gone (the pumper, the old hot shot
   and gopher); their ids are dropped from a saved log on load. An entry unlocks the first time its
   gag plays right through (`GameView.seen`; the worker counts once he is asleep). Saved in
   `rush-hour-rigs:log` (`v: 3`), so Reset progress clears it.
+- HINTS are plain and short and say where and what to do ("In Cardium, tap the bush three
+  times."); a gag that comes on a roll says "He may ...". No em dashes. A test holds them to it.
+- NIGHT SHIFT (`night`): not a gag. Found when the lease has gone fully dark (the idle fade has
+  finished: `GameView.nightSeen`, once a visit; not when night is pinned with `?night=1`). Same
+  toast and card as a gag. Its art is `nightStill()` (night.ts): the pad at night, the flare glowing.
 - Every card's art is a still of the gag's own PUPPET (`LOG_ART` in main.ts: `magpieStill`,
   `workerStill`, `mooseStill`, `nearMissStill`, ...). No sprites. Found: in colour with its caption;
   unfound: a dark silhouette (CSS brightness(0)) and, in DEMO mode only, the gag's hint
-  (`cardHint`); the game says "Not seen yet."
+  (`cardHint`); the game says "Not seen yet." NO STRETCH: `fitArt` (main.ts) gives every card's
+  picture a px width and height from its own viewBox, inside `ART_BOX` (104 x 84), so a tall
+  drawing (the biffy) is never squeezed. Occupied is the biffy at its true shape; The Runaway Roll
+  is one big toilet roll with a short tail of paper (`biffyBStill`, drawn for the card). The
+  moose's still is cut off at its picture's edge (his neck runs on below it).
 - New sighting: a toast at the very top (`toast.ts`, 2s, one at a time, never over the board):
   "New sighting! Bear (3/15)". The last one adds a celebration toast and turns on camo pickups.
 - Camo is earned (`camoEarned`) by finding every entry; camo earned under an earlier, shorter log is
@@ -669,6 +681,10 @@ something, give exact clicks and one command at a time.
   animation frame loop, each starting at its own phase (`phaseFor`, from its cell). Flare flames
   flicker in CSS (`flare-flicker`, staggered by `--eq-delay`). Reduced motion: both hold still.
   The frame-rate e2e check (4x CPU throttle) runs on a level with a pumpjack and a flare.
+  The loop (and so the pumpjack's sound) runs ONLY while a level is being played:
+  `BoardView.startAmbient` / `stopAmbient`; `GameView` stops it on a win, in `leave()` and when the
+  app is hidden (`visibilitychange`), and starts it when the board shows again. `sound.pumpjack()`
+  also plays only in the 'play' scene. `npm run test:e2e:audio` listens for 10 s in each place.
 - Flare stacks in levels: an alternate look for some tanks. `tools/gen-levels.ts` `withFlares` turns
   the first tank of every second Montney and Duvernay level into `kind: 'flare'` at write time.
   Cosmetic only: layouts, par and the solver are untouched. `node e2e/equip-shots.mjs` saves

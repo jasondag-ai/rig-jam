@@ -16,7 +16,7 @@ const check = (ok, text) => {
   if (!ok) failures++;
   console.log(`   ${ok ? 'ok  ' : 'FAIL'} ${text}`);
 };
-const ALL = ['magpie', 'spotter', 'moose', 'nearmiss', 'landowner', 'biffy', 'biffyB', 'marshmallow', 'geese', 'porcupine', 'lunch', 'sam', 'tongue', 'surveyor', 'deer', 'tourists', 'bull', 'bear'];
+const ALL = ['magpie', 'spotter', 'moose', 'nearmiss', 'landowner', 'biffy', 'biffyB', 'marshmallow', 'geese', 'porcupine', 'lunch', 'sam', 'tongue', 'surveyor', 'deer', 'tourists', 'night', 'bull', 'bear'];
 const N = ALL.length;
 // Night, Safety Sam and the other idle gags are kept out of the way; the idle cooldown is off.
 const QUIET = 'night=0&cooldown=0&off=lunch,tongue,sam,porcupine';
@@ -225,7 +225,7 @@ await page.reload({ waitUntil: 'networkidle' });
 const demoLog = () => page.evaluate(() => JSON.parse(localStorage.getItem('rush-hour-rigs:demo-log') ?? '{"found":[]}').found);
 log = await openLog();
 const hints = Object.fromEntries(log.cards.map((c) => [c.id, c.text]));
-check(log.count === `0/${N}` && hints.magpie === 'Tap a truck without dragging it. One time in two.' && hints.biffy === 'Bump a truck into the bottom berm.' && hints.bear === 'Tap the snowy bush three times in Duvernay. One time in three.' && log.cards.every((c) => c.text.length > 10 && c.text !== 'Not seen yet.'), 'demo mode: the demo log starts empty and every card shows its hint');
+check(log.count === `0/${N}` && hints.magpie === 'Tap a truck without dragging it. He may fly in.' && hints.biffy === 'Bump a truck into the bottom berm.' && hints.bear === 'In Duvernay, tap the snowy bush three times. He comes one time in three.' && log.cards.every((c) => c.text.length > 10 && c.text !== 'Not seen yet.'), 'demo mode: the demo log starts empty and every card shows its hint');
 await page.$eval('.log-head .back', (b) => b.click());
 await wait(200);
 await enter(cardium, bumpLevel);
@@ -261,6 +261,49 @@ await page.$eval('[data-act="reset"]', (b) => b.click());
 await page.$eval('[data-act="wipe"]', (b) => b.click());
 await wait(250);
 check((await page.evaluate(() => [localStorage.getItem('rush-hour-rigs:log'), localStorage.getItem('rush-hour-rigs:demo-log')])).every((x) => x === null), 'Reset progress clears both logs');
+
+// Night Shift: an idle Montney level goes fully dark, and that is a sighting like any gag's.
+// (?idle=0.1 makes the 30 s wait 3 s; the fade itself takes its 4 s.)
+{
+  const montney = REGIONS.findIndex((r) => r.id === 'montney');
+  await page.goto(ROOT + '?idle=0.1&bird=0&nap=0&surveyor=0&tourists=0&lunch=0&off=sam', { waitUntil: 'networkidle' });
+  await page.evaluate((p) => { localStorage.clear(); localStorage.setItem('rush-hour-rigs:v2', p); }, PROGRESS);
+  await page.reload({ waitUntil: 'networkidle' });
+  await enter(montney, 2);
+  await watchToasts();
+  await page.waitForFunction(() => document.querySelector('.screen.game.night, .game.night, .night'), null, { timeout: 8000 }).catch(() => {});
+  const early = (await toasts()).length;
+  await page.waitForFunction(() => window.__toasts.length >= 1, null, { timeout: 9000 }).catch(() => {});
+  const t = (await toasts())[0];
+  const shade = await page.evaluate(() => +getComputedStyle(document.querySelector('.night-shade')).opacity);
+  check(early === 0 && t?.text === `New sighting! Night Shift (1/${N})` && shade > 0.97, `an idle Montney level goes fully dark: "${t?.text}" (no toast while it was still fading; the shade is at ${shade})`);
+  check(t && t.bottom <= t.boardTop, 'the toast sits above the board');
+  check(JSON.parse(await page.evaluate(() => localStorage.getItem('rush-hour-rigs:log'))).found.includes('night'), 'saved in the log');
+  await page.$eval('.hud [data-act="levels"]', (b) => b.click());
+  await wait(250);
+  const l = await openLog();
+  const card = l.cards.find((c) => c.id === 'night');
+  check(card.found && card.title === 'Night Shift' && card.text === 'Lights out on the lease.' && l.count === `1/${N}`, `its card: ${card.title}, "${card.text}" (${l.count})`);
+  // No card's picture is stretched: each is drawn at its own drawing's shape, inside the art box.
+  for (const w of [375, 430]) {
+    await page.setViewportSize({ width: w, height: 800 });
+    await wait(200);
+    const arts = await page.evaluate(() => [...document.querySelectorAll('.log-card')].map((c) => {
+      const box = c.querySelector('.art').getBoundingClientRect(); const name = c.querySelector('h2').getBoundingClientRect();
+      return [...c.querySelectorAll('.art svg')].filter((s) => !s.parentElement.closest('svg')).map((s) => {
+        const r = s.getBoundingClientRect(); const vb = s.viewBox.baseVal;
+        return { id: c.dataset.id, off: Math.abs(r.width / r.height / (vb.width / vb.height) - 1), in: r.left >= box.left - 1 && r.right <= box.right + 1, clear: getComputedStyle(s).overflow !== 'visible' ? r.bottom <= name.top + 1 : true, par: s.getAttribute('preserveAspectRatio') };
+      });
+    }).flat());
+    const bad = arts.filter((a) => a.off > 0.02 || !a.in || !a.clear || /none/.test(a.par ?? ''));
+    check(arts.length >= N && bad.length === 0, `${w} wide: all ${N} cards' pictures keep their own shape, inside their box${bad.length ? ` (wrong: ${bad.map((a) => `${a.id} ${a.off.toFixed(2)}`).join(', ')})` : ''}`);
+  }
+  await page.setViewportSize({ width: 390, height: 664 });
+  const roll = await page.evaluate(() => ({ biffy: document.querySelector('.log-card[data-id="biffy"] .art svg').getBoundingClientRect().toJSON(), roll: !!document.querySelector('.log-card[data-id="biffyB"] .art svg.roll-still') }));
+  check(roll.roll && roll.biffy.width / roll.biffy.height > 0.7, `Occupied is ${Math.round(roll.biffy.width)} x ${Math.round(roll.biffy.height)} (not tall and skinny); The Runaway Roll is one big roll`);
+  await page.$eval('.log-head .back', (b) => b.click());
+  await wait(200);
+}
 
 await browser.close();
 console.log(failures ? `\nFAILED: ${failures} check(s)` : '\nPASS');

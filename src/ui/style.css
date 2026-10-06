@@ -3196,8 +3196,10 @@ img.hat { width: 100%; height: auto; }
 .worker-layer .pup-z { position: absolute; opacity: 0; font-weight: 700; color: #fff; letter-spacing: 1px; white-space: nowrap; text-shadow: -1.5px -1.5px 0 #2b1e16, 1.5px -1.5px 0 #2b1e16, -1.5px 1.5px 0 #2b1e16, 1.5px 1.5px 0 #2b1e16; }
 .moose-layer { z-index: 0; bottom: auto; overflow: hidden; }
 .moose-layer .pup-puff { position: absolute; opacity: 0; border: 1.5px solid #2b1e16; border-radius: 50%; background: #fff; }
-.log-card .art .worker-still,
-.log-card .art .moose-still { width: 84px; height: 84px; overflow: visible; }
+.log-card .art .worker-still { width: 84px; height: 84px; overflow: visible; }
+/* The moose's neck runs on below his picture (the berm hides it in the game): cut it off at the
+   picture's edge so it never lies over the card's name. */
+.log-card .art .moose-still { overflow: hidden; }
 
 /* ---------- The bottom strip: the permanent biffy and its gags, the landowner, Near Miss (strip-gags.ts) ---------- */
 .puppet-layer.biffy-layer,

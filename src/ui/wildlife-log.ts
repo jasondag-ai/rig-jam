@@ -5,13 +5,13 @@
 // `?log=all` previews a full log.
 import { STORAGE_PREFIX } from './progress.ts';
 
-export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'bull' | 'bear';
+export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'night' | 'bull' | 'bear';
 
 export interface LogEntry {
   id: Sighting;
   name: string;
   caption: string;
-  /** Shown on the card until it's found (demo mode only). */
+  /** Shown on the card until it's found (demo mode only). Plain words, short: where, and what to do. No em dashes. */
   hint: string;
   /** The rare one: gold frame and a LEGENDARY tag on its card, found or not. */
   legendary?: boolean;
@@ -19,24 +19,25 @@ export interface LogEntry {
 
 /** One entry per gag in the game, in the order the page lists them. */
 export const LOG_ENTRIES: LogEntry[] = [
-  { id: 'magpie', name: 'Magpie', caption: 'Never park under a tree.', hint: 'Tap a truck without dragging it. One time in two.' },
-  { id: 'spotter', name: 'Sleepy Worker', caption: 'On the clock. Allegedly.', hint: 'Slide a truck into another truck. One time in two.' },
-  { id: 'moose', name: 'Moose', caption: 'Just checking in.', hint: 'Bump a truck into the top berm twice in Duvernay.' },
-  { id: 'nearmiss', name: 'Near Miss', caption: 'Owns the lease. Pays no rent.', hint: 'Send two trucks out back to back in Cardium.' },
-  { id: 'landowner', name: 'Angry Landowner', caption: 'Wants a word about the ruts.', hint: 'Drive one truck back and forth four times, or wiggle it fast.' },
-  { id: 'biffy', name: 'Occupied', caption: 'Knock first.', hint: 'Bump a truck into the bottom berm.' },
-  { id: 'biffyB', name: 'The Runaway Roll', caption: 'It got away from him.', hint: 'Bump the bottom berm twice, quickly.' },
-  { id: 'marshmallow', name: 'Marshmallow', caption: 'Mmm. Crispy.', hint: 'Tap a flare stack three times.' },
-  { id: 'geese', name: 'Lost Goose', caption: 'Wrong way, buddy.', hint: 'Undo three times in a row.' },
-  { id: 'porcupine', name: 'Porcupine', caption: 'Check behind the bush first.', hint: 'Tap the bush three times in Cardium.' },
-  { id: 'lunch', name: 'Gopher Lunch', caption: 'He left you the crust.', hint: 'Press Hint in Cardium. One time in two.' },
-  { id: 'sam', name: 'Safety Sam', caption: 'See me.', hint: 'Bump three times in a row, or push a truck at a wrong-colour gate.' },
-  { id: 'tongue', name: 'Frozen Tongue', caption: 'HEWP!', hint: 'Tap the frosty riser three times on a winter level.' },
-  { id: 'surveyor', name: 'Surveyor', caption: 'Off a metre. Or not.', hint: 'Press Restart. One time in two.' },
-  { id: 'deer', name: 'Back Scratcher', caption: "That's the spot.", hint: 'Tap the lease sign (not in winter).' },
-  { id: 'tourists', name: 'Tourists', caption: 'A real oil sign!', hint: 'Make your first move on the Daily Pad (not in winter). One time in three.' },
-  { id: 'bull', name: 'Bull and Cow', caption: 'Spring in the Montney.', hint: 'Tap the cow in Montney.' },
-  { id: 'bear', name: 'Bear', caption: 'Does what bears do in the woods.', hint: 'Tap the snowy bush three times in Duvernay. One time in three.', legendary: true },
+  { id: 'magpie', name: 'Magpie', caption: 'Never park under a tree.', hint: "Tap a truck without dragging it. He may fly in." },
+  { id: 'spotter', name: 'Sleepy Worker', caption: 'On the clock. Allegedly.', hint: "Slide one truck into another. He may wander in." },
+  { id: 'moose', name: 'Moose', caption: 'Just checking in.', hint: "In Duvernay, bump a truck into the top berm twice." },
+  { id: 'nearmiss', name: 'Near Miss', caption: 'Owns the lease. Pays no rent.', hint: "In Cardium, drive two trucks out one right after the other." },
+  { id: 'landowner', name: 'Angry Landowner', caption: 'Wants a word about the ruts.', hint: "Drive one truck back and forth four times, or wiggle it fast." },
+  { id: 'biffy', name: 'Occupied', caption: 'Knock first.', hint: "Bump a truck into the bottom berm." },
+  { id: 'biffyB', name: 'The Runaway Roll', caption: 'It got away from him.', hint: "Bump the bottom berm twice, quickly." },
+  { id: 'marshmallow', name: 'Marshmallow', caption: 'Mmm. Crispy.', hint: "Tap a flare stack three times." },
+  { id: 'geese', name: 'Lost Goose', caption: 'Wrong way, buddy.', hint: "Press Undo three times in a row." },
+  { id: 'porcupine', name: 'Porcupine', caption: 'Check behind the bush first.', hint: "In Cardium, tap the bush three times." },
+  { id: 'lunch', name: 'Gopher Lunch', caption: 'He left you the crust.', hint: "In Cardium, press Hint. He may show up for lunch." },
+  { id: 'sam', name: 'Safety Sam', caption: 'See me.', hint: "Bump three times in a row, or push a truck at a wrong-colour gate." },
+  { id: 'tongue', name: 'Frozen Tongue', caption: 'HEWP!', hint: "On a winter level, tap the frosty pipe stand three times." },
+  { id: 'surveyor', name: 'Surveyor', caption: 'Off a metre. Or not.', hint: "Press Restart. He may come to check the sign." },
+  { id: 'deer', name: 'Back Scratcher', caption: "That's the spot.", hint: "Tap the lease sign (spring to fall)." },
+  { id: 'tourists', name: 'Tourists', caption: 'A real oil sign!', hint: "Play the Daily Pad. They may show up on your first move (spring to fall)." },
+  { id: 'night', name: 'Night Shift', caption: 'Lights out on the lease.', hint: "Leave a Montney or Duvernay level alone for a while." },
+  { id: 'bull', name: 'Bull and Cow', caption: 'Spring in the Montney.', hint: "In Montney, tap the cow." },
+  { id: 'bear', name: 'Bear', caption: 'Does what bears do in the woods.', hint: "In Duvernay, tap the snowy bush three times. He comes one time in three.", legendary: true },
 ];
 /** How many of the log's entries have been found (a saved log may hold ids from gags since retired). */
 export const foundCount = (log: WildlifeLog): number => LOG_ENTRIES.filter((e) => log.found.includes(e.id)).length;
