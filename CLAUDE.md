@@ -1,8 +1,18 @@
 # Rush Hour Rigs
 
-STANDING RULE, BEFORE EVERY JOB: read `GAME_BIBLE.md` and `ART_BIBLE.md` from
-`~/Desktop/RHR Art Inbox/` (those are the latest versions). If either differs from the copy in the
+STANDING RULE, BEFORE EVERY JOB: read `GAME_BIBLE.md`, `ART_BIBLE.md` and `STANDING_RULES.md` from
+`~/Desktop/RHR Art Inbox/` (those are the latest versions). If any differs from the copy in the
 repo root, copy it over the repo copy and commit that change before starting the job.
+
+EVERY JOB MUST PASS `STANDING_RULES.md` (Jay, Oct 6; it overrides anything older in the Game
+Bible). Every gag, prop and scene change is checked against all ten before it ships: 1 the DEPTH
+rule (below, "THE DEPTH RULE"; `npm run test:e2e:depth`), 2 same start, same end
+(`test:e2e:frames`), 3 one standard scene a region, and a gag never adds or removes scenery, 4
+true side profile for every strip character, 5 no size change between poses, 6 acting (face the
+way you travel, anticipation, squash and stretch, arcs, eases, follow-through, a payoff), 7
+"sightings", never "Easter eggs", 8 no new bathroom humour, accurate oilfield terms and geology,
+9 no time-based gag triggers (only the night is idle-based), 10 visual fixes are checked in WebKit
+at iPhone DPR 3 plus Galaxy and Pixel sizes, never only in Chromium.
 
 Mobile-first web puzzle game (hackathon, due Nov 1). Owner is a beginner: when they need to do
 something, give exact clicks and one command at a time.
@@ -155,6 +165,34 @@ something, give exact clicks and one command at a time.
   Characters walk in and out fully off screen; nothing appears or disappears by magic; any prop a
   gag uses is permanent scenery, and every prop is back as it began (the cow grazing in her spot,
   the biffy's indicator its starting green).
+- THE DEPTH RULE (STANDING_RULES 1; Job T): the bottom strip has ONE front-to-back order, by
+  ground line: what stands lower on the screen draws in front.
+  - `.depth-strip` (GameView, under the night's shade): every prop layer, every strip gag layer
+    and every tree, bush and mound standing below the lease (`depthTrees` moves those out of the
+    scenery's layer) is ONE CHILD of it, a UNIT, and a unit's `z-index` IS its ground line in px
+    (`data-ground`; puppet-stage.ts `setGround`). `place()` sets it from a puppet's anchor (the
+    lowest foot in a layer); the wave 3 scenes set theirs from the reference's lane. Equal lines
+    keep the order they were put on screen (a gag over a prop). Sky layers, the magpie and
+    `over-lease` are not in the strip (`SKY_LAYERS`).
+  - THE STRIP'S LINES (strip-gags.ts `stripGeom`, `propLine`, `propBack`; scenery.ts `LANE_UP`),
+    from the back: the BACK ROW up by the berm (the biffy; the lease sign and its visitors, so
+    the surveyor walks BEHIND the cow, the bushes and everything else); PROP ROW 2 (the riser,
+    the gopher's mound); PROP ROW 1 (the gag bushes, the cow), each `propBack` (8 px at 390)
+    behind the next; the WALKING LANE (`stripGeom().ground`: the landowner, Sam, the hotshot, the
+    worker in most gags), in front of every prop; and the scenery's front trees on the strip's
+    floor, in front of the lane (a tree that would stand on the lane is stood on the floor). A
+    gag about a prop plays on that prop's row; the two prop rows are apart so it passes the other
+    row's prop clearly in front (the bear and the riser, the porcupine and the mound) or clearly
+    behind (the frozen worker's buddy and the bear's bush). Mannville and Bakken: the reference's
+    own lane (back trees behind it, the lane aspen in front, the bale on it).
+  - WHEN A LANE AND A PROP FIGHT, MOVE ONE OF THEM (never accept the overlap): a new prop goes on
+    a row, a new walker on the lane, and scenery keeps trees off a gag's path with a clearing.
+  - `npm run test:e2e:depth` (WebKit at iPhone DPR 3, Galaxy S23 and Pixel sizes; every region):
+    each strip gag is held every 0.25 s and each character compared with every prop and tree it
+    overlaps: ORDER (lower draws in front), ONE LANE (a gag layer keeps one ground line), NO TIES
+    (no overlap with a prop on his own ground line, unless the gag is about that prop: `OWN`),
+    NOT LOST (never standing still mostly hidden). The sleepy worker, the magpie, the moose, the
+    geese and the aurora are not strip-held gags and are not in it.
 - GAG LAYERS AND THE NIGHT: every gag layer is put on the screen with `host.mount`, which inserts
   it UNDER the night's shade. Strip layers (`.strip-layer`, `.worker-layer`) are z 0, so at night
   they dim exactly like the scenery and the props, with no filters. Only what must lie over the
@@ -697,7 +735,7 @@ something, give exact clicks and one command at a time.
 - Cues: drag (`drag` + the `motor` loop, pitched with speed), backing up (`reverse` loop), bump then
   `radio` before the bubble, an exit (`clack`; exits within `CHAIN_MS` add the toy `horn` as
   a three-pitch chord, `HORN_CHORD`, two semitones higher per exit in the chain, `chordLift`), win
-  (a pop per hard hat, then `win` at par or `lose` at par + 4 or worse, `winCue`), `streak`, a
+  (a pop per hard hat, then `tada` at par or `lose` at par + 4 or worse, `winCue`), `streak`, a
   pumpjack's stroke (`pumpjack`, once a stroke for the lease, very quiet).
 - GAG SOUNDS: one table, `src/audio/gag-sounds.ts` (`GAG_SOUNDS`: gag > beat > cues; `'poke'`,
   `'poke@0.4'` delayed, `'+steps'` / `'-steps'` start and stop a loop: steps, snore, mosquito,
@@ -1083,6 +1121,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:wave3` – gag wave 3: the standard Mannville scene and its four gags (`ONLY=beaver` runs one; start the dev server first)
 - `npm run test:e2e:tabs` – the region bar: full-size text, the peek, the fades, the active tab in view, swipes never tap, 5 tabs and a made-up 8 (start the dev server first)
 - `npm run test:e2e:beta` – beta readiness: first run, small phones (iPhone SE, 360x800 Android), Settings version and feedback, the update bar (start the dev server first)
+- `npm run test:e2e:depth` – the depth rule on every region's standard scene at three phone sizes: order, one lane, no ties, nobody lost behind a prop (`ONLY=surveyor`, `REGION=1`, `SIZE=iPhone` narrow it; start the dev server first)
 - `npm run test:e2e:gagsounds` – every gag (all 26) with sound on in WebKit: cues, timing, output level, lazy loading (`ONLY=beaver` runs one; start the dev server first)
 - `npm run test:e2e:audio` – sound: lazy loading, every cue, gag sounds, the three music styles, gapless loops, Credits (start the dev server first)
 
