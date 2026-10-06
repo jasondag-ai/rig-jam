@@ -366,6 +366,16 @@ something, give exact clicks and one command at a time.
   degrees (260ms ease-out): outward on top/bottom, inward on the sides; none with reduced motion.
   Wrong-color gates simply stay shut. Convoy gates shift the badge toward the hinge and put the
   waiting-number chip (gate color, white numeral) on the latch post. Fallback: the colored tabs.
+- GATE EXITS (Job J; `src/ui/exit.ts` pure and tested, `BoardView.driveOut`): a leaving truck never
+  meets a hard edge. The yard's clip is lifted while it leaves (`.yard.letting-out`, until its dust
+  has cleared); it drives only until its cab is `EXIT_PAST` (1) cell past the gate
+  (`exitDistance`), in the same `DRIVE_MS`; its opacity eases from 1 to 0 over the last
+  `EXIT_FADE` (45%) of the drive; a big puff comes up at the gate early in the drive
+  (`gateDust`, `.dust.gate-dust`: 10 puffs of 1.3 to 1.9 cells from the truck's tail to where its
+  cab ends, in the ground's colour: dust, mud or powder) and covers it while it fades; the gate's
+  arm comes down once it has gone. Plain opacity only: NO mask-image or clip-path (iPhone Safari).
+  Reduced motion: the truck is simply removed. `npm run test:e2e:exits` checks all four sides in
+  WebKit, frame by frame and by the pixels of a mid-fade screenshot.
 - Light: ONE soft neutral vignette at the outer screen edges (`.vignette`, z 0: over the scenery,
   under the board, HUD and buttons) and nothing else: no hotspot or diagonal shade on the pad (it
   reads as a stain), no warm wash outside. Soft down-right drop shadows on gates, trees and HUD.
@@ -760,6 +770,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:gags` – every puppet gag suite in turn: magpie, eggs, strip, eggs2 (start the dev server first)
 - `npm run test:e2e:bubbles` – every speech bubble's tail on its speaker, following it, clear of the HUD and buttons; witness lines (start the dev server first)
 - `npm run test:e2e:signs` – the permanent lease sign and gags 16 to 18: surveyor, back scratcher, tourists (start the dev server first)
+- `npm run test:e2e:exits` – a truck leaving by each of the four sides: no clip, the short drive, the fade, the gate's dust, the arm, reduced motion (start the dev server first)
 - `npm run test:e2e:tutorial` – the "?" button, the three how-to cards, level 1's ghost finger (start the dev server first)
 - `npm run test:e2e:lines` – bump lines by kind, escalation, witness lines, the Company Man (start the dev server first)
 - `npm run test:e2e:frames` – SAME START, SAME END: every strip gag's first and last frames show no character (start the dev server first)

@@ -29,7 +29,8 @@
     "test:e2e:lines": "node e2e/lines.e2e.mjs",
     "test:e2e:bubbles": "node e2e/bubbles.e2e.mjs",
     "test:e2e:tutorial": "node e2e/tutorial.e2e.mjs",
-    "test:e2e:signs": "node e2e/signs.e2e.mjs"
+    "test:e2e:signs": "node e2e/signs.e2e.mjs",
+    "test:e2e:exits": "node e2e/exits.e2e.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
