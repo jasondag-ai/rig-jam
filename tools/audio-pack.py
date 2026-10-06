@@ -46,14 +46,11 @@ SFX = {
     'motor': ('sfx/02_truck_moving_motor_seamless_01_a.mp3', None, True),
     'reverse': ('sfx/03_reversing_truck_reverse_beeps_a.mp3', None, False),
     'bump': ('sfx/04_bump_soft_quick_punch_c.mp3', None, False),
-    'exit': ('sfx/05_truck_exits_arrow_whoosh_a.mp3', None, False),
     'horn': ('sfx/06_horn_chord_toy_horn_high_c.mp3', None, False),
-    'win': ('sfx/07_win_at_par_toy_whistle_c.mp3', None, False),
     'lose': ('sfx/08_win_over_par_wah_wah_horn_c.mp3', None, False),
     'streak': ('sfx/09_streak_up_winning_chimes_b.mp3', None, False),
     'tap': ('sfx/10_button_tap_oga_pop1_c.mp3', None, False),
     'back': ('sfx/11_back_button_soap_bubble_a.mp3', None, False),
-    'gate': ('custom/12_gate_ratchet_ding_y.mp3', None, False),
     'step': ('sfx/13_footsteps_kenney_wood_000_c.mp3', None, False),
     'quad_start': ('sfx/14_quad_start_motor_seamless_03_a.mp3', 1.2, False),
     'quad_idle': ('sfx/14_quad_idle_motor_seamless_04_a.mp3', None, True),
@@ -82,9 +79,41 @@ SFX = {
     'puff': ('sfx/36_dust_puff_air_whoosh_whistle_c.mp3', None, False),
     'twinkle': ('sfx/37_twinkle_sparkling_fairy_a.mp3', 1.8, False),
     'scurry': ('sfx/38_scurry_cartoony_whoosh_c.mp3', 1.1, False),
-    'rattle': ('sfx/39_rattle_shaking_cartoon_b.mp3', None, False),
     'hop': ('sfx/40_spring_boing_hit_b.mp3', None, False),
+    # ---- The sound pass (Job S, Jay's picks of Oct 6). 'art/<key>.wav' is a synthesized pick, made
+    # by tools/sound-picks.py --export into tools/sfx-art/; the rest are alternates from the pack.
+    # All of these are LEVELLED (see LEVELLED below), so none jumps out.
+    'knock': ('art/knock.wav', None, False),        # sign rattle: replaces the old "dingle" everywhere
+    'tada': ('art/tada.wav', None, False),          # level complete: replaces the toy whistle
+    'clack': ('art/clack.wav', None, False),        # gate exit: replaces the ratchet-and-ding and its whoosh
+    'squelch': ('sfx/35_slurp_oga_slime_01_c.mp3', 1.2, False),
+    'shluck': ('sfx/34_tongue_cartoon_slurp_b.mp3', 1.0, False),
+    'blup': ('sfx/35_slurp_oga_burble_01_b.mp3', 1.0, False),
+    'mew': ('art/mew.wav', None, False),
+    'yawn': ('art/yawn.wav', None, False),
+    'pats': ('art/pats.wav', None, False),
+    'bonk': ('art/bonk.wav', None, False),
+    'tailslap': ('sfx/32_slap_cartoon_slap_2_b.mp3', 0.6, False),
+    'shimmer': ('art/shimmer.wav', None, False),
+    'howl': ('art/howl.wav', None, False),
+    'rustle': ('art/rustle.wav', None, False),
+    'whistle': ('art/whistle.wav', None, False),
+    'squeak': ('art/squeak.wav', None, False),
+    'aww': ('art/aww.wav', None, False),
+    'rumble': ('art/rumble.wav', None, False),
+    'sigh': ('art/sigh.wav', None, False),
+    'rain': ('art/rain.wav', None, False),
+    'umbrella': ('sfx/10_button_tap_light_bubble_pop_b.mp3', 0.5, False),
+    'downpour': ('art/downpour.wav', None, False),
 }
+ART_SRC = ROOT / 'tools' / 'sfx-art'
+# THE SOUND PASS'S FILES ARE LEVELLED as they are built: each is brought to the same average level
+# (LEVEL_MEAN, the mix's own target in src/audio/pack.ts), but never so far that its peak passes
+# LEVEL_PEAK. The mix table then only has to give each its place.
+LEVELLED = {'knock', 'tada', 'clack', 'squelch', 'shluck', 'blup', 'mew', 'yawn', 'pats', 'bonk', 'tailslap', 'shimmer', 'howl', 'rustle', 'whistle', 'squeak',
+            'aww', 'rumble', 'sigh', 'rain', 'umbrella', 'downpour'}
+LEVEL_MEAN = -19.0
+LEVEL_PEAK = -1.5
 # style_scene: (source dir, file stem, the delivered gapless Ogg (or None), bake a 2 s crossfade)
 MUSIC = {
     'country_menu': (SFX_SRC / 'music', 'A_menu_fun_on_the_farm_b', None, True),
@@ -146,7 +175,7 @@ def main() -> None:
     tmp = OUT / '_tmp.wav'
 
     for key, (src, keep, loop) in SFX.items():
-        source = SFX_SRC / src
+        source = ART_SRC / src[4:] if src.startswith('art/') else SFX_SRC / src
         if not source.exists():
             sys.exit(f'missing {source}')
         # Leading silence off (so a sound starts when it is asked for), then the part the game uses.
@@ -154,6 +183,16 @@ def main() -> None:
         if keep:
             chain.append(f'atrim=0:{keep}')
         run('-i', str(source), '-af', ','.join(chain), '-ac', '1', '-ar', '44100', str(tmp))
+        if key in LEVELLED:
+            # (Measured as it will sound, with its end faded; then one clean gain.)
+            lvl = OUT / '_lvl.wav'
+            was = measure(tmp)
+            fade = 0.12 if keep else FADE_OUT
+            run('-i', str(tmp), '-af', f'afade=t=out:st={max(0, was["seconds"] - fade):.3f}:d={fade}', str(lvl))
+            was = measure(lvl)
+            gain = min(LEVEL_MEAN - was['mean'], LEVEL_PEAK - was['peak'])
+            run('-i', str(tmp), '-af', f'volume={gain:.2f}dB', '-ac', '1', '-ar', '44100', str(lvl))
+            lvl.replace(tmp)
         seconds = measure(tmp)['seconds']
         out = OUT / 'sfx' / f'{key}.mp3'
         if loop:

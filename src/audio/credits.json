@@ -36,15 +36,6 @@
   "url": "https://mixkit.co/free-sound-effects/cartoon/"
  },
  {
-  "use": "exit",
-  "kind": "sfx",
-  "file": "sfx/05_truck_exits_arrow_whoosh_a.mp3",
-  "title": "",
-  "author": "Mixkit",
-  "licence": "Mixkit Sound Effects Free License",
-  "url": "https://mixkit.co/free-sound-effects/whoosh/"
- },
- {
   "use": "horn",
   "kind": "sfx",
   "file": "sfx/06_horn_chord_toy_horn_high_c.mp3",
@@ -52,15 +43,6 @@
   "author": "freesound_community via Pixabay (pitch-shifted high)",
   "licence": "Pixabay Content License",
   "url": "https://pixabay.com/sound-effects/film-special-effects-bicycle-horn-7126/"
- },
- {
-  "use": "win",
-  "kind": "sfx",
-  "file": "sfx/07_win_at_par_toy_whistle_c.mp3",
-  "title": "",
-  "author": "Mixkit",
-  "licence": "Mixkit Sound Effects Free License",
-  "url": "https://mixkit.co/free-sound-effects/cartoon/"
  },
  {
   "use": "lose",
@@ -97,15 +79,6 @@
   "author": "Mixkit",
   "licence": "Mixkit Sound Effects Free License",
   "url": "https://mixkit.co/free-sound-effects/pop/"
- },
- {
-  "use": "gate",
-  "kind": "sfx",
-  "file": "custom/12_gate_ratchet_ding_y.mp3",
-  "title": "",
-  "author": "Synthesized for Rush Hour Rigs",
-  "licence": "Original",
-  "url": ""
  },
  {
   "use": "step",
@@ -360,15 +333,6 @@
   "url": "https://pixabay.com/sound-effects/film-special-effects-cartoony-whooshes-7114/"
  },
  {
-  "use": "rattle",
-  "kind": "sfx",
-  "file": "sfx/39_rattle_shaking_cartoon_b.mp3",
-  "title": "",
-  "author": "Mixkit",
-  "licence": "Mixkit Sound Effects Free License",
-  "url": "https://mixkit.co/free-sound-effects/cartoon/"
- },
- {
   "use": "hop",
   "kind": "sfx",
   "file": "sfx/40_spring_boing_hit_b.mp3",
@@ -376,6 +340,204 @@
   "author": "Mixkit",
   "licence": "Mixkit Sound Effects Free License",
   "url": "https://mixkit.co/free-sound-effects/cartoon/"
+ },
+ {
+  "use": "knock",
+  "kind": "sfx",
+  "file": "art/knock.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "tada",
+  "kind": "sfx",
+  "file": "art/tada.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "clack",
+  "kind": "sfx",
+  "file": "art/clack.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "squelch",
+  "kind": "sfx",
+  "file": "sfx/35_slurp_oga_slime_01_c.mp3",
+  "title": "",
+  "author": "rubberduck",
+  "licence": "CC0",
+  "url": "https://opengameart.org/content/80-cc0-creture-sfx-2"
+ },
+ {
+  "use": "shluck",
+  "kind": "sfx",
+  "file": "sfx/34_tongue_cartoon_slurp_b.mp3",
+  "title": "",
+  "author": "freesound_community via Pixabay",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/sound-effects/film-special-effects-cartoon-slurp-37066/"
+ },
+ {
+  "use": "blup",
+  "kind": "sfx",
+  "file": "sfx/35_slurp_oga_burble_01_b.mp3",
+  "title": "",
+  "author": "rubberduck",
+  "licence": "CC0",
+  "url": "https://opengameart.org/content/80-cc0-creature-sfx"
+ },
+ {
+  "use": "mew",
+  "kind": "sfx",
+  "file": "art/mew.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "yawn",
+  "kind": "sfx",
+  "file": "art/yawn.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "pats",
+  "kind": "sfx",
+  "file": "art/pats.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "bonk",
+  "kind": "sfx",
+  "file": "art/bonk.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "tailslap",
+  "kind": "sfx",
+  "file": "sfx/32_slap_cartoon_slap_2_b.mp3",
+  "title": "",
+  "author": "floraphonic",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/sound-effects/film-special-effects-cartoon-slap-2-189831/"
+ },
+ {
+  "use": "shimmer",
+  "kind": "sfx",
+  "file": "art/shimmer.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "howl",
+  "kind": "sfx",
+  "file": "art/howl.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "rustle",
+  "kind": "sfx",
+  "file": "art/rustle.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "whistle",
+  "kind": "sfx",
+  "file": "art/whistle.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "squeak",
+  "kind": "sfx",
+  "file": "art/squeak.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "aww",
+  "kind": "sfx",
+  "file": "art/aww.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "rumble",
+  "kind": "sfx",
+  "file": "art/rumble.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "sigh",
+  "kind": "sfx",
+  "file": "art/sigh.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "rain",
+  "kind": "sfx",
+  "file": "art/rain.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "umbrella",
+  "kind": "sfx",
+  "file": "sfx/10_button_tap_light_bubble_pop_b.mp3",
+  "title": "",
+  "author": "Virtual_Vibes",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/sound-effects/film-special-effects-light-bubble-pop-383738/"
+ },
+ {
+  "use": "downpour",
+  "kind": "sfx",
+  "file": "art/downpour.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
  },
  {
   "use": "country_menu",

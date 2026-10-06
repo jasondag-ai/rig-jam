@@ -10,7 +10,11 @@ so the mix can be matched once the picks are in.
 The page embeds its audio (no other files), so the same file works from the Desktop and deployed.
 
 Run: python3 tools/sound-picks.py      (needs ffmpeg and numpy)
-Writes: ~/Desktop/RHR Art Inbox/sound_picks.html and public/sound-picks.html
+Writes: ~/Desktop/RHR Art Inbox/sound_picks.html (the board is NOT on the live site any more).
+
+STEP 2 (Jay picked, Oct 6): `python3 tools/sound-picks.py --export` writes the synthesized picks
+(`PICKED`) as WAV sources into tools/sfx-art/, which tools/audio-pack.py builds into the game's
+sounds. (His pack picks are named in audio-pack.py's own table, like every other pack sound.)
 """
 import base64
 import html
@@ -29,7 +33,8 @@ DESK = Path.home() / 'Desktop'
 PACK = DESK / 'RHR Art Inbox' / 'Sound files' / 'rhr_cartoon_sounds'
 if not PACK.exists():
     PACK = DESK / 'rhr_cartoon_sounds'
-OUT = [Path(p) for p in sys.argv[1:]] or [DESK / 'RHR Art Inbox' / 'sound_picks.html', ROOT / 'public' / 'sound-picks.html']
+OUT = [Path(p) for p in sys.argv[1:] if not p.startswith('--')] or [DESK / 'RHR Art Inbox' / 'sound_picks.html']
+ART = ROOT / 'tools' / 'sfx-art'
 SR = 44100
 TMP = Path(tempfile.mkdtemp(prefix='rhr-picks-'))
 
@@ -715,6 +720,28 @@ CUES = [
       ('Downpour with a grumble', S('heavy rain with a small roll of thunder', downpour_c))]),
 ]
 
+# JAY'S PICKS that were synthesized here (Oct 6), by the key the game plays them under. The prairie
+# dogs' squeak is ONE squeak: the game plays it once per dog, each a little higher, on that dog's beat.
+PICKED = {
+    'knock': sign_rattle_a,        # sign_rattle A
+    'tada': tada_xylo,             # level_complete B
+    'clack': exit_clack,           # gate_exit B
+    'mew': cat_mews_a,             # cat_mews A
+    'yawn': cat_yawn_a,            # cat_yawn A
+    'pats': beaver_pats,           # beaver_pats A
+    'bonk': pipe_bonk,             # beaver_bonk A
+    'shimmer': shimmer,            # aurora_shimmer A
+    'howl': howl_b,                # aurora_howl B
+    'rustle': rustle_b,            # tumble_rustle B
+    'whistle': whistle_a,          # tumble_wind A
+    'squeak': lambda: finish(mix(0.2, (squeak(1150), 0.01, 1)), peak_db=-9, top=6500),   # pdog_wave A, one dog's worth
+    'aww': pdog_late_c,            # pdog_late C
+    'rumble': rumble_b,            # bale_rumble B
+    'sigh': sigh_a,                # bale_sigh A
+    'rain': rain_b,                # cloud_rain B
+    'downpour': downpour_c,        # cloud_downpour C
+}
+
 SILENT_GAGS = ['Muskeg Boots', 'Cat Train', 'Beaver', 'Aurora Howl', 'Tumbleweed', 'Prairie Dog Wave', 'Runaway Bale', 'Personal Cloud']
 SILENT_EVENTS = [
     'A win one to three moves over par (the hard hats pop, then nothing)',
@@ -891,7 +918,23 @@ show();
 """
 
 
+def export():
+    """Jay's synthesized picks as WAV sources for audio-pack.py (the game's key: the sound)."""
+    ART.mkdir(parents=True, exist_ok=True)
+    for key, make in PICKED.items():
+        x = make()
+        with wave.open(str(ART / f'{key}.wav'), 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(SR)
+            w.writeframes((np.clip(x, -1, 1) * 32767).astype('<i2').tobytes())
+        print(f'{key:10} {len(x) / SR:5.2f} s  peak {20 * np.log10(np.abs(x).max()):5.1f} dB')
+    print(f'wrote {len(PICKED)} sources to {ART}')
+
+
 def main():
+    if '--export' in sys.argv:
+        return export()
     cues = build()
     page = (PAGE
             .replace('__SILENT_GAGS__', html.escape(', '.join(SILENT_GAGS)))

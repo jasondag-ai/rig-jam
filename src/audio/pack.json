@@ -24,22 +24,10 @@
    "peak": -0.2,
    "loop": false
   },
-  "exit": {
-   "seconds": 0.35,
-   "mean": -15.3,
-   "peak": -0.4,
-   "loop": false
-  },
   "horn": {
    "seconds": 0.61,
    "mean": -19.0,
    "peak": -8.9,
-   "loop": false
-  },
-  "win": {
-   "seconds": 1.05,
-   "mean": -19.0,
-   "peak": -3.3,
    "loop": false
   },
   "lose": {
@@ -64,12 +52,6 @@
    "seconds": 0.23,
    "mean": -15.6,
    "peak": -0.4,
-   "loop": false
-  },
-  "gate": {
-   "seconds": 0.65,
-   "mean": -18.2,
-   "peak": -2.5,
    "loop": false
   },
   "step": {
@@ -240,16 +222,142 @@
    "peak": -0.9,
    "loop": false
   },
-  "rattle": {
-   "seconds": 1.21,
-   "mean": -17.5,
-   "peak": -2.8,
-   "loop": false
-  },
   "hop": {
    "seconds": 0.49,
    "mean": -17.3,
    "peak": -7.3,
+   "loop": false
+  },
+  "knock": {
+   "seconds": 0.95,
+   "mean": -20.7,
+   "peak": -1.9,
+   "loop": false
+  },
+  "tada": {
+   "seconds": 1.3,
+   "mean": -19.4,
+   "peak": -4.7,
+   "loop": false
+  },
+  "clack": {
+   "seconds": 0.3,
+   "mean": -20.1,
+   "peak": -1.9,
+   "loop": false
+  },
+  "squelch": {
+   "seconds": 0.38,
+   "mean": -25.4,
+   "peak": -1.9,
+   "loop": false
+  },
+  "shluck": {
+   "seconds": 0.39,
+   "mean": -23.2,
+   "peak": -1.9,
+   "loop": false
+  },
+  "blup": {
+   "seconds": 0.94,
+   "mean": -20.2,
+   "peak": -1.7,
+   "loop": false
+  },
+  "mew": {
+   "seconds": 0.48,
+   "mean": -19.5,
+   "peak": -7.7,
+   "loop": false
+  },
+  "yawn": {
+   "seconds": 1.1,
+   "mean": -19.4,
+   "peak": -9.2,
+   "loop": false
+  },
+  "pats": {
+   "seconds": 1.05,
+   "mean": -19.5,
+   "peak": -4.4,
+   "loop": false
+  },
+  "bonk": {
+   "seconds": 0.9,
+   "mean": -19.4,
+   "peak": -2.0,
+   "loop": false
+  },
+  "tailslap": {
+   "seconds": 0.6,
+   "mean": -19.4,
+   "peak": -2.1,
+   "loop": false
+  },
+  "shimmer": {
+   "seconds": 2.52,
+   "mean": -19.4,
+   "peak": -6.4,
+   "loop": false
+  },
+  "howl": {
+   "seconds": 1.5,
+   "mean": -19.4,
+   "peak": -11.8,
+   "loop": false
+  },
+  "rustle": {
+   "seconds": 1.28,
+   "mean": -20.4,
+   "peak": -1.9,
+   "loop": false
+  },
+  "whistle": {
+   "seconds": 1.47,
+   "mean": -19.4,
+   "peak": -9.3,
+   "loop": false
+  },
+  "squeak": {
+   "seconds": 0.19,
+   "mean": -19.5,
+   "peak": -10.2,
+   "loop": false
+  },
+  "aww": {
+   "seconds": 0.6,
+   "mean": -19.4,
+   "peak": -11.7,
+   "loop": false
+  },
+  "rumble": {
+   "seconds": 1.98,
+   "mean": -19.5,
+   "peak": -6.6,
+   "loop": false
+  },
+  "sigh": {
+   "seconds": 0.98,
+   "mean": -19.5,
+   "peak": -4.4,
+   "loop": false
+  },
+  "rain": {
+   "seconds": 1.99,
+   "mean": -19.4,
+   "peak": -2.9,
+   "loop": false
+  },
+  "umbrella": {
+   "seconds": 0.12,
+   "mean": -19.4,
+   "peak": -10.1,
+   "loop": false
+  },
+  "downpour": {
+   "seconds": 2.39,
+   "mean": -19.4,
+   "peak": -5.4,
    "loop": false
   }
  },
