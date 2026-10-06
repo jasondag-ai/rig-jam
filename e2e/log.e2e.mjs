@@ -16,7 +16,7 @@ const check = (ok, text) => {
   if (!ok) failures++;
   console.log(`   ${ok ? 'ok  ' : 'FAIL'} ${text}`);
 };
-const ALL = ['magpie', 'spotter', 'moose', 'nearmiss', 'landowner', 'biffy', 'biffyB', 'marshmallow', 'geese', 'porcupine', 'lunch', 'sam', 'tongue', 'surveyor', 'deer', 'tourists', 'muskeg', 'cattrain', 'beaver', 'aurora', 'tumbleweed', 'pdogs', 'bale', 'cloud', 'night', 'bull', 'bear'];
+const ALL = ['magpie', 'spotter', 'moose', 'nearmiss', 'landowner', 'biffy', 'biffyB', 'marshmallow', 'geese', 'porcupine', 'lunch', 'sam', 'tongue', 'surveyor', 'deer', 'tourists', 'muskeg', 'cattrain', 'beaver', 'aurora', 'tumbleweed', 'pdogs', 'bale', 'cloud', 'night', 'bull', 'dug', 'bear'];
 const N = ALL.length;
 // Night, Safety Sam and the other idle gags are kept out of the way; the idle cooldown is off.
 const QUIET = 'night=0&cooldown=0&off=lunch,tongue,sam,porcupine';
