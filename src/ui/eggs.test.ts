@@ -155,7 +155,7 @@ describe('Wildlife Log: hints', () => {
     const [, worker, moose] = LOG_ENTRIES;
     expect(cardHint(worker, true)).toBe('Slide one truck into another. He may wander in.');
     expect(cardHint(moose, true)).toBe('In Duvernay, bump a truck into the top berm twice.');
-    expect(cardHint(worker, false)).toBe('Not seen yet.');
+    expect(cardHint(worker, false)).toBe(worker.riddle);
     expect(cardHint(moose, false)).not.toContain('berm');
   });
 });

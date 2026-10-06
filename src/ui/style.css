@@ -2339,6 +2339,24 @@ canvas.lease-detail {
   opacity: 0.8;
 }
 
+/* A locked card is a button: its riddle turns over to the plain hint when tapped. */
+.log-card.riddle {
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.log-card.riddle.plain p { font-style: normal; opacity: 1; }
+.log-card .hint-more {
+  margin-top: 2px;
+  padding: 2px 9px;
+  border: 1.5px solid var(--outline);
+  border-radius: 999px;
+  background: var(--cream);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
 .log-reward {
   margin: 18px 4px 0;
   padding: 10px 12px;

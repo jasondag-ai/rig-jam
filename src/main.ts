@@ -442,9 +442,26 @@ function showLog(regionIndex: number): void {
     li.innerHTML = `${e.legendary ? '<span class="legend-tag">LEGENDARY</span>' : ''}<div class="art art-${e.id}" aria-hidden="true">${LOG_ART[e.id]()}</div><h2></h2><p></p>`;
     fitArt(li.querySelector<HTMLElement>('.art')!);
     li.querySelector('h2')!.textContent = found ? e.name : '???';
-    // Sightings: demo mode shows how to find each one; the game keeps it a secret.
+    // Sightings: a locked card shows a riddle (its plain hint in demo mode).
     // (Dug Through shows the player's best time through the Earth.)
     li.querySelector('p')!.textContent = found ? (e.id === 'dug' && log.dug ? `Best: ${swipesText(log.dugSwipes ?? 1)}, ${clockText(log.dug)}` : e.caption) : cardHint(e, demo);
+    // A locked card in the game: a riddle first; a tap turns it over to the plain hint (and back).
+    if (!found && !demo) {
+      li.classList.add('riddle');
+      li.tabIndex = 0;
+      li.setAttribute('role', 'button');
+      li.setAttribute('aria-pressed', 'false');
+      li.insertAdjacentHTML('beforeend', '<small class="hint-more">Tap for the hint</small>');
+      const turn = () => {
+        const plain = !li.classList.contains('plain');
+        li.classList.toggle('plain', plain);
+        li.setAttribute('aria-pressed', String(plain));
+        li.querySelector('p')!.textContent = cardHint(e, plain);
+        li.querySelector('.hint-more')!.textContent = plain ? 'Tap for the riddle' : 'Tap for the hint';
+      };
+      li.addEventListener('click', turn);
+      li.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); turn(); } });
+    }
     cards.push(li);
   }
   screen.querySelector('.log-reward')!.textContent = demo

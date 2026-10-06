@@ -4,10 +4,12 @@
 // sprite); finding them all unlocks camo pickups with a Settings switch; ?log=all previews
 // everything without saving; demo mode keeps its own log; Reset progress clears both.
 // Run: npm run dev -- --host   (in one terminal), then:  npm run test:e2e:log
+import { LOG_ENTRIES as RIDDLE_ENTRIES } from '../src/ui/wildlife-log.ts';
 import { DEMO, UNLOCKED } from './progress.mjs';
 import { chromium, devices } from 'playwright';
 import { REGIONS } from '../src/levels/regions.ts';
 import { getMoveRange, newGame } from '../src/engine/index.ts';
+const riddleOf = (id) => RIDDLE_ENTRIES.find((e) => e.id === id)?.riddle;
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -97,7 +99,20 @@ const btn = await page.$eval('.binoculars', (b) => { const r = b.getBoundingClie
 check(btn.w >= 44 && btn.h >= 44 && btn.beside, `binoculars button next to the gear (${btn.w}x${btn.h}, "${btn.label}")`);
 let log = await openLog();
 check(log.count === `0/${N}` && log.cards.length === CARDS.length && log.cards.map((c) => c.id).join() === CARDS.join() && log.cards.every((c) => !c.found && c.title === '???'), `${CARDS.length} cards, one per gag in the game, none found (${log.count})`);
-check(log.cards.every((c) => c.text === 'Not seen yet.'), 'unfound cards keep their secret in the game (hints show in demo mode only)');
+check(log.cards.every((c) => c.text === riddleOf(c.id)), 'a locked card shows its riddle, not the plain hint');
+{
+  const card = page.locator('.log-card[data-id="geese"]');
+  const read = () => card.evaluate((c) => ({ text: c.querySelector('p').textContent, more: c.querySelector('.hint-more')?.textContent, pressed: c.getAttribute('aria-pressed'), h: c.getBoundingClientRect().height, spill: c.scrollHeight > c.clientHeight + 1 }));
+  const before = await read();
+  await card.click();
+  const plain = await read();
+  await card.click();
+  const back = await read();
+  check(before.more === 'Tap for the hint' && plain.text === 'Press Undo three times in a row.' && plain.pressed === 'true' && plain.more === 'Tap for the riddle' && back.text === riddleOf('geese') && back.pressed === 'false' && before.h >= 44 && !plain.spill,
+    `a tap turns a locked card over to its plain hint ("${plain.text}"), and another tap turns it back to the riddle`);
+  const all = await page.evaluate(() => [...document.querySelectorAll('.log-card.unfound')].every((c) => c.classList.contains('riddle') && c.querySelector('p').textContent.length > 12 && c.querySelector('p').getBoundingClientRect().right <= c.getBoundingClientRect().right));
+  check(all, 'every locked card has a riddle that fits inside its card');
+}
 const art = await page.$$eval('.log-card', (cs) => cs.map((c) => ({ id: c.dataset.id, puppet: !!c.querySelector('.art svg'), sprite: !!c.querySelector('.art img, .art .anim-still, .art [style*="background-image"]') })));
 check(art.every((a) => a.puppet && !a.sprite), 'every card is a still of its own puppet: no sprite anywhere on the page');
 check(!log.cards.some((c) => ['pumper', 'hotshot', 'gopher'].includes(c.id)), 'no cards for gags that are no longer in the game (the pumper, the old hot shot and gopher)');
@@ -228,7 +243,7 @@ await page.reload({ waitUntil: 'networkidle' });
 const demoLog = () => page.evaluate(() => JSON.parse(localStorage.getItem('rush-hour-rigs:demo-log') ?? '{"found":[]}').found);
 log = await openLog();
 const hints = Object.fromEntries(log.cards.map((c) => [c.id, c.text]));
-check(log.count === `0/${N}` && hints.magpie === 'Tap a truck without dragging it. He may fly in.' && hints.biffy === 'Bump a truck into the bottom berm.' && hints.bear === 'In Duvernay, tap the snowy bush three times. He comes one time in three.' && log.cards.every((c) => c.text.length > 10 && c.text !== 'Not seen yet.'), 'demo mode: the demo log starts empty and every card shows its hint');
+check(log.count === `0/${N}` && hints.magpie === 'Tap a truck without dragging it. He may fly in.' && hints.biffy === 'Bump a truck into the bottom berm.' && hints.bear === 'In Duvernay, tap the snowy bush three times. He comes one time in three.' && log.cards.every((c) => c.text.length > 10 && c.text !== riddleOf(c.id)), 'demo mode: the demo log starts empty and every card shows its hint');
 await page.$eval('.log-head .back', (b) => b.click());
 await wait(200);
 await enter(cardium, bumpLevel);

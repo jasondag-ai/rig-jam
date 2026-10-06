@@ -9,6 +9,7 @@
 //  - neither blocks a touch; one gag at a time; reduced motion: simple fades; the Wildlife Log lists
 //    the live gags, with hints in demo mode only.
 // Saves clips (gag23_*.webm) to OUT. Run with the dev server up: npm run test:e2e:eggs
+import { LOG_ENTRIES as RIDDLE_ENTRIES } from '../src/ui/wildlife-log.ts';
 import { DEMO, UNLOCKED } from './progress.mjs';
 import { chromium, webkit } from 'playwright';
 import { mkdirSync, renameSync, rmSync } from 'node:fs';
@@ -16,6 +17,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { REGIONS } from '../src/levels/regions.ts';
 import { getMoveRange, newGame } from '../src/engine/index.ts';
+const riddleOf = (id) => RIDDLE_ENTRIES.find((e) => e.id === id)?.riddle;
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
 const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
@@ -280,7 +282,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       const cards = await page.$$eval('.log-card', (cs) => cs.map((c) => ({ id: c.dataset.id, text: c.querySelector('p').textContent, art: !!c.querySelector('.art svg') })));
       if (mode === 'game') {
         check(cards.map((c) => c.id).slice(0, 3).join() === 'magpie,spotter,moose' && cards.every((c) => c.art), 'lists the live gags, each with card art from its puppet');
-        check(cards.every((c) => c.text === 'Not seen yet.'), 'game mode hides the hints');
+        check(cards.every((c) => c.text === riddleOf(c.id)), 'game mode hides the hints');
       } else check(cards[1].text === 'Slide one truck into another. He may wander in.' && cards[2].text === 'In Duvernay, bump a truck into the top berm twice.', `demo mode shows each gag's hint ("${cards[1].text}" / "${cards[2].text}")`);
       await context.close();
     }

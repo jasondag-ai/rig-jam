@@ -6,6 +6,7 @@
 //    level; characters start and end fully off screen; the right line is said, on screen
 //  - one gag at a time; reduced motion: simple fades; the Wildlife Log lists all seven
 // Saves clips (gag47_*.webm) to OUT. Run with the dev server up: npm run test:e2e:strip
+import { LOG_ENTRIES as RIDDLE_ENTRIES } from '../src/ui/wildlife-log.ts';
 import { LANDOWNER_LINES } from '../src/ui/lines.ts';
 import { DEMO, UNLOCKED } from './progress.mjs';
 import { chromium, webkit } from 'playwright';
@@ -14,6 +15,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { REGIONS } from '../src/levels/regions.ts';
 import { getMoveRange, newGame, solve, tryMove } from '../src/engine/index.ts';
+const riddleOf = (id) => RIDDLE_ENTRIES.find((e) => e.id === id)?.riddle;
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
 const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
@@ -347,7 +349,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       await page.locator('.binoculars').click();
       await page.waitForSelector('.log-card');
       const cards = await page.$$eval('.log-card', (cs) => cs.map((c) => ({ id: c.dataset.id, text: c.querySelector('p').textContent, art: !!c.querySelector('.art svg') })));
-      if (mode === 'game') check(cards.map((c) => c.id).slice(0, 7).join() === 'magpie,spotter,moose,nearmiss,landowner,biffy,biffyB' && cards.every((c) => c.art && c.text === 'Not seen yet.'), `lists these four after the first three, with puppet card art; the game hides the hints (${cards.length})`);
+      if (mode === 'game') check(cards.map((c) => c.id).slice(0, 7).join() === 'magpie,spotter,moose,nearmiss,landowner,biffy,biffyB' && cards.every((c) => c.art && c.text === riddleOf(c.id)), `lists these four after the first three, with puppet card art; the game hides the hints (${cards.length})`);
       else check(cards.slice(3, 7).map((c) => c.text).join('|') === 'In Cardium, drive two trucks out one right after the other.|Drive one truck back and forth four times, or wiggle it fast.|Bump a truck into the bottom berm.|Bump the bottom berm twice, quickly.', 'demo mode shows each gag\'s hint');
       await context.close();
     }
