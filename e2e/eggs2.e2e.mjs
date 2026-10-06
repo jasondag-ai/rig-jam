@@ -436,7 +436,8 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       const m = document.querySelector('[data-anchor="mound"]').getBoundingClientRect(), note = document.querySelector('.note').getBoundingClientRect(), board = document.querySelector('.board').getBoundingClientRect();
       return { base: m.top + (29.5 / 34) * m.height, heap: (m.width * 59) / 64, ground: note.top - 4, holeY: m.top + (17 / 34) * m.height, left: m.left, right: m.right, top: m.top, clear: m.top > board.bottom };
     });
-    check(Math.abs(geo.base - geo.ground) < 1.5 && Math.abs(geo.heap - 0.13 * W * 0.92) < 2.5 && geo.clear, `the board's mound stands on the strip's ground line at the reference's size (heap ${geo.heap.toFixed(1)}px)`);
+    // (The depth rule: the mound is on prop row 2, two rows of 8 px behind the walking lane, so walkers pass in front of it.)
+    check(Math.abs(geo.ground - geo.base - 16 * (W / 390)) < 2.5 && Math.abs(geo.heap - 0.13 * W * 0.92) < 2.5 && geo.clear, `the board's mound stands on prop row 2, ${(geo.ground - geo.base).toFixed(0)} px behind the walking lane, at the reference's size (heap ${geo.heap.toFixed(1)}px)`);
     await wait(600);
     check(!(await page.$('.strip-layer')), 'not before Hint is pressed');
     const watching = watch(page, 'gopherLunch', { parts: { worker: '.lunch-layer > svg.pup:not(:first-of-type) .torso', head: '.lunch-layer svg.pup .hat', crust: '.lunch-layer .pup-food:last-of-type', steam: '.lunch-layer .pup-overlay .steam', gopher: '.lunch-layer .pup-clip svg.pup .head', clip: '.lunch-layer .pup-clip', lip: '.lunch-layer > svg.pup', sand: '.lunch-layer .pup-food', paw: '.lunch-layer .pup-overlay .paw' } }, 32000);

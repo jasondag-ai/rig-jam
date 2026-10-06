@@ -38,7 +38,7 @@ async function open(query) {
   return { context, page, fetched, errors };
 }
 /** The first tap (sound may only start after one): on the sky, where there is no button and no gag's trigger... except the cloud's, which needs three. */
-const unlock = (page) => page.evaluate(() => { for (const type of ['pointerdown', 'pointerup']) document.querySelector('.hud').dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 9, pointerType: 'touch', clientX: 4, clientY: 4 })); });
+const unlock = (page) => page.evaluate(() => { for (const type of ['pointerdown', 'pointerup']) (document.querySelector('.hud') ?? document.body).dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 9, pointerType: 'touch', clientX: 4, clientY: 4 })); });
 
 console.log('webkit 390x844 @3x, Sound effects on: every gag, one whole run');
 const names = Object.keys(PREVIEWS).filter((n) => !process.env.ONLY || process.env.ONLY === n);
