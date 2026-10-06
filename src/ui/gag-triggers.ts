@@ -53,6 +53,17 @@ export const GAG_TRIGGERS = {
   /** Gag 18, the tourists (at the lease sign): the first move on the Daily Pad, with this chance. Not on these themes' levels. Demo mode: every time. */
   tourists: { firstDailyMove: true, chance: 1 / 3, notThemes: ['winter'] },
   /**
+   * GAG WAVE 3, MANNVILLE (wave3.ts, on the standard Mannville scene: scene-stage.ts).
+   * Muskeg Boots: this many taps on the big muskeg puddle in the bottom strip.
+   */
+  muskeg: { region: 'mannville', puddleTaps: 3 },
+  /** Cat Train: a convoy drives out in order, back to back (truck 1, then truck 2 on the very next move). */
+  catTrain: { region: 'mannville', convoyInOrder: true },
+  /** Beaver: this many taps on the lane aspen (the tall one in front). */
+  beaver: { region: 'mannville', aspenTaps: 3 },
+  /** Aurora Howl: this many taps on the moon, once night has fallen on the level. In the sky band. */
+  aurora: { region: 'mannville', moonTaps: 1, night: true },
+  /**
    * Not a gag. NIGHT: no level starts at night. After `idleMs` with no moves the lease fades to
    * night over `fadeInMs`; the next move brings the day back over `fadeOutMs`. Only where the
    * season is one of `themes`: Montney (spring), Duvernay (winter), Mannville (late fall) and Bakken
@@ -70,7 +81,7 @@ export const GAG_TRIGGERS = {
  * the level is won. NO GAG COMES FROM WAITING (Jay, Oct 5): every one is set off by something the
  * player does. Sitting idle only brings the night (and its nudge).
  */
-export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists';
+export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'muskeg' | 'catTrain' | 'beaver' | 'aurora';
 
 /** Is a bump a push at a wrong-colour gate? (A truck in line with a gate that is not its own; `hit` is what it ran into.) */
 export const wrongGateBump = (
@@ -105,6 +116,10 @@ export const PREVIEWS: Record<string, { gag: GagId; region: string; level: numbe
   surveyor: { gag: 'surveyor', region: 'cardium', level: 6 },
   deer: { gag: 'deer', region: 'cardium', level: 6 },
   tourists: { gag: 'tourists', region: 'cardium', level: 6 },
+  muskeg: { gag: 'muskeg', region: 'mannville', level: 3 },
+  cattrain: { gag: 'catTrain', region: 'mannville', level: 3 },
+  beaver: { gag: 'beaver', region: 'mannville', level: 3 },
+  aurora: { gag: 'aurora', region: 'mannville', level: 3 },
 };
 
 /**
@@ -132,6 +147,11 @@ export const SHARES: Record<GagId, string[]> = {
   surveyor: ['sign'],
   deer: ['sign'],
   tourists: ['sign'],
+  // (The lane aspen is the beaver's; the worker in red loses the boot.)
+  muskeg: ['worker'],
+  catTrain: [],
+  beaver: ['aspen'],
+  aurora: [],
 };
 /** Must this gag wait for one of those playing? */
 export const mustWait = (id: GagId, playing: Iterable<GagId>): boolean => [...playing].some((p) => p === id || SHARES[p].some((x) => SHARES[id].includes(x)));

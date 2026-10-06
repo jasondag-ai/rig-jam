@@ -6,7 +6,7 @@
 import { STORAGE_PREFIX } from './progress.ts';
 import { dressCamo } from './sprites.ts';
 
-export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'night' | 'bull' | 'bear';
+export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'night' | 'bull' | 'bear' | 'muskeg' | 'cattrain' | 'beaver' | 'aurora';
 
 export interface LogEntry {
   id: Sighting;
@@ -36,6 +36,10 @@ export const LOG_ENTRIES: LogEntry[] = [
   { id: 'surveyor', name: 'Surveyor', caption: 'Off a metre. Or not.', hint: "Press Restart. He may come to check the sign." },
   { id: 'deer', name: 'Back Scratcher', caption: "That's the spot.", hint: "Tap the lease sign (spring to fall)." },
   { id: 'tourists', name: 'Tourists', caption: 'A real oil sign!', hint: "Play the Daily Pad. They may show up on your first move (spring to fall)." },
+  { id: 'muskeg', name: 'Muskeg Boots', caption: 'The muskeg keeps what it takes.', hint: "In Mannville, tap the big muskeg puddle three times." },
+  { id: 'cattrain', name: 'Cat Train', caption: 'One always falls behind.', hint: "In Mannville, drive a convoy out in order, one right after the other." },
+  { id: 'beaver', name: 'Beaver', caption: 'Measure twice. Bonk once.', hint: "In Mannville, tap the tall aspen three times." },
+  { id: 'aurora', name: 'Aurora Howl', caption: 'Nobody heard that.', hint: "In Mannville, wait for night, then tap the moon." },
   { id: 'night', name: 'Night Shift', caption: 'Lights out on the lease.', hint: "Leave a Montney or Duvernay level alone for a while." },
   { id: 'bull', name: 'Bull and Cow', caption: 'Spring in the Montney.', hint: "In Montney, tap the cow." },
   { id: 'bear', name: 'Bear', caption: 'Does what bears do in the woods.', hint: "In Duvernay, tap the snowy bush three times. He comes one time in three.", legendary: true },

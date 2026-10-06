@@ -50,6 +50,11 @@ export const GAG_SOUNDS: Record<GagId, Record<string, string[]>> = {
   },
   deer: { 'wanders-in': ['+steps'], 'eyes-the-post': ['-steps'], rubs: ['rattle', 'rattle@1.3', 'rattle@2.6'], thump: ['step', 'step@0.11', 'step@0.22', 'step@0.33', 'step@0.44'], sigh: ['puff'], shake: ['rattle'], 'ambles-off': ['+steps'] },
   tourists: { 'stroll-in': ['+steps'], points: ['-steps'], flash: ['camera'], admire: ['+mosquito@0.15'], slap: ['slap@0.25'], swarm: ['wind'], run: ['scurry', '+steps'], straggler: ['-steps'] },
+  // Wave 3 (Mannville): no sounds picked yet.
+  muskeg: {},
+  catTrain: {},
+  beaver: {},
+  aurora: {},
 };
 
 /** The loops a gag may run, and the sound each repeats. `every`: a one-shot repeated that often (s); none: the file itself loops. */

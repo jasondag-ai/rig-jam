@@ -6,6 +6,8 @@ import { BURIED_LINES } from './lines.ts';
 import { onTap } from './tap.ts';
 
 const BUBBLE_MS = 2600;
+/** Formations whose `after` is more than this lie below every card. */
+const DEEP = 4;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
@@ -52,7 +54,8 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
     col.append(ul);
     if (g === groups - 1) col.append(reward);
     // (Whatever the number of cards, every formation gets its window: the deep ones after the last group.)
-    for (const f of FORMATIONS) if (f.window && (f.after === g + 1 || (g === groups - 1 && f.after > groups))) col.append(windowFor(f.id, f.window));
+    // The first four windows open between the groups; the deep ones all lie below the LAST group.
+    for (const f of FORMATIONS) if (f.window && (f.after <= DEEP ? f.after === g + 1 && g < groups - 1 : g === groups - 1)) col.append(windowFor(f.id, f.window));
   }
 
   const bg = col.querySelector<HTMLElement>('.dig-bg')!;

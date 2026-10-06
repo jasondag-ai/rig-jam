@@ -21,7 +21,8 @@ import { applyCamo, loadLog, record, saveLog, sightingToast, type Sighting } fro
 import { bearAlways, bearNever, eggOff, gagTest, lunchAlways, lunchNever, rollPinned, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
 import { BackAndForth, GAG_TRIGGERS, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump, type GagId } from './gag-triggers.ts';
-import { BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, SignProp, deerDef, signLane, surveyorDef, touristsDef, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
+import { MANN_SIGN_X, MannProp, auroraDef, sceneDef } from './scene-stage.ts';
+import { setSignX, BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, SignProp, deerDef, signLane, surveyorDef, touristsDef, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
 import { companyLine, tierFor } from './company.ts';
@@ -48,6 +49,8 @@ const BANNER_TEXT =
 /** Night sky: about how far the tree tops rise above the horizon line, and the open sky the moon needs (px). */
 const TREE_RISE = 70;
 const MOON_ROOM = 40;
+/** The least sky band (px, HUD's foot to the board) in which Mannville's moon is always shown: about what Aurora Howl needs. */
+const AURORA_SKY = 62;
 /** The perfect-solve confetti: how long the whole burst lasts, and how many pieces. */
 const CONFETTI_MS = 1600;
 const CONFETTI_PIECES = 40;
@@ -147,6 +150,12 @@ export class GameView {
   /** The lease sign: permanent scenery in the bottom strip of every level. */
   private sign: SignProp | null = null;
   private signTaps = 0;
+  /** The standard Mannville scene (scene-stage.ts), and taps on its big puddle and its lane aspen. */
+  private mann: MannProp | null = null;
+  private puddleTaps = 0;
+  private aspenTaps = 0;
+  /** The convoy truck 1 that drove out on the last move (its colour), for the Cat Train. */
+  private convoyOut: string | null = null;
   /** The surveyor has been this visit (Restart starts everything else afresh, but not him). */
   private surveyed = false;
   /** The Daily Pad's first move has had its roll for the tourists. */
@@ -257,6 +266,12 @@ export class GameView {
       };
       if (workerOn() || this.eggForced === 'worker') this.worker = new WorkerGag(egg);
       if ((mooseOn() && this.regionId === GAG_TRIGGERS.moose.region) || this.eggForced === 'moose') this.moose = new MooseGag(egg);
+      // Mannville: the standard scene (its own trees, three muskeg puddles, the lane aspen in front of
+      // every strip gag's characters) and the four gags that play on it.
+      const mannGag = (['muskeg', 'catTrain', 'beaver', 'aurora'] as GagId[]).includes(this.eggForced as GagId);
+      const inMann = this.regionId === GAG_TRIGGERS.muskeg.region || mannGag;
+      setSignX(inMann ? MANN_SIGN_X : undefined);
+      if (inMann) this.mann = new MannProp(egg, theme.season);
       // The bottom strip: the permanent biffy and its two gags, the landowner, and in Cardium the Near Miss.
       this.biffy = new BiffyProp(egg);
       this.strips = { landowner: new TimelineGag(egg, landownerDef), biffyA: new TimelineGag(egg, biffyADef(this.biffy)), biffyB: new TimelineGag(egg, biffyBDef(this.biffy)) };
@@ -295,6 +310,11 @@ export class GameView {
         this.bush = new BushProp(egg, BUSH_X, 'winter');
         this.strips.bear = new TimelineGag(egg, bearDef(this.bush));
       }
+      if (this.mann) {
+        const mann = this.mann;
+        for (const [id, key] of [['muskeg', 'muskeg'], ['catTrain', 'catTrain'], ['beaver', 'beaver']] as [GagId, string][]) if (!eggOff(id.toLowerCase())) this.strips[id] = new TimelineGag(egg, sceneDef(id, key, () => mann.geom()));
+        if (!eggOff('aurora')) this.strips.aurora = new TimelineGag(egg, auroraDef(egg, () => this.night, (el) => this.nightShade?.after(el)));
+      }
       // Taps on a flare stack (gag-triggers.ts): a touch that lifts where it landed, on a flare's picture.
       let down: { x: number; y: number; truck: boolean } | null = null;
       this.el.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY, truck: !!(e.target as Element | null)?.closest?.('.truck') }), { capture: true });
@@ -326,6 +346,20 @@ export class GameView {
             else this.bush!.shake();
           }
           if (this.cow?.hit(e.clientX, e.clientY) && ++this.cowTaps >= GAG_TRIGGERS.bull.cowTaps) this.fire('bull');
+          // Mannville: the big muskeg puddle and the lane aspen, each tapped three times; the moon at night.
+          if (this.mann) {
+            if (this.mann.hitPuddle(e.clientX, e.clientY) && ++this.puddleTaps >= GAG_TRIGGERS.muskeg.puddleTaps) {
+              this.puddleTaps = 0;
+              this.fire('muskeg');
+            } else if (this.mann.hitAspen(e.clientX, e.clientY) && !this.eggsOn.has('beaver')) {
+              if (++this.aspenTaps >= GAG_TRIGGERS.beaver.aspenTaps) {
+                this.aspenTaps = 0;
+                if (!this.eggDone.has('beaver')) this.fire('beaver');
+                else this.mann.shake();
+              } else this.mann.shake();
+            }
+            if (this.night && this.onMoon(e.clientX, e.clientY)) this.fire('aurora');
+          }
           // The lease sign, tapped: the back scratcher.
           if (this.sign?.hit(e.clientX, e.clientY) && ++this.signTaps >= GAG_TRIGGERS.deer.signTaps) this.fire('deer');
           if (!this.strips.marshmallow) return;
@@ -358,7 +392,8 @@ export class GameView {
     this.nightShade.className = 'scene-layer night-shade';
     this.nightShade.setAttribute('aria-hidden', 'true');
     this.el.append(this.nightShade);
-    const nightPin = nightForced();
+    // (The Aurora Howl's preview needs the night.)
+    const nightPin = this.eggForced === 'aurora' ? true : nightForced();
     if (nightPin === true) this.setNight(true);
     if (nightPin !== false) {
       const timer = window.setInterval(() => {
@@ -428,13 +463,17 @@ export class GameView {
     this.el.style.setProperty('--horizon', `${Math.round(box.y - 4 - depth)}px`);
     if (this.nightShade) {
       // Stars from the top of the screen down into the open sky; the moon only where there is sky for it above the trees.
-      const gap = box.y - 4 - depth - TREE_RISE - hudBottom;
+      let gap = box.y - 4 - depth - TREE_RISE - hudBottom;
+      // Mannville's moon can be tapped (Aurora Howl), so it is always there where the sky band has
+      // room for the gag, even low over the treetops under a tall HUD.
+      if (this.strips.aurora && box.y - hudBottom >= AURORA_SKY) gap = Math.max(gap, MOON_ROOM);
       this.nightShade.innerHTML = nightSky(screen.width, Math.round(hudBottom + Math.max(0, gap) * 0.5 + 22), gap >= MOON_ROOM);
     }
     // Kept clear of trees: the sleepy worker's spot by the left edge, and the biffy's.
     const strip = { top: box.y + box.height, bottom: controlsTop };
     const clearings = [this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.biffy ? biffyLane(screen.width, strip) : null, this.sign ? signLane(screen.width, strip) : null, this.bush ? (this.bush.x === BUSH_X ? bearBox(screen.width, strip) : bushBox(this.bush.x, screen.width, strip)) : null, this.cow ? cowBox(screen.width, strip) : null, this.riser ? riserBox(screen.width, strip) : null].filter((c) => c !== null);
-    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, anchors: { bush: !this.bush, mound: this.regionId === 'cardium' }, moundAt: this.strips.gopherLunch || this.strips.nearMiss ? moundSpot(screen.width, strip) : undefined, clearings });
+    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, below: !this.mann, anchors: { bush: !this.bush && !this.mann, mound: this.regionId === 'cardium' }, moundAt: this.strips.gopherLunch || this.strips.nearMiss ? moundSpot(screen.width, strip) : undefined, clearings });
+    this.mann?.layout();
     this.biffy?.layout();
     if (!this.eggsOn.has('surveyor') && !this.eggsOn.has('deer') && !this.eggsOn.has('tourists')) this.sign?.layout();
     this.bush?.layout();
@@ -444,6 +483,7 @@ export class GameView {
   }
 
   private move(id: string, delta: number): void {
+    const mover = this.state.trucks.find((t) => t.id === id);
     const result = tryMove(this.state, id, delta);
     if (!result) {
       this.board.sync(this.state);
@@ -460,6 +500,11 @@ export class GameView {
     }
     // Easter-egg triggers (gag-triggers.ts): the same truck back and forth; two exits back to back.
     if (this.backForth.moved(id, delta) >= GAG_TRIGGERS.landowner.backAndForth) this.fire('landowner');
+    // The Cat Train: a convoy drives out in order, back to back (truck 1, then truck 2 on the next move).
+    {
+      if (result.exited && mover?.convoy === 2 && this.convoyOut === mover.color) this.fire('catTrain');
+      this.convoyOut = result.exited && mover?.convoy === 1 ? mover.color : null;
+    }
     if (result.exited) {
       const now = performance.now();
       if (now - this.lastExitAt <= GAG_TRIGGERS.nearMiss.backToBackMs) this.fire('nearMiss');
@@ -597,6 +642,9 @@ export class GameView {
     this.bumpRun = 0;
     this.flareTaps = 0;
     this.cowTaps = 0;
+    this.puddleTaps = 0;
+    this.aspenTaps = 0;
+    this.convoyOut = null;
     this.lastExitAt = -Infinity;
     this.backForth.reset();
     this.biffy?.reset();
@@ -659,7 +707,7 @@ export class GameView {
       this.coach();
     }
     this.lastMoveAt = this.lastPlayAt = performance.now();
-    if (this.night && nightForced() !== true) this.setNight(false);
+    if (this.night && nightForced() !== true && this.eggForced !== 'aurora') this.setNight(false);
   }
 
   /** Night falls (a slow fade) or the day comes back (a quicker one): style.css "Night". */
@@ -673,7 +721,7 @@ export class GameView {
 
   /** What is on screen of a gag right now: the boxes of its characters and props (screen px). */
   private gagBoxes(id: GagId): DOMRect[] {
-    const where = id === 'magpie' ? '.magpie-layer svg.magpie' : id === 'worker' ? '.worker-layer svg.pup' : id === 'moose' ? '.moose-layer svg' : `.strip-layer[data-gag="${id}"] svg.pup${id === 'biffyA' || id === 'biffyB' ? ', .biffy-layer svg.pup' : ''}`;
+    const where = id === 'magpie' ? '.magpie-layer svg.magpie' : id === 'worker' ? '.worker-layer svg.pup' : id === 'moose' ? '.moose-layer svg' : `.strip-layer[data-gag="${id}"] g.pup, .strip-layer[data-gag="${id}"] svg.pup${id === 'biffyA' || id === 'biffyB' ? ', .biffy-layer svg.pup' : ''}`;
     const view = this.el.getBoundingClientRect();
     return [...this.el.querySelectorAll<HTMLElement>(where)]
       .filter((el) => getComputedStyle(el).visibility !== 'hidden')
@@ -691,6 +739,17 @@ export class GameView {
   /** Puts a gag's layer on the screen UNDER the night's shade, so the strip's gags dim exactly like the scenery. */
   private mount(el: HTMLElement): void {
     this.el.insertBefore(el, this.nightShade);
+    // What stands IN FRONT of the strip's characters (Mannville's lane aspen) stays over every gag
+    // layer put on later; only a gag's own sound words go over that.
+    if (el.classList.contains('scene-front') || el.classList.contains('scene-over')) return;
+    for (const top of this.el.querySelectorAll<HTMLElement>(':scope > .scene-front')) this.el.insertBefore(top, this.nightShade);
+    for (const top of this.el.querySelectorAll<HTMLElement>(':scope > .scene-over')) this.el.insertBefore(top, this.nightShade);
+  }
+
+  /** Is a tap at (x, y) on the night sky's moon? (A tap target of at least 44 px.) */
+  private onMoon(x: number, y: number): boolean {
+    const moon = this.nightShade?.querySelector('.night-sky circle[stroke]')?.getBoundingClientRect();
+    return !!moon && Math.abs(x - (moon.left + moon.width / 2)) <= Math.max(22, moon.width / 2) && Math.abs(y - (moon.top + moon.height / 2)) <= Math.max(22, moon.height / 2);
   }
 
   /** Plays a gag by id. Resolves 'seen' if it counts as a sighting. */
@@ -1006,4 +1065,4 @@ function fitRibbon(span: HTMLElement | null): void {
 }
 
 /** Which Wildlife Log entry each egg fills in. */
-const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull', porcupine: 'porcupine', gopherLunch: 'lunch', sam: 'sam', tongue: 'tongue', surveyor: 'surveyor', deer: 'deer', tourists: 'tourists' };
+const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull', porcupine: 'porcupine', gopherLunch: 'lunch', sam: 'sam', tongue: 'tongue', surveyor: 'surveyor', deer: 'deer', tourists: 'tourists', muskeg: 'muskeg', catTrain: 'cattrain', beaver: 'beaver', aurora: 'aurora' };

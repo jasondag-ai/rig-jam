@@ -75,7 +75,6 @@ describe('the dig: buried things', () => {
   it('they are not log entries', () => {
     const ids = new Set<string>(LOG_ENTRIES.map((e) => e.id));
     for (const b of BURIED) expect(ids.has(b.id), b.id).toBe(false);
-    expect(LOG_ENTRIES).toHaveLength(19);
   });
 
   it('each has a drawing with the toy outline and one short line, with no em dash', () => {

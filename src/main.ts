@@ -29,6 +29,8 @@ import { LOG_ENTRIES, applyCamo, cardHint, complete, foundCount, loadLog, saveLo
 import { PREVIEWS, type GagId } from './ui/gag-triggers.ts';
 import { workerStill } from './ui/worker.ts';
 import { mountDig } from './ui/log-dig-view.ts';
+import { wave3Still } from './ui/scene-stage.ts';
+import { MUSKEG, WAVE3 } from './ui/wave3.ts';
 import { mooseStill } from './ui/moose.ts';
 import { sceneryHtml } from './ui/scenery.ts';
 import { THEMES, applyTheme, themeOverride } from './ui/themes.ts';
@@ -45,6 +47,11 @@ const BINOCULARS = uiImg('icon_binoculars');
 
 /** Card art for each Wildlife Log entry: a still of the gag's own puppet (found: in color; not yet: a dark silhouette). */
 const LOG_ART: Record<Sighting, () => string> = {
+  // Wave 3 (wave3.ts): the puppets at one moment, cut close.
+  muskeg: () => wave3Still('muskeg', 3.1, [102, 76, 112, 90], MUSKEG),
+  cattrain: () => wave3Still('catTrain', 9.4, [204, 92, 96, 66]),
+  beaver: () => wave3Still('beaver', 1.6, [68, 92, 146, 62]),
+  aurora: () => wave3Still('aurora', 4.4, [128, 6, 124, 126], `<rect x="128" y="6" width="124" height="126" rx="8" fill="#18213f"/><clipPath id="aur-card"><rect x="128" y="6" width="124" height="126" rx="8"/></clipPath><g clip-path="url(#aur-card)">${(WAVE3 as unknown as { aurora: { lights: (t: number, a: number, b: number) => string } }).aurora.lights(4.4, 120, 260)}<path d="M120 122 Q190 116 260 121 V140 H120 z" fill="#25392f" stroke="#2b1e16" stroke-width="2.4"/></g>`),
   magpie: () => magpieStill(),
   spotter: () => workerStill(),
   moose: () => mooseStill(),

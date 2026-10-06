@@ -232,4 +232,9 @@ export const WITNESS_LINES = {
   surveyor: 'It was fine where it was.',
   deer: "Somebody's itchy.",
   tourists: 'Should have brought the bug spray.',
+  // (Wave 3: stand-ins until Jay writes his own.)
+  muskeg: 'That boot is gone for good.',
+  catTrain: 'Now that is a cat train.',
+  beaver: 'Give him a hard hat.',
+  aurora: 'Nobody heard that.',
 };

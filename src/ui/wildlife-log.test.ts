@@ -4,7 +4,7 @@ import { DEMO_LOG_KEY, LOG_ENTRIES, LOG_KEY, camoOn, complete, foundCount, parse
 
 describe('Wildlife Log', () => {
   it('one entry per gag in the game, each with a name, caption and hint; none for the retired sprite gags', () => {
-    expect(LOG_ENTRIES.map((e) => e.name)).toEqual(['Magpie', 'Sleepy Worker', 'Moose', 'Near Miss', 'Angry Landowner', 'Occupied', 'The Runaway Roll', 'Marshmallow', 'Lost Goose', 'Porcupine', 'Gopher Lunch', 'Safety Sam', 'Frozen Tongue', 'Surveyor', 'Back Scratcher', 'Tourists', 'Night Shift', 'Bull and Cow', 'Bear']);
+    expect(LOG_ENTRIES.map((e) => e.name)).toEqual(['Magpie', 'Sleepy Worker', 'Moose', 'Near Miss', 'Angry Landowner', 'Occupied', 'The Runaway Roll', 'Marshmallow', 'Lost Goose', 'Porcupine', 'Gopher Lunch', 'Safety Sam', 'Frozen Tongue', 'Surveyor', 'Back Scratcher', 'Tourists', 'Muskeg Boots', 'Cat Train', 'Beaver', 'Aurora Howl', 'Night Shift', 'Bull and Cow', 'Bear']);
     const ids = LOG_ENTRIES.map((e) => e.id as string);
     for (const gone of ['pumper', 'hotshot', 'gopher']) expect(ids).not.toContain(gone);
     expect(LOG_ENTRIES.find((e) => e.id === 'bear')!.caption).toBe('Does what bears do in the woods.');
@@ -89,6 +89,6 @@ describe('log hints and Night Shift', () => {
     const night = LOG_ENTRIES.find((e) => e.id === 'night')!;
     expect(night).toMatchObject({ name: 'Night Shift', caption: 'Lights out on the lease.', hint: 'Leave a Montney or Duvernay level alone for a while.' });
     expect(sightingToast('night', 4)).toBe(`New sighting! Night Shift (4/${LOG_ENTRIES.length})`);
-    expect(LOG_ENTRIES).toHaveLength(19);
+    expect(LOG_ENTRIES).toHaveLength(23);
   });
 });
