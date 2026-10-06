@@ -162,8 +162,11 @@ const TRIPOD = `<g class="legs" stroke-linecap="round"></g>
 <rect x="7" y="33" width="26" height="5.5" rx="2" fill="#3a3f46" stroke="${O}" stroke-width="1.8"/>
 <circle cx="32" cy="35.7" r="1.6" fill="#8fd3f0"/>
 <path d="M16 30 Q20 25 24 30" fill="none" stroke="${O}" stroke-width="2"/></g>`;
-const tripodLegs = (spread) => { const feet = [[20 - 15*spread, 108], [20, 106 - 2*(1-spread)], [20 + 15*spread, 108]];
-  return feet.map(([x,y]) => `<path d="M20 48 L${x} ${y}" stroke="${O}" stroke-width="5"/><path d="M20 48 L${x} ${y}" stroke="#e7b33b" stroke-width="2.6"/>`).join(''); };
+/** FOLDED, THE TRIPOD IS COLLAPSED: its legs are telescoped to half their length (`TRI_SHORT` shorter), so he can carry it against him. Unfolding (`spread` 0 to 1) spreads the legs and runs them out together, and the instrument rises on them. */
+export const TRI_SHORT = 30;
+const tripodTop = (spread) => 48 + TRI_SHORT*(1 - spread);
+const tripodLegs = (spread) => { const top = tripodTop(spread), feet = [[20 - 15*spread, 108], [20, 106 - 2*(1-spread)], [20 + 15*spread, 108]];
+  return feet.map(([x,y]) => `<path d="M20 ${top} L${x} ${y}" stroke="${O}" stroke-width="5"/><path d="M20 ${top} L${x} ${y}" stroke="#e7b33b" stroke-width="2.6"/>`).join(''); };
 
 export const SURVEY_BEATS = [[0,'just-the-sign','Just the lease sign'],[.3,'walks-in','A surveyor walks in from the near edge, tripod in hand'],[2.3,'plants-tripod','Plants the tripod and spreads its legs'],[2.9,'sights','Sights the sign through the instrument. Squints'],[4.0,'looks-again','Pulls back, blinks, looks again'],[4.6,'off-a-metre','"Off a metre."'],[5.2,'marches-over','Marches over and grabs the sign'],[6.4,'yanks','Yanks it out of the ground. Dirt flies'],[6.8,'moves-it','Shuffles it a metre over and plants it. Thunk'],[7.9,'heads-back','Hop-turns and heads back to the tripod'],[8.9,'sights-again','Sights it again. Long pause'],[9.6,'huh','Taps the instrument. "Huh."'],[10.4,'pulls-it-up','Marches back, pulls the sign up again'],[11.3,'carries-back','Carries it back to exactly where it was'],[12.0,'stamps','Plants it, stamps the dirt down'],[12.8,'perfect','Dusts his hands. "Perfect."'],[13.4,'folds-tripod','Folds up the tripod'],[14.9,'walks-off','Walks off the way he came. Just the sign again']];
 export const SURVEY_END = 17.1;
@@ -174,7 +177,10 @@ export const SURVEY_END = 17.1;
     `T_PLANT` / `T_PICKUP`: those two instants (s). `TRI_AT`: where it stands (his units from the sign). */
 export const T_PLANT = 2.45, T_PICKUP = 14.85, TRI_AT = -70;
 /** His front arm when he sets the tripod down or takes it up, and when he carries it; the carried tripod's lean (degrees, toward the way he faces). */
-export const HOLD = {arF:0, foF:-20}, CARRY = {arF:-25, foF:-55}, CARRY_LEAN = 9;
+export const HOLD = {arF:0, foF:-20}, CARRY = {arF:40, foF:-95}, CARRY_LEAN = -14;
+// (Carried COLLAPSED and clutched against his belly, leaning a little back: nothing of it leads him
+// onto the screen and it never covers his face. Held out in front at full length, its thin folded
+// legs came on before he did: "a thin object" ahead of the gag.)
 /** His front glove in his own drawing (120 box, facing right, standing straight), from the arm's two angles. */
 export const gloveAt = (arF, foF) => { const a = arF*Math.PI/180, b = (arF+foF)*Math.PI/180; return {x: 70 - 12*Math.sin(a) - 13*Math.sin(b), y: 56 + 12*Math.cos(a) + 13*Math.cos(b)}; };
 const HOLD_AT = gloveAt(HOLD.arF, HOLD.foF);
@@ -191,10 +197,14 @@ export function surveyScene(stage, frame, sign, f, spot, mirror){
   const sc = stageOf(stage, frame, sign, f, spot, mirror);
   // The standing tripod: its own drawing, put on its spot once and never moved.
   sc.tri = z(makePup(stage, TRIPOD, {vw:40, vh:110, ax:20, ay:108, frac:.19*f*40/120, spot}), 4);
+  // (Nothing is drawn before its first frame says so: the standing tripod starts hidden.)
+  sc.tri.svg.style.visibility = 'hidden';
   sc.man = z(makePup(stage, WORKER, {vw:120, vh:120, ax:60, ay:108, frac:.19*f, spot}), 5);
+  sc.man.q('.flip').style.visibility = 'hidden';
   // The carried tripod: the same drawing, folded, inside his front forearm (under the glove that grips it).
   sc.man.q('.armF .fore').insertAdjacentHTML('afterbegin', `<g class="held" style="display:none">${TRIPOD}</g>`);
   sc.held = sc.man.q('.armF .fore .held'); sc.held.querySelector('.legs').innerHTML = tripodLegs(0);
+  sc.held.querySelector('.headpiece').setAttribute('transform', `translate(0 ${TRI_SHORT})`);
   dress(sc.man, {top:'#c9b07a', shade:'#ad9560', vest:'#f07f2a', pants:'#6d6a4f', hardHat:'#f7f7f2', hardHat2:'#ffffff', beard:false, moustache:'#7a4f2e'});
   sc.ov = overlay(stage);
   return sc;
@@ -248,7 +258,7 @@ export function surveyApply(sc, P, t){
   place(sc.sign, sg.dx*sc.way); sc.sign.svg.style.transform = sg.lift ? `translateY(${-sg.lift*u}px)` : '';
   // The standing tripod never moves; its legs are redrawn only when their spread changes.
   place(sc.tri, TRI_AT);
-  if (tri.mode === 'stand' && sc.spread !== tri.spread) sc.tri.q('.legs').innerHTML = tripodLegs((sc.spread = tri.spread));
+  if (tri.mode === 'stand' && sc.spread !== tri.spread){ sc.tri.q('.legs').innerHTML = tripodLegs((sc.spread = tri.spread)); sc.tri.q('.headpiece').setAttribute('transform', `translate(0 ${TRI_SHORT*(1 - tri.spread)})`); }
   sc.tri.svg.style.visibility = tri.mode === 'stand' ? 'visible' : 'hidden';
   // The carried one is a child of his forearm: kept upright by taking the arm's own turn back out
   // (plus the carrying lean), and turned back when he is mirrored so the instrument faces the same way.

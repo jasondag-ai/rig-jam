@@ -111,7 +111,9 @@ console.log('\nwebkit: the lease sign is permanent scenery at one fixed spot');
   }
   check(spots.every((s) => s.n === 1 && s.old === 0), `one sign on each of ${spots.length} levels (three regions and the Daily Pad), and no other in the scenery`);
   // (The same place across the screen, and the same distance under the berm: the lease itself sits a little higher or lower with the length of the level's tip line.)
-  check(spots.every((s) => Math.abs(s.x - 0.62 * W) < 1 && Math.abs(s.under - spots[0].under) < 1), `always at the same spot (x ${spots[0].x.toFixed(1)}, ${spots[0].under.toFixed(1)} px under the lease): ${spots.filter((s) => Math.abs(s.x - 0.62 * W) >= 1 || Math.abs(s.under - spots[0].under) >= 1).map((s) => `${s.where} ${s.x.toFixed(1)}/${s.under.toFixed(1)}`).join(', ') || 'all the same'}`);
+  // (Duvernay's stands left of the stage, clear of the sitting bear: the depth rule, strip-gags.ts `WINTER_SIGN_X`.)
+  const signX = (s) => (s.where.startsWith('Duvernay') ? 0.345 : 0.62) * W;
+  check(spots.every((s) => Math.abs(s.x - signX(s)) < 1 && Math.abs(s.under - spots[0].under) < 1), `always at its one spot (x ${spots[0].x.toFixed(1)}; Duvernay's left of the stage; ${spots[0].under.toFixed(1)} px under the lease): ${spots.filter((s) => Math.abs(s.x - signX(s)) >= 1 || Math.abs(s.under - spots[0].under) >= 1).map((s) => `${s.where} ${s.x.toFixed(1)}/${s.under.toFixed(1)}`).join(', ') || 'all the same'}`);
   check(spots.every((s) => s.clearBoard && s.clearNote && s.touch === 'none'), 'in the bottom strip, clear of the lease and the tip line; its layer takes no touches');
 }
 
@@ -262,6 +264,30 @@ console.log('\nwebkit: the surveyor\'s tripod');
   check(Math.max(...grip) < 14, `in his hand it stays at his glove through every step (never more than ${Math.max(...grip).toFixed(1)} px to the side of it)`);
   const hand = f.filter((x) => x.inHand);
   const first = hand[0].redraws, spread = f.filter((x) => x.standing && x.t > T_PLANT + 0.5 && x.t < T_PICKUP - 0.5);
+  // Job U: NOTHING DRAWS BEFORE HE WALKS IN. From the gag's first frame until his body is on the
+  // screen, nothing of the gag shows; and carried, the tripod never sticks out ahead of him (it is
+  // collapsed and held against him), so no "thin object" comes on first.
+  const lead = await page.evaluate(async () => {
+    const g = window.__rhrGag, vw = innerWidth, out = [];
+    for (let t = 0; t <= 2.3; t += 1 / 60) {
+      g.hold('surveyor', t);
+      await Promise.resolve();
+      const layer = document.querySelector('.surveyor-layer');
+      const vis = (e) => { const c = getComputedStyle(e); if (c.visibility === 'hidden' || c.display === 'none') return null; const r = e.getBoundingClientRect(); return r.width > 0.5 && r.right > 0 && r.left < vw ? r : null; };
+      const body = ['.torso > rect', '.hat', '.legF', '.legB'].map((q) => layer.querySelector('.armF')?.ownerSVGElement.querySelector(q)).filter(Boolean).map(vis).filter(Boolean);
+      // (On screen by more than 3 px: a pixel or two of its outline beside his hat's brim is nothing anyone sees.)
+      const held = [...layer.querySelectorAll('.held .legs, .held .headpiece')].map(vis).filter((r) => r && r.left < vw - 3 && r.right > 3);
+      const stand = [...layer.querySelectorAll('svg.pup')].filter((s2) => !s2.querySelector('.armF')).map(vis).filter(Boolean);
+      const bl = Math.min(...body.map((r) => r.left)), br = Math.max(...body.map((r) => r.right));
+      out.push({ t, body: body.length, held: held.length, stand: stand.length, ahead: held.length && body.length ? Math.max(bl - Math.min(...held.map((r) => r.left)), Math.max(...held.map((r) => r.right)) - br) : held.length ? 99 : 0 });
+    }
+    g.release('surveyor');
+    return out;
+  });
+  const before = lead.filter((x) => x.body === 0);
+  const worst = Math.max(...lead.map((x) => x.ahead));
+  check(before.length > 20 && before.every((x) => x.held === 0 && x.stand === 0), `nothing of the gag is on screen before he is (${before.length} frames, ${before[before.length - 1].t.toFixed(2)} s): no tripod, no thin object`);
+  check(worst <= 3, `carried, the tripod never sticks out ahead of him or behind him (at most ${worst.toFixed(1)} px past his body)`);
   check(first === 0 && spread[spread.length - 1].redraws === spread[0].redraws && f[f.length - 1].redraws > spread[0].redraws, 'its legs unfold only on the set-down spot and fold there again; carried, it is always folded');
   await context.close();
 }
