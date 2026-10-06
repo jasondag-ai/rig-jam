@@ -6,7 +6,7 @@
 import { STORAGE_PREFIX } from './progress.ts';
 import { dressCamo } from './sprites.ts';
 
-export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'night' | 'bull' | 'bear' | 'muskeg' | 'cattrain' | 'beaver' | 'aurora' | 'tumbleweed' | 'pdogs' | 'bale' | 'cloud';
+export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'night' | 'bull' | 'bear' | 'muskeg' | 'cattrain' | 'beaver' | 'aurora' | 'tumbleweed' | 'pdogs' | 'bale' | 'cloud' | 'dug';
 
 export interface LogEntry {
   id: Sighting;
@@ -46,6 +46,8 @@ export const LOG_ENTRIES: LogEntry[] = [
   { id: 'cloud', name: 'Personal Cloud', caption: 'Some days are like that.', hint: "In Bakken, tap the sky three times." },
   { id: 'night', name: 'Night Shift', caption: 'Lights out on the lease.', hint: "Leave a Montney or Duvernay level alone for a while." },
   { id: 'bull', name: 'Bull and Cow', caption: 'Spring in the Montney.', hint: "In Montney, tap the cow." },
+  // Not a gag: found by scrolling the log's own dig right through the Earth (log-deep.ts). Its card shows the player's best time.
+  { id: 'dug', name: 'Dug Through', caption: 'Alberta to Kerguelen, the short way.', hint: "Scroll this log down. Keep going. All the way down." },
   { id: 'bear', name: 'Bear', caption: 'Does what bears do in the woods.', hint: "In Duvernay, tap the snowy bush three times. He comes one time in three.", legendary: true },
 ];
 /** How many of the log's entries have been found (a saved log may hold ids from gags since retired). */
@@ -65,6 +67,8 @@ export interface WildlifeLog {
   camo: boolean;
   /** Camo pickups earned: every entry found (or earned under an earlier, shorter log: that is kept). */
   camoEarned: boolean;
+  /** Dug Through: the best time (ms) from the grass to the Kerguelen Islands. */
+  dug?: number;
 }
 
 /** Saved-log format: 3 is the puppet gags' log (ids of the retired sprite gags are dropped on load). */
@@ -77,7 +81,8 @@ export function parseLog(raw: string | null): WildlifeLog {
     const v = raw ? (JSON.parse(raw) as Partial<WildlifeLog>) : {};
     const found = Array.isArray(v.found) ? [...new Set(v.found.filter((x): x is Sighting => IDS.has(x)))] : [];
     const camoEarned = v.camoEarned === true || LOG_ENTRIES.every((e) => found.includes(e.id));
-    return { found, camo: typeof v.camo === 'boolean' ? v.camo : true, camoEarned };
+    const dug = typeof v.dug === 'number' && Number.isFinite(v.dug) && v.dug > 0 ? { dug: v.dug } : {};
+    return { found, camo: typeof v.camo === 'boolean' ? v.camo : true, camoEarned, ...dug };
   } catch {
     return { found: [], camo: true, camoEarned: false };
   }
@@ -121,6 +126,17 @@ export function record(log: WildlifeLog, id: Sighting): { log: WildlifeLog; isNe
   const done = LOG_ENTRIES.every((e) => found.includes(e.id));
   const next = { ...log, found, camoEarned: log.camoEarned || done };
   return { log: next, isNew: true, count: found.length, completed: done };
+}
+
+/**
+ * The dig went right through: Dug Through is found (the first time) and the best time kept (the
+ * shorter of this one and the one saved). `newBest` is true the first time and whenever it is beaten.
+ */
+export function recordDig(log: WildlifeLog, ms: number): { log: WildlifeLog; isNew: boolean; count: number; completed: boolean; best: number; newBest: boolean } {
+  const r = record(log, 'dug');
+  const newBest = log.dug === undefined || ms < log.dug;
+  const best = newBest ? ms : log.dug!;
+  return { ...r, log: { ...r.log, dug: best }, best, newBest };
 }
 
 export const sightingToast = (id: Sighting, count: number, demo = false) =>

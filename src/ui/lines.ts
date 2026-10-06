@@ -190,7 +190,7 @@ export function fromPool(pool: readonly string[], random: () => number = Math.ra
 /**
  * BURIED THINGS in the Wildlife Log's dig (log-dig.ts): tap one and it wiggles and says its line.
  * ONE LINE each: 40 characters at most, so the bubble never wraps on a phone. Jay's own (Oct 6).
- * `reservoir` is said by the oil at the very bottom of the dig.
+ * `reservoir` is said by the oil at the foot of the upper dig.
  */
 export const BURIED_LINES = {
   keys: 'Who had them last?',
@@ -209,6 +209,10 @@ export const BURIED_LINES = {
   plesiosaur: 'Alberta had a beach once.',
   trilobite: 'Here first.',
   reservoir: 'You made it. The pumpjack says hi.',
+  // Deeper still (log-deep.ts): on the way through the Earth.
+  diamond: 'Pressure makes diamonds.',
+  lunchbox: 'Halfway. Snack break.',
+  whale: 'Long way from Alberta.',
 } as const;
 
 /**

@@ -78,7 +78,8 @@ describe('the dig: buried things', () => {
   });
 
   it('each has a drawing with the toy outline and one short line, with no em dash', () => {
-    expect(Object.keys(BURIED_LINES).sort()).toEqual([...BURIED.map((b) => b.id), 'reservoir'].sort());
+    // (Besides the buried things: the oil's own line, and the three oddities deeper down, log-deep.ts.)
+    expect(Object.keys(BURIED_LINES).sort()).toEqual([...BURIED.map((b) => b.id), 'reservoir', 'diamond', 'lunchbox', 'whale'].sort());
     expect(BURIED_LINES.reservoir).toBe('You made it. The pumpjack says hi.');
     expect(BURIED_LINES.reservoir.length).toBeLessThanOrEqual(40);
     for (const b of BURIED) {
