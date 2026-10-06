@@ -58,6 +58,39 @@ describe('truck sprites', () => {
     for (const kind of KINDS) for (const color of Object.keys(GATES)) expect(paint(kind, color).share, `${kind} ${color}`).toBeGreaterThanOrEqual(0.4);
   });
 
+  // Camo pickups (the Wildlife Log's reward) are held to the SAME colour rules as the plain ones.
+  describe('camo pickups keep their gate colour', () => {
+    const camo = (color: string) => (manifest as unknown as { camo: Record<string, { mean: string; share: number }> }).camo[color];
+    const colors = Object.keys(GATES);
+
+    it('a camo sprite for the pickup in every gate colour, at 1x and 2x', () => {
+      for (const color of colors)
+        for (const suffix of ['', '@2x']) {
+          const file = `public/sprites/trucks/pickup-${color}-camo${suffix}.webp`;
+          expect(existsSync(file), file).toBe(true);
+          expect(statSync(file).size, file).toBeLessThan(40_000);
+        }
+    });
+
+    it('its paint still reads as its gate colour, and no two camo pickups look alike', () => {
+      for (const [color, hex] of Object.entries(GATES)) expect(dE(camo(color).mean, hex), color).toBeLessThan(12);
+      for (let i = 0; i < colors.length; i++)
+        for (let j = i + 1; j < colors.length; j++) {
+          expect(dE(camo(colors[i]).mean, camo(colors[j]).mean), `${colors[i]} vs ${colors[j]}`).toBeGreaterThan(30);
+          // Nor can a camo pickup be taken for a plain truck of another colour.
+          for (const kind of KINDS) expect(dE(camo(colors[i]).mean, paint(kind, colors[j]).mean), `camo ${colors[i]} vs ${kind} ${colors[j]}`).toBeGreaterThan(30);
+        }
+    });
+
+    it.each(Object.values(THEMES))('$id: every camo pickup stands out from the pad', (theme) => {
+      for (const color of colors) expect(dE(camo(color).mean, theme.vars['--pad']), `${color} on ${theme.id}`).toBeGreaterThan(25);
+    });
+
+    it('as much of the truck carries the colour as before', () => {
+      for (const color of colors) expect(camo(color).share).toBe(paint('pickup', color).share);
+    });
+  });
+
   it('a snow coat and a mud coat for every kind, at 1x and 2x (one layer for every color)', () => {
     for (const kind of KINDS)
       for (const coat of ['snow', 'mud'])

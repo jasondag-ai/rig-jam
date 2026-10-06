@@ -2317,9 +2317,10 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
   stroke: none;
 }
 
-.v-camo .cm-dk { fill: rgba(30, 40, 14, 0.66); }
-.v-camo .cm-lt { fill: rgba(226, 212, 150, 0.6); }
-.v-camo .cm-br { fill: rgba(96, 62, 26, 0.6); }
+/* (The drawn fallback's camo: shades of the truck's own colour, like the camo sprite.) */
+.v-camo .cm-dk { fill: rgba(0, 0, 0, 0.3); }
+.v-camo .cm-lt { fill: rgba(255, 255, 255, 0.42); }
+.v-camo .cm-br { fill: rgba(0, 0, 0, 0.16); }
 
 /* The legendary entry (the bear): gold frame and tag on its card, found or not. */
 .log-card.legendary {

@@ -4,8 +4,25 @@
 import type { Color, TruckKind } from '../engine/index.ts';
 
 const BASE = './sprites/trucks/';
-export const spriteSrc = (kind: TruckKind, color: Color, scale: 1 | 2 = 1) => `${BASE}${kind}-${color}${scale === 2 ? '@2x' : ''}.webp`;
+/** Camo pickups (the Wildlife Log's reward): the kind that wears it. Its camo sprite is the same
+ *  truck with blotches in a deep shade and a pale tint of its OWN gate colour (truck-sprites.py). */
+export const CAMO_KIND: TruckKind = 'pickup';
+const camoNow = () => typeof document !== 'undefined' && document.body.classList.contains('camo-pickups');
+export const spriteSrc = (kind: TruckKind, color: Color, scale: 1 | 2 = 1, camo = camoNow()) =>
+  `${BASE}${kind}-${color}${camo && kind === CAMO_KIND ? '-camo' : ''}${scale === 2 ? '@2x' : ''}.webp`;
 export const spriteSrcset = (kind: TruckKind, color: Color) => `${spriteSrc(kind, color)} 1x, ${spriteSrc(kind, color, 2)} 2x`;
+
+/** Puts every pickup already on the page into (or out of) its camo, when the switch changes. */
+export function dressCamo(root: ParentNode = document): void {
+  const camo = camoNow();
+  const dress = (s: string) => s.replace(new RegExp(`(${CAMO_KIND}-[a-z]+)(-camo)?(@2x)?\\.webp`, 'g'), (_m, stem: string, _c, x2 = '') => `${stem}${camo ? '-camo' : ''}${x2}.webp`);
+  root.querySelectorAll<HTMLImageElement>('img.sprite').forEach((img) => {
+    const src = img.getAttribute('src') ?? '';
+    if (!src.includes(`/${CAMO_KIND}-`) || dress(src) === src) return;
+    img.setAttribute('srcset', dress(img.getAttribute('srcset') ?? ''));
+    img.setAttribute('src', dress(src));
+  });
+}
 
 /** The sprite <img> for a truck (sized and turned by the .art box around it). */
 export const spriteImg = (kind: TruckKind, color: Color) =>

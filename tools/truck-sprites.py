@@ -53,6 +53,9 @@ COLORS = {  # kept in sync with :root in style.css
     'green': (0x22, 0xC5, 0x5E), 'orange': (0xFF, 0x8A, 0x00), 'purple': (0xA5, 0x5C, 0xFF),
 }
 OUTLINE = (0x2A, 0x1A, 0x0C)
+# Camo pickups: which kind wears it, and where the blotch field is cut into deep and pale patches.
+CAMO_KIND = 'pickup'
+CAMO_DARK, CAMO_LIGHT = 160, 94
 # Box per scale: along x across (CSS px at 1x), the same shape as the truck element.
 ACROSS = 52
 # Room round the truck inside its box (CSS px), the outline's width (CSS px), and how much larger
@@ -222,9 +225,39 @@ def mud_coat(src: Image.Image, kind: str) -> Image.Image:
     return coat
 
 
+def camo(tinted: Image.Image, mask: Image.Image, color) -> Image.Image:
+    """Camo pickups (the Wildlife Log's reward): crisp blotches in the truck's OWN gate colour, a
+    deep shade and a pale tint of it over the paint, so the colour still says which gate is its
+    own. The two are balanced so the paint's average stays the gate colour (sprites.test.ts)."""
+    rng = random.Random(7)
+    w, h = tinted.size
+    field = blobs(rng, (w, h), 5).filter(ImageFilter.GaussianBlur(10))
+    fine = blobs(rng, (w, h), 9).filter(ImageFilter.GaussianBlur(8))
+    field = ImageChops.add(field, fine, scale=2)
+    crisp = lambda im: im.filter(ImageFilter.GaussianBlur(1.5))
+    dark = crisp(field.point(lambda v: 255 if v > CAMO_DARK else 0))
+    light = crisp(field.point(lambda v: 255 if v < CAMO_LIGHT else 0))
+    rgb = tinted.convert('RGB')
+    deep = ImageChops.multiply(rgb, Image.new('RGB', (w, h), tuple(round(255 * (0.62 + 0.2 * c / 255)) for c in color)))
+    pale = Image.blend(rgb, Image.new('RGB', (w, h), tuple(round(c + (255 - c) * 0.7) for c in color)), 0.4)
+    out = Image.composite(deep, rgb, ImageChops.multiply(dark, mask))
+    out = Image.composite(pale, out, ImageChops.multiply(light, mask)).convert('RGBA')
+    out.putalpha(tinted.getchannel('A'))
+    return out
+
+
+def measure(img: Image.Image, mask: Image.Image, src: Image.Image):
+    """The paint as a player sees it: the mean of the clearly painted pixels, and how much of the
+    sprite's canvas they cover."""
+    data = lambda im: im.get_flattened_data() if hasattr(im, 'get_flattened_data') else im.getdata()
+    px = [p for p, m in zip(data(img), data(mask)) if m > 200]
+    mean = [round(sum(p[i] for p in px) / len(px)) for i in range(3)]
+    return {'mean': '#%02x%02x%02x' % tuple(mean), 'share': round(len(px) / (src.width * src.height), 3)}
+
+
 def main() -> None:
     os.makedirs(OUT, exist_ok=True)
-    manifest = {'across': ACROSS, 'along': ALONG, 'paint': {}}
+    manifest = {'across': ACROSS, 'along': ALONG, 'paint': {}, 'camo': {}}
     for kind, cells in KINDS.items():
         src = clean(Image.open(os.path.join(SRC, f'{kind}.png')).convert('RGBA'))
         bbox = src.getchannel('A').point(lambda v: 255 if v > 24 else 0).getbbox()
@@ -233,12 +266,12 @@ def main() -> None:
             tinted, mask = paint(src, kind, rgb)
             for suffix, scale in SCALES.items():
                 sprite(tinted, bbox, cells, scale).save(os.path.join(OUT, f'{kind}-{name}{suffix}.webp'), 'WEBP', quality=86, method=6)
-            # The paint as a player sees it: the mean of the clearly painted pixels, and how much
-            # of the sprite's canvas they cover.
-            data = lambda im: im.get_flattened_data() if hasattr(im, 'get_flattened_data') else im.getdata()
-            px = [p for p, m in zip(data(tinted), data(mask)) if m > 200]
-            mean = [round(sum(p[i] for p in px) / len(px)) for i in range(3)]
-            manifest['paint'][kind][name] = {'mean': '#%02x%02x%02x' % tuple(mean), 'share': round(len(px) / (src.width * src.height), 3)}
+            manifest['paint'][kind][name] = measure(tinted, mask, src)
+            if kind == CAMO_KIND:
+                hidden = camo(tinted, mask, rgb)
+                for suffix, scale in SCALES.items():
+                    sprite(hidden, bbox, cells, scale).save(os.path.join(OUT, f'{kind}-{name}-camo{suffix}.webp'), 'WEBP', quality=86, method=6)
+                manifest['camo'][name] = measure(hidden, mask, src)
         # Season coats: one snow layer and one mud layer per kind (any color), drawn over the sprite.
         for coat_name, coat in (('snow', snow_coat(src, kind)), ('mud', mud_coat(src, kind))):
             for suffix, scale in SCALES.items():

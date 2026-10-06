@@ -176,10 +176,11 @@ check(!(await page.evaluate(() => document.body.classList.contains('camo-pickups
 // 4. Settings switch: on by default once earned; off hides the camo, and it's remembered.
 await fresh('', JSON.stringify({ v: 3, found: ALL, camo: true, camoEarned: true }));
 await enter(cardium, 0);
-const camoShown = () => page.$eval('.truck[data-kind="pickup"] .v-camo', (g) => getComputedStyle(g).display !== 'none').catch(() => null);
-check((await camoShown()) === true, 'every pickup wears camo in play');
-const kinds = await page.$$eval('.truck', (ts) => ts.filter((x) => x.dataset.kind !== 'pickup').map((x) => getComputedStyle(x.querySelector('.v-camo') ?? x).display));
-check(kinds.every((d) => d !== 'inline'), 'other trucks stay as they are');
+// (The camo is the pickup's own sprite in camo, in its own gate colour: `pickup-<colour>-camo`.)
+const camoShown = () => page.$$eval('.truck[data-kind="pickup"]', (ts) => ts.length > 0 && ts.every((t) => { const i = t.querySelector('img.sprite'); const colour = [...t.classList].find((c) => c.startsWith('c-')).slice(2); return i.complete && i.naturalWidth > 0 && i.currentSrc.includes(`pickup-${colour}-camo`) && t.classList.contains('sprite-on'); })).catch(() => null);
+check((await camoShown()) === true, 'every pickup wears camo in play, each in its own gate colour');
+const kinds = await page.$$eval('.truck', (ts) => ts.filter((x) => x.dataset.kind !== 'pickup').map((x) => x.querySelector('img.sprite').currentSrc));
+check(kinds.every((d) => !d.includes('camo')), 'other trucks stay as they are');
 await page.$eval('.hud [data-act="levels"]', (b) => b.click());
 await wait(200);
 await page.$eval('.gear', (g) => g.click());

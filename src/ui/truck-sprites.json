@@ -135,5 +135,31 @@
         "share": 0.47
       }
     }
+  },
+  "camo": {
+    "red": {
+      "mean": "#eb4e4e",
+      "share": 0.59
+    },
+    "blue": {
+      "mean": "#3a87ec",
+      "share": 0.59
+    },
+    "yellow": {
+      "mean": "#ebc42d",
+      "share": 0.59
+    },
+    "green": {
+      "mean": "#2fb961",
+      "share": 0.59
+    },
+    "orange": {
+      "mean": "#eb8614",
+      "share": 0.59
+    },
+    "purple": {
+      "mean": "#9d5fec",
+      "share": 0.59
+    }
   }
 }

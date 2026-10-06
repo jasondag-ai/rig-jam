@@ -4,6 +4,7 @@
 // Settings). Saved on this phone under a `rush-hour-rigs:` key, so "Reset progress" clears it too.
 // `?log=all` previews a full log.
 import { STORAGE_PREFIX } from './progress.ts';
+import { dressCamo } from './sprites.ts';
 
 export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'night' | 'bull' | 'bear';
 
@@ -117,7 +118,8 @@ export function record(log: WildlifeLog, id: Sighting): { log: WildlifeLog; isNe
 export const sightingToast = (id: Sighting, count: number, demo = false) =>
   `${demo ? 'Demo' : 'New'} sighting! ${LOG_ENTRIES.find((e) => e.id === id)?.name ?? id} (${count}/${LOG_ENTRIES.length})`;
 
-/** Every pickup in the game wears camo (a class on <body>; style.css draws it). */
+/** Every pickup in the game wears camo in its own gate colour (a class on <body>; sprites.ts picks the camo sprite). */
 export function applyCamo(log: WildlifeLog = loadLog()): void {
   document.body.classList.toggle('camo-pickups', camoOn(log));
+  dressCamo();
 }
