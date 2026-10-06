@@ -68,7 +68,8 @@ export function runRegionBar(frame: HTMLElement, track: HTMLElement, active: num
   };
   let lastMove = -1e9, downAt: number | null = null, moving = false;
   track.addEventListener('scroll', () => { lastMove = performance.now(); remembered = track.scrollLeft; fades(); }, { passive: true });
-  track.addEventListener('pointerdown', () => { downAt = track.scrollLeft; moving = performance.now() - lastMove < SETTLE_MS; }, { capture: true });
+  // (Only a finger can stop a fling: a mouse click just after the bar was scrolled is still a click.)
+  track.addEventListener('pointerdown', (e) => { downAt = track.scrollLeft; moving = e.pointerType === 'touch' && performance.now() - lastMove < SETTLE_MS; }, { capture: true });
   // In the page now or later: place it once it has a size.
   if (track.isConnected && track.clientWidth) place();
   else requestAnimationFrame(place);
