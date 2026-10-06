@@ -5,10 +5,10 @@
 import { versionText } from './version.ts';
 
 /**
- * WHERE FEEDBACK GOES. Jay: put the address here (one place). While it is empty the row is not
+ * WHERE FEEDBACK GOES (one place; Jay's address, Oct 6). If it is ever emptied the row is not
  * shown. (`?feedback=name@example.com` shows the row with that address: tests and previews.)
  */
-export const FEEDBACK_EMAIL = '';
+export const FEEDBACK_EMAIL = 'jason@stragentic.com';
 
 export const feedbackEmail = (search: string = typeof location === 'undefined' ? '' : location.search): string => {
   const test = new URLSearchParams(search).get('feedback') ?? '';

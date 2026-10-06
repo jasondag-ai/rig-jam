@@ -631,7 +631,7 @@ something, give exact clicks and one command at a time.
   copy, and a Copy button that copies the address with the app version, the phone
   (`phoneModel`, from the user agent) with its screen size, and the level last opened
   (`rememberLevel`, its own storage key). No accounts, no links, no forms. THE ADDRESS IS ONE
-  CONSTANT, `FEEDBACK_EMAIL`: while it is empty the row is not shown. `?feedback=a@b.c` shows it
+  CONSTANT, `FEEDBACK_EMAIL` (jason@stragentic.com): if it is empty the row is not shown. `?feedback=a@b.c` shows it
   with that address (tests).
 - FIRST RUN: a brand-new player (no level cleared, no Daily Pad, demo off) goes from the cover's
   one tap STRAIGHT INTO LEVEL 1, which teaches itself with the ghost finger; everyone else gets
