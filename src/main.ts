@@ -25,7 +25,8 @@ import { onTap } from './ui/tap.ts';
 import { shouldShowCover, showCover } from './ui/cover.ts';
 import { applyUiArt, uiImg } from './ui/ui-art.ts';
 import { preloadSprites } from './ui/sprites.ts';
-import { LOG_ENTRIES, applyCamo, cardHint, complete, foundCount, loadLog, saveLog, type Sighting } from './ui/wildlife-log.ts';
+import { LOG_ENTRIES, applyCamo, cardHint, complete, foundCount, loadLog, previewAll, recordDig, saveLog, sightingToast, type Sighting } from './ui/wildlife-log.ts';
+import { clockText, dugStill } from './ui/log-deep.ts';
 import { PREVIEWS, type GagId } from './ui/gag-triggers.ts';
 import { workerStill } from './ui/worker.ts';
 import { mountDig } from './ui/log-dig-view.ts';
@@ -47,6 +48,7 @@ const BINOCULARS = uiImg('icon_binoculars');
 
 /** Card art for each Wildlife Log entry: a still of the gag's own puppet (found: in color; not yet: a dark silhouette). */
 const LOG_ART: Record<Sighting, () => string> = {
+  dug: () => dugStill(),
   // Wave 3 (wave3.ts): the puppets at one moment, cut close.
   muskeg: () => wave3Still('muskeg', 3.1, [102, 76, 112, 90], MUSKEG),
   cattrain: () => wave3Still('catTrain', 9.4, [204, 92, 96, 66]),
@@ -407,7 +409,8 @@ function showLog(regionIndex: number): void {
     fitArt(li.querySelector<HTMLElement>('.art')!);
     li.querySelector('h2')!.textContent = found ? e.name : '???';
     // Easter eggs: demo mode shows how to find each one; the game keeps it a secret.
-    li.querySelector('p')!.textContent = found ? e.caption : cardHint(e, demo);
+    // (Dug Through shows the player's best time through the Earth.)
+    li.querySelector('p')!.textContent = found ? (e.id === 'dug' && log.dug ? `Best time ${clockText(log.dug)}` : e.caption) : cardHint(e, demo);
     cards.push(li);
   }
   screen.querySelector('.log-reward')!.textContent = demo
@@ -419,7 +422,33 @@ function showLog(regionIndex: number): void {
         : `Easter eggs. Find all ${entries.length} to unlock camo pickups.`;
   // The deep dig: the cards stand over one continuous cross-section down to the oil (log-dig.ts).
   const progress = loadProgress();
-  const dig = mountDig(cards, screen.querySelector<HTMLElement>('.log-reward')!, (id) => regionOpen(REGIONS, REGIONS.findIndex((r) => r.id === id), progress.best, progress.demo));
+  // Scrolled from the grass right through the Earth to Kerguelen: Dug Through is found (it counts
+  // toward the camo like any entry), this dig's time is shown on its card and the best one kept.
+  const arrived = (ms: number): void => {
+    const time = clockText(ms);
+    if (previewAll(location.search)) return void toast(`Dug through in ${time}`);
+    const r = recordDig(loadLog(demo), ms);
+    saveLog(r.log, demo);
+    const card = cards.find((c) => c.dataset.id === 'dug');
+    if (card) {
+      card.classList.replace('unfound', 'found');
+      card.querySelector('h2')!.textContent = 'Dug Through';
+      card.querySelector('p')!.textContent = r.newBest ? `Best time ${time}` : `${time} this dig. Best ${clockText(r.best)}`;
+    }
+    if (r.isNew) {
+      const count = screen.querySelector('.log-count')!;
+      count.textContent = `${r.count}/${entries.length}`;
+      count.setAttribute('aria-label', `${r.count} of ${entries.length} found`);
+      void toast(sightingToast('dug', r.count, demo));
+      void toast(`Dug through in ${time}`);
+      if (r.completed && demo) void toast('Demo log complete!', { sub: 'Your real log is unchanged', big: true, ms: 3200 });
+      else if (r.completed) {
+        void toast('Wildlife Log complete!', { sub: log.camoEarned ? 'Every sighting found' : 'Camo pickups unlocked', big: true, ms: 3200 });
+        applyCamo(r.log);
+      }
+    } else void toast(r.newBest ? `Dug through in ${time}. New best!` : `Dug through in ${time}. Best ${clockText(r.best)}.`);
+  };
+  const dig = mountDig(cards, screen.querySelector<HTMLElement>('.log-reward')!, (id) => regionOpen(REGIONS, REGIONS.findIndex((r) => r.id === id), progress.best, progress.demo), arrived);
   screen.append(dig.el);
   onTap(screen.querySelector('.log-head')!, '.back', () => showLevels(regionIndex));
   app.replaceChildren(screen);

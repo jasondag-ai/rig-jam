@@ -667,7 +667,7 @@ something, give exact clicks and one command at a time.
   crossfades want an ear check on a phone.
 
 ## Wildlife Log
-- `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game plus Night Shift (27: the four Mannville gags and the four Bakken gags of wave 3 come after Tourists;
+- `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game plus Night Shift (28: the four Mannville gags and the four Bakken gags of wave 3 come after Tourists, and Dug Through, which is not a gag, comes before the Bear;
   Magpie, Sleepy Worker, Moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll,
   Marshmallow, Lost Goose, Porcupine, Gopher Lunch, Safety Sam, Frozen Tongue, Surveyor, Back
   Scratcher, Tourists, Night Shift, Bull and Cow, Bear),
@@ -699,7 +699,7 @@ something, give exact clicks and one command at a time.
   grass, topsoil, glacial till, badlands, Cardium, Mannville (coal seams), Montney, Bakken,
   Duvernay shale, reef reservoir with oil (`FORMATIONS`, in that order). The cards stand in groups
   of four (`GROUP`); after each group a WINDOW (`.dig-window`) opens on the formation at that depth,
-  and below the last card the section keeps going down to the reef, where the page ends. A
+  and below the last card the section keeps going down to the reef (and on through the Earth: Log v3 below). A
   wellbore runs from a wellhead on the grass, down the gutter between the two columns of cards,
   into the reservoir. `mountDig` measures where each window ends and draws the layers to match
   (again whenever the column changes size). Each formation has a pill (`.dig-pill`); a region's
@@ -717,6 +717,28 @@ something, give exact clicks and one command at a time.
   `npm run test:e2e:dig` checks it in WebKit (pixels of the margin at every depth included) and the
   frame rate in Chromium at 4x throttle, 390 and 375 wide. The lines are Jay's own (Oct 6). The oil pool itself is a
   tap target too (`.dig-oil`): it says `BURIED_LINES.reservoir`.
+- LOG v3, THE DIG GOES RIGHT THROUGH (Jay, Oct 6; `src/ui/log-deep.ts` pure and tested, put on the
+  page by `log-dig-view.ts`): below the reef the section continues through the whole Earth and out
+  at Alberta's opposite point: basement granite, mantle, outer core, inner core (the CENTRE OF THE
+  EARTH is the dashed line across its middle), then mirrored back up: outer core, mantle, ocean
+  crust, seafloor, the Southern Ocean, the surface at the Kerguelen Islands (`DEEP`, about 8,000
+  px: the log is about 11,800 px tall). THE FAR SIDE IS UPSIDE DOWN (we come up underneath it):
+  its seabed is above its sea, the island hangs from the waterline with a king penguin and an
+  elephant seal on it, the sky and clouds below; the page ends there. Each deep layer is ITS OWN
+  small static SVG (`deepSvg`, seeded, flat, under 420 shapes; the mirrored two are the same
+  drawing turned over), never one huge picture; only `.deep-glow` lights (opacity) move.
+  - DEPTH GAUGE (`.dig-gauge`, a sticky rail in the column, the pill on the right): real km at a
+    line that moves from the screen's top (page top) to its foot (page end) as the page scrolls
+    (`gaugeLine`), read off marks at every layer's end (`marksFrom`, `depthKm`; `UPPER_KM` for the
+    upper formations): 0 at the grass, 6,371 at the centre, 12,742 at Kerguelen (`kmText`).
+  - STOPWATCH (`.dig-clock`, under the depth): starts on the first scroll down past the grass,
+    stops on reaching the end of the page; back at the very top it is ready again. Arriving calls
+    `arrived` (main.ts): `recordDig` finds the log entry DUG THROUGH (`dug`, the 28th: it counts
+    toward the camo like any entry), keeps the BEST time in the log (`WildlifeLog.dug`, ms; the
+    demo log has its own), and the card shows "Best time m:ss.t" (or "x this dig. Best y").
+  - ODDITIES (`ODDITIES`, same tap rules and bubble as the buried things; lines in
+    `BURIED_LINES`): a diamond in the mantle, a lost lunchbox at the very centre, a whale in the
+    Southern Ocean (belly up to us).
 - CAMO PICKUPS keep their gate colour (Log v2): the reward is the pickup's own sprite in camo,
   `pickup-<colour>-camo(@2x).webp`, blotches of a deep shade and a pale tint of ITS OWN gate colour
   baked by `tools/truck-sprites.py` (`camo`, `CAMO_DARK` / `CAMO_LIGHT`), measured into

@@ -3671,9 +3671,8 @@ canvas.berm-night { opacity: 0; transition: opacity var(--night-out) ease-in-out
   overflow: visible; /* the wellhead stands up out of the grass */
 }
 
-/* The log ends in the reservoir: no strip of grass under the oil. */
+/* The log ends at the far side of the Earth: no strip of grass under the Kerguelen sky. */
 .screen.log { padding-bottom: 0; }
-.dig-window[data-layer='reef'] { box-sizing: content-box; padding-bottom: var(--safe-bottom); }
 
 .dig-col .log-cards {
   position: relative;
@@ -3916,4 +3915,73 @@ svg.dig-tunnel {
 
 @media (prefers-reduced-motion: reduce) {
   .scene-front svg.scene-svg.shake { animation: none; }
+}
+
+/* ---------- Log v3: the dig goes right through the Earth (log-deep.ts) ----------
+   One block a layer, each with its own small static drawing (a very long page must never paint one
+   huge picture). The far side is upside down: we come up underneath it. */
+.dig-deep {
+  position: relative;
+}
+
+.deep-layer {
+  position: relative;
+  overflow: hidden;
+}
+
+.deep-layer[data-layer='kerguelen'] { box-sizing: content-box; padding-bottom: var(--safe-bottom); background: #bfe3f2; }
+
+.deep-art-slot,
+.deep-art-slot svg.deep-art {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  pointer-events: none;
+}
+
+.deep-layer .dig-pill { left: var(--dig-left, 16px); }
+/* The centre of the Earth: its own pill on the dashed line across the inner core's middle. */
+.deep-layer .dig-pill.centre { top: calc(50% - 13px); background: var(--accent); }
+
+/* The mantle and the outer core glow. */
+.oil-glint.deep-glow {
+  background: radial-gradient(circle, rgba(255, 236, 160, 0.85) 0 16%, rgba(255, 190, 80, 0.45) 42%, rgba(255, 190, 80, 0) 70%);
+  animation-duration: 4.6s;
+}
+
+/* The depth gauge: a small pill riding down the right side of the screen, real km; under it the
+   stopwatch once the dig has begun. A sticky rail of no height inside the column. */
+.dig-gauge {
+  position: sticky;
+  top: 46%;
+  z-index: 6;
+  height: 0;
+  pointer-events: none;
+}
+
+.dig-gauge-pill {
+  position: absolute;
+  right: -10px;
+  top: 0;
+  display: grid;
+  justify-items: end;
+  gap: 1px;
+  min-width: 74px;
+  padding: 3px 9px 4px;
+  border: 2.5px solid var(--outline);
+  border-radius: 12px;
+  background: var(--cream);
+  color: var(--ink);
+  box-shadow: 0 3px 0 var(--outline);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.dig-depth { font-size: 14px; font-weight: 700; white-space: nowrap; }
+.dig-clock { font-size: 12px; font-style: normal; font-weight: 600; color: var(--ink-dim); white-space: nowrap; }
+.dig-clock.final { color: #1f7a3d; font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+  .oil-glint.deep-glow { animation: none; opacity: 0.6; }
 }
