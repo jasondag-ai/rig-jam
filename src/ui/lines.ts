@@ -186,6 +186,28 @@ export function fromPool(pool: readonly string[], random: () => number = Math.ra
 }
 
 /**
+ * BURIED THINGS in the Wildlife Log's dig (log-dig.ts): tap one and it wiggles and says its line.
+ * ONE LINE each: 40 characters at most, so the bubble never wraps on a phone. (Written to stand in until Jay's own list arrives: edit freely.)
+ */
+export const BURIED_LINES = {
+  keys: "So that's where the truck keys went.",
+  remote: "Batteries dead since '94.",
+  sock: 'The other one is still in the dryer.',
+  golf: 'Sliced it clean off the ninth tee.',
+  den: 'Nice place. He kept the crust.',
+  phone: 'Three missed calls. All dispatch.',
+  chest: 'Wrong province for pirates.',
+  tusk: 'Do not load this on the picker.',
+  plane: 'Twin engine, no pilot. Say nothing.',
+  dino: 'Albertosaurus. Not on the lease map.',
+  egg: 'Not today.',
+  plesiosaur: 'This was all ocean once. He misses it.',
+  ammonite: 'Ammonite. Still rolled up tight.',
+  bit: 'Lost in hole. Fishing is going great.',
+  trilobite: 'Older than the Company Man.',
+} as const;
+
+/**
  * WITNESS LINES: while a gag is on screen, the player's next move makes that truck's driver say
  * the gag's line. Once per gag per level. Keyed by the gag's id (gag-triggers.ts `GagId`).
  */
