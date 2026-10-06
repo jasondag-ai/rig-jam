@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DIG_FINDS, DIG_SLOTS, QUIET_SCREENS } from './dig-finds.ts';
-import { DEEP, DIG, EARTH, ODDITIES, SURFACE_PX, UPPER_KM, clockText, depthKm, dugStill, gaugeLine, kerguelenSvg, kmText, layerAt, layerBackground, layerEdge, layerTop, marksFrom, oddityArt, oddityBox, seabedSvg, tileSvg, tilesIn, tilesNear } from './log-deep.ts';
+import { DEEP, DIG, EARTH, ODDITIES, SURFACE_PX, UPPER_KM, clockText, depthKm, dugStill, gaugeLine, kerguelenSvg, kmText, layerAt, layerBackground, layerEdge, layerTop, marksFrom, oddityArt, oddityBox, seabedSvg, tileSvg, tilesIn, tilesNear, SWIPE_SHARE, SwipeCount } from './log-deep.ts';
 import { FORMATIONS } from './log-dig.ts';
 import { BURIED_LINES } from './lines.ts';
 import { LOG_ENTRIES, complete, parseLog, record, recordDig, shownEntries, type Sighting } from './wildlife-log.ts';
@@ -253,5 +253,43 @@ describe('finds in the dirt (dig-finds.ts)', () => {
       expect(p.x).toBeGreaterThanOrEqual(0.2);
       expect(p.x).toBeLessThanOrEqual(0.82);
     }
+  });
+});
+
+describe('the dig counts swipes honestly', () => {
+  it('a gesture counts only once it has moved the page a quarter of a screen; taps never count', () => {
+    const s = new SwipeCount();
+    expect(SWIPE_SHARE).toBe(0.25);
+    // A tap: a finger down and up, the page where it was.
+    s.begin(100); s.moved(100, 844);
+    expect(s.count).toBe(0);
+    // A touch that nudges the page a little.
+    s.begin(100); s.moved(160, 844); s.moved(300, 844);
+    expect(s.count).toBe(0);
+    // A real swipe, with its fling: counted once, however far it carries.
+    s.begin(300); s.moved(400, 844); s.moved(511, 844);
+    expect(s.count).toBe(1);
+    s.moved(2000, 844); s.moved(9000, 844);
+    expect(s.count).toBe(1);
+    // Five taps on the way: still one.
+    for (let i = 0; i < 5; i++) { s.begin(9000); s.moved(9000, 844); }
+    expect(s.count).toBe(1);
+    // A swipe back up counts too.
+    s.begin(9000); s.moved(8700, 844);
+    expect(s.count).toBe(2);
+  });
+
+  it('the page moving by itself (no finger, no wheel) is nobody\'s swipe; the stopwatch starting keeps the swipe in hand', () => {
+    const s = new SwipeCount();
+    s.moved(5000, 844);
+    expect(s.count).toBe(0);
+    // The swipe that starts the stopwatch: it began at the top, the clock started a few px down, it counts once it has gone far enough.
+    s.begin(0); s.moved(8, 844); s.restart(); s.moved(90, 844);
+    expect(s.count).toBe(0);
+    s.moved(260, 844);
+    expect(s.count).toBe(1);
+    // Starting over forgets earlier swipes.
+    s.restart();
+    expect(s.count).toBe(0);
   });
 });

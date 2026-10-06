@@ -108,6 +108,37 @@ export function kmText(km: number): string {
 }
 
 /** The stopwatch: minutes, seconds and tenths ("0:07.4", "12:03.9"). */
+/**
+ * SWIPES, counted honestly: a gesture (a finger put down, or a burst of the mouse wheel) is a
+ * swipe only once THAT gesture has moved the page at least a quarter of a screen, its fling
+ * included. A plain tap, a touch that scrolls a few pixels, a finger resting on the page: none
+ * of those count. Pure: the page tells it when a gesture begins and where the page is.
+ */
+export const SWIPE_SHARE = 0.25;
+export class SwipeCount {
+  count = 0;
+  private from: number | null = null;
+  private counted = false;
+  /** A finger went down (or the wheel started turning) with the page at `scrollTop`. */
+  begin(scrollTop: number): void {
+    this.from = scrollTop;
+    this.counted = false;
+  }
+  /** The page is now at `scrollTop` on a screen `screenH` px tall. */
+  moved(scrollTop: number, screenH: number): void {
+    if (this.from === null || this.counted || !(screenH > 0)) return;
+    if (Math.abs(scrollTop - this.from) >= screenH * SWIPE_SHARE) {
+      this.count++;
+      this.counted = true;
+    }
+  }
+  /** The stopwatch starts: the count starts over (the swipe in hand may still earn its count). */
+  restart(): void {
+    this.count = 0;
+    this.counted = false;
+  }
+}
+
 export function clockText(ms: number): string {
   const t = Math.max(0, Math.floor(ms / 100));
   return `${Math.floor(t / 600)}:${String(Math.floor(t / 10) % 60).padStart(2, '0')}.${t % 10}`;

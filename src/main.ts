@@ -159,7 +159,7 @@ function showLevels(requested = savedRegion()): void {
       ${Object.keys(progress.best).length ? '' : '<p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>'}
     </header>
     <div class="daily-block"></div>
-    <div class="regions"><div class="regions-track" role="tablist"></div></div>
+    <div class="regions"><div class="regions-track" role="tablist"></div><svg class="regions-more" viewBox="0 0 12 18" aria-hidden="true"><path d="M3 3 L9 9 L3 15"/></svg></div>
     <p class="region-blurb"></p>
     <ol class="level-list"></ol>
     <p class="hint-balance">Hints left: <strong>${progress.hints}</strong> · clear a level at par to earn one</p>`;

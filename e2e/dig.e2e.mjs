@@ -220,12 +220,13 @@ console.log('\nwebkit 390x844: the depth gauge, the stopwatch and Dug Through');
   const gone = await page.evaluate(() => document.querySelector('.dig-arrival').hidden);
   await swipe();
   await at(300);
-  for (let i = 0; i < 4; i++) await swipe();
+  // Four more real swipes (each moves the page well over a quarter of a screen), with plain taps between them: the taps never count.
+  for (let i = 0; i < 4; i++) { await swipe(); await swipe(); await swipe(); await at(300 + (i + 1) * 500); }
   await wait(first.dug + 900);
   const slow = await at('end');
   await wait(300);
   const kept = await card();
-  check(again.clock === null && slow.final && kept.dug === first.dug && kept.swipes === 3 && kept.title === 'Dug Through!' && kept.lines.join('|') === `5 swipes in ${slow.clock}|Best: 3 swipes, ${end.clock}`, `a slower dig keeps the best: "${kept.lines.join('" "')}"`);
+  check(again.clock === null && slow.final && kept.dug === first.dug && kept.swipes === 3 && kept.title === 'Dug Through!' && kept.lines.join('|') === `5 swipes in ${slow.clock}|Best: 3 swipes, ${end.clock}`, `(13 touches, 5 of them swipes) a slower dig keeps the best: "${kept.lines.join('" "')}"`);
   await at(0);
   await wait(1700);
   await swipe();

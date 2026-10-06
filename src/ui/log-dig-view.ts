@@ -2,7 +2,7 @@
 // four with a window on the formation between the groups, the strata drawn behind everything
 // once the page is laid out, the formation pills, the buried objects and what they say.
 import { BETWEEN, BURIED, FORMATIONS, GLINTS, GRASS, GROUP, buriedArt, buriedBox, layersFrom, pillLocked, strataSvg, tunnelSvg, type FormationId } from './log-dig.ts';
-import { DEEP as DEEP_LAYERS, DIG, ODDITIES, clockText, depthKm, gaugeLine, kerguelenSvg, kmText, layerBackground, layerEdge, marksFrom, oddityArt, oddityBox, seabedSvg, tileSvg, tilesNear, type DeepId, type Mark } from './log-deep.ts';
+import { SwipeCount, DEEP as DEEP_LAYERS, DIG, ODDITIES, clockText, depthKm, gaugeLine, kerguelenSvg, kmText, layerBackground, layerEdge, marksFrom, oddityArt, oddityBox, seabedSvg, tileSvg, tilesNear, type DeepId, type Mark } from './log-deep.ts';
 import { BURIED_LINES } from './lines.ts';
 import { onTap } from './tap.ts';
 import { confettiBurst } from './confetti.ts';
@@ -172,8 +172,9 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
   // past the grass and stops on reaching the end; back at the very top it is ready to go again.
   const depthEl = col.querySelector<HTMLElement>('.dig-depth')!, clockEl = col.querySelector<HTMLElement>('.dig-clock')!;
   let frame = 0, started = 0, done = false, ticker = 0, shown = '';
-  // Swipes: every finger put down on the page (or burst of the mouse wheel) while the dig is timed.
-  let gestures = 0, lastGesture = -1e9, lastWheel = -1e9, fromGesture = 0;
+  // Swipes while the dig is timed: a gesture counts only once it has moved the page a quarter of a screen (log-deep.ts `SwipeCount`).
+  const swipes = new SwipeCount();
+  let lastWheel = -1e9;
   const arrival = col.querySelector<HTMLElement>('.dig-arrival');
   const scroller = () => col.closest<HTMLElement>('.screen');
   function update(): void {
@@ -190,21 +191,22 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
     const now = performance.now();
     if (!started && !done && top > 0 && km > 0) {
       started = now;
-      // (The swipe that set it off counts.)
-      fromGesture = gestures - (now - lastGesture < 1500 ? 1 : 0);
+      // (The swipe that set it off counts, once it has moved the page far enough.)
+      swipes.restart();
       if (arrival) arrival.hidden = true;
       clockEl.hidden = false;
       clockEl.classList.remove('final');
       clockEl.textContent = clockText(0);
       ticker = window.setInterval(() => { if (started && !done) clockEl.textContent = clockText(performance.now() - started); }, 100);
     }
+    swipes.moved(top, sc.clientHeight);
     if (started && !done && max > 0 && top >= max - 1) {
       done = true;
       window.clearInterval(ticker);
       const ms = now - started;
       clockEl.textContent = clockText(ms);
       clockEl.classList.add('final');
-      const card = onArrive(ms, Math.max(1, gestures - fromGesture));
+      const card = onArrive(ms, Math.max(1, swipes.count));
       if (arrival && card) {
         arrival.innerHTML = `<b></b>${card.lines.map(() => '<span></span>').join('')}`;
         arrival.querySelector('b')!.textContent = card.title;
@@ -241,8 +243,8 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
     const sc = scroller();
     if (!sc || sc === listening) return;
     (listening = sc).addEventListener('scroll', onScroll, { passive: true });
-    sc.addEventListener('touchstart', () => { gestures++; lastGesture = performance.now(); }, { passive: true });
-    sc.addEventListener('wheel', () => { const now = performance.now(); if (now - lastWheel > 220) { gestures++; lastGesture = now; } lastWheel = now; }, { passive: true });
+    sc.addEventListener('touchstart', () => swipes.begin(sc.scrollTop), { passive: true });
+    sc.addEventListener('wheel', () => { const now = performance.now(); if (now - lastWheel > 220) swipes.begin(sc.scrollTop); lastWheel = now; }, { passive: true });
   };
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { listen(); layout(); }).observe(col);
 

@@ -305,7 +305,24 @@ input,
 }
 
 .regions::before { left: 0; background: linear-gradient(to right, var(--cream) 10%, rgba(255, 247, 230, 0)); }
-.regions::after { right: 0; background: linear-gradient(to left, var(--cream) 10%, rgba(255, 247, 230, 0)); }
+/* THE RIGHT EDGE SAYS "MORE THIS WAY": the peeking tab's name is cut by the frame, so it melts
+   into a wide soft fade with a small chevron on it, instead of ending in half a word. */
+.regions::after { right: 0; width: 46px; background: linear-gradient(to left, var(--cream) 34%, rgba(255, 247, 230, 0.86) 58%, rgba(255, 247, 230, 0)); }
+.regions-more {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  z-index: 2;
+  width: 12px;
+  height: 18px;
+  margin-top: -9px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms;
+}
+.regions-more path { fill: none; stroke: var(--ink); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.regions.more-right .regions-more { opacity: 0.8; }
+.regions.all-fit .regions-more { display: none; }
 .regions.more-left::before,
 .regions.more-right::after { opacity: 0.92; }
 
@@ -4143,7 +4160,8 @@ svg.dig-tunnel {
 
 @media (prefers-reduced-motion: reduce) {
   .regions::before,
-  .regions::after { transition: none; }
+  .regions::after,
+  .regions-more { transition: none; }
 }
 
 /* The dig's arrival: the hard-hat confetti over the whole page (never over a tap: it takes none). */
@@ -4187,6 +4205,13 @@ svg.dig-tunnel {
 }
 body:has(.screen.game) .update-bar,
 body:has(.screen.cover) .update-bar { display: none; }
+/* THE BAR HAS ITS OWN ROOM: while it shows, every screen it shows over (and any panel open over
+   that screen) starts below it, so it never lies over the header's buttons. `--bar-room` is the
+   bar's height and the gap under it. */
+body:has(.update-bar):not(:has(.screen.game)):not(:has(.screen.cover)) { --bar-room: 66px; }
+body:has(.update-bar) .screen:not(.game):not(.cover) { padding-top: calc(max(12px, var(--safe-top)) + var(--bar-room, 0px)); }
+body:has(.update-bar) .overlay { padding-top: calc(max(16px, var(--safe-top)) + var(--bar-room, 0px)); }
+body:has(.update-bar) .toast { margin-top: var(--bar-room, 0px); }
 
 /* Settings: the feedback row and the version at the very bottom. */
 .settings .feedback {
