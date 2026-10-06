@@ -167,27 +167,52 @@ const tripodLegs = (spread) => { const feet = [[20 - 15*spread, 108], [20, 106 -
 
 export const SURVEY_BEATS = [[0,'just-the-sign','Just the lease sign'],[.3,'walks-in','A surveyor walks in from the near edge, tripod in hand'],[2.3,'plants-tripod','Plants the tripod and spreads its legs'],[2.9,'sights','Sights the sign through the instrument. Squints'],[4.0,'looks-again','Pulls back, blinks, looks again'],[4.6,'off-a-metre','"Off a metre."'],[5.2,'marches-over','Marches over and grabs the sign'],[6.4,'yanks','Yanks it out of the ground. Dirt flies'],[6.8,'moves-it','Shuffles it a metre over and plants it. Thunk'],[7.9,'heads-back','Hop-turns and heads back to the tripod'],[8.9,'sights-again','Sights it again. Long pause'],[9.6,'huh','Taps the instrument. "Huh."'],[10.4,'pulls-it-up','Marches back, pulls the sign up again'],[11.3,'carries-back','Carries it back to exactly where it was'],[12.0,'stamps','Plants it, stamps the dirt down'],[12.8,'perfect','Dusts his hands. "Perfect."'],[13.4,'folds-tripod','Folds up the tripod'],[14.9,'walks-off','Walks off the way he came. Just the sign again']];
 export const SURVEY_END = 17.1;
-/** When he plants the tripod and when he picks it up again (s), where it stands (his units from the sign), and how long it takes to pass between hand and ground. */
-export const T_PLANT = 2.3, T_PICKUP = 14.9, TRI_AT = -70, TRI_BLEND = 0.2;
+/** THE TRIPOD IS PART OF HIS HAND. Carried, it is drawn inside his front forearm's own group, so
+    it goes wherever the glove goes with no measuring and no tween of its own. It changes hands
+    with the ground only at an instant when the two drawings are the same by arithmetic: he stands
+    in the HOLD pose with the folded tripod upright and its feet on the ground at `TRI_AT`.
+    `T_PLANT` / `T_PICKUP`: those two instants (s). `TRI_AT`: where it stands (his units from the sign). */
+export const T_PLANT = 2.45, T_PICKUP = 14.85, TRI_AT = -70;
+/** His front arm when he sets the tripod down or takes it up, and when he carries it; the carried tripod's lean (degrees, toward the way he faces). */
+export const HOLD = {arF:0, foF:-20}, CARRY = {arF:-25, foF:-55}, CARRY_LEAN = 9;
+/** His front glove in his own drawing (120 box, facing right, standing straight), from the arm's two angles. */
+export const gloveAt = (arF, foF) => { const a = arF*Math.PI/180, b = (arF+foF)*Math.PI/180; return {x: 70 - 12*Math.sin(a) - 13*Math.sin(b), y: 56 + 12*Math.cos(a) + 13*Math.cos(b)}; };
+const HOLD_AT = gloveAt(HOLD.arF, HOLD.foF);
+/** Where on the tripod's own drawing the glove grips it: with the HOLD pose its feet (y 108) are on his ground line. */
+export const GRIP = {x:20, y:HOLD_AT.y};
+/** Where he stands to set it down (facing the sign) and to take it up (facing away), so the glove is right on the standing tripod. */
+export const PLANT_DX = TRI_AT - (HOLD_AT.x - 60), PICK_DX = TRI_AT + (HOLD_AT.x - 60);
+/** Where the carried tripod is, from his pose alone (his units from the sign; `foot` above the ground): what the tests check against the standing one. */
+export function heldTripod(w, lean = 0){ const g = gloveAt(w.arF, w.foF), r = lean*Math.PI/180, fy = 108 - GRIP.y;
+  return {x: w.dx + (g.x - 60 - Math.sin(r)*fy)*w.face, foot: 108 - (g.y + w.y + Math.cos(r)*fy)}; }
 /** What he says, and when (the reference's `say`). */
 export const SURVEY_LINES = [{from:4.6, to:5.2, text:'Off a metre.'}, {from:9.9, to:10.4, text:'Huh.'}, {from:12.8, to:13.4, text:'Perfect.'}];
 export function surveyScene(stage, frame, sign, f, spot, mirror){
   const sc = stageOf(stage, frame, sign, f, spot, mirror);
+  // The standing tripod: its own drawing, put on its spot once and never moved.
   sc.tri = z(makePup(stage, TRIPOD, {vw:40, vh:110, ax:20, ay:108, frac:.19*f*40/120, spot}), 4);
   sc.man = z(makePup(stage, WORKER, {vw:120, vh:120, ax:60, ay:108, frac:.19*f, spot}), 5);
+  // The carried tripod: the same drawing, folded, inside his front forearm (under the glove that grips it).
+  sc.man.q('.armF .fore').insertAdjacentHTML('afterbegin', `<g class="held" style="display:none">${TRIPOD}</g>`);
+  sc.held = sc.man.q('.armF .fore .held'); sc.held.querySelector('.legs').innerHTML = tripodLegs(0);
   dress(sc.man, {top:'#c9b07a', shade:'#ad9560', vest:'#f07f2a', pants:'#6d6a4f', hardHat:'#f7f7f2', hardHat2:'#ffffff', beard:false, moustache:'#7a4f2e'});
   sc.ov = overlay(stage);
   return sc;
 }
 /** The pose at a time. `off`: how far from the sign (his units) he is fully off the near edge (the reference: 330). */
 export function surveyPose(t, off = 330){
-    const w = base(); let tri = {mode:'carry', dx:-70, spread:0}, sg = {dx:0, lift:0, puff:-1, puffX:0}, say = null;
-    const SCOPE = -95, GRAB1 = -44, GRAB2 = -59, TRI = -70;
+    const w = base(); let tri = {mode:'hand', spread:0, lean:CARRY_LEAN}, sg = {dx:0, lift:0, puff:-1, puffX:0}, say = null;
+    const SCOPE = -95, GRAB1 = -44, GRAB2 = -59;
+    const carry = (o) => { o.arF = CARRY.arF; o.foF = CARRY.foF; };
     const look = (o) => { o.dx = SCOPE; o.rot = 7; o.head = 6; o.px = 74.2; o.py = 34; o.arF = -60; o.foF = -40; o.arB = -40; o.foB = -50; };
     const grab = (o) => { o.arF = -84; o.arB = -84; o.foF = -10; o.foB = -10; };
     if (t < .3){ w.show = false; tri.mode = 'hidden'; }
-    else if (t < 2.3){ const k = seg(t,.3,2.3); w.dx = lerp(-off, SCOPE + 8, k < .88 ? k/.88*.97 : .97 + ease((k-.88)/.12)*.03); walkP(w, t, 1.8, 22); w.arF = -18; w.foF = -30; }
-    else if (t < 2.9){ const k = ease(seg(t,2.3,2.7)); w.dx = SCOPE + 8; w.arF = lerp(-18, -55, k); w.foF = -30; w.rot = 4*k; tri.mode = 'stand'; tri.spread = ease(seg(t,2.45,2.85)); tri.bounce = Math.sin(seg(t,2.75,2.9)*Math.PI)*2; }
+    else if (t < 2.3){ const k = seg(t,.3,2.3); w.dx = lerp(-off, PLANT_DX, k < .88 ? k/.88*.97 : .97 + ease((k-.88)/.12)*.03); walkP(w, t, 1.8, 22); carry(w); }
+    else if (t < T_PLANT){ const k = ease(seg(t,2.3,T_PLANT - .03)), a = base(); walkP(a, 2.3, 1.8, 22);            // stops; lowers it, in his hand, until its feet are on the ground
+      w.dx = PLANT_DX; w.y = a.y*(1-k); w.hatY = a.hatY*(1-k); w.thB = a.thB*(1-k); w.thF = a.thF*(1-k); w.shB = a.shB*(1-k); w.shF = a.shF*(1-k); w.arB = a.arB*(1-k);
+      w.arF = lerp(CARRY.arF, HOLD.arF, k); w.foF = lerp(CARRY.foF, HOLD.foF, k); tri.lean = CARRY_LEAN*(1-k); }
+    else if (t < 2.9){ const k = ease(seg(t,2.55,2.9)); w.dx = lerp(PLANT_DX, SCOPE, k); w.arF = HOLD.arF; w.foF = HOLD.foF; w.rot = 4*k;            // it stands; he spreads its legs and steps back to the eyepiece
+      w.thB = Math.sin(k*Math.PI*2)*8; w.thF = -w.thB; tri.mode = 'stand'; tri.spread = ease(seg(t,T_PLANT,2.85)); }
     else if (t < 4.0){ look(w); w.lid = 'M65 26 L75 26 L75 34 L65 34 Z'; w.brow = 'M65 26 Q70 24.5 76 25.5'; tri.mode = 'stand'; tri.spread = 1; }
     else if (t < 4.6){ tri.mode = 'stand'; tri.spread = 1; if (t < 4.2){ w.dx = SCOPE; w.rot = 0; w.head = 0; w.px = 72; w.lid = t < 4.1 ? 'M65 27 L75 27 L75 38 L65 38 Z' : 'M65 28 L75 28 L75 29 L65 29 Z'; w.brow = 'M65 23 Q70 21 76 23'; } else { look(w); w.lid = 'M65 26 L75 26 L75 34 L65 34 Z'; } }
     else if (t < 5.2){ w.dx = SCOPE; tri.mode = 'stand'; tri.spread = 1; w.px = 74.2; w.brow = 'M65 25.5 Q70 24 76 25.5'; w.mouth = 'M65 47.5 L71 47.5'; w.arF = -100; w.foF = -110; say = 'Off a metre.'; }   // hand to chin
@@ -209,9 +234,10 @@ export function surveyPose(t, off = 330){
     else if (t < 12.8){ w.dx = GRAB1; const s = Math.max(0, Math.sin((t-12.3)*Math.PI*4)); w.thF = -30*s; w.shF = 30*s; w.y = -s*1.5; tri.mode = 'stand'; tri.spread = 1; sg.puff = t < 12.5 ? seg(t,12.12,12.5) : seg(t,12.55,12.8); w.brow = 'M65 25.5 Q70 24 76 25.5'; }   // stamps the dirt down
     else if (t < 13.4){ w.dx = GRAB1; tri.mode = 'stand'; tri.spread = 1; w.px = 74.2; w.arF = -70 + Math.sin(t*28)*10; w.foF = -60; w.arB = -60 + Math.sin(t*28 + 1)*10; w.foB = -60; w.mouth = 'M64 46.5 Q68 49.5 72 46.5'; w.lid = 'M65 27 Q70 30 75 27 L75 33 L65 33 Z'; say = 'Perfect.'; }
     else if (t < 13.6){ w.dx = GRAB1; hop(w, seg(t,13.4,13.6), 1, -1); tri.mode = 'stand'; tri.spread = 1; }
-    else if (t < 14.4){ const k = seg(t,13.6,14.4); w.face = -1; w.dx = lerp(GRAB1, TRI + 14, k); walkP(w, t, 1.8, 20); tri.mode = 'stand'; tri.spread = 1; }
-    else if (t < 14.9){ w.face = -1; w.dx = TRI + 14; w.arF = -55; w.foF = -30; tri.mode = 'stand'; tri.spread = 1 - ease(seg(t,14.5,14.85)); }
-    else if (t < 16.9){ const k = seg(t,14.9,16.9); w.face = -1; w.dx = lerp(TRI + 14, -(off + 70), k); walkP(w, t, 1.8, 22); w.arF = -18; w.foF = -30; tri.mode = 'carry'; }
+    else if (t < 14.4){ const k = seg(t,13.6,14.4); w.face = -1; w.dx = lerp(GRAB1, PICK_DX, k); walkP(w, t, 1.8, 20); tri.mode = 'stand'; tri.spread = 1; }
+    else if (t < T_PICKUP){ w.face = -1; w.dx = PICK_DX; w.arF = HOLD.arF; w.foF = HOLD.foF; tri.mode = 'stand'; tri.spread = 1 - ease(seg(t,14.45,14.8)); }   // his glove on it while it folds
+    else if (t < 15.05){ const k = ease(seg(t,T_PICKUP + .02,15.05)); w.face = -1; w.dx = PICK_DX; w.arF = lerp(HOLD.arF, CARRY.arF, k); w.foF = lerp(HOLD.foF, CARRY.foF, k); tri.lean = CARRY_LEAN*k; }   // in his hand again; lifts it
+    else if (t < 16.9){ const k = seg(t,15.05,16.9); w.face = -1; w.dx = lerp(PICK_DX, -(off + 70), k); walkP(w, t - 15.05, 1.8, 22*Math.min(1, (t - 15.05)*4)); carry(w); }
     else { w.show = false; tri.mode = 'hidden'; }
     return {w, tri, sg, say};
 }
@@ -220,18 +246,14 @@ export function surveyApply(sc, P, t){
   place(sc.man, w.dx); pupApply(sc.man, w);
   // The sign is the permanent one, on its own (unmirrored) layer: its moves are turned to the stage's way.
   place(sc.sign, sg.dx*sc.way); sc.sign.svg.style.transform = sg.lift ? `translateY(${-sg.lift*u}px)` : '';
-  // The tripod's legs are redrawn only when their spread changes (not every frame).
-  if (sc.spread !== tri.spread) sc.tri.q('.legs').innerHTML = tripodLegs((sc.spread = tri.spread));
-  if (tri.mode === 'hidden') sc.tri.svg.style.visibility = 'hidden';
-  else { sc.tri.svg.style.visibility = 'visible';
-    // Where it stands when planted, and where it rides when carried: in his front hand, at a fixed
-    // angle, level (the hand's place without the walk's bob, so it does not jiggle with his steps).
-    const stand = { x: sc.tri.spot.x*r.width + TRI_AT*u, y: sc.tri.spot.y*r.height + (tri.bounce || 0)*u, rot: 0 };
-    const g = pt(sc, sc.man, '.armF .fore', 0, 13);
-    const carry = { x: g.x, y: g.y - w.y*u + 36*u, rot: w.face < 0 ? -6 : 6 };
-    // It never pops between the two: set down (as he plants it) and picked up (as he leaves) over TRI_BLEND.
-    const k = tri.mode === 'stand' ? ease(seg(t, T_PLANT, T_PLANT + TRI_BLEND)) : t < T_PLANT ? 0 : 1 - ease(seg(t, T_PICKUP, T_PICKUP + TRI_BLEND));
-    placePx(sc.tri, lerp(carry.x, stand.x, k), lerp(carry.y, stand.y, k), lerp(carry.rot, stand.rot, k)); }
+  // The standing tripod never moves; its legs are redrawn only when their spread changes.
+  place(sc.tri, TRI_AT);
+  if (tri.mode === 'stand' && sc.spread !== tri.spread) sc.tri.q('.legs').innerHTML = tripodLegs((sc.spread = tri.spread));
+  sc.tri.svg.style.visibility = tri.mode === 'stand' ? 'visible' : 'hidden';
+  // The carried one is a child of his forearm: kept upright by taking the arm's own turn back out
+  // (plus the carrying lean), and turned back when he is mirrored so the instrument faces the same way.
+  sc.held.style.display = tri.mode === 'hand' ? '' : 'none';
+  if (tri.mode === 'hand') sc.held.setAttribute('transform', `translate(0 13) rotate(${(tri.lean || 0) - w.rot - w.arF - w.foF})${w.face < 0 ? ' scale(-1 1)' : ''} translate(${-GRIP.x} ${-GRIP.y})`);
   let html = '';
   if (sg.puff >= 0 && sg.puff < 1) html += puff(sc.spot.x*r.width + sg.puffX*u, sc.spot.y*r.height, sg.puff, u);
   if (sc.ovHtml !== html) sc.ov.innerHTML = sc.ovHtml = html;

@@ -11,7 +11,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { REGIONS } from '../src/levels/regions.ts';
 import { getMoveRange, newGame } from '../src/engine/index.ts';
-import { DEER_BEATS, SURVEY_BEATS, TOUR_BEATS } from '../src/ui/sign-gags.ts';
+import { DEER_BEATS, SURVEY_BEATS, TOUR_BEATS, T_PICKUP, T_PLANT } from '../src/ui/sign-gags.ts';
 import { LOG_ENTRIES } from '../src/ui/wildlife-log.ts';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
@@ -224,42 +224,44 @@ for (const gag of ['surveyor', 'deer', 'tourists']) {
   check(a?.beat === 'still' && a.o === '1' && a.at === b?.at, `${gag}: fades in as a still and holds`);
   await context.close();
 }
-// The surveyor's tripod, set down and picked up (held frame by frame, ?gagtest=1): it passes
-// between his hand and the ground in a short blend, never a pop; carried, it is folded at one fixed
-// angle; and its legs are only redrawn while they spread or fold.
+// The surveyor's tripod (held frame by frame, ?gagtest=1): carried, it is a CHILD OF HIS FOREARM
+// (no element of its own to tween); standing, it is one drawing that never moves; and at the two
+// instants it changes hands the two drawings are in the same place, so nothing jumps.
 console.log('\nwebkit: the surveyor\'s tripod');
 {
   const { context, page } = await open({ query: '?cover=0&gagtest=1&night=0' });
   const run = await page.evaluate(async () => {
     const g = window.__rhrGag;
-    g.hold('surveyor', 14.0);
-    const legs = document.querySelector('.strip-layer svg .legs') ?? document.querySelector('svg .legs');
-    const svg = legs.ownerSVGElement;
+    g.hold('surveyor', 1.0);
+    const held = document.querySelector('.surveyor-layer .armF .fore > .held');
+    const stand = [...document.querySelectorAll('.surveyor-layer svg.pup')].find((s) => !s.querySelector('.armF') && s.querySelector('.legs'));
+    const legs = stand.querySelector('.legs');
     let redraws = 0;
     new MutationObserver(() => redraws++).observe(legs, { childList: true });
+    const box = (el) => { const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.bottom, w: r.width }; };
     const out = [];
-    for (let t = 14.0; t <= 16.4; t += 1 / 60) {
+    for (let t = 0.5; t <= 16.6; t += 1 / 60) {
       g.hold('surveyor', t);
       await Promise.resolve();
-      const r = svg.getBoundingClientRect();
-      const turn = /rotate\(([-\d.]+)deg\)/.exec(svg.style.transform)?.[1] ?? '0';
-      out.push({ t, x: r.x + r.width / 2, y: r.y + r.height / 2, turn: +turn, redraws, legs: legs.innerHTML, seen: svg.style.visibility !== 'hidden' });
+      const inHand = held.style.display !== 'none', standing = stand.style.visibility !== 'hidden';
+      const glove = box(held.parentElement.querySelector('circle'));
+      out.push({ t, inHand, standing, redraws, at: `${stand.style.left} ${stand.style.top} ${stand.style.transform}`, tri: inHand ? box(held.querySelector('.headpiece')) : standing ? box(stand.querySelector('.headpiece')) : null, glove });
     }
     g.release('surveyor');
-    return out;
+    return { out, child: !!held && held.closest('.armF') !== null, feet: null };
   });
-  const step = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
-  const steps = run.slice(1).map((f, i) => ({ t: f.t, d: step(run[i], f) }));
-  const walk = steps.filter((x) => x.t > 15.3).map((x) => x.d).sort((a, b) => a - b);
-  const pace = walk[walk.length >> 1];
-  const worst = steps.reduce((m, x) => (x.d > m.d ? x : m));
-  check(run.every((f) => f.seen) && pace > 0.5 && worst.d <= pace * 2.5 + 1.5, `picked up at 14.9: it never jumps (most in one frame ${worst.d.toFixed(1)} px at ${worst.t.toFixed(2)} s; his walking pace is ${pace.toFixed(1)} px a frame)`);
-  const carried = run.filter((f) => f.t > 15.15);
-  const turns = carried.map((f) => f.turn);
-  const bob = Math.max(...carried.map((f) => f.y)) - Math.min(...carried.map((f) => f.y));
-  check(Math.max(...turns) - Math.min(...turns) < 0.01 && bob < 1, `carried: folded at one fixed angle (${turns[0]} degrees) and level (${bob.toFixed(2)} px up and down), no jiggle with his steps`);
-  const fold = run.filter((f) => f.t > 14.9);
-  check(new Set(fold.map((f) => f.legs)).size === 1 && fold[fold.length - 1].redraws === fold[0].redraws && run[run.length - 1].redraws > 0, `its legs are redrawn only while they fold (${run[run.length - 1].redraws} times from 14.0 s, none after 14.9)`);
+  const f = run.out;
+  check(run.child && f.every((x) => x.inHand !== x.standing), 'carried, the tripod is a child of his front forearm; there is always exactly one tripod on screen');
+  check(new Set(f.map((x) => x.at)).size === 1, 'the standing tripod is put on its spot once and never moved or turned');
+  const swaps = f.slice(1).map((x, i) => ({ t: x.t, from: f[i], to: x })).filter((s) => s.from.inHand !== s.to.inHand);
+  const jump = (s) => Math.hypot(s.to.tri.x - s.from.tri.x, s.to.tri.y - s.from.tri.y);
+  check(swaps.length === 2 && Math.abs(swaps[0].t - T_PLANT) < 0.02 && Math.abs(swaps[1].t - T_PICKUP) < 0.02 && swaps.every((s) => jump(s) < 0.6), `set down at ${swaps[0]?.t.toFixed(2)} s and taken up at ${swaps[1]?.t.toFixed(2)} s with the two drawings in the same place (${swaps.map((s) => jump(s).toFixed(2)).join(' and ')} px apart)`);
+  const carried = f.filter((x) => x.inHand);
+  const grip = carried.map((x) => Math.hypot(x.tri.x - x.glove.x, 0));
+  check(Math.max(...grip) < 14, `in his hand it stays at his glove through every step (never more than ${Math.max(...grip).toFixed(1)} px to the side of it)`);
+  const hand = f.filter((x) => x.inHand);
+  const first = hand[0].redraws, spread = f.filter((x) => x.standing && x.t > T_PLANT + 0.5 && x.t < T_PICKUP - 0.5);
+  check(first === 0 && spread[spread.length - 1].redraws === spread[0].redraws && f[f.length - 1].redraws > spread[0].redraws, 'its legs unfold only on the set-down spot and fold there again; carried, it is always folded');
   await context.close();
 }
 console.log('\nwebkit: Wildlife Log');

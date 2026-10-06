@@ -10,7 +10,7 @@ import { BUDDY, BUDDY_FAR, BUDDY_STOP, STAND, TONGUE_BEATS, TONGUE_END, tonguePo
 import { RISER_TAP, RISER_X, riserBox, riserHeight } from './strip-gags.ts';
 import { treeArt } from './trees.ts';
 import { eggOff, lunchAlways, lunchNever, rollPinned } from './flags.ts';
-import { DEER_BEATS, DEER_END, DEER_STOP, SURVEY_BEATS, SURVEY_END, SURVEY_LINES, TOUR_BEATS, TOUR_END, TOUR_HER, TOUR_HIM, deerPose, surveyPose, tourPose } from './sign-gags.ts';
+import { DEER_BEATS, DEER_END, DEER_STOP, SURVEY_BEATS, SURVEY_END, SURVEY_LINES, TRI_AT, T_PICKUP, T_PLANT, TOUR_BEATS, TOUR_END, TOUR_HER, TOUR_HIM, deerPose, heldTripod, surveyPose, tourPose } from './sign-gags.ts';
 import { BULL_BEATS, BULL_END, COW_REST, SHIFT as PRIMP_SHIFT, T_BACK, T_GRAZE, T_HOME, bullPose } from './bull.ts';
 import { A_BEATS, A_END, A_SHAKE, BIFFY_SIZE, B_BEATS, B_END, B_OFF, B_ROLL_OFF, B_SHAKE, B_SHUT, biffy } from './biffy.ts';
 import { L_BEATS, L_END, lPose } from './landowner.ts';
@@ -607,6 +607,26 @@ describe('the sign gags (16 to 18)', () => {
     expect(end.w.show).toBe(false);
     expect(end.tri.mode).toBe('hidden');
     expect(surveyPose(16.89, 500).w.dx).toBeLessThan(-560);
+  });
+
+  it("the surveyor's tripod is part of his hand: it changes hands with the ground only where the two are the same", () => {
+    // Carried in, folded, in his hand; unfolded only standing on its spot; folded again before he takes it.
+    for (const t of [0.4, 1, 2, 2.4]) expect(surveyPose(t).tri).toMatchObject({ mode: 'hand', spread: 0 });
+    for (const t of [T_PLANT, 3, 8, 14]) expect(surveyPose(t).tri.mode).toBe('stand');
+    expect(surveyPose(T_PLANT).tri.spread).toBe(0);
+    expect(surveyPose(4).tri.spread).toBe(1);
+    expect(surveyPose(T_PICKUP - 0.01).tri.spread).toBe(0);
+    for (const t of [T_PICKUP, 15, 16.5]) expect(surveyPose(t).tri.mode).toBe('hand');
+    // The instant before it stands and the instant he has it again: upright, feet on the ground, on the spot.
+    for (const t of [T_PLANT - 0.001, T_PICKUP]) {
+      const p = surveyPose(t), at = heldTripod(p.w, p.tri.lean);
+      expect(p.tri.lean).toBeCloseTo(0, 6);
+      expect(p.w.rot).toBe(0);
+      expect(at.x).toBeCloseTo(TRI_AT, 6);
+      expect(at.foot).toBeCloseTo(0, 6);
+    }
+    // Carried, its feet are clear of the ground.
+    expect(heldTripod(surveyPose(1.5).w, surveyPose(1.5).tri.lean).foot).toBeGreaterThan(4);
   });
 
   it("the back scratcher (Jay's revision): cheek and neck on the near post, never its rump", () => {
