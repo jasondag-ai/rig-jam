@@ -79,9 +79,19 @@ something, give exact clicks and one command at a time.
   first included (Jay, Oct 5: nothing below the floor); level 1 has muskeg and nothing else new.
   8 to 9 trucks. Theme: `fall` (late fall: dry tan grass, gold aspen
   thinning among the spruce, pale overcast sky). Opens after 5 of Duvernay.
-- Bakken: 10 levels, adds LOAD RACKS and SHIFT-CHANGE GATES. EVERY level is par 18 to 24, the
+- Bakken: HELD, NOT IN THE GAME YET (Jay, Oct 5: Mannville shipped first; Bakken's levels get a
+  second pass). Its rules, art, lines and tests are in; it is left out of `regions.ts`, its level
+  tests are `describe.skip`, and `gen-levels` skips it (`held`). To bring it in: finish its ten
+  levels in `tools/fixed-levels/k01..k10.json`, take `held` off, add it back to `regions.ts`. The plan:
+  10 levels, adds LOAD RACKS and SHIFT-CHANGE GATES. EVERY level is par 18 to 24, the
   first included; level 1 has racks and no clock gate, level 2 brings in one. 8 to 9 trucks. Theme: `prairie` (canola stubble in rows to a flat
   horizon, a big blue sky, hardly a tree: `Theme.trees` 0.14). Opens after 5 of Mannville.
+- LEVELS OF REGIONS 4 AND 5 ARE NOT SEARCHED FOR AT RANDOM (it took 6 hours): the accepted ones
+  live in `tools/fixed-levels/<id>.json` and `gen-levels` reads them first. A missing slot is
+  hill-climbed from an accepted level by `node tools/climb.ts <id> <minutes> <out dir>` (`JOBS`:
+  one piece changed at a time, kept if still sound and par did not drop, solver capped at
+  `MAX_STATES` 2 million, done when par is in the window and it stands at least 4 trucks apart
+  from the others). Mannville 1 was climbed from Mannville 2 (convoy and equipment taken off).
 - Both go dark after 30 s idle like Montney and Duvernay (`GAG_TRIGGERS.night.themes`). A theme
   has a `season` (which drawing of the trees: `fall` is new in trees.ts) and a `trees` density.
   Their outside ground tiles (`grass-fall`, `grass-prairie`) are made from the summer grass by
@@ -283,7 +293,10 @@ something, give exact clicks and one command at a time.
     about the sign (`signStage`); the sign itself is the prop's own puppet, and BZZZZ is turned back.
     16 SURVEYOR (approved as it is): sights the sign, "Off a metre.", yanks it up, moves it a
     metre, sights again, "Huh.", carries it back exactly, stamps it in, "Perfect.", folds the
-    tripod, leaves. Trigger: the Restart button, 1 in 2, once a visit. Any region.
+    tripod, leaves. Trigger: the Restart button, 1 in 2, once a visit. Any region. THE TRIPOD
+    (Job I) never pops: it passes between his hand and the ground over `TRI_BLEND` (0.2 s) at
+    `T_PLANT` and `T_PICKUP`; carried, it rides folded at a fixed 6 degrees at his hand's height
+    without the walk's bob (his carry arm is still); `.legs` is rebuilt only when `spread` changes.
     17 BACK SCRATCHER (mule deer) and 18 TOURISTS were REVISED by Jay (bible, Oct 5) after the file
     was saved and no newer file has arrived, so their revised beats are AUTHORED from his words on
     the reference's drawings and clock: the deer rubs its CHEEK AND NECK on the sign's near corner
@@ -388,6 +401,16 @@ something, give exact clicks and one command at a time.
   degrees (260ms ease-out): outward on top/bottom, inward on the sides; none with reduced motion.
   Wrong-color gates simply stay shut. Convoy gates shift the badge toward the hinge and put the
   waiting-number chip (gate color, white numeral) on the latch post. Fallback: the colored tabs.
+- GATE EXITS (Job J; `src/ui/exit.ts` pure and tested, `BoardView.driveOut`): a leaving truck never
+  meets a hard edge. The yard's clip is lifted while it leaves (`.yard.letting-out`, until its dust
+  has cleared); it drives only until its cab is `EXIT_PAST` (1) cell past the gate
+  (`exitDistance`), in the same `DRIVE_MS`; its opacity eases from 1 to 0 over the last
+  `EXIT_FADE` (45%) of the drive; a big puff comes up at the gate early in the drive
+  (`gateDust`, `.dust.gate-dust`: 10 puffs of 1.3 to 1.9 cells from the truck's tail to where its
+  cab ends, in the ground's colour: dust, mud or powder) and covers it while it fades; the gate's
+  arm comes down once it has gone. Plain opacity only: NO mask-image or clip-path (iPhone Safari).
+  Reduced motion: the truck is simply removed. `npm run test:e2e:exits` checks all four sides in
+  WebKit, frame by frame and by the pixels of a mid-fade screenshot.
 - Light: ONE soft neutral vignette at the outer screen edges (`.vignette`, z 0: over the scenery,
   under the board, HUD and buttons) and nothing else: no hotspot or diagonal shade on the pad (it
   reads as a stain), no warm wash outside. Soft down-right drop shadows on gates, trees and HUD.
@@ -600,18 +623,27 @@ something, give exact clicks and one command at a time.
   crossfades want an ear check on a phone.
 
 ## Wildlife Log
-- `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game (18:
+- `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game plus Night Shift (19:
   Magpie, Sleepy Worker, Moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll,
   Marshmallow, Lost Goose, Porcupine, Gopher Lunch, Safety Sam, Frozen Tongue, Surveyor, Back
-  Scratcher, Tourists, Bull and Cow, Bear),
+  Scratcher, Tourists, Night Shift, Bull and Cow, Bear),
   each with a caption and a hint. No entries for gags that are gone (the pumper, the old hot shot
   and gopher); their ids are dropped from a saved log on load. An entry unlocks the first time its
   gag plays right through (`GameView.seen`; the worker counts once he is asleep). Saved in
   `rush-hour-rigs:log` (`v: 3`), so Reset progress clears it.
+- HINTS are plain and short and say where and what to do ("In Cardium, tap the bush three
+  times."); a gag that comes on a roll says "He may ...". No em dashes. A test holds them to it.
+- NIGHT SHIFT (`night`): not a gag. Found when the lease has gone fully dark (the idle fade has
+  finished: `GameView.nightSeen`, once a visit; not when night is pinned with `?night=1`). Same
+  toast and card as a gag. Its art is `nightStill()` (night.ts): the pad at night, the flare glowing.
 - Every card's art is a still of the gag's own PUPPET (`LOG_ART` in main.ts: `magpieStill`,
   `workerStill`, `mooseStill`, `nearMissStill`, ...). No sprites. Found: in colour with its caption;
   unfound: a dark silhouette (CSS brightness(0)) and, in DEMO mode only, the gag's hint
-  (`cardHint`); the game says "Not seen yet."
+  (`cardHint`); the game says "Not seen yet." NO STRETCH: `fitArt` (main.ts) gives every card's
+  picture a px width and height from its own viewBox, inside `ART_BOX` (104 x 84), so a tall
+  drawing (the biffy) is never squeezed. Occupied is the biffy at its true shape; The Runaway Roll
+  is one big toilet roll with a short tail of paper (`biffyBStill`, drawn for the card). The
+  moose's still is cut off at its picture's edge (his neck runs on below it).
 - New sighting: a toast at the very top (`toast.ts`, 2s, one at a time, never over the board):
   "New sighting! Bear (3/15)". The last one adds a celebration toast and turns on camo pickups.
 - Camo is earned (`camoEarned`) by finding every entry; camo earned under an earlier, shorter log is
@@ -694,6 +726,10 @@ something, give exact clicks and one command at a time.
   animation frame loop, each starting at its own phase (`phaseFor`, from its cell). Flare flames
   flicker in CSS (`flare-flicker`, staggered by `--eq-delay`). Reduced motion: both hold still.
   The frame-rate e2e check (4x CPU throttle) runs on a level with a pumpjack and a flare.
+  The loop (and so the pumpjack's sound) runs ONLY while a level is being played:
+  `BoardView.startAmbient` / `stopAmbient`; `GameView` stops it on a win, in `leave()` and when the
+  app is hidden (`visibilitychange`), and starts it when the board shows again. `sound.pumpjack()`
+  also plays only in the 'play' scene. `npm run test:e2e:audio` listens for 10 s in each place.
 - Flare stacks in levels: an alternate look for some tanks. `tools/gen-levels.ts` `withFlares` turns
   the first tank of every second Montney and Duvernay level into `kind: 'flare'` at write time.
   Cosmetic only: layouts, par and the solver are untouched. `node e2e/equip-shots.mjs` saves
@@ -787,6 +823,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:bubbles` – every speech bubble's tail on its speaker, following it, clear of the HUD and buttons; witness lines (start the dev server first)
 - `npm run test:e2e:regions` – Mannville and Bakken: the tabs, the three new rules taught by doing, and all 20 levels cleared at par by dragging (start the dev server first)
 - `npm run test:e2e:signs` – the permanent lease sign and gags 16 to 18: surveyor, back scratcher, tourists (start the dev server first)
+- `npm run test:e2e:exits` – a truck leaving by each of the four sides: no clip, the short drive, the fade, the gate's dust, the arm, reduced motion (start the dev server first)
 - `npm run test:e2e:tutorial` – the "?" button, the three how-to cards, level 1's ghost finger (start the dev server first)
 - `npm run test:e2e:lines` – bump lines by kind, escalation, witness lines, the Company Man (start the dev server first)
 - `npm run test:e2e:frames` – SAME START, SAME END: every strip gag's first and last frames show no character (start the dev server first)

@@ -109,6 +109,7 @@ export class GameView {
   /** The last thing the PLAYER did (gags leaving do not count): the night nudge's clock. */
   private lastPlayAt = performance.now();
   private night = false;
+  private nightSeen = false;
   private nudged = false;
   private nightShade: HTMLElement | null = null;
   /** The bottom-strip gags (strip-gags.ts): Near Miss, the landowner, Biffy A and B. Each null if it cannot play here. */
@@ -366,6 +367,11 @@ export class GameView {
         const now = performance.now();
         // Night falls after a quiet spell; the next thing the player does brings the day back (`played`).
         if (!this.night && nightComes(this.theme.id) && !this.board.moving && now - this.lastPlayAt >= GAG_TRIGGERS.night.idleMs * this.idleScale) this.setNight(true);
+        // NIGHT SHIFT (an Easter egg in the Wildlife Log): found once the lease has gone fully dark from sitting idle.
+        if (this.night && !this.nightSeen && nightPin !== true && now - this.nightAt >= GAG_TRIGGERS.night.fadeInMs) {
+          this.nightSeen = true;
+          this.seen('night');
+        }
         // The nudge: a while after night has fully fallen, a truck speaks up. Once per level; never a fail.
         // (Not while a gag is on: its own line may be up, and the bubble is shared.)
         if (this.night && !this.nudged && !this.eggsOn.size && now - this.nightAt >= GAG_TRIGGERS.night.fadeInMs + GAG_TRIGGERS.nightNudge.afterNightMs * this.idleScale) {
@@ -378,6 +384,7 @@ export class GameView {
       }, 250);
     }
     this.showLevelHint();
+    document.addEventListener('visibilitychange', this.onVisibility);
 
     onTap(this.el, TAPPED, (el) => this.act(el));
     this.el.addEventListener('click', (e) => {
@@ -479,6 +486,8 @@ export class GameView {
     }
     this.updateHud();
     if (isWon(this.state)) {
+      // Won: the lease falls quiet (no pumpjack squeak under the win card).
+      this.board.stopAmbient();
       window.clearInterval(this.eggTimer);
       this.clearEggs();
       setTimeout(() => this.showWin(), WIN_DELAY_MS);
@@ -553,7 +562,16 @@ export class GameView {
   leave(): void {
     this.clearEggs();
     window.clearInterval(this.eggTimer);
+    this.board.stopAmbient();
+    document.removeEventListener('visibilitychange', this.onVisibility);
   }
+
+  /** The app hidden: the lease's ambient motion and sound stop; back in front (and not won): they start again. */
+  private onVisibility = (): void => {
+    if (!this.el.isConnected) return void document.removeEventListener('visibilitychange', this.onVisibility);
+    if (document.hidden || isWon(this.state)) this.board.stopAmbient();
+    else this.board.startAmbient();
+  };
 
   private clearEggs(): void {
     this.magpie?.clear();

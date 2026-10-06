@@ -223,6 +223,44 @@ for (const gag of ['surveyor', 'deer', 'tourists']) {
   check(a?.beat === 'still' && a.o === '1' && a.at === b?.at, `${gag}: fades in as a still and holds`);
   await context.close();
 }
+// The surveyor's tripod, set down and picked up (held frame by frame, ?gagtest=1): it passes
+// between his hand and the ground in a short blend, never a pop; carried, it is folded at one fixed
+// angle; and its legs are only redrawn while they spread or fold.
+console.log('\nwebkit: the surveyor\'s tripod');
+{
+  const { context, page } = await open({ query: '?cover=0&gagtest=1&night=0' });
+  const run = await page.evaluate(async () => {
+    const g = window.__rhrGag;
+    g.hold('surveyor', 14.0);
+    const legs = document.querySelector('.strip-layer svg .legs') ?? document.querySelector('svg .legs');
+    const svg = legs.ownerSVGElement;
+    let redraws = 0;
+    new MutationObserver(() => redraws++).observe(legs, { childList: true });
+    const out = [];
+    for (let t = 14.0; t <= 16.4; t += 1 / 60) {
+      g.hold('surveyor', t);
+      await Promise.resolve();
+      const r = svg.getBoundingClientRect();
+      const turn = /rotate\(([-\d.]+)deg\)/.exec(svg.style.transform)?.[1] ?? '0';
+      out.push({ t, x: r.x + r.width / 2, y: r.y + r.height / 2, turn: +turn, redraws, legs: legs.innerHTML, seen: svg.style.visibility !== 'hidden' });
+    }
+    g.release('surveyor');
+    return out;
+  });
+  const step = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
+  const steps = run.slice(1).map((f, i) => ({ t: f.t, d: step(run[i], f) }));
+  const walk = steps.filter((x) => x.t > 15.3).map((x) => x.d).sort((a, b) => a - b);
+  const pace = walk[walk.length >> 1];
+  const worst = steps.reduce((m, x) => (x.d > m.d ? x : m));
+  check(run.every((f) => f.seen) && pace > 0.5 && worst.d <= pace * 2.5 + 1.5, `picked up at 14.9: it never jumps (most in one frame ${worst.d.toFixed(1)} px at ${worst.t.toFixed(2)} s; his walking pace is ${pace.toFixed(1)} px a frame)`);
+  const carried = run.filter((f) => f.t > 15.15);
+  const turns = carried.map((f) => f.turn);
+  const bob = Math.max(...carried.map((f) => f.y)) - Math.min(...carried.map((f) => f.y));
+  check(Math.max(...turns) - Math.min(...turns) < 0.01 && bob < 1, `carried: folded at one fixed angle (${turns[0]} degrees) and level (${bob.toFixed(2)} px up and down), no jiggle with his steps`);
+  const fold = run.filter((f) => f.t > 14.9);
+  check(new Set(fold.map((f) => f.legs)).size === 1 && fold[fold.length - 1].redraws === fold[0].redraws && run[run.length - 1].redraws > 0, `its legs are redrawn only while they fold (${run[run.length - 1].redraws} times from 14.0 s, none after 14.9)`);
+  await context.close();
+}
 console.log('\nwebkit: Wildlife Log');
 for (const [mode, progress] of [['game', UNLOCKED], ['demo', DEMO]]) {
   const { context, page } = await open({ level: null, progress });
@@ -230,8 +268,8 @@ for (const [mode, progress] of [['game', UNLOCKED], ['demo', DEMO]]) {
   await page.waitForSelector('.log-card');
   const cards = await page.evaluate(() => [...document.querySelectorAll('.log-card')].map((c) => ({ id: c.dataset.id, art: !!c.querySelector('.art svg'), text: c.querySelector('p').textContent })));
   const by = Object.fromEntries(cards.map((c) => [c.id, c]));
-  if (mode === 'game') check(cards.length === 18 && ['surveyor', 'deer', 'tourists'].every((id) => by[id]?.art && by[id].text === 'Not seen yet.'), `the log has ${cards.length} cards; Surveyor, Back Scratcher and Tourists have puppet art and keep their secrets`);
-  else check(by.surveyor.text === 'Press Restart. One time in two.' && by.deer.text === 'Tap the lease sign (not in winter).' && by.tourists.text === 'Make your first move on the Daily Pad (not in winter). One time in three.', 'demo mode shows their hints');
+  if (mode === 'game') check(cards.length === 19 && ['surveyor', 'deer', 'tourists'].every((id) => by[id]?.art && by[id].text === 'Not seen yet.'), `the log has ${cards.length} cards; Surveyor, Back Scratcher and Tourists have puppet art and keep their secrets`);
+  else check(by.surveyor.text === 'Press Restart. He may come to check the sign.' && by.deer.text === 'Tap the lease sign (spring to fall).' && by.tourists.text === 'Play the Daily Pad. They may show up on your first move (spring to fall).', 'demo mode shows their hints');
   await context.close();
 }
 if (!process.env.NO_CLIPS) {

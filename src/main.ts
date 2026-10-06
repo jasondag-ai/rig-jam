@@ -1,4 +1,5 @@
 import { bearStill } from './ui/bear.ts';
+import { nightStill } from './ui/night.ts';
 import { musicCredits, sfxCredits } from './audio/credits.ts';
 import { bullStill } from './ui/bull.ts';
 import { tongueStill } from './ui/frozen-tongue.ts';
@@ -59,9 +60,26 @@ const LOG_ART: Record<Sighting, () => string> = {
   surveyor: () => surveyorStill(),
   deer: () => deerStill(),
   tourists: () => touristsStill(),
+  night: () => nightStill(),
   bull: () => bullStill(),
   bear: () => bearStill(),
 };
+
+/** A log card's art box: this wide and tall at most (px). */
+const ART_BOX = { w: 104, h: 84 };
+/**
+ * A log card's picture is shown at ITS OWN SHAPE, as big as fits the art box: its width and height
+ * are set outright from its viewBox, so no browser has to work out a size (and none can stretch it).
+ */
+function fitArt(art: HTMLElement): void {
+  const svg = art.querySelector<SVGSVGElement>(':scope > svg');
+  const vb = svg?.getAttribute('viewBox')?.split(/[ ,]+/).map(Number);
+  if (!svg || !vb || vb.length !== 4 || !(vb[2] > 0 && vb[3] > 0)) return;
+  const k = Math.min(ART_BOX.w / vb[2], ART_BOX.h / vb[3]);
+  svg.style.width = `${Math.round(vb[2] * k * 10) / 10}px`;
+  svg.style.height = `${Math.round(vb[3] * k * 10) / 10}px`;
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+}
 
 /** Text made safe to put in markup. */
 const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -375,6 +393,7 @@ function showLog(regionIndex: number): void {
     li.className = `log-card ${found ? 'found' : 'unfound'}${e.legendary ? ' legendary' : ''}`;
     li.dataset.id = e.id;
     li.innerHTML = `${e.legendary ? '<span class="legend-tag">LEGENDARY</span>' : ''}<div class="art art-${e.id}" aria-hidden="true">${LOG_ART[e.id]()}</div><h2></h2><p></p>`;
+    fitArt(li.querySelector<HTMLElement>('.art')!);
     li.querySelector('h2')!.textContent = found ? e.name : '???';
     // Easter eggs: demo mode shows how to find each one; the game keeps it a secret.
     li.querySelector('p')!.textContent = found ? e.caption : cardHint(e, demo);

@@ -15,11 +15,15 @@ import { TrackLayer } from './track-layer.ts';
 import type { Ground } from './themes.ts';
 import { SYMBOL } from './palette.ts';
 import { sound } from '../audio/engine.ts';
+import { EXIT_FADE, EXIT_PAST, exitDistance } from './exit.ts';
 
 const FENCE_RATIO = 0.42;
 const GAP = 3; // px between a truck and its cell edge
 const WAVE_MS = 260; // gate arm lifts and the driver waves before pulling out
 const DRIVE_MS = 460;
+/** When the gate's dust comes up (a share of the drive), and how long a puff lasts. */
+const GATE_DUST_AT = 0.12;
+const GATE_DUST_MS = 800;
 /** How far back (cells) the finger must turn for a reversal to count toward a wiggle. */
 const WIGGLE_TURN = 0.25;
 const BUMP_PUSH = 0.25; // cells of push past a blocker before it counts as a bump
@@ -54,6 +58,8 @@ export class BoardView {
   private trucks = new Map<string, HTMLElement>();
   private cell = 48;
   private fence = 20;
+  /** Trucks on their way out right now (the yard's clip is lifted while there are any). */
+  private leaving = 0;
   private drag: Drag | null = null;
   /** The dirt berm round the pad (berm.ts), repainted when the size, level or season changes. */
   private berm: HTMLCanvasElement;
@@ -91,7 +97,7 @@ export class BoardView {
     this.onBump = onBump;
     this.el = document.createElement('div');
     this.el.className = 'board';
-    // The yard clips trucks driving out; bubbles sit on the board so they can overhang.
+    // The yard clips what is on the pad (except a truck on its way out); bubbles sit on the board so they can overhang.
     this.yard = document.createElement('div');
     this.yard.className = 'yard';
     // Under everything: the lease's one continuous ground (pad and berm band alike), then the berm.
@@ -189,9 +195,23 @@ export class BoardView {
       ob.innerHTML = (kind === 'flare' ? '<i class="flare-glow"></i>' : '') + equipmentSvg(kind, seed);
       this.equip.append(ob);
     }
+    this.startAmbient();
+    this.layout();
+  }
+
+  /**
+   * The lease's own motion and sound (pumpjacks pumping, a squeak a stroke) run only while the board
+   * is being played: `stopAmbient` on a win, on leaving the game screen and when the app is hidden;
+   * `startAmbient` when the board shows again (a new level, Restart, the app back in front).
+   */
+  startAmbient(): void {
     this.stopPumpjacks();
     this.stopPumpjacks = runPumpjacks(this.equip, reducedMotion(), () => sound.pumpjack());
-    this.layout();
+  }
+
+  stopAmbient(): void {
+    this.stopPumpjacks();
+    this.stopPumpjacks = () => {};
   }
 
   /** Fits the board into the given box and repositions everything. */
@@ -343,6 +363,9 @@ export class BoardView {
   }
 
   // ---------- Drive-out: gate arm lifts, driver waves, truck pulls out in a cloud of dust ----------
+  // The truck never meets a hard edge: the yard's clip is lifted while it leaves (`.letting-out`), it
+  // drives only a little way past the gate (EXIT_PAST) and fades to nothing over the last part of
+  // the drive (EXIT_FADE) inside a big puff of dust at the gate. Plain opacity, no masks (Safari).
 
   private driveOut(el: HTMLElement): void {
     const side = el.dataset.cab as Side;
@@ -356,16 +379,62 @@ export class BoardView {
     el.classList.add('waving');
     sound.exit();
     const from = this.currentXY(el);
-    const dist = this.cell * (SIZE + 1);
+    const dist = exitDistance(side, from, el.offsetWidth, el.offsetHeight, this.cell, this.fence);
     const dx = side === 'left' ? -dist : side === 'right' ? dist : 0;
     const dy = side === 'top' ? -dist : side === 'bottom' ? dist : 0;
+    this.leaving++;
+    this.yard.classList.add('letting-out');
     setTimeout(() => {
-      el.style.transitionDuration = `${DRIVE_MS}ms`;
+      const fade = DRIVE_MS * EXIT_FADE;
+      el.style.transition = `transform ${DRIVE_MS}ms cubic-bezier(0.5, 0, 0.9, 0.6), opacity ${fade}ms ease-in-out ${DRIVE_MS - fade}ms`;
       el.style.transform = `translate3d(${from.x + dx}px, ${from.y + dy}px, 0)`;
+      el.style.opacity = '0';
       this.kickUpDust(el, from, dx, dy);
+      setTimeout(() => this.gateDust(side, el, from), DRIVE_MS * GATE_DUST_AT);
     }, WAVE_MS);
+    // Gone (faded right out), and only then the gate's arm comes down.
     setTimeout(() => el.remove(), WAVE_MS + DRIVE_MS + 40);
-    setTimeout(() => gate?.classList.remove('open'), WAVE_MS + DRIVE_MS + 300);
+    // (The clip comes back only when its dust has cleared too.)
+    setTimeout(() => {
+      if (--this.leaving <= 0) {
+        this.leaving = 0;
+        this.yard.classList.remove('letting-out');
+      }
+    }, WAVE_MS + DRIVE_MS * GATE_DUST_AT + GATE_DUST_MS + 300);
+    setTimeout(() => gate?.classList.remove('open'), WAVE_MS + DRIVE_MS + 200);
+  }
+
+  /** The big puff at the gate that the leaving truck fades into: it comes up as the fade begins. */
+  private gateDust(side: Side, el: HTMLElement, from: { x: number; y: number }): void {
+    const { cell, fence } = this;
+    const pad = cell * SIZE;
+    const horizontal = side === 'left' || side === 'right';
+    // The gate's middle, in the pad's own px; the puffs lie along the lane from just inside the pad
+    // to where the cab ends up, and a little to each side.
+    const lane = horizontal ? from.y + el.offsetHeight / 2 : from.x + el.offsetWidth / 2;
+    const out = side === 'left' || side === 'top' ? -1 : 1;
+    const edge = out < 0 ? 0 : pad;
+    const reach = fence + cell * EXIT_PAST;
+    // (From where the truck's tail is as it starts to fade, still on the pad, out to where its cab ends.)
+    const back = Math.max(cell * 0.6, (horizontal ? el.offsetWidth : el.offsetHeight) - reach * 0.4);
+    const puffs = 10;
+    for (let i = 0; i < puffs; i++) {
+      setTimeout(() => {
+        const puff = document.createElement('div');
+        puff.className = `dust gate-dust on-${this.ground}`;
+        const size = cell * (1.3 + Math.random() * 0.6);
+        const along = edge + out * (-back + (reach + back) * ((i % 5) / 4)) + (Math.random() - 0.5) * cell * 0.3;
+        const across = lane + (Math.random() - 0.5) * cell * 0.45;
+        Object.assign(puff.style, {
+          width: `${size}px`,
+          height: `${size}px`,
+          left: `${(horizontal ? along : across) - size / 2}px`,
+          top: `${(horizontal ? across : along) - size / 2}px`,
+        });
+        this.pad.append(puff);
+        setTimeout(() => puff.remove(), GATE_DUST_MS);
+      }, i * 8);
+    }
   }
 
   private gateEl(side: Side, truckEl: HTMLElement): HTMLElement | null {

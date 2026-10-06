@@ -4,7 +4,7 @@ import { DEMO_LOG_KEY, LOG_ENTRIES, LOG_KEY, camoOn, complete, foundCount, parse
 
 describe('Wildlife Log', () => {
   it('one entry per gag in the game, each with a name, caption and hint; none for the retired sprite gags', () => {
-    expect(LOG_ENTRIES.map((e) => e.name)).toEqual(['Magpie', 'Sleepy Worker', 'Moose', 'Near Miss', 'Angry Landowner', 'Occupied', 'The Runaway Roll', 'Marshmallow', 'Lost Goose', 'Porcupine', 'Gopher Lunch', 'Safety Sam', 'Frozen Tongue', 'Surveyor', 'Back Scratcher', 'Tourists', 'Bull and Cow', 'Bear']);
+    expect(LOG_ENTRIES.map((e) => e.name)).toEqual(['Magpie', 'Sleepy Worker', 'Moose', 'Near Miss', 'Angry Landowner', 'Occupied', 'The Runaway Roll', 'Marshmallow', 'Lost Goose', 'Porcupine', 'Gopher Lunch', 'Safety Sam', 'Frozen Tongue', 'Surveyor', 'Back Scratcher', 'Tourists', 'Night Shift', 'Bull and Cow', 'Bear']);
     const ids = LOG_ENTRIES.map((e) => e.id as string);
     for (const gone of ['pumper', 'hotshot', 'gopher']) expect(ids).not.toContain(gone);
     expect(LOG_ENTRIES.find((e) => e.id === 'bear')!.caption).toBe('Does what bears do in the woods.');
@@ -55,7 +55,7 @@ describe('Wildlife Log', () => {
 
   it('the Bear is the one legendary entry', () => {
     expect(LOG_ENTRIES.filter((e) => e.legendary).map((e) => e.id)).toEqual(['bear']);
-    expect(LOG_ENTRIES.find((e) => e.id === 'bear')!.hint).toBe('Tap the snowy bush three times in Duvernay. One time in three.');
+    expect(LOG_ENTRIES.find((e) => e.id === 'bear')!.hint).toBe('In Duvernay, tap the snowy bush three times. He comes one time in three.');
   });
 
   it('demo sightings are worded differently', () => {
@@ -71,5 +71,24 @@ describe('Wildlife Log', () => {
   it('?log=all previews a full log', () => {
     expect(previewAll('?log=all')).toBe(true);
     expect(previewAll('?gag=bear')).toBe(false);
+  });
+});
+
+describe('log hints and Night Shift', () => {
+  it('every hint is plain and short, says where and what to do, and has no em dash', () => {
+    for (const e of LOG_ENTRIES) {
+      expect(e.hint.length, e.id).toBeLessThanOrEqual(76);
+      expect(e.hint, e.id).not.toMatch(/[\u2014\u2013]/);
+      expect(e.hint, e.id).toMatch(/^(In |On |Tap |Press |Bump |Slide |Drive |Play |Leave )/);
+      expect(e.hint, e.id).toMatch(/[.)]$/);
+    }
+    expect(LOG_ENTRIES.find((e) => e.id === 'tourists')!.hint).toBe('Play the Daily Pad. They may show up on your first move (spring to fall).');
+  });
+
+  it('Night Shift is a log entry like any other: found when the lease goes fully dark', () => {
+    const night = LOG_ENTRIES.find((e) => e.id === 'night')!;
+    expect(night).toMatchObject({ name: 'Night Shift', caption: 'Lights out on the lease.', hint: 'Leave a Montney or Duvernay level alone for a while.' });
+    expect(sightingToast('night', 4)).toBe(`New sighting! Night Shift (4/${LOG_ENTRIES.length})`);
+    expect(LOG_ENTRIES).toHaveLength(19);
   });
 });

@@ -505,6 +505,13 @@ canvas.berm {
   overflow: hidden;
 }
 
+/* A truck on its way out drives a little way past the gate and fades away in its dust there, so
+   nothing may cut it off: the clip is lifted while it leaves (board-view.ts driveOut). */
+.yard.letting-out,
+.yard.letting-out .pad {
+  overflow: visible;
+}
+
 /* The level's own ground variety (lease-detail.ts): soft patches, pebbles, puddles or drifts. */
 canvas.lease-detail {
   position: absolute;
@@ -1013,6 +1020,29 @@ canvas.lease-detail {
   from { transform: scale(0.4); opacity: 0.9; }
   to { transform: scale(1.8); opacity: 0; }
 }
+
+/* The big puff at the gate that a leaving truck fades into: thick while the truck goes, then thins. */
+.dust.gate-dust {
+  z-index: 11;
+  background: radial-gradient(circle, rgba(240, 226, 196, 0.95) 0 22%, rgba(228, 208, 170, 0.6) 46%, rgba(201, 166, 107, 0) 70%);
+  animation: gate-puff 720ms ease-out forwards;
+}
+
+.dust.gate-dust.on-snow {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.97) 0 22%, rgba(232, 240, 248, 0.62) 46%, rgba(255, 255, 255, 0) 70%);
+}
+
+.dust.gate-dust.on-mud {
+  background: radial-gradient(circle, rgba(196, 180, 156, 0.95) 0 22%, rgba(160, 138, 110, 0.6) 46%, rgba(120, 98, 72, 0) 70%);
+}
+
+@keyframes gate-puff {
+  0% { transform: scale(0.35); opacity: 0; }
+  25% { transform: scale(0.95); opacity: 0.96; }
+  60% { transform: scale(1.15); opacity: 0.9; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+
 
 /* ---------- Bumps: jolt and speech bubble (the near-miss counter is in the HUD) ---------- */
 
@@ -3196,8 +3226,10 @@ img.hat { width: 100%; height: auto; }
 .worker-layer .pup-z { position: absolute; opacity: 0; font-weight: 700; color: #fff; letter-spacing: 1px; white-space: nowrap; text-shadow: -1.5px -1.5px 0 #2b1e16, 1.5px -1.5px 0 #2b1e16, -1.5px 1.5px 0 #2b1e16, 1.5px 1.5px 0 #2b1e16; }
 .moose-layer { z-index: 0; bottom: auto; overflow: hidden; }
 .moose-layer .pup-puff { position: absolute; opacity: 0; border: 1.5px solid #2b1e16; border-radius: 50%; background: #fff; }
-.log-card .art .worker-still,
-.log-card .art .moose-still { width: 84px; height: 84px; overflow: visible; }
+.log-card .art .worker-still { width: 84px; height: 84px; overflow: visible; }
+/* The moose's neck runs on below his picture (the berm hides it in the game): cut it off at the
+   picture's edge so it never lies over the card's name. */
+.log-card .art .moose-still { overflow: hidden; }
 
 /* ---------- The bottom strip: the permanent biffy and its gags, the landowner, Near Miss (strip-gags.ts) ---------- */
 .puppet-layer.biffy-layer,

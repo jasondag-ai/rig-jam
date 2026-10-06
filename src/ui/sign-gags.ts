@@ -167,6 +167,8 @@ const tripodLegs = (spread) => { const feet = [[20 - 15*spread, 108], [20, 106 -
 
 export const SURVEY_BEATS = [[0,'just-the-sign','Just the lease sign'],[.3,'walks-in','A surveyor walks in from the near edge, tripod in hand'],[2.3,'plants-tripod','Plants the tripod and spreads its legs'],[2.9,'sights','Sights the sign through the instrument. Squints'],[4.0,'looks-again','Pulls back, blinks, looks again'],[4.6,'off-a-metre','"Off a metre."'],[5.2,'marches-over','Marches over and grabs the sign'],[6.4,'yanks','Yanks it out of the ground. Dirt flies'],[6.8,'moves-it','Shuffles it a metre over and plants it. Thunk'],[7.9,'heads-back','Hop-turns and heads back to the tripod'],[8.9,'sights-again','Sights it again. Long pause'],[9.6,'huh','Taps the instrument. "Huh."'],[10.4,'pulls-it-up','Marches back, pulls the sign up again'],[11.3,'carries-back','Carries it back to exactly where it was'],[12.0,'stamps','Plants it, stamps the dirt down'],[12.8,'perfect','Dusts his hands. "Perfect."'],[13.4,'folds-tripod','Folds up the tripod'],[14.9,'walks-off','Walks off the way he came. Just the sign again']];
 export const SURVEY_END = 17.1;
+/** When he plants the tripod and when he picks it up again (s), where it stands (his units from the sign), and how long it takes to pass between hand and ground. */
+export const T_PLANT = 2.3, T_PICKUP = 14.9, TRI_AT = -70, TRI_BLEND = 0.2;
 /** What he says, and when (the reference's `say`). */
 export const SURVEY_LINES = [{from:4.6, to:5.2, text:'Off a metre.'}, {from:9.9, to:10.4, text:'Huh.'}, {from:12.8, to:13.4, text:'Perfect.'}];
 export function surveyScene(stage, frame, sign, f, spot, mirror){
@@ -218,11 +220,18 @@ export function surveyApply(sc, P, t){
   place(sc.man, w.dx); pupApply(sc.man, w);
   // The sign is the permanent one, on its own (unmirrored) layer: its moves are turned to the stage's way.
   place(sc.sign, sg.dx*sc.way); sc.sign.svg.style.transform = sg.lift ? `translateY(${-sg.lift*u}px)` : '';
-  sc.tri.q('.legs').innerHTML = tripodLegs(tri.spread);
+  // The tripod's legs are redrawn only when their spread changes (not every frame).
+  if (sc.spread !== tri.spread) sc.tri.q('.legs').innerHTML = tripodLegs((sc.spread = tri.spread));
   if (tri.mode === 'hidden') sc.tri.svg.style.visibility = 'hidden';
   else { sc.tri.svg.style.visibility = 'visible';
-    if (tri.mode === 'stand') placePx(sc.tri, sc.tri.spot.x*r.width + tri.dx*u, sc.tri.spot.y*r.height + (tri.bounce || 0)*u);
-    else { const g = pt(sc, sc.man, '.armF .fore', 0, 13); placePx(sc.tri, g.x, g.y + 36*u, w.face < 0 ? -6 : 6); } }
+    // Where it stands when planted, and where it rides when carried: in his front hand, at a fixed
+    // angle, level (the hand's place without the walk's bob, so it does not jiggle with his steps).
+    const stand = { x: sc.tri.spot.x*r.width + TRI_AT*u, y: sc.tri.spot.y*r.height + (tri.bounce || 0)*u, rot: 0 };
+    const g = pt(sc, sc.man, '.armF .fore', 0, 13);
+    const carry = { x: g.x, y: g.y - w.y*u + 36*u, rot: w.face < 0 ? -6 : 6 };
+    // It never pops between the two: set down (as he plants it) and picked up (as he leaves) over TRI_BLEND.
+    const k = tri.mode === 'stand' ? ease(seg(t, T_PLANT, T_PLANT + TRI_BLEND)) : t < T_PLANT ? 0 : 1 - ease(seg(t, T_PICKUP, T_PICKUP + TRI_BLEND));
+    placePx(sc.tri, lerp(carry.x, stand.x, k), lerp(carry.y, stand.y, k), lerp(carry.rot, stand.rot, k)); }
   let html = '';
   if (sg.puff >= 0 && sg.puff < 1) html += puff(sc.spot.x*r.width + sg.puffX*u, sc.spot.y*r.height, sg.puff, u);
   if (sc.ovHtml !== html) sc.ov.innerHTML = sc.ovHtml = html;
