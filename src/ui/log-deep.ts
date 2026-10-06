@@ -5,8 +5,8 @@
 // and the surface. THE FAR SIDE IS UPSIDE DOWN: we come up underneath it, so its sea floor is
 // above its sea on the page and the island hangs from the waterline with its sky below.
 //
-// This file is pure (no DOM): the deep layers and their drawings (one small SVG per layer, so a
-// very long page never paints one huge picture), the depth gauge's arithmetic in real km, the
+// This file is pure (no DOM): the deep layers, the dirt drawn a small tile at a time (only the tiles
+// near the screen are ever on the page), the depth gauge's arithmetic in real km, the
 // oddities buried on the way, and the stopwatch's text. log-dig-view.ts puts it on the page.
 import { mulberry32 } from '../engine/rng.ts';
 
@@ -29,21 +29,37 @@ export interface DeepLayer {
 }
 
 /**
+ * HOW LONG THE DIG IS: ONE SETTING. `screens` phone screens (of `screenPx`) from the foot of the
+ * reservoir to the far waterline, like the long dig in Plants vs Zombies. Mostly dirt and rock:
+ * thick layers that change slowly. (`tile` is how tall a piece of dirt is drawn at a time: only
+ * the tiles near the screen are ever on the page.)
+ */
+export const DIG = { screens: 60, screenPx: 844, tile: 422 } as const;
+
+/** Each layer's share of the dig (they add up to 1), and the depth at its foot (km, straight through the Earth). */
+const PLAN: { id: DeepId; name: string; share: number; km: number }[] = [
+  { id: 'granite', name: 'Basement granite', share: 0.05, km: 35 },
+  { id: 'mantle', name: 'Mantle', share: 0.21, km: 2890 },
+  { id: 'outerCore', name: 'Outer core', share: 0.15, km: 5150 },
+  { id: 'innerCore', name: 'Inner core', share: 0.1, km: EARTH.far - 5150 },
+  { id: 'outerCoreUp', name: 'Outer core', share: 0.15, km: EARTH.far - 2890 },
+  { id: 'mantleUp', name: 'Mantle', share: 0.21, km: EARTH.far - 11 },
+  { id: 'oceanCrust', name: 'Ocean crust', share: 0.035, km: EARTH.far - 4.4 },
+  { id: 'seafloor', name: 'Seafloor', share: 0.015, km: EARTH.far - 4 },
+  { id: 'ocean', name: 'Southern Ocean', share: 0.08, km: EARTH.far },
+];
+/** The far surface: one screen-high picture at the very end (not part of the dirt's length). */
+export const SURFACE_PX = 460;
+
+/**
  * Past the reservoir, top of the page to bottom. The crust ends at 35 km, the mantle at 2,890, the
- * outer core at 5,150; the centre (6,371) is the MIDDLE of the inner core's block. Then back up:
- * the same depths counted from the far surface, which has an ocean's crust (7 km) under 4 km of sea.
+ * outer core at 5,150; the centre (6,371) is the MIDDLE of the inner core. Then back up: the same
+ * depths counted from the far surface, which has an ocean's crust under 4 km of sea. Every
+ * layer is a whole number of tiles tall; the two mirrored layers are as tall as their twins.
  */
 export const DEEP: DeepLayer[] = [
-  { id: 'granite', name: 'Basement granite', height: 420, km: 35 },
-  { id: 'mantle', name: 'Mantle', height: 1500, km: 2890 },
-  { id: 'outerCore', name: 'Outer core', height: 1000, km: 5150 },
-  { id: 'innerCore', name: 'Inner core', height: 800, km: EARTH.far - 5150 },
-  { id: 'outerCoreUp', name: 'Outer core', height: 1000, km: EARTH.far - 2890 },
-  { id: 'mantleUp', name: 'Mantle', height: 1500, km: EARTH.far - 11 },
-  { id: 'oceanCrust', name: 'Ocean crust', height: 300, km: EARTH.far - 4.4 },
-  { id: 'seafloor', name: 'Seafloor', height: 160, km: EARTH.far - 4 },
-  { id: 'ocean', name: 'Southern Ocean', height: 900, km: EARTH.far },
-  { id: 'kerguelen', name: 'Kerguelen Islands', height: 460, km: EARTH.far },
+  ...PLAN.map((l) => ({ id: l.id, name: l.name, km: l.km, height: Math.max(1, Math.round((l.share * DIG.screens * DIG.screenPx) / DIG.tile)) * DIG.tile })),
+  { id: 'kerguelen', name: 'Kerguelen Islands', height: SURFACE_PX, km: EARTH.far },
 ];
 
 /** A mark on the page: at `y` px the depth is `km`. */
@@ -97,30 +113,19 @@ export function clockText(ms: number): string {
 
 // ---------- Oddities on the way down ----------
 
-export type OddityId = 'diamond' | 'lunchbox' | 'whale';
-export interface Oddity {
-  id: OddityId;
-  label: string;
-  in: DeepId;
-  /** Its centre: across the cards' width and down its layer (both 0 to 1). */
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-/** A diamond in the mantle, a lost lunchbox at the very centre, a whale in the Southern Ocean. Tap to wiggle, like the buried things above. */
-export const ODDITIES: Oddity[] = [
-  { id: 'diamond', label: 'Diamond', in: 'mantle', x: 0.3, y: 0.42, w: 50, h: 46 },
-  { id: 'lunchbox', label: 'Lost lunchbox', in: 'innerCore', x: 0.6, y: 0.5, w: 60, h: 50 },
-  { id: 'whale', label: 'Whale', in: 'ocean', x: 0.42, y: 0.45, w: 150, h: 70 },
-];
+import { DIG_FINDS, type DigFind } from './dig-finds.ts';
+export type OddityId = DigFind['id'];
+export type Oddity = DigFind;
+/** The finds in the dirt (dig-finds.ts). Tap to wiggle, like the buried things above. */
+export const ODDITIES: Oddity[] = DIG_FINDS;
 
 const O = '#2a1a0c';
 const ol = `stroke="${O}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"`;
 const thin = `stroke="${O}" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"`;
 const pic = (w: number, h: number, body: string) => `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true">${body}</svg>`;
 
-const ODD_ART: Record<OddityId, () => string> = {
+/** A find's drawing, by its id (dig-finds.ts). */
+const FIND_ART: Record<OddityId, () => string> = {
   diamond: () =>
     pic(50, 46,
       `<path d="M10 16 L18 5 L32 5 L40 16 L25 42 Z" fill="#9fe3f5" ${ol}/><path d="M10 16 L40 16 M18 5 L22 16 L25 42 L28 16 L32 5" fill="none" ${thin}/>` +
@@ -143,21 +148,36 @@ const ODD_ART: Record<OddityId, () => string> = {
       `<path d="M56 12 q-2 -7 -8 -9 M58 12 q2 -8 9 -9" fill="none" stroke="#bfe3f5" stroke-width="2.4" stroke-linecap="round"/></g>`),
 };
 /** An oddity's drawing. */
-export const oddityArt = (id: OddityId): string => ODD_ART[id]();
-/** An oddity's box inside its layer, for cards `width` px wide (a tap target of at least 44 px each way). */
+export const oddityArt = (id: OddityId): string => FIND_ART[id]();
+/** A find's box inside its layer, for cards `width` px wide (a tap target of at least 44 px each way). */
 export function oddityBox(o: Oddity, width: number, layerH: number): { left: number; top: number; hitW: number; hitH: number } {
   const hitW = Math.max(44, o.w), hitH = Math.max(44, o.h);
-  return { left: Math.round(o.x * width - hitW / 2), top: Math.round(o.y * layerH - hitH / 2), hitW, hitH };
+  return { left: Math.round(o.x * width - hitW / 2), top: Math.round(o.at * layerH - hitH / 2), hitW, hitH };
 }
 
-// ---------- The deep layers' drawings ----------
+// ---------- The dirt, drawn a tile at a time ----------
 
-const FILL: Record<DeepId, string> = {
-  granite: '#b59a92', mantle: '#c4471f', outerCore: '#f0a21c', innerCore: '#ffe7a0', outerCoreUp: '#f0a21c', mantleUp: '#c4471f',
-  oceanCrust: '#414955', seafloor: '#b8a888', ocean: '#1d4f86', kerguelen: '#bfe3f2',
+/** Each layer's colour at its top and at its foot: it changes slowly all the way down. */
+const TONE: Record<Exclude<DeepId, 'kerguelen'>, [string, string]> = {
+  granite: ['#b59a92', '#8f7b78'],
+  mantle: ['#a83617', '#e0652b'],
+  outerCore: ['#e58c12', '#ffc53d'],
+  innerCore: ['#ffd978', '#fff2c2'],
+  outerCoreUp: ['#ffc53d', '#e58c12'],
+  mantleUp: ['#e0652b', '#a83617'],
+  oceanCrust: ['#353c46', '#4d5663'],
+  seafloor: ['#a89878', '#c8b898'],
+  ocean: ['#143a66', '#58a4d6'],
 };
-/** Each deep layer's base colour (its top edge takes this fill, so two layers meet cleanly). */
-export const deepFill = (id: DeepId): string => FILL[id];
+/**
+ * A layer's background (CSS): one long, slow change of colour from its top to its foot (the inner
+ * core is brightest at its middle, the centre of the Earth). The far surface is the sky's blue.
+ */
+export function layerBackground(id: DeepId): string {
+  if (id === 'kerguelen') return '#bfe3f2';
+  const [a, b] = TONE[id];
+  return id === 'innerCore' ? `linear-gradient(${a}, ${b} 50%, ${a})` : `linear-gradient(${a}, ${b})`;
+}
 
 /** A wavy line across a layer at `y`, as path steps from x = 0. */
 function wave(y: number, width: number, rng: () => number, amp = 5, step = 38): string {
@@ -166,74 +186,106 @@ function wave(y: number, width: number, rng: () => number, amp = 5, step = 38): 
   return d;
 }
 
+/** How many tiles a layer is. */
+export const tilesIn = (id: DeepId): number => (id === 'kerguelen' ? 0 : DEEP.find((l) => l.id === id)!.height / DIG.tile);
+
 /**
- * One deep layer as its own SVG, `width` x its height px: flat fills, the dark toy line along its
- * top, a sparse seeded texture (never more than a few hundred shapes, no filters, no gradients).
- * The two layers that mirror an earlier one are that same drawing turned over.
+ * ONE TILE OF DIRT: tile `k` (0 at the layer's top) of a layer, `width` x `DIG.tile` px, as its
+ * own small SVG. Procedural and seeded by the layer and the tile, so the same tile is always the
+ * same and no two alike; flat shapes only (no background: the layer's own slow colour shows
+ * through, and a shape may run over the tile's edge without being cut). The two mirrored layers
+ * draw their twin's tiles in reverse order, turned over.
  */
-export function deepSvg(id: DeepId, width: number, seed = 61): string {
-  const layer = DEEP.find((l) => l.id === id)!;
-  const h = layer.height;
-  const base: DeepId = id === 'outerCoreUp' ? 'outerCore' : id === 'mantleUp' ? 'mantle' : id;
-  const rng = mulberry32(seed + base.length * 977 + base.charCodeAt(0));
+export function tileSvg(id: Exclude<DeepId, 'kerguelen'>, k: number, width: number): string {
+  const up = id === 'outerCoreUp' || id === 'mantleUp';
+  const base = id === 'outerCoreUp' ? 'outerCore' : id === 'mantleUp' ? 'mantle' : id;
+  const kk = up ? tilesIn(id) - 1 - k : k;
+  const h = DIG.tile;
+  const rng = mulberry32(((base.charCodeAt(0) * 131 + base.length) * 7919 + kk * 104729) >>> 0);
   const r = (a: number, b: number) => a + rng() * (b - a);
   const n = (v: number) => v.toFixed(1);
-  const count = (per: number, cap: number) => Math.min(cap, Math.round((width * h) / per));
-  let body = `<rect width="${width}" height="${h}" fill="${FILL[id]}"/>`;
+  const many = (per: number, cap: number) => Math.min(cap, Math.max(1, Math.round((width * h) / per)));
+  let body = '';
   if (base === 'granite') {
-    for (let i = count(1500, 260); i > 0; i--) body += `<circle cx="${n(r(0, width))}" cy="${n(r(6, h))}" r="${n(r(1.2, 3.2))}" fill="${['#3d3532', '#f1e6e0', '#d68f86', '#8d7f7a'][Math.floor(rng() * 4)]}"/>`;
-    for (let i = 5; i > 0; i--) { const x = r(10, width - 60), y = r(30, h - 40); body += `<path d="M${n(x)} ${n(y)} l${n(r(18, 40))} ${n(r(10, 26))} l${n(r(10, 30))} ${n(r(-8, 12))}" fill="none" stroke="#6f5f5a" stroke-width="1.6" stroke-linecap="round"/>`; }
+    for (let i = many(1700, 110); i > 0; i--) body += `<circle cx="${n(r(0, width))}" cy="${n(r(0, h))}" r="${n(r(1.2, 3.2))}" fill="${['#3d3532', '#f1e6e0', '#d68f86', '#7d706c'][Math.floor(rng() * 4)]}"/>`;
+    for (let i = 2; i > 0; i--) { const x = r(10, width - 60), y = r(20, h - 40); body += `<path d="M${n(x)} ${n(y)} l${n(r(18, 40))} ${n(r(10, 26))} l${n(r(10, 30))} ${n(r(-8, 12))}" fill="none" stroke="#6f5f5a" stroke-width="1.6" stroke-linecap="round"/>`; }
   } else if (base === 'mantle') {
-    // Slow convection: big soft plumes, lighter and hotter toward the core.
-    for (let i = count(26000, 22); i > 0; i--) { const x = r(-20, width + 20), y = r(40, h - 20), rx = r(36, 84); body += `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(rx)}" ry="${n(rx * r(0.9, 1.9))}" fill="${y > h * 0.6 ? '#e2632a' : '#d1521f'}"/>`; }
-    for (let i = count(42000, 14); i > 0; i--) { const x = r(0, width), y = r(h * 0.35, h - 10), rx = r(18, 44); body += `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(rx)}" ry="${n(rx * r(1, 1.8))}" fill="#f08a3a"/>`; }
-    for (let i = count(9000, 60); i > 0; i--) { const x = r(0, width), y = r(10, h); body += `<path d="M${n(x)} ${n(y)} q${n(r(-10, 10))} ${n(r(12, 26))} ${n(r(-6, 6))} ${n(r(30, 54))}" fill="none" stroke="#a83a16" stroke-width="2" stroke-linecap="round"/>`; }
+    // Slow convection: big soft plumes a little hotter than the rock round them, and flow lines.
+    for (let i = many(30000, 7); i > 0; i--) { const rx = r(34, 80); body += `<ellipse cx="${n(r(-20, width + 20))}" cy="${n(r(0, h))}" rx="${n(rx)}" ry="${n(rx * r(0.9, 1.8))}" fill="#ff9a4a" opacity="0.22"/>`; }
+    for (let i = many(60000, 3); i > 0; i--) { const rx = r(16, 38); body += `<ellipse cx="${n(r(0, width))}" cy="${n(r(0, h))}" rx="${n(rx)}" ry="${n(rx * r(1, 1.7))}" fill="#ffb060" opacity="0.3"/>`; }
+    for (let i = many(9000, 20); i > 0; i--) body += `<path d="M${n(r(0, width))} ${n(r(0, h))} q${n(r(-10, 10))} ${n(r(12, 26))} ${n(r(-6, 6))} ${n(r(30, 54))}" fill="none" stroke="#7d2a10" stroke-width="2" stroke-linecap="round" opacity="0.55"/>`;
   } else if (base === 'outerCore') {
     // Molten: bright currents running across, and bubbles.
-    for (let y = 26; y < h; y += r(34, 60)) body += `<path d="${wave(y, width, rng, 9)}" fill="none" stroke="${rng() < 0.5 ? '#ffd24a' : '#e08412'}" stroke-width="${n(r(3, 7))}" stroke-linecap="round"/>`;
-    for (let i = count(14000, 34); i > 0; i--) { const s = r(3, 9); body += `<circle cx="${n(r(0, width))}" cy="${n(r(10, h - 6))}" r="${n(s)}" fill="#ffe27a" stroke="#c9770c" stroke-width="1.4"/>`; }
+    for (let y = r(10, 40); y < h; y += r(40, 70)) body += `<path d="${wave(y, width, rng, 9)}" fill="none" stroke="${rng() < 0.5 ? '#ffe07a' : '#c9770c'}" stroke-width="${n(r(3, 7))}" stroke-linecap="round" opacity="0.7"/>`;
+    for (let i = many(15000, 12); i > 0; i--) body += `<circle cx="${n(r(0, width))}" cy="${n(r(0, h))}" r="${n(r(3, 9))}" fill="#ffe9a0" stroke="#c9770c" stroke-width="1.4"/>`;
   } else if (base === 'innerCore') {
     // Solid iron, crystalline: long facets leaning the same way.
-    for (let i = count(5200, 70); i > 0; i--) { const x = r(-20, width), y = r(10, h - 10), len = r(26, 70); body += `<path d="M${n(x)} ${n(y)} l${n(len)} ${n(-len * 0.5)}" stroke="${rng() < 0.5 ? '#f3c85a' : '#fff6cf'}" stroke-width="${n(r(2, 4))}" stroke-linecap="round"/>`; }
-    // The centre of the Earth: one dashed line across its middle.
-    body += `<path d="M0 ${h / 2} H${width}" stroke="${O}" stroke-width="2.4" stroke-dasharray="9 7" opacity="0.8"/>`;
+    for (let i = many(5600, 30); i > 0; i--) { const len = r(26, 70); body += `<path d="M${n(r(-20, width))} ${n(r(0, h))} l${n(len)} ${n(-len * 0.5)}" stroke="${rng() < 0.5 ? '#f0c14e' : '#fffbe6'}" stroke-width="${n(r(2, 4))}" stroke-linecap="round"/>`; }
   } else if (base === 'oceanCrust') {
     // Pillow basalt.
-    for (let i = count(2600, 46); i > 0; i--) { const x = r(0, width), y = r(16, h - 12), rx = r(12, 26); body += `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(rx)}" ry="${n(rx * r(0.55, 0.8))}" fill="${rng() < 0.5 ? '#4d5663' : '#353c46'}" stroke="#23282f" stroke-width="1.8"/>`; }
+    for (let i = many(2700, 62); i > 0; i--) { const rx = r(12, 26); body += `<ellipse cx="${n(r(0, width))}" cy="${n(r(0, h))}" rx="${n(rx)}" ry="${n(rx * r(0.55, 0.8))}" fill="${rng() < 0.5 ? '#566070' : '#2c323b'}" stroke="#23282f" stroke-width="1.8"/>`; }
   } else if (base === 'seafloor') {
-    // Soft sediment, and at its foot (the sea is BELOW it here) the seabed: rocks and weed hanging into the water.
-    for (let i = count(1300, 50); i > 0; i--) body += `<circle cx="${n(r(0, width))}" cy="${n(r(8, h - 30))}" r="${n(r(1, 2.4))}" fill="${rng() < 0.5 ? '#9c8c6c' : '#d6c8a8'}"/>`;
-    body += `<path d="${wave(h - 26, width, rng, 6)} L${width} ${h} L0 ${h} Z" fill="${FILL.ocean}"/><path d="${wave(h - 26, width, mulberry32(seed + 5), 6)}" fill="none" stroke="${O}" stroke-width="2.4" stroke-linecap="round"/>`;
-    for (let x = 14; x < width; x += r(26, 60)) body += rng() < 0.5 ? `<ellipse cx="${n(x)}" cy="${n(h - 22)}" rx="${n(r(6, 12))}" ry="${n(r(4, 7))}" fill="#7d7566" stroke="${O}" stroke-width="1.6"/>` : `<path d="M${n(x)} ${n(h - 24)} q${n(r(-6, 6))} ${n(r(8, 14))} ${n(r(-3, 3))} ${n(r(16, 24))}" fill="none" stroke="#3f8f5a" stroke-width="3" stroke-linecap="round"/>`;
+    for (let i = many(1500, 110); i > 0; i--) body += `<circle cx="${n(r(0, width))}" cy="${n(r(0, h))}" r="${n(r(1, 2.4))}" fill="${rng() < 0.5 ? '#8c7c5c' : '#e0d2b2'}"/>`;
   } else if (base === 'ocean') {
-    // Dark at the seabed (the top, here), lighter toward the surface (the foot): flat bands, no gradient.
-    const bands = ['#1d4f86', '#225b96', '#2869a6', '#3078b5', '#3d8ac4', '#4f9bd0'];
-    bands.forEach((c, i) => { if (i) body += `<path d="${wave((h * i) / bands.length, width, rng, 8)} L${width} ${h} L0 ${h} Z" fill="${c}"/>`; });
-    for (let i = count(16000, 20); i > 0; i--) { const s = r(2, 5); body += `<circle cx="${n(r(0, width))}" cy="${n(r(20, h - 10))}" r="${n(s)}" fill="none" stroke="#bfe3f5" stroke-width="1.4" opacity="0.7"/>`; }
-    // A few small fish, upside down like everything on this side.
-    for (let i = count(40000, 9); i > 0; i--) { const x = r(20, width - 40), y = r(60, h - 60), s = r(0.8, 1.3), way = rng() < 0.5 ? 1 : -1; body += `<g transform="translate(${n(x)} ${n(y)}) scale(${n(s * way)} ${n(-s)})"><path d="M0 0 Q8 -6 18 0 Q8 6 0 0 Z M18 0 l7 -5 l0 10 z" fill="#f2b84a" stroke="${O}" stroke-width="1.4" stroke-linejoin="round"/><circle cx="5" cy="-1" r="1" fill="${O}"/></g>`; }
-  } else if (base === 'kerguelen') {
-    // The far surface, from underneath: the sea above, the waterline, and below it the open sky,
-    // with one tiny island hanging from the waterline, a king penguin and an elephant seal on it.
-    const sea = 70, cx = width * 0.5;
-    body = `<rect width="${width}" height="${h}" fill="#bfe3f2"/><rect width="${width}" height="${sea}" fill="#4f9bd0"/>`;
-    // clouds (the right way up for a penguin)
-    for (const [x, y, s] of [[width * 0.16, 250, 1], [width * 0.8, 330, 0.8], [width * 0.3, 400, 0.7]] as const) body += `<g transform="translate(${n(x)} ${y}) scale(${s} ${-s})"><path d="M-30 6 Q-34 -6 -20 -8 Q-16 -20 0 -16 Q14 -24 22 -10 Q36 -10 32 6 Z" fill="#fff" stroke="${O}" stroke-width="2"/></g>`;
-    // the island: rock and tussock grass, hanging down from the waterline
-    body += `<path d="M${n(cx - 128)} ${sea} Q${n(cx - 100)} ${sea + 46} ${n(cx - 52)} ${sea + 58} Q${n(cx - 10)} ${sea + 104} ${n(cx + 30)} ${sea + 66} Q${n(cx + 88)} ${sea + 58} ${n(cx + 128)} ${sea} Z" fill="#6f6a62" ${ol}/>`;
-    body += `<path d="M${n(cx - 112)} ${sea + 14} Q${n(cx - 74)} ${sea + 40} ${n(cx - 34)} ${sea + 46} Q${n(cx + 8)} ${sea + 70} ${n(cx + 52)} ${sea + 48} Q${n(cx + 92)} ${sea + 40} ${n(cx + 114)} ${sea + 14}" fill="none" stroke="#6fa04a" stroke-width="9" stroke-linecap="round"/>`;
-    for (const tx of [-84, -18, 14, 100]) body += `<path d="M${n(cx + tx)} ${sea + 40} l-3 10 M${n(cx + tx)} ${sea + 40} l1 11 M${n(cx + tx)} ${sea + 40} l5 9" stroke="#4f8035" stroke-width="2.2" stroke-linecap="round"/>`;
-    // waves along the waterline
-    body += `<path d="${wave(sea, width, rng, 3, 22)}" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.9"/><path d="${wave(sea + 1, width, mulberry32(seed + 9), 3, 22)}" fill="none" stroke="${O}" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>`;
-    // a king penguin, standing on the island (head down, to us)
-    body += `<g transform="translate(${n(cx - 58)} ${sea + 58}) scale(1.15 -1.15)"><ellipse cx="0" cy="-22" rx="12" ry="20" fill="#2b2f3a" ${ol}/><ellipse cx="1" cy="-19" rx="7.5" ry="15" fill="#fbfbf6"/><path d="M-5 -34 Q1 -30 7 -34" fill="none" stroke="#f2a51e" stroke-width="3" stroke-linecap="round"/><circle cx="0" cy="-42" r="8" fill="#2b2f3a" ${ol}/><path d="M5 -43 l11 2 l-11 3 z" fill="#f08a24" ${thin}/><circle cx="2" cy="-44" r="1.4" fill="#fff"/><path d="M-12 -26 q-6 8 -3 16 M12 -26 q6 8 3 16" fill="none" stroke="${O}" stroke-width="4" stroke-linecap="round"/><path d="M-7 -2 h6 M2 -2 h6" stroke="#f08a24" stroke-width="3.4" stroke-linecap="round"/></g>`;
-    // an elephant seal, flopped beside him
-    body += `<g transform="translate(${n(cx + 58)} ${sea + 60}) scale(1.15 -1.15)"><path d="M-38 0 Q-44 -14 -24 -20 Q4 -30 26 -22 Q40 -18 40 -6 Q40 0 30 0 Z" fill="#8b7d6f" ${ol}/><path d="M-38 0 l-10 -7 l2 9 l-6 4 z" fill="#8b7d6f" ${thin}/><circle cx="30" cy="-14" r="1.8" fill="${O}"/><path d="M38 -10 Q48 -10 46 0 Q42 4 38 -2 Z" fill="#7a6d60" ${thin}/><path d="M-8 -2 q8 -6 18 -2" fill="none" stroke="#6f6358" stroke-width="2" stroke-linecap="round"/></g>`;
+    // Bubbles, and a few small fish, upside down like everything on this side of the world.
+    for (let i = many(17000, 10); i > 0; i--) body += `<circle cx="${n(r(0, width))}" cy="${n(r(0, h))}" r="${n(r(2, 5))}" fill="none" stroke="#cfeaf8" stroke-width="1.4" opacity="0.7"/>`;
+    for (let i = many(60000, 3); i > 0; i--) { const s = r(0.8, 1.3), way = rng() < 0.5 ? 1 : -1; body += `<g transform="translate(${n(r(20, width - 40))} ${n(r(20, h - 20))}) scale(${n(s * way)} ${n(-s)})"><path d="M0 0 Q8 -6 18 0 Q8 6 0 0 Z M18 0 l7 -5 l0 10 z" fill="#f2b84a" stroke="${O}" stroke-width="1.4" stroke-linejoin="round"/><circle cx="5" cy="-1" r="1" fill="${O}"/></g>`; }
   }
-  // The layer's top: one dark toy line (the surface block has its own waterline).
-  if (base !== 'kerguelen') body += `<path d="${wave(1.5, width, mulberry32(seed + h), 3)}" fill="none" stroke="${O}" stroke-width="2.4" stroke-linecap="round" opacity="0.85"/>`;
-  const turned = id !== base ? ` transform="translate(0 ${h}) scale(1 -1)"` : '';
-  return `<svg class="deep-art" viewBox="0 0 ${width} ${h}" width="${width}" height="${h}" preserveAspectRatio="none" aria-hidden="true"><g${turned}>${body}</g></svg>`;
+  const turned = up ? ` transform="translate(0 ${h}) scale(1 -1)"` : '';
+  return `<svg class="deep-tile-art" viewBox="0 0 ${width} ${h}" width="${width}" height="${h}" overflow="visible" aria-hidden="true"><g${turned}>${body}</g></svg>`;
+}
+
+/**
+ * Which tiles of a layer are near the screen: those within `margin` px of the stretch of the layer
+ * that shows (`viewTop` and `viewBottom` are px from the LAYER's top). Everything else stays off
+ * the page: a sixty-screen dig never holds more than a few tiles at once.
+ */
+export function tilesNear(id: DeepId, viewTop: number, viewBottom: number, margin: number = DIG.screenPx): number[] {
+  const count = tilesIn(id);
+  const first = Math.max(0, Math.floor((viewTop - margin) / DIG.tile)), last = Math.min(count - 1, Math.floor((viewBottom + margin) / DIG.tile));
+  const out: number[] = [];
+  for (let k = first; k <= last; k++) out.push(k);
+  return out;
+}
+
+/** The dark toy line along the top of a layer: a thin strip `width` px wide. */
+export function layerEdge(id: DeepId, width: number): string {
+  const rng = mulberry32(id.length * 4409 + id.charCodeAt(1));
+  return `<svg class="deep-edge" viewBox="0 0 ${width} 10" width="${width}" height="10" overflow="visible" aria-hidden="true"><path d="${wave(1.5, width, rng, 3)}" fill="none" stroke="${O}" stroke-width="2.4" stroke-linecap="round" opacity="0.85"/></svg>`;
+}
+
+/** The seabed, at the seafloor's foot (the sea is BELOW it on this side): its ragged edge, rocks and weed hanging into the water. 44 px tall. */
+export function seabedSvg(width: number): string {
+  const rng = mulberry32(8123);
+  const r = (a: number, b: number) => a + rng() * (b - a);
+  const n = (v: number) => v.toFixed(1);
+  let body = `<path d="${wave(18, width, rng, 6)} L${width} 44 L0 44 Z" fill="${TONE.ocean[0]}"/><path d="${wave(18, width, mulberry32(8123), 6)}" fill="none" stroke="${O}" stroke-width="2.4" stroke-linecap="round"/>`;
+  for (let x = 14; x < width; x += r(26, 60)) body += rng() < 0.5 ? `<ellipse cx="${n(x)}" cy="22" rx="${n(r(6, 12))}" ry="${n(r(4, 7))}" fill="#7d7566" stroke="${O}" stroke-width="1.6"/>` : `<path d="M${n(x)} 20 q${n(r(-6, 6))} ${n(r(8, 12))} ${n(r(-3, 3))} ${n(r(14, 22))}" fill="none" stroke="#3f8f5a" stroke-width="3" stroke-linecap="round"/>`;
+  return `<svg class="deep-seabed" viewBox="0 0 ${width} 44" width="${width}" height="44" aria-hidden="true">${body}</svg>`;
+}
+
+/**
+ * THE FAR SURFACE, from underneath: the sea above, the waterline, and below it the open sky, with
+ * one tiny island hanging from the waterline, a king penguin and an elephant seal on it.
+ */
+export function kerguelenSvg(width: number): string {
+  const h = SURFACE_PX, sea = 70, cx = width * 0.5;
+  const rng = mulberry32(4421);
+  const n = (v: number) => v.toFixed(1);
+  let body = `<rect width="${width}" height="${h}" fill="#bfe3f2"/><rect width="${width}" height="${sea}" fill="${TONE.ocean[1]}"/>`;
+  // clouds (the right way up for a penguin)
+  for (const [x, y, s] of [[width * 0.16, 250, 1], [width * 0.8, 330, 0.8], [width * 0.3, 400, 0.7]] as const) body += `<g transform="translate(${n(x)} ${y}) scale(${s} ${-s})"><path d="M-30 6 Q-34 -6 -20 -8 Q-16 -20 0 -16 Q14 -24 22 -10 Q36 -10 32 6 Z" fill="#fff" stroke="${O}" stroke-width="2"/></g>`;
+  // the island: rock and tussock grass, hanging down from the waterline
+  body += `<path d="M${n(cx - 128)} ${sea} Q${n(cx - 100)} ${sea + 46} ${n(cx - 52)} ${sea + 58} Q${n(cx - 10)} ${sea + 104} ${n(cx + 30)} ${sea + 66} Q${n(cx + 88)} ${sea + 58} ${n(cx + 128)} ${sea} Z" fill="#6f6a62" ${ol}/>`;
+  body += `<path d="M${n(cx - 112)} ${sea + 14} Q${n(cx - 74)} ${sea + 40} ${n(cx - 34)} ${sea + 46} Q${n(cx + 8)} ${sea + 70} ${n(cx + 52)} ${sea + 48} Q${n(cx + 92)} ${sea + 40} ${n(cx + 114)} ${sea + 14}" fill="none" stroke="#6fa04a" stroke-width="9" stroke-linecap="round"/>`;
+  for (const tx of [-84, -18, 14, 100]) body += `<path d="M${n(cx + tx)} ${sea + 40} l-3 10 M${n(cx + tx)} ${sea + 40} l1 11 M${n(cx + tx)} ${sea + 40} l5 9" stroke="#4f8035" stroke-width="2.2" stroke-linecap="round"/>`;
+  // waves along the waterline
+  body += `<path d="${wave(sea, width, rng, 3, 22)}" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.9"/><path d="${wave(sea + 1, width, mulberry32(4430), 3, 22)}" fill="none" stroke="${O}" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>`;
+  // a king penguin, standing on the island (head down, to us)
+  body += `<g transform="translate(${n(cx - 58)} ${sea + 58}) scale(1.15 -1.15)"><ellipse cx="0" cy="-22" rx="12" ry="20" fill="#2b2f3a" ${ol}/><ellipse cx="1" cy="-19" rx="7.5" ry="15" fill="#fbfbf6"/><path d="M-5 -34 Q1 -30 7 -34" fill="none" stroke="#f2a51e" stroke-width="3" stroke-linecap="round"/><circle cx="0" cy="-42" r="8" fill="#2b2f3a" ${ol}/><path d="M5 -43 l11 2 l-11 3 z" fill="#f08a24" ${thin}/><circle cx="2" cy="-44" r="1.4" fill="#fff"/><path d="M-12 -26 q-6 8 -3 16 M12 -26 q6 8 3 16" fill="none" stroke="${O}" stroke-width="4" stroke-linecap="round"/><path d="M-7 -2 h6 M2 -2 h6" stroke="#f08a24" stroke-width="3.4" stroke-linecap="round"/></g>`;
+  // an elephant seal, flopped beside him
+  body += `<g transform="translate(${n(cx + 58)} ${sea + 60}) scale(1.15 -1.15)"><path d="M-38 0 Q-44 -14 -24 -20 Q4 -30 26 -22 Q40 -18 40 -6 Q40 0 30 0 Z" fill="#8b7d6f" ${ol}/><path d="M-38 0 l-10 -7 l2 9 l-6 4 z" fill="#8b7d6f" ${thin}/><circle cx="30" cy="-14" r="1.8" fill="${O}"/><path d="M38 -10 Q48 -10 46 0 Q42 4 38 -2 Z" fill="#7a6d60" ${thin}/><path d="M-8 -2 q8 -6 18 -2" fill="none" stroke="#6f6358" stroke-width="2" stroke-linecap="round"/></g>`;
+  return `<svg class="deep-surface" viewBox="0 0 ${width} ${h}" width="${width}" height="${h}" preserveAspectRatio="none" aria-hidden="true">${body}</svg>`;
 }
 
 /** The Dug Through card's picture: the Earth cut in half, the hole straight through it, a derrick on top and a penguin underneath. */
