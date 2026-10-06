@@ -31,6 +31,7 @@ import { companyStill, mascotStill } from './win-cast.ts';
 import { gsap } from 'gsap';
 import { TAP_SLOP, onTap } from './tap.ts';
 import type { BumpHit } from './lines.ts';
+import { confettiBurst } from './confetti.ts';
 
 /** Screen-changing buttons: act on the first tap, even on iOS (see tap.ts). */
 /** The level whose board shows the ghost finger until the first drag: Cardium 1. */
@@ -53,8 +54,6 @@ const MOON_ROOM = 40;
 /** The least sky band (px, HUD's foot to the board) in which Mannville's moon is always shown: about what Aurora Howl needs. */
 const AURORA_SKY = 62;
 /** The perfect-solve confetti: how long the whole burst lasts, and how many pieces. */
-const CONFETTI_MS = 1600;
-const CONFETTI_PIECES = 40;
 
 export interface GameViewHandlers {
   onLevels: () => void;
@@ -101,7 +100,7 @@ export class GameView {
 
   /** Null while gags are switched off (flags.ts). */
   /**
-   * The Easter-egg gags that are live, each its own code puppet, each null if switched off:
+   * The gags (sightings) that are live, each its own code puppet, each null if switched off:
    * the magpie (10 s with no moves), the sleepy worker (20 s with no moves) and the moose (Duvernay:
    * two bumps into the top berm). One at a time, none while a truck moves (`tickEggs`).
    */
@@ -431,7 +430,7 @@ export class GameView {
         const now = performance.now();
         // Night falls after a quiet spell; the next thing the player does brings the day back (`played`).
         if (!this.night && nightComes(this.theme.id) && !this.board.moving && now - this.lastPlayAt >= GAG_TRIGGERS.night.idleMs * this.idleScale) this.setNight(true);
-        // NIGHT SHIFT (an Easter egg in the Wildlife Log): found once the lease has gone fully dark from sitting idle.
+        // NIGHT SHIFT (a sighting in the Wildlife Log): found once the lease has gone fully dark from sitting idle.
         if (this.night && !this.nightSeen && nightPin !== true && now - this.nightAt >= GAG_TRIGGERS.night.fadeInMs) {
           this.nightSeen = true;
           this.seen('night');
@@ -528,7 +527,7 @@ export class GameView {
       this.toured = true;
       if (this.roll('tourists', GAG_TRIGGERS.tourists.chance)) this.fire('tourists');
     }
-    // Easter-egg triggers (gag-triggers.ts): the same truck back and forth; two exits back to back.
+    // Gag triggers (gag-triggers.ts): the same truck back and forth; two exits back to back.
     if (this.backForth.moved(id, delta) >= GAG_TRIGGERS.landowner.backAndForth) this.fire('landowner');
     // The Cat Train: a convoy drives out in order, back to back (truck 1, then truck 2 on the next move).
     {
@@ -1019,32 +1018,7 @@ export class GameView {
    * the card (the layer sits under it, so nothing ever covers a button). Gone after CONFETTI_MS.
    */
   private confetti(): void {
-    const layer = document.createElement('div');
-    layer.className = 'confetti';
-    layer.setAttribute('aria-hidden', 'true');
-    layer.style.setProperty('--ui-hat', `url("${new URL('./sprites/ui/icon_hardhat_full.webp', location.href).href}")`);
-    const colors = ['#ff8a00', '#ffb347', '#ffd21f', '#ff6a2b'];
-    const h = this.winEl.clientHeight;
-    let html = '';
-    for (let i = 0; i < CONFETTI_PIECES; i++) {
-      const hat = i % 4 === 0;
-      const size = hat ? 16 + Math.random() * 6 : 6 + Math.random() * 5;
-      const style = [
-        `--x:${(Math.random() * 100).toFixed(1)}%`,
-        `--w:${size.toFixed(0)}px`,
-        `--h:${(hat ? size : size * (0.5 + Math.random() * 0.7)).toFixed(0)}px`,
-        `--bg:${colors[i % colors.length]}`,
-        `--d:${(Math.random() * 0.45).toFixed(2)}s`,
-        `--t:${(0.85 + Math.random() * 0.25).toFixed(2)}s`,
-        `--dx:${((Math.random() - 0.5) * 90).toFixed(0)}px`,
-        `--fall:${(h * (0.55 + Math.random() * 0.5)).toFixed(0)}px`,
-        `--spin:${((Math.random() - 0.5) * 900).toFixed(0)}deg`,
-      ].join(';');
-      html += `<i class="${hat ? 'hat' : 'scrap'}" style="${style}"></i>`;
-    }
-    layer.innerHTML = html;
-    this.winEl.prepend(layer);
-    setTimeout(() => layer.remove(), CONFETTI_MS);
+    confettiBurst(this.winEl, this.winEl.clientHeight);
   }
 
   /** One tap: copy the spoiler-free result, ready to paste into Messages. */
