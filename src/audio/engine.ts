@@ -105,6 +105,10 @@ class AudioEngine {
     this.syncMusic();
   }
 
+  sceneNow(): Scene {
+    return this.scene;
+  }
+
   /** The menus or a level: each has its own loop of the chosen style. */
   setScene(scene: Scene): void {
     if (scene === this.scene) return;
@@ -387,7 +391,8 @@ export const sound = {
   },
   /** A pumpjack's stroke: a small squeak and clunk, well down in the mix. */
   pumpjack(): void {
-    audio.play('pumpjack');
+    // Only on a level being played: never on the menus, the log or the cover.
+    if (audio.sceneNow() === 'play') audio.play('pumpjack');
   },
 
   // The magpie's own (they follow what the player does, not his beats).

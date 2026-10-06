@@ -261,6 +261,59 @@ for (const [gag, want, loops, secs] of [
   }
   await context.close();
 }
+// ---------- 3b. The pumpjack is only heard while a level is being played ----------
+console.log('\nchromium iPhone 13: the pumpjack stops with the level');
+{
+  const montney = REGIONS.findIndex((r) => r.id === 'montney');
+  const li = REGIONS[montney].levels.findIndex((l) => (l.obstacles ?? []).some((o) => (o.kind ?? 'pumpjack') === 'pumpjack'));
+  const lv = REGIONS[montney].levels[li];
+  const { context, page, cdp } = await open({ audio: ON });
+  await touch(cdp, 195, 150);
+  await page.waitForFunction((n) => window.__rhrAudio.log.filter((x) => x.startsWith('loaded:sfx/')).length >= n, Object.keys(pack.sfx).length, { timeout: 15000 });
+  await enter(page, montney + 1, li);
+  await heard(page);
+  // (A stroke takes about 8.6 s, so 10 s always holds one.)
+  await wait(10000);
+  check(count(await heard(page), 'pumpjack') >= 1, `${lv.name}: the pumpjack's stroke is heard while the level is played`);
+  // The app is hidden: nothing. Shown again: it pumps.
+  const hide = (hidden) => page.evaluate((h) => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => h });
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => (h ? 'hidden' : 'visible') });
+    document.dispatchEvent(new Event('visibilitychange'));
+  }, hidden);
+  await hide(true);
+  await heard(page);
+  await wait(10000);
+  check(count(await heard(page), 'pumpjack') === 0, 'the app hidden for 10 s: no pumpjack');
+  await hide(false);
+  await wait(10000);
+  check(count(await heard(page), 'pumpjack') >= 1, 'shown again: it pumps again');
+  for (const m of solve(lv)) await drag(page, cdp, m.id, m.delta + Math.sign(m.delta) * 0.4);
+  await page.waitForSelector('.win:not([hidden])', { timeout: 8000 }).catch(() => {});
+  await wait(1500);
+  await heard(page);
+  await wait(10000);
+  let log = await heard(page);
+  check(!!(await page.$('.win:not([hidden])')) && count(log, 'pumpjack') === 0, `10 s on the win card: no pumpjack (${list(log) || 'silence'})`);
+  await page.evaluate(() => document.querySelector('.win:not([hidden]) [data-act="levels"]').click());
+  await wait(400);
+  await heard(page);
+  await wait(10000);
+  log = await heard(page);
+  check(!!(await page.$('.level-btn')) && count(log, 'pumpjack') === 0, `10 s on the level list: no pumpjack (${list(log) || 'silence'})`);
+  await page.$eval('.binoculars', (b) => b.click());
+  await wait(10000);
+  log = await heard(page);
+  check(!!(await page.$('.log-card')) && count(log, 'pumpjack') === 0, '10 s in the Wildlife Log: no pumpjack');
+  await page.$eval('.log-head .back', (b) => b.click());
+  await wait(200);
+  await page.$eval(`.level-btn[data-index="${li}"]`, (b) => b.click());
+  await page.waitForSelector('.board .truck');
+  await heard(page);
+  await wait(10000);
+  check(count(await heard(page), 'pumpjack') >= 1, 'back on the level: it pumps again');
+  await context.close();
+}
 await browser.close();
 
 // ---------- 4. Every loop file decodes to exactly its loop: no gap, no click ----------

@@ -168,9 +168,23 @@ export class BoardView {
       ob.innerHTML = (kind === 'flare' ? '<i class="flare-glow"></i>' : '') + equipmentSvg(kind, seed);
       this.equip.append(ob);
     }
+    this.startAmbient();
+    this.layout();
+  }
+
+  /**
+   * The lease's own motion and sound (pumpjacks pumping, a squeak a stroke) run only while the board
+   * is being played: `stopAmbient` on a win, on leaving the game screen and when the app is hidden;
+   * `startAmbient` when the board shows again (a new level, Restart, the app back in front).
+   */
+  startAmbient(): void {
     this.stopPumpjacks();
     this.stopPumpjacks = runPumpjacks(this.equip, reducedMotion(), () => sound.pumpjack());
-    this.layout();
+  }
+
+  stopAmbient(): void {
+    this.stopPumpjacks();
+    this.stopPumpjacks = () => {};
   }
 
   /** Fits the board into the given box and repositions everything. */
