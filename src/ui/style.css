@@ -3640,6 +3640,11 @@ canvas.berm-night { opacity: 0; transition: opacity var(--night-out) ease-in-out
   from { transform: scale(0.4); }
 }
 
-/* Five regions: the tabs sit three to a row. */
-.regions { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
-.region-tab { min-width: 0; font-size: clamp(15px, 4.5vw, 18px); }
+/* Four regions: the tabs share ONE row (a second row pushes the level list down the page). When
+   Bakken comes in as the fifth they go three to a row. */
+.regions { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.regions:has(.region-tab:nth-child(5)) { grid-template-columns: repeat(3, 1fr); }
+.region-tab { min-width: 0; font-size: clamp(13px, 3.9vw, 17px); padding-left: 2px; padding-right: 2px; }
+.region-tab .rlock { font-size: 10px; }
+.region-tab.locked .rname { gap: 2px; }
+.region-tab.locked img.padlock { width: 14px; height: 14px; flex: none; }
