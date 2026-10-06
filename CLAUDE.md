@@ -290,9 +290,15 @@ something, give exact clicks and one command at a time.
     16 SURVEYOR (approved as it is): sights the sign, "Off a metre.", yanks it up, moves it a
     metre, sights again, "Huh.", carries it back exactly, stamps it in, "Perfect.", folds the
     tripod, leaves. Trigger: the Restart button, 1 in 2, once a visit. Any region. THE TRIPOD
-    (Job I) never pops: it passes between his hand and the ground over `TRI_BLEND` (0.2 s) at
-    `T_PLANT` and `T_PICKUP`; carried, it rides folded at a fixed 6 degrees at his hand's height
-    without the walk's bob (his carry arm is still); `.legs` is rebuilt only when `spread` changes.
+    IS PART OF HIS HAND (Job P, root cause fixed): carried, it is drawn INSIDE his front forearm's
+    group (`.armF .fore > .held`, kept upright by taking the arm's own turn back out), so it goes
+    wherever the glove goes; it is never an element placed or tweened on its own. Standing, it is
+    one drawing put on `TRI_AT` once and never moved. The two change places only at `T_PLANT` and
+    `T_PICKUP`, when he stands in the `HOLD` pose and the folded tripod in his hand is, by
+    arithmetic (`gloveAt`, `GRIP`, `PLANT_DX`, `PICK_DX`, `heldTripod`), exactly on the standing
+    one. Folded while carried; its legs unfold and fold only on the spot. (The old way measured
+    his hand on screen with `getScreenCTM` through a mirrored stage, took the walk's bob out and
+    blended the tripod between hand and ground by itself, so it slid against the glove.)
     17 BACK SCRATCHER (mule deer) and 18 TOURISTS were REVISED by Jay (bible, Oct 5) after the file
     was saved and no newer file has arrived, so their revised beats are AUTHORED from his words on
     the reference's drawings and clock: the deer rubs its CHEEK AND NECK on the sign's near corner
@@ -335,7 +341,12 @@ something, give exact clicks and one command at a time.
     aspen, `hitAspen`; it shakes on the other taps), AURORA HOWL (a tap on the moon once night has
     fallen, `onMoon`; in the sky band: its layer goes OVER the night's shade, `.aurora-layer`, and
     fades with the night; Mannville's moon is always shown where the sky band has room,
-    `AURORA_SKY`). `?gag=muskeg|cattrain|beaver|aurora` (the aurora's preview pins the night).
+    `AURORA_SKY`). The coyote slows to his stop and starts off again (`COY_EASE`, `pace`), sits in
+    one smooth fold, and LEAVES BEHIND THE FRONT TREE LINE: the scenery's front row above the lease
+    is `.sc.front`, a second drawing of him (`svg.aurora-under`) lies in `.trees` just under it,
+    and the one over the trees fades into it as he goes (`behind(t)`); there he is dimmed by the
+    night like the trees. The beaver's pipe makes ONE simple twist (tilt upright, carry it upright
+    past the aspen, tilt back down; no spin). `?gag=muskeg|cattrain|beaver|aurora` (the aurora's preview pins the night).
     Log cards: `wave3Still`. No sounds yet (`GAG_SOUNDS` rows are empty). Witness lines are Jay's own.
   - THE STANDARD BAKKEN SCENE (`BakkenProp`, every Bakken level): the round bale at the reference's
     spot (`BALE_AT`, world x 352, on the lane's ground line), `.bakken-layer`. The generic prairie
@@ -348,7 +359,8 @@ something, give exact clicks and one command at a time.
     itself, ending exactly where it stood; the rancher is the reference's own drawing of the
     landowner on foot, not the quad puppet; he shouts `BALE_LINE` "Hey!" in the game's bubble,
     whose tail follows him), PERSONAL CLOUD (3 taps on the sky band; it plays in the bottom
-    strip, as in the reference). `?gag=tumbleweed|pdogs|bale|cloud`.
+    strip, as in the reference, on a layer OVER the lease, `sceneDef` `overLease`, so the cloud is
+    never behind the berm). `?gag=tumbleweed|pdogs|bale|cloud`.
   - A SHUT GATE COUNTS AS BERM for bump triggers (`bermBump`): a wrong-colour gate, a convoy gate
     waiting, a tanker's gate before it has loaded, a clock gate on the wrong move.
   - `npm run test:e2e:wave3` (WebKit at DPR 3; Chromium 4x throttle): the scene on all 10 levels,
@@ -1004,6 +1016,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:eggs2` – gags 8 and up: marshmallow, geese, bear, bull and cow, porcupine, gopher lunch, Safety Sam, the riser and the frozen tongue, two gags at once, the landowner's wiggle (`ONLY=geese` runs one; start the dev server first)
 - `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
+- `node tools/qc-filmstrip.mjs <gag> <iphone|s23|pixel> <folder> [region tab] [level] [query] [sky]` – a sheet with a frame every 0.25 s of one gag, for Jay to check by eye (WebKit at iPhone DPR 3, Chromium at Galaxy S23 and Pixel sizes; `PYTHON=` a python with Pillow). Jay's copies: `~/Desktop/RHR Art Inbox/qc/`
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)
 - `npm run test:e2e:dig` – the Wildlife Log's dig: the cross-section, pills, buried things and their bubbles, reduced motion, scroll frame rate (start the dev server first)
 - `npm run test:e2e:wave3` – gag wave 3: the standard Mannville scene and its four gags (`ONLY=beaver` runs one; start the dev server first)
