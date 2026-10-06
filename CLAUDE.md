@@ -953,6 +953,28 @@ something, give exact clicks and one command at a time.
 - The Hint button's count reads up to 9, then "9+" (`hintCountText`).
 - `npm run test:e2e:quick` checks all of the above (start the dev server first).
 
+## Final-pass fixes (Job U, Oct 6)
+- THE UPDATE BAR HAS ITS OWN ROOM: while it shows, `--bar-room` (66 px) is added to the top
+  padding of every screen it shows over and of any overlay open there (and toasts drop below it),
+  so it never lies over the header's buttons. Never give it a z-index fight instead.
+- THE SERVICE WORKER (`tools/service-worker.ts`): every path comes from its own scope
+  (`self.registration.scope`), so it serves the site at `/` and under `/rush-hour-rigs/` alike;
+  main.ts registers `sw.js` beside the page with that scope. ITS INSTALL CANNOT BE SUNK BY ONE BAD
+  FETCH: the core (the page, its script, its styles) first, then the rest `PRECACHE_BATCH` at a
+  time, each file tried `PRECACHE_TRIES` times; what still will not come is cached when the game
+  first asks for it. (It used to `addAll` two hundred files at once: one 503 and the worker never
+  installed.) Only a good page is kept as the offline copy. `npm run test:e2e:offline` builds the
+  site, serves it under the Pages base path, turns requests away, cuts the network and plays.
+- REGION BAR: where the next tab is cut off the right edge fades out (46 px) under a small
+  chevron (`.regions-more`): "more this way". Gone at the bar's end and where all tabs fit.
+- THE DIG COUNTS SWIPES HONESTLY (`SwipeCount`, log-deep.ts): a gesture is a swipe only once it
+  has moved the page a quarter of a screen (`SWIPE_SHARE`), its fling included; taps never count.
+- SURVEYOR: NOTHING DRAWS BEFORE HE WALKS IN. Folded, the tripod is COLLAPSED (`TRI_SHORT`: its
+  legs half length) and carried against his belly, leaning back a little, so it never leads him
+  onto the screen and never covers his face; set down, it spreads its legs and runs them out
+  together and the instrument rises. Both his drawing and the standing tripod start hidden.
+- The Wildlife Log's one LEGENDARY card is the Bear (tested, found and unfound).
+
 ## Stack
 - TypeScript + Vite, DOM + CSS transforms, Pointer Events. No game engine, no frameworks. GSAP (free
   standard license) for character animation only.
@@ -1123,6 +1145,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:beta` – beta readiness: first run, small phones (iPhone SE, 360x800 Android), Settings version and feedback, the update bar (start the dev server first)
 - `npm run test:e2e:depth` – the depth rule on every region's standard scene at three phone sizes: order, one lane, no ties, nobody lost behind a prop (`ONLY=surveyor`, `REGION=1`, `SIZE=iPhone` narrow it; start the dev server first)
 - `npm run test:e2e:gagsounds` – every gag (all 26) with sound on in WebKit: cues, timing, output level, lazy loading (`ONLY=beaver` runs one; start the dev server first)
+- `npm run test:e2e:offline` – the built site under the Pages base path: the service worker registers, fills its cache through 503s, and the game plays with the network gone (builds first; needs no dev server)
 - `npm run test:e2e:audio` – sound: lazy loading, every cue, gag sounds, the three music styles, gapless loops, Credits (start the dev server first)
 
 ## Out of scope (M2)
