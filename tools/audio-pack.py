@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Builds public/audio/ from Jay's picked sounds (needs ffmpeg).
 
-Sources (not in the repo): ~/Desktop/rhr_cartoon_sounds and ~/Desktop/rhr_music_styles
-(unzip rhr_music_styles.zip first). Only the PICKED files are copied:
+Sources (not in the repo): the folders rhr_cartoon_sounds and rhr_music_styles, in
+~/Desktop/RHR Art Inbox/Sound files/ (or loose on the Desktop). Only the PICKED files are copied:
 
   public/audio/sfx/<key>.mp3      one per cue (mono, 44.1 kHz): leading silence trimmed, cut to
                                   the part the game uses, a short fade at the end so nothing stops
@@ -29,8 +29,15 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SFX_SRC = Path.home() / 'Desktop' / 'rhr_cartoon_sounds'
-MUSIC_SRC = Path.home() / 'Desktop' / 'rhr_music_styles'
+def source(name: str) -> Path:
+    """The pack folder: in the art inbox's "Sound files", or loose on the Desktop."""
+    desk = Path.home() / 'Desktop'
+    inbox = desk / 'RHR Art Inbox' / 'Sound files' / name
+    return inbox if inbox.exists() else desk / name
+
+
+SFX_SRC = source('rhr_cartoon_sounds')
+MUSIC_SRC = source('rhr_music_styles')
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / 'public' / 'audio'
 
 # key: (source file under rhr_cartoon_sounds, seconds to keep (None = all), loop)
@@ -157,7 +164,7 @@ def main() -> None:
             run('-i', str(tmp), '-af', f'afade=t=in:d=0.003,afade=t=out:st={max(0, seconds - fade):.3f}:d={fade}', '-ac', '1', '-ar', '44100', '-b:a', '128k', str(out))
         m = measure(out)
         pack['sfx'][key] = {'seconds': m['seconds'], 'mean': m['mean'], 'peak': m['peak'], 'loop': loop}
-        c = sfx_credits.get(src) or {'title': '', 'author': 'Made for Rush Hour Rigs', 'licence': 'Original', 'url': ''}
+        c = sfx_credits.get(src) or {'title': '', 'author': 'Synthesized for Rush Hour Rigs', 'licence': 'Original', 'url': ''}
         credits.append({'use': key, 'kind': 'sfx', 'file': src, **c})
 
     for key, (folder, stem, ogg_dir, bake) in MUSIC.items():
