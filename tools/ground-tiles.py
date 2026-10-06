@@ -27,13 +27,16 @@ TILES = {
     'grass-summer': 'grass_border_summer_v1',
     'grass-spring': 'grass_border_spring_v1',
     'grass-winter': 'grass_border_winter_v1',
+    # Regions 4 and 5 (no sources of their own: made from the summer grass).
+    'grass-fall': 'grass_border_fall_v1',
+    'grass-prairie': 'grass_border_prairie_v1',
 }
 SNOW_SRC = 'ground_winter_snow_v1'
 # Grass field: image size, and how many pixels of it one source square spans (must divide the size so
 # the field wraps). On screen the field is drawn at half its size (GRASS_CSS in themes.ts), so the
 # sources repeat every 96px (they were 180px: blades about half the size), the same in every season.
 GRASS = 768
-GRASS_TILE = {'grass-summer': 192, 'grass-spring': 192, 'grass-winter': 384}
+GRASS_TILE = {'grass-summer': 192, 'grass-spring': 192, 'grass-winter': 384, 'grass-fall': 192, 'grass-prairie': 192}
 
 
 def smooth_snow(im: Image.Image) -> Image.Image:
@@ -74,6 +77,37 @@ def spring_grass(summer: Image.Image) -> Image.Image:
     dull = ImageEnhance.Color(summer).enhance(0.5)
     wet = ImageChops.multiply(dull, Image.new('RGB', summer.size, (196, 190, 150)))
     return ImageEnhance.Brightness(wet).enhance(0.95)
+
+
+def fall_grass(summer: Image.Image) -> Image.Image:
+    """Mannville in late fall: the summer grass gone dry and frost-bitten, a dull tan with a little
+    olive left in it (a third of its saturation, pulled toward straw-brown)."""
+    dull = ImageEnhance.Color(summer).enhance(0.16)
+    dry = ImageChops.multiply(dull, Image.new('RGB', summer.size, (255, 208, 138)))
+    return ImageEnhance.Brightness(dry).enhance(1.28)
+
+
+def prairie_stubble(summer: Image.Image) -> Image.Image:
+    """Bakken's flat prairie: canola stubble, pale straw. The grass's own blades, bleached to straw.
+    (The seeding rows are drawn by `stubble_rows` on the finished field.)"""
+    grey = ImageEnhance.Color(summer).enhance(0.12)
+    straw = ImageChops.multiply(grey, Image.new('RGB', summer.size, (255, 224, 132)))
+    return ImageEnhance.Contrast(ImageEnhance.Brightness(straw).enhance(1.75)).enhance(0.8)
+
+
+def stubble_rows(im: Image.Image, every: int = 24) -> Image.Image:
+    """The drill rows of a harvested field: thin darker lines running across, a soft lighter band
+    of cut stalks between them. `every` divides the image's height, so the field still wraps."""
+    rows = Image.new('L', im.size, 0)
+    px = rows.load()
+    for y in range(im.height):
+        k = y % every
+        v = 150 if k < 3 else (60 if k < 6 else 0)
+        for x in range(im.width):
+            px[x, y] = v
+    rows = rows.filter(ImageFilter.GaussianBlur(1.4))
+    dark = Image.new('RGB', im.size, (128, 100, 52))
+    return Image.composite(dark, im, rows.point(lambda v: v * 160 // 255))
 
 
 def tiled(tile: Image.Image, size: int, dx: int, dy: int) -> Image.Image:
@@ -137,11 +171,17 @@ def main() -> None:
             im = Image.open(path).convert('RGB')
         elif name == 'grass-spring':
             im = spring_grass(Image.open(os.path.join(SRC, f'{TILES["grass-summer"]}.png')).convert('RGB'))
+        elif name == 'grass-fall':
+            im = fall_grass(Image.open(os.path.join(SRC, f'{TILES["grass-summer"]}.png')).convert('RGB'))
+        elif name == 'grass-prairie':
+            im = prairie_stubble(Image.open(os.path.join(SRC, f'{TILES["grass-summer"]}.png')).convert('RGB'))
         else:
             raise SystemExit(f'missing {path}')
         big = field(im, GRASS, GRASS_TILE[name], len(manifest) + 34)
         if name == 'grass-winter':
             big = drifts(big, 5)
+        if name == 'grass-prairie':
+            big = stubble_rows(big)
         big.save(os.path.join(OUT, f'{name}.webp'), 'WEBP', quality=62, method=6)
         manifest[name] = tones(big)
     with open(MANIFEST, 'w') as f:

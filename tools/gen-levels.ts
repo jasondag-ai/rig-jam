@@ -16,6 +16,8 @@ interface SlotConfig extends Slot {
 }
 
 interface RegionConfig {
+  /** Not shipped yet: its file is not written and none of its slots are generated. */
+  held?: boolean;
   id: string;
   prefix: string;
   /** Fixed seed for the cosmetic obstacle looks (pumpjack, tank, wellhead). Layouts don't use it. */
@@ -29,6 +31,9 @@ const SHARDS = 5;
 const SEARCH: SearchOptions = { restarts: 40, iters: 500, maxStates: 40_000 };
 // Late slots need longer climbs to reach high par.
 const LATE: Partial<SearchOptions> = { restarts: 60, iters: 1200, maxStates: 60_000 };
+
+// Regions 4 and 5: par 14 to 24 takes long climbs and a big solver budget (the fast solver makes them affordable).
+const HARD: Partial<SearchOptions> = { restarts: 40, iters: 3000, maxStates: 250_000 };
 
 // Difficulty ramps by par and truck count. `minExtra` = forced "make room" moves beyond one per truck.
 // Daily Pads: 60 medium levels with mixed obstacles, cheaper search than the hand-tuned ramps.
@@ -118,6 +123,53 @@ const REGIONS: RegionConfig[] = [
     ],
   },
   {
+    // Region 4: MUSKEG (a truck that drives onto it slides until it hits something), on top of
+    // everything before it. EVERY level is par 14 to 20 (Jay, Oct 5: nothing below the floor, the
+    // first level included). Level 1 has muskeg and nothing else new: no equipment, no convoy.
+    id: 'mannville',
+    prefix: 'n',
+    kindSeed: 10000,
+    truckKindSeed: 11000,
+    slots: [
+      { name: 'Muskeg', trucks: 8, pumpjacks: 0, muskeg: 4, long: 2, minPar: 14, maxPar: 14, minExtra: 4, decoys: 0, seed: 401, search: HARD,
+        hint: 'Muskeg! A truck that drives onto it keeps sliding until it hits something.' },
+      { name: 'Soft Ground', trucks: 8, pumpjacks: 0, convoys: 1, muskeg: 3, long: 2, minPar: 14, maxPar: 14, minExtra: 4, decoys: 1, seed: 402, search: HARD },
+      { name: 'Corduroy Road', trucks: 8, pumpjacks: 1, convoys: 1, muskeg: 3, long: 2, minPar: 14, maxPar: 15, minExtra: 4, decoys: 2, seed: 403, search: HARD },
+      { name: 'Rig Mats', trucks: 8, pumpjacks: 1, convoys: 2, muskeg: 3, long: 2, minPar: 15, maxPar: 16, minExtra: 5, decoys: 2, seed: 404, search: HARD },
+      { name: 'Winch Line', trucks: 8, pumpjacks: 1, convoys: 2, muskeg: 4, long: 2, minPar: 16, maxPar: 17, minExtra: 5, decoys: 2, seed: 405, search: HARD },
+      { name: 'Sump', trucks: 9, pumpjacks: 1, convoys: 2, muskeg: 4, long: 2, minPar: 17, maxPar: 18, minExtra: 6, decoys: 2, seed: 406, search: HARD },
+      { name: 'Bogged Down', trucks: 9, pumpjacks: 1, convoys: 2, muskeg: 4, long: 2, minPar: 18, maxPar: 18, minExtra: 6, decoys: 2, seed: 407, search: HARD },
+      { name: 'Cat Train', trucks: 9, pumpjacks: 1, convoys: 2, muskeg: 4, long: 2, minPar: 18, maxPar: 19, minExtra: 6, decoys: 2, seed: 408, search: HARD },
+      { name: 'Freeze Up', trucks: 9, pumpjacks: 2, convoys: 2, muskeg: 4, long: 2, minPar: 19, maxPar: 20, minExtra: 7, decoys: 2, seed: 409, search: HARD },
+      { name: 'Road Ban', trucks: 9, pumpjacks: 2, convoys: 2, muskeg: 5, long: 2, minPar: 20, maxPar: 20, minExtra: 7, decoys: 2, seed: 410, search: HARD },
+    ],
+  },
+  {
+    // Region 5: LOAD RACKS (a tanker must stop on one before its gate takes it) and SHIFT-CHANGE
+    // gates (open only on even moves). EVERY level is par 18 to 24 (nothing below the floor).
+    // Level 1 has racks and no clock gate; level 2 brings in one clock gate.
+    id: 'bakken',
+    prefix: 'k',
+    // HELD (Jay, Oct 5): Bakken waits for a second pass; Mannville shipped first.
+    held: true,
+    kindSeed: 12000,
+    truckKindSeed: 13000,
+    slots: [
+      { name: 'Load Rack', trucks: 8, pumpjacks: 0, tankers: 4, convoys: 1, long: 2, minPar: 18, maxPar: 18, minExtra: 6, decoys: 0, seed: 501, search: HARD,
+        hint: 'A tanker loads first. Stop it on the load rack, then its gate will open.' },
+      { name: 'Shift Change', trucks: 8, pumpjacks: 0, tankers: 3, shifts: 1, convoys: 1, long: 2, minPar: 18, maxPar: 18, minExtra: 6, decoys: 0, seed: 502, search: HARD,
+        hint: 'A gate with a clock opens only on even moves: your 2nd, 4th, 6th...' },
+      { name: 'Unit Train', trucks: 8, pumpjacks: 0, tankers: 3, shifts: 2, convoys: 1, long: 2, minPar: 18, maxPar: 18, minExtra: 6, decoys: 1, seed: 503, search: HARD },
+      { name: 'Custody Transfer', trucks: 8, pumpjacks: 0, tankers: 3, shifts: 2, convoys: 1, long: 2, minPar: 18, maxPar: 19, minExtra: 6, decoys: 1, seed: 504, search: HARD },
+      { name: 'Double Shift', trucks: 8, pumpjacks: 1, tankers: 3, shifts: 3, convoys: 1, long: 2, minPar: 19, maxPar: 20, minExtra: 7, decoys: 2, seed: 505, search: HARD },
+      { name: 'Tank Battery', trucks: 9, pumpjacks: 1, tankers: 3, shifts: 3, convoys: 1, long: 2, minPar: 20, maxPar: 21, minExtra: 7, decoys: 2, seed: 506, search: HARD },
+      { name: 'Hours of Service', trucks: 9, pumpjacks: 1, tankers: 4, shifts: 3, convoys: 1, long: 2, minPar: 21, maxPar: 22, minExtra: 8, decoys: 2, seed: 507, search: HARD },
+      { name: 'Pipeline Spec', trucks: 9, pumpjacks: 1, tankers: 4, shifts: 3, convoys: 1, long: 2, minPar: 22, maxPar: 22, minExtra: 8, decoys: 2, seed: 508, search: HARD },
+      { name: 'Night Hauler', trucks: 9, pumpjacks: 1, tankers: 4, shifts: 3, convoys: 2, long: 2, minPar: 22, maxPar: 23, minExtra: 8, decoys: 2, seed: 509, search: HARD },
+      { name: 'Last Load', trucks: 9, pumpjacks: 1, tankers: 4, shifts: 4, convoys: 2, long: 2, minPar: 23, maxPar: 24, minExtra: 9, decoys: 2, seed: 510, search: HARD },
+    ],
+  },
+  {
     id: 'daily',
     prefix: 'd',
     kindSeed: 6000,
@@ -125,6 +177,17 @@ const REGIONS: RegionConfig[] = [
     slots: DAILY_SLOTS,
   },
 ];
+
+/**
+ * On a level with tankers that load, a tank truck IS a tanker: the trucks that must load are the
+ * water hauler and the vac truck (alternating), and every other 3-cell truck there is a frac unit,
+ * so nothing that looks like a tanker can drive out unloaded. Cosmetic only.
+ */
+function tankerKinds<T extends { length: number; load?: true; kind?: string }>(trucks: T[]): T[] {
+  if (!trucks.some((t) => t.load)) return trucks;
+  let n = 0;
+  return trucks.map((t) => (t.length !== 3 ? t : { ...t, kind: t.load ? (n++ % 2 ? 'vac' : 'water') : 'frac' }));
+}
 
 interface Job {
   id: string;
@@ -147,6 +210,11 @@ function readCache(id: string, slot: SlotConfig): Level | null {
   return entry.key === cacheKey(slot) ? entry.level : null;
 }
 
+function readFixed(id: string): Level | null {
+  const file = new URL(`./fixed-levels/${id}.json`, import.meta.url);
+  return existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as Level) : null;
+}
+
 function writeCache(id: string, slot: SlotConfig, level: Level): void {
   mkdirSync(CACHE, { recursive: true });
   writeFileSync(new URL(`${id}.json`, CACHE), JSON.stringify({ key: cacheKey(slot), level }));
@@ -167,6 +235,8 @@ function toLevel(id: string, slot: SlotConfig, g: Generated): Level {
     trucks: g.level.trucks,
     gates: g.level.gates,
     obstacles: g.level.obstacles,
+    muskeg: g.level.muskeg,
+    racks: g.level.racks,
   };
 }
 
@@ -180,7 +250,9 @@ function format(levels: Level[]): string {
       ...(l.hint ? [`    "hint": ${JSON.stringify(l.hint)},`] : []),
       `    "trucks": [\n${list(l.trucks)}\n    ],`,
       `    "gates": [\n${list(l.gates)}\n    ],`,
-      l.obstacles.length ? `    "obstacles": [\n${list(l.obstacles)}\n    ]` : '    "obstacles": []',
+      (l.obstacles.length ? `    "obstacles": [\n${list(l.obstacles)}\n    ]` : '    "obstacles": []') + (l.muskeg.length || l.racks.length ? ',' : ''),
+      ...(l.muskeg.length ? [`    "muskeg": [${l.muskeg.map((c) => JSON.stringify(c)).join(', ')}]${l.racks.length ? ',' : ''}`] : []),
+      ...(l.racks.length ? [`    "racks": [${l.racks.map((c) => JSON.stringify(c)).join(', ')}]`] : []),
       '  }',
     ].join('\n');
   return `[\n${levels.map(one).join(',\n')}\n]\n`;
@@ -188,14 +260,16 @@ function format(levels: Level[]): string {
 
 async function main() {
   const force = new Set(process.argv.slice(2));
-  const all = REGIONS.flatMap((r) =>
+  const all = REGIONS.filter((r) => !r.held).flatMap((r) =>
     r.slots.map((slot, i) => ({ id: `${r.prefix}${String(i + 1).padStart(2, '0')}`, slot })),
   );
 
   const results = new Map<string, Level | null>();
   const todo = all.filter(({ id, slot }) => {
-    const cached = force.has(id) ? null : readCache(id, slot);
-    if (cached) results.set(id, { ...cached, name: slot.name, ...(slot.hint ? { hint: slot.hint } : {}) });
+    // Regions 4 and 5 are not searched for at random any more (it took hours): their levels are
+    // the accepted ones and the hill-climbed ones in tools/fixed-levels (tools/climb.ts).
+    const cached = readFixed(id) ?? (force.has(id) ? null : readCache(id, slot));
+    if (cached) results.set(id, { ...cached, muskeg: cached.muskeg ?? [], racks: cached.racks ?? [], name: slot.name, ...(slot.hint ? { hint: slot.hint } : {}) });
     return !cached;
   });
   console.log(`${all.length - todo.length} slots cached, generating ${todo.length}`);
@@ -228,17 +302,17 @@ async function main() {
         const level = toLevel(job.id, job.slot, winner);
         writeCache(job.id, job.slot, level);
         results.set(job.id, level);
-        console.log(`${job.id} ${job.slot.name}: par ${level.par}, ${level.trucks.length} trucks, ${level.obstacles.length} pumpjacks (${secs}s)`);
+        console.log(`${job.id} ${job.slot.name}: par ${level.par}, ${level.trucks.length} trucks, ${level.obstacles.length} pumpjacks, ${level.muskeg.length} muskeg, ${level.racks.length} racks, ${level.gates.filter((g) => g.shift).length} shift gates (${secs}s)`);
       }
     }),
   );
 
   let failed = false;
-  for (const region of REGIONS) {
+  for (const region of REGIONS.filter((r) => !r.held)) {
     const levels = region.slots.map((_, i) => {
       const level = results.get(`${region.prefix}${String(i + 1).padStart(2, '0')}`);
       if (!level) return level;
-      return { ...level, trucks: assignTruckKinds(level.trucks, region.truckKindSeed + i), obstacles: withFlares(assignKinds(level.obstacles, region.kindSeed + i), region.id, i) };
+      return { ...level, trucks: tankerKinds(assignTruckKinds(level.trucks, region.truckKindSeed + i)), obstacles: withFlares(assignKinds(level.obstacles, region.kindSeed + i), region.id, i) };
     });
     if (levels.some((l) => !l)) {
       failed = true;

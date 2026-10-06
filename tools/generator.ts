@@ -34,6 +34,14 @@ export interface Slot {
   decoys: number;
   /** Convoy pairs (numbered 1 and 2, same color). Their order must raise par. */
   convoys?: number;
+  /** MUSKEG cells (Mannville). The best solution must slide on muskeg at least once. */
+  muskeg?: number;
+  /** Tankers that must load (Bakken): each is a 3-cell truck with one load rack in its lane. */
+  tankers?: number;
+  /** Shift-change gates (Bakken). The clock must raise par. */
+  shifts?: number;
+  /** How many trucks in three are 3 cells long (default 1: a third). Regions 4 and 5 use more. */
+  long?: number;
 }
 
 export interface SearchOptions {
@@ -58,13 +66,18 @@ interface Layout {
   pumpjacks: { row: number; col: number }[];
   /** Convoy pairs as piece indices: [number 1, number 2]. */
   convoys: [number, number][];
+  muskeg: { row: number; col: number }[];
+  /** Tankers as piece indices, each with its load rack. */
+  tankers: { piece: number; rack: { row: number; col: number } }[];
+  /** Piece indices whose gates are shift-change gates. */
+  shifts: number[];
 }
 
 type Rng = () => number;
 const pick = (rng: Rng, n: number) => Math.floor(rng() * n);
 
-function randomPiece(rng: Rng): Piece {
-  const length = pick(rng, 3) === 0 ? 3 : 2;
+function randomPiece(rng: Rng, long = 1): Piece {
+  const length = pick(rng, 3) < long ? 3 : 2;
   const orient = pick(rng, 2) ? 'h' : 'v';
   return {
     orient,
@@ -93,7 +106,7 @@ function randomLayout(slot: Slot, rng: Rng): Layout | null {
   const spots = new Set<string>();
   const pieces: Piece[] = [];
   for (let tries = 0; pieces.length < slot.trucks && tries < 400; tries++) {
-    const p = randomPiece(rng);
+    const p = randomPiece(rng, slot.long ?? 1);
     const cells = cellsOf(p);
     const spot = `${p.side}${gateIndex(p)}`;
     if (spots.has(spot) || cells.some((c) => taken.has(c))) continue;
@@ -110,7 +123,30 @@ function randomLayout(slot: Slot, rng: Rng): Layout | null {
     if (!free.length) return null;
     pumpjacks.push(free.splice(pick(rng, free.length), 1)[0]);
   }
-  return { pieces, pumpjacks, convoys: randomConvoys(slot.convoys ?? 0, pieces.length, rng) };
+  const layout: Layout = { pieces, pumpjacks, convoys: randomConvoys(slot.convoys ?? 0, pieces.length, rng), muskeg: [], tankers: [], shifts: [] };
+  if (!slot.muskeg && !slot.tankers && !slot.shifts) return layout; // don't touch rng: older slots generate as before
+  // Tankers: 3-cell trucks (a 2-cell one is stretched if it has room), each with a rack somewhere in its lane.
+  const order = Array.from({ length: pieces.length }, (_, i) => i).sort(() => rng() - 0.5);
+  for (const i of order) {
+    if (layout.tankers.length >= (slot.tankers ?? 0)) break;
+    if (pieces[i].length !== 3) continue;
+    const rack = randomRack(pieces[i], rng);
+    if (rack) layout.tankers.push({ piece: i, rack });
+  }
+  if (layout.tankers.length < (slot.tankers ?? 0)) return null;
+  layout.shifts = order.filter((i) => !layout.convoys.some((c) => c.includes(i))).slice(0, slot.shifts ?? 0);
+  if (layout.shifts.length < (slot.shifts ?? 0)) return null;
+  for (let i = 0; i < (slot.muskeg ?? 0); i++) layout.muskeg.push(randomCell(rng));
+  return layout;
+}
+
+/** A cell in a truck's lane that it does not start on. */
+function randomRack(p: Piece, rng: Rng): { row: number; col: number } | null {
+  const at = p.orient === 'h' ? p.col : p.row;
+  const free = [0, 1, 2, 3, 4, 5].filter((k) => k < at || k >= at + p.length);
+  if (!free.length) return null;
+  const k = free[pick(rng, free.length)];
+  return p.orient === 'h' ? { row: p.row, col: k } : { row: k, col: p.col };
 }
 
 /** Picks `count` disjoint pairs of piece indices. */
@@ -120,20 +156,49 @@ function randomConvoys(count: number, pieces: number, rng: Rng): [number, number
   return Array.from({ length: count }, (_, i) => [order[i * 2], order[i * 2 + 1]] as [number, number]);
 }
 
-function mutate(layout: Layout, rng: Rng): Layout {
+function mutate(layout: Layout, rng: Rng, long = 1): Layout {
   const pieces = layout.pieces.map((p) => ({ ...p }));
   const pumpjacks = layout.pumpjacks.map((c) => ({ ...c }));
   let convoys = layout.convoys.map(([a, b]) => [a, b] as [number, number]);
+  const muskeg = layout.muskeg.map((c) => ({ ...c }));
+  const tankers = layout.tankers.map((t) => ({ piece: t.piece, rack: { ...t.rack } }));
+  let shifts = [...layout.shifts];
+  const extras = muskeg.length + tankers.length + shifts.length;
+  // Regions 4 and 5: sometimes rework the new pieces instead (a muskeg cell, a rack, which gate keeps the clock).
+  if (extras && pick(rng, 3) === 0) {
+    const roll = pick(rng, extras);
+    if (roll < muskeg.length) {
+      // Mostly a small step, so a patch of muskeg can creep into a useful lane.
+      const m = muskeg[roll];
+      if (pick(rng, 2)) muskeg[roll] = randomCell(rng);
+      else if (pick(rng, 2)) m.row = Math.max(0, Math.min(5, m.row + (pick(rng, 2) ? 1 : -1)));
+      else m.col = Math.max(0, Math.min(5, m.col + (pick(rng, 2) ? 1 : -1)));
+    } else if (roll < muskeg.length + tankers.length) {
+      const t = tankers[roll - muskeg.length];
+      if (pick(rng, 3) === 0) {
+        // Another 3-cell truck becomes the tanker.
+        const others = pieces.map((_, i) => i).filter((i) => pieces[i].length === 3 && !tankers.some((x) => x.piece === i));
+        if (others.length) t.piece = others[pick(rng, others.length)];
+      }
+      const rack = randomRack(pieces[t.piece], rng);
+      if (rack) t.rack = rack;
+    } else {
+      const free = pieces.map((_, i) => i).filter((i) => !shifts.includes(i) && !convoys.some((c) => c.includes(i)));
+      if (free.length) shifts[roll - muskeg.length - tankers.length] = free[pick(rng, free.length)];
+    }
+    return { pieces, pumpjacks, convoys, muskeg, tankers, shifts };
+  }
   // Sometimes rework a convoy: swap who goes first, or pick a new pair.
   if (convoys.length && pick(rng, 5) === 0) {
     const i = pick(rng, convoys.length);
     if (pick(rng, 2)) convoys[i] = [convoys[i][1], convoys[i][0]];
     else convoys = randomConvoys(convoys.length, pieces.length, rng);
-    return { pieces, pumpjacks, convoys };
+    shifts = shifts.filter((x) => !convoys.some((c) => c.includes(x)));
+    return { pieces, pumpjacks, convoys, muskeg, tankers, shifts: shifts.length === layout.shifts.length ? shifts : layout.shifts };
   }
   const roll = pick(rng, pumpjacks.length ? 4 : 3);
   const k = pick(rng, pieces.length);
-  if (roll === 0) pieces[k] = randomPiece(rng);
+  if (roll === 0) pieces[k] = randomPiece(rng, long);
   else if (roll === 1) {
     const p = pieces[k];
     p.side = p.orient === 'h' ? (p.side === 'left' ? 'right' : 'left') : p.side === 'top' ? 'bottom' : 'top';
@@ -144,7 +209,20 @@ function mutate(layout: Layout, rng: Rng): Layout {
     if (pick(rng, 2)) p.row += d;
     else p.col += d;
   } else pumpjacks[pick(rng, pumpjacks.length)] = randomCell(rng);
-  return { pieces, pumpjacks, convoys };
+  // A tanker that moved keeps being one: 3 cells long, its rack somewhere in its (new) lane.
+  const tank = tankers.find((t) => t.piece === k);
+  if (tank && roll !== 1 && roll !== 3) {
+    const p = pieces[k];
+    if (p.length !== 3) {
+      p.length = 3;
+      if (p.orient === 'h') p.col = Math.min(p.col, 3);
+      else p.row = Math.min(p.row, 3);
+    }
+    const inLane = p.orient === 'h' ? tank.rack.row === p.row : tank.rack.col === p.col;
+    const under = p.orient === 'h' ? tank.rack.col >= p.col && tank.rack.col < p.col + 3 : tank.rack.row >= p.row && tank.rack.row < p.row + 3;
+    if (!inLane || under) tank.rack = randomRack(p, rng) ?? tank.rack;
+  }
+  return { pieces, pumpjacks, convoys, muskeg, tankers, shifts };
 }
 
 const lineOf = (p: Piece) => `${p.orient}${p.orient === 'h' ? p.row : p.col}`;
@@ -204,9 +282,12 @@ export function buildLevel(layout: Layout, id = 'gen', name = 'Generated'): Leve
         length: p.length,
         orient: p.orient,
         ...(convoyOf.has(i) ? { convoy: convoyOf.get(i) } : {}),
+        ...(layout.tankers.some((t) => t.piece === i) ? { load: true } : {}),
       })),
-      gates: layout.pieces.map((p, i) => ({ color: colors[i], side: p.side, index: gateIndex(p) })),
+      gates: layout.pieces.map((p, i) => ({ color: colors[i], side: p.side, index: gateIndex(p), ...(layout.shifts.includes(i) ? { shift: true } : {}) })),
       obstacles: layout.pumpjacks,
+      muskeg: layout.muskeg,
+      racks: layout.tankers.map((t) => t.rack),
     });
   } catch (e) {
     if (e instanceof LevelError) return null;
@@ -224,6 +305,33 @@ function solution(level: Level, maxStates: number): Move[] | null {
 }
 
 const sameRange = (a: MoveRange, b: MoveRange) => a.min === b.min && a.max === b.max;
+
+/** How many moves of a solution are slides on muskeg (the truck went further than a move without muskeg would). */
+export function slidesIn(level: Level, moves: Move[]): number {
+  let state = newGame(level);
+  let slides = 0;
+  for (const m of moves) {
+    const t = state.trucks.find((x) => x.id === m.id)!;
+    const h = t.orient === 'h';
+    const dir = Math.sign(m.delta);
+    const pos = h ? t.col : t.row;
+    for (let step = 1; step <= Math.abs(m.delta); step++) {
+      const lead = dir > 0 ? pos + t.length - 1 + step : pos - step;
+      if (lead < 0 || lead > 5) break;
+      if (level.muskeg.some((c) => c.row === (h ? t.row : lead) && c.col === (h ? lead : t.col))) {
+        slides++;
+        break;
+      }
+    }
+    state = tryMove(state, m.id, m.delta)!.state;
+  }
+  return slides;
+}
+
+/** The same level with every shift-change gate made an ordinary one. */
+export function withoutShifts(level: Level): Level {
+  return { ...level, gates: level.gates.map(({ shift: _s, ...g }) => g) };
+}
 
 /** The same level with the convoy numbers taken off (every gate open). */
 export function withoutConvoys(level: Level): Level {
@@ -318,14 +426,27 @@ export function generate(slot: Slot, seed: number, opts: SearchOptions): Generat
       raisesPar = bare !== null && bare.length < par;
     }
     // Convoys must earn their place too: without the order rule the level has to get easier.
-    const convoyMatters = !slot.convoys || convoyRaisesPar(level, par, opts.maxStates);
+    let convoyMatters = !slot.convoys || convoyRaisesPar(level, par, opts.maxStates);
+    // So must the new rules. Muskeg: the best solution slides on it (and every patch lies in some
+    // truck's lane, so none is decoration). Shift change: the clock makes the level longer.
+    let bonus = 0;
+    if (slot.muskeg) {
+      const slides = slidesIn(level, moves);
+      const lanes = level.muskeg.every((c) => level.trucks.some((t) => (t.orient === 'h' ? t.row === c.row : t.col === c.col)));
+      if (!slides || !lanes) convoyMatters = false;
+      bonus += Math.min(3, slides);
+    }
+    if (slot.shifts) {
+      const open = solution(withoutShifts(level), opts.maxStates);
+      if (!(open !== null && open.length < par)) convoyMatters = false;
+    }
     return {
       level,
       par,
       matters,
       raisesPar,
       convoyMatters,
-      value: par * 4 + (convoyMatters ? 3 : 0) + (matters ? 2 : 0) + (raisesPar ? 1 : 0),
+      value: par * 4 + (convoyMatters ? 3 : 0) + (matters ? 2 : 0) + (raisesPar ? 1 : 0) + bonus * 0.2,
     };
   };
 
@@ -339,7 +460,7 @@ export function generate(slot: Slot, seed: number, opts: SearchOptions): Generat
     if (!cur || !curScore) continue;
 
     for (let i = 0; i < opts.iters && !(curScore.par === slot.maxPar && curScore.matters && curScore.convoyMatters && (slot.pumpjacks === 0 || curScore.raisesPar)); i++) {
-      const next = mutate(cur, rng);
+      const next = mutate(cur, rng, slot.long ?? 1);
       const s = score(next);
       if (s && s.value >= curScore.value) {
         cur = next;

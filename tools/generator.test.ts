@@ -38,7 +38,7 @@ describe('generator', () => {
 
   it('rejects two trucks sharing one gate', () => {
     const piece = { orient: 'h', length: 2, col: 0, side: 'right' } as const;
-    expect(buildLevel({ pieces: [{ ...piece, row: 1 }, { ...piece, row: 1, col: 2 }], pumpjacks: [], convoys: [] })).toBeNull();
+    expect(buildLevel({ pieces: [{ ...piece, row: 1 }, { ...piece, row: 1, col: 2 }], pumpjacks: [], convoys: [], muskeg: [], tankers: [], shifts: [] })).toBeNull();
   });
 });
 
