@@ -265,7 +265,7 @@
     "muskeg": [{"row":2,"col":1}, {"row":5,"col":3}, {"row":0,"col":5}, {"row":2,"col":3}]
   },
   {
-    "id": "n10", "name": "Road Ban", "par": 20,
+    "id": "n10", "name": "First Frost", "par": 20,
     "trucks": [
       {"id":"A","color":"blue","row":4,"col":1,"length":2,"orient":"h","convoy":1,"kind":"picker"},
       {"id":"B","color":"blue","row":0,"col":2,"length":3,"orient":"v","convoy":2,"kind":"vac"},

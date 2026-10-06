@@ -141,7 +141,7 @@ const REGIONS: RegionConfig[] = [
       { name: 'Bogged Down', trucks: 9, pumpjacks: 1, convoys: 2, muskeg: 4, long: 2, minPar: 18, maxPar: 18, minExtra: 6, decoys: 2, seed: 407, search: HARD },
       { name: 'Cat Train', trucks: 9, pumpjacks: 1, convoys: 2, muskeg: 4, long: 2, minPar: 18, maxPar: 19, minExtra: 6, decoys: 2, seed: 408, search: HARD },
       { name: 'Freeze Up', trucks: 9, pumpjacks: 2, convoys: 2, muskeg: 4, long: 2, minPar: 19, maxPar: 20, minExtra: 7, decoys: 2, seed: 409, search: HARD },
-      { name: 'Road Ban', trucks: 9, pumpjacks: 2, convoys: 2, muskeg: 5, long: 2, minPar: 20, maxPar: 20, minExtra: 7, decoys: 2, seed: 410, search: HARD },
+      { name: 'First Frost', trucks: 9, pumpjacks: 2, convoys: 2, muskeg: 5, long: 2, minPar: 20, maxPar: 20, minExtra: 7, decoys: 2, seed: 410, search: HARD },
     ],
   },
   {
