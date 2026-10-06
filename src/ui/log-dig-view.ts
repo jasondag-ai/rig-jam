@@ -1,7 +1,7 @@
 // The Wildlife Log's deep dig on the page (log-dig.ts is the pure part): the cards in groups of
 // four with a window on the formation between the groups, the strata drawn behind everything
 // once the page is laid out, the formation pills, the buried objects and what they say.
-import { BURIED, FORMATIONS, GLINTS, GRASS, GROUP, buriedArt, buriedBox, layersFrom, pillLocked, strataSvg, tunnelSvg, type Buried, type FormationId } from './log-dig.ts';
+import { BURIED, FORMATIONS, GLINTS, GRASS, GROUP, buriedArt, buriedBox, layersFrom, pillLocked, strataSvg, tunnelSvg, type FormationId } from './log-dig.ts';
 import { BURIED_LINES } from './lines.ts';
 import { onTap } from './tap.ts';
 
@@ -39,6 +39,8 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
       w.append(btn);
     }
     if (id === 'topsoil') w.insertAdjacentHTML('afterbegin', '<span class="dig-tunnel-slot" aria-hidden="true"></span>');
+    // The oil itself can be tapped: it has the last word.
+    if (id === 'reef') w.insertAdjacentHTML('beforeend', '<button type="button" class="dig-oil" data-id="reservoir" aria-label="Oil reservoir"></button>');
     if (id === 'reef') w.insertAdjacentHTML('beforeend', GLINTS.map((g) => `<i class="oil-glint" style="left:${(g.x * 100).toFixed(1)}%;top:${(g.y * 100).toFixed(1)}%;width:${g.size}px;height:${g.size}px;animation-delay:${g.delay}s"></i>`).join(''));
     return w;
   };
@@ -83,17 +85,17 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
   // A tap: the thing wiggles and says its line (one bubble at a time). Not a log entry.
   let bubble: HTMLElement | null = null;
   let timer = 0;
-  const say = (btn: HTMLElement, b: Buried) => {
+  const say = (btn: HTMLElement, id: keyof typeof BURIED_LINES) => {
     bubble?.remove();
     window.clearTimeout(timer);
-    col.querySelectorAll('.buried.wiggle, .buried.peek').forEach((x) => x.classList.remove('wiggle', 'peek'));
+    col.querySelectorAll('.wiggle, .peek').forEach((x) => x.classList.remove('wiggle', 'peek'));
     void btn.offsetWidth; // so a second tap wiggles again
-    btn.classList.add(b.id === 'egg' ? 'peek' : 'wiggle');
+    btn.classList.add(id === 'egg' ? 'peek' : 'wiggle');
     bubble = document.createElement('div');
     bubble.className = 'dig-bubble';
-    bubble.dataset.for = b.id;
+    bubble.dataset.for = id;
     bubble.setAttribute('role', 'status');
-    bubble.textContent = BURIED_LINES[b.id];
+    bubble.textContent = BURIED_LINES[id];
     col.append(bubble);
     // Above the thing, inside the column; its tail points down at it.
     const c = col.getBoundingClientRect(), r = btn.getBoundingClientRect();
@@ -111,6 +113,6 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
       if (bubble === mine) bubble = null;
     }, BUBBLE_MS);
   };
-  onTap(col, '.buried', (el) => say(el, BURIED.find((x) => x.id === el.dataset.id)!));
+  onTap(col, '.buried, .dig-oil', (el) => say(el, el.dataset.id as keyof typeof BURIED_LINES));
   return { el: col, layout };
 }

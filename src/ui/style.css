@@ -3829,6 +3829,21 @@ svg.dig-tunnel {
 .dig-bubble::before { left: calc(var(--tail, 50%) - 10px); border-width: 10px; border-top-color: var(--outline); }
 .dig-bubble::after { left: calc(var(--tail, 50%) - 6px); border-width: 6px; border-top-color: #fff; }
 
+/* The oil pool is one big tap target (the lower third of the reef's window). */
+.dig-oil {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 34%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Oil glistening in the reservoir: a few soft glints that brighten and fade (opacity only). */
 .oil-glint {
   position: absolute;

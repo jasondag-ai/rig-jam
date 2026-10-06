@@ -151,6 +151,13 @@ for (const [width, height] of [[390, 844], [375, 667]]) {
   const eggAt = (ms) => wait(ms).then(() => page.evaluate(() => { const e = document.querySelector('.buried-egg'); return { peek: e.classList.contains('peek'), crack: +getComputedStyle(e.querySelector('.egg-crack')).opacity, eye: +getComputedStyle(e.querySelector('.egg-peek')).opacity, bubble: document.querySelector('.dig-bubble')?.textContent ?? null }; }));
   const e1 = await eggAt(1100), e2 = await eggAt(1900);
   check(e1.peek && e1.crack > 0.9 && e1.eye > 0.9 && e1.bubble === BURIED_LINES.egg && !e2.peek && e2.crack === 0 && e2.eye === 0 && e2.bubble === null, `the egg cracks and one eye peeks out ("${e1.bubble}"), then it closes and the bubble goes`);
+  // The oil at the very bottom has the last word.
+  await page.evaluate(() => { const s = document.querySelector('.screen.log'); s.scrollTop = s.scrollHeight; });
+  await wait(150);
+  await tap(page, '.dig-oil');
+  await wait(90);
+  const oil = await page.evaluate(() => { const o = document.querySelector('.dig-oil').getBoundingClientRect(), b = document.querySelector('.dig-bubble'), q = b?.getBoundingClientRect(); return { text: b?.textContent, h: o.height, w: o.width, seen: q && q.top >= 0 && q.bottom <= innerHeight && q.left >= 0 && q.right <= innerWidth + 0.5, top: document.elementFromPoint(o.left + o.width * 0.25, o.top + o.height / 2)?.className }; });
+  check(oil.text === BURIED_LINES.reservoir && oil.h >= 44 && oil.seen && oil.top === 'dig-oil wiggle', `tap the oil: "${oil.text}"`);
   const after = await page.evaluate(() => [document.querySelector('.log-count').textContent, localStorage.getItem('rush-hour-rigs:log')]);
   check(after.join() === before.join() && !(await page.$('.toast')), `they are not log entries: the count stays ${after[0]}, nothing is saved, no toast`);
   await context.close();

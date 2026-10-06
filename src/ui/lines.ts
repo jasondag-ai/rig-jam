@@ -187,24 +187,26 @@ export function fromPool(pool: readonly string[], random: () => number = Math.ra
 
 /**
  * BURIED THINGS in the Wildlife Log's dig (log-dig.ts): tap one and it wiggles and says its line.
- * ONE LINE each: 40 characters at most, so the bubble never wraps on a phone. (Written to stand in until Jay's own list arrives: edit freely.)
+ * ONE LINE each: 40 characters at most, so the bubble never wraps on a phone. Jay's own (Oct 6).
+ * `reservoir` is said by the oil at the very bottom of the dig.
  */
 export const BURIED_LINES = {
-  keys: "So that's where the truck keys went.",
-  remote: "Batteries dead since '94.",
-  sock: 'The other one is still in the dryer.',
-  golf: 'Sliced it clean off the ninth tee.',
-  den: 'Nice place. He kept the crust.',
-  phone: 'Three missed calls. All dispatch.',
-  chest: 'Wrong province for pirates.',
-  tusk: 'Do not load this on the picker.',
-  plane: 'Twin engine, no pilot. Say nothing.',
-  dino: 'Albertosaurus. Not on the lease map.',
-  egg: 'Not today.',
-  plesiosaur: 'This was all ocean once. He misses it.',
-  ammonite: 'Ammonite. Still rolled up tight.',
-  bit: 'Lost in hole. Fishing is going great.',
-  trilobite: 'Older than the Company Man.',
+  keys: 'Who had them last?',
+  remote: 'The show ended.',
+  sock: 'The dryer sends its regards.',
+  golf: 'Play it as it lies.',
+  tusk: 'He wants that back.',
+  dino: 'Just resting his eyes.',
+  ammonite: "Alberta's official gemstone. Seriously.",
+  plane: 'Took the scenic route.',
+  bit: 'Day four. Still fishing.',
+  den: 'Wipe your paws.',
+  phone: 'Still on 2 percent.',
+  chest: 'Wrong ocean.',
+  egg: 'Not yet.',
+  plesiosaur: 'Alberta had a beach once.',
+  trilobite: 'Here first.',
+  reservoir: 'You made it. The pumpjack says hi.',
 } as const;
 
 /**

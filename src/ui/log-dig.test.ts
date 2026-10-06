@@ -68,7 +68,7 @@ describe('the dig: buried things', () => {
   it('fifteen of them, each in its formation', () => {
     expect(BURIED.map((b) => b.id).sort()).toEqual(['ammonite', 'bit', 'chest', 'den', 'dino', 'egg', 'golf', 'keys', 'phone', 'plane', 'plesiosaur', 'remote', 'sock', 'trilobite', 'tusk']);
     const where = Object.fromEntries(BURIED.map((b) => [b.id, b.in]));
-    expect(where).toMatchObject({ den: 'topsoil', phone: 'topsoil', chest: 'till', egg: 'badlands', dino: 'badlands', plesiosaur: 'cardium', trilobite: 'duvernay' });
+    expect(where).toMatchObject({ ammonite: 'badlands', den: 'topsoil', phone: 'topsoil', chest: 'till', egg: 'badlands', dino: 'badlands', plesiosaur: 'cardium', trilobite: 'duvernay' });
     for (const b of BURIED) expect(FORMATIONS.find((f) => f.id === b.in)!.window, b.id).toBeGreaterThan(0);
   });
 
@@ -79,7 +79,9 @@ describe('the dig: buried things', () => {
   });
 
   it('each has a drawing with the toy outline and one short line, with no em dash', () => {
-    expect(Object.keys(BURIED_LINES).sort()).toEqual(BURIED.map((b) => b.id).sort());
+    expect(Object.keys(BURIED_LINES).sort()).toEqual([...BURIED.map((b) => b.id), 'reservoir'].sort());
+    expect(BURIED_LINES.reservoir).toBe('You made it. The pumpjack says hi.');
+    expect(BURIED_LINES.reservoir.length).toBeLessThanOrEqual(40);
     for (const b of BURIED) {
       expect(buriedArt(b.id), b.id).toContain('#2a1a0c');
       expect(buriedArt(b.id), b.id).toContain(`viewBox="0 0 ${b.w} ${b.h}"`);

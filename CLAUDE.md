@@ -660,7 +660,7 @@ something, give exact clicks and one command at a time.
   BURIED THINGS (`BURIED`, 15; NOT log entries: no count, no toast, nothing saved): car keys, TV
   remote, one sock, golf ball, the gopher's den with the crust on a plate, a dropped phone in his
   tunnel (topsoil); pirate chest, mammoth tusk, vintage silver plane (till); dinosaur egg and
-  skeleton (badlands); plesiosaur (Cardium); ammonite (Montney); the lost drill bit and fishing
+  skeleton and ammonite (badlands, where ammolite comes from); plesiosaur (Cardium); the lost drill bit and fishing
   tool (Bakken); trilobite (Duvernay). Each is a button of at least 44 px in its own half of its
   window, clear of the wellbore and the pill (unit-tested at 375, 390 and 430). A tap wiggles it
   and shows its ONE line (`BURIED_LINES` in lines.ts, 40 characters at most) in `.dig-bubble`
@@ -668,8 +668,8 @@ something, give exact clicks and one command at a time.
   (`.peek`). ONLY small elements ever animate here (the tapped thing, the bubble, `.oil-glint`
   opacity): never the strata, so scrolling stays at 60 fps. Reduced motion: nothing moves.
   `npm run test:e2e:dig` checks it in WebKit (pixels of the margin at every depth included) and the
-  frame rate in Chromium at 4x throttle, 390 and 375 wide. THE LINES ARE STAND-INS: Jay's own list
-  did not come through ("[paste the list above]"); put his in `BURIED_LINES` when it does.
+  frame rate in Chromium at 4x throttle, 390 and 375 wide. The lines are Jay's own (Oct 6). The oil pool itself is a
+  tap target too (`.dig-oil`): it says `BURIED_LINES.reservoir`.
 - CAMO PICKUPS keep their gate colour (Log v2): the reward is the pickup's own sprite in camo,
   `pickup-<colour>-camo(@2x).webp`, blotches of a deep shade and a pale tint of ITS OWN gate colour
   baked by `tools/truck-sprites.py` (`camo`, `CAMO_DARK` / `CAMO_LIGHT`), measured into

@@ -73,10 +73,11 @@ export const BURIED: Buried[] = [
   { id: 'chest', label: 'Pirate chest', in: 'till', x: 0.15, y: 86, w: 66, h: 56 },
   { id: 'tusk', label: 'Mammoth tusk', in: 'till', x: 0.36, y: 84, w: 70, h: 52 },
   { id: 'plane', label: 'Vintage silver plane', in: 'till', x: 0.765, y: 76, w: 124, h: 66 },
-  { id: 'egg', label: 'Dinosaur egg', in: 'badlands', x: 0.2, y: 92, w: 44, h: 54 },
+  { id: 'egg', label: 'Dinosaur egg', in: 'badlands', x: 0.17, y: 96, w: 44, h: 54 },
   { id: 'dino', label: 'Dinosaur skeleton', in: 'badlands', x: 0.765, y: 86, w: 148, h: 88 },
   { id: 'plesiosaur', label: 'Plesiosaur skeleton', in: 'cardium', x: 0.25, y: 76, w: 150, h: 70 },
-  { id: 'ammonite', label: 'Ammonite', in: 'montney', x: 0.23, y: 72, w: 54, h: 54 },
+  // (In the badlands: that is where Alberta's ammolite comes from.)
+  { id: 'ammonite', label: 'Ammonite', in: 'badlands', x: 0.375, y: 96, w: 54, h: 54 },
   { id: 'bit', label: 'Lost drill bit and fishing tool', in: 'bakken', x: 0.66, y: 78, w: 50, h: 110 },
   { id: 'trilobite', label: 'Trilobite', in: 'duvernay', x: 0.76, y: 72, w: 46, h: 60 },
 ];
