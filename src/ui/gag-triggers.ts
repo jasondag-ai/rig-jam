@@ -64,6 +64,17 @@ export const GAG_TRIGGERS = {
   /** Aurora Howl: this many taps on the moon, once night has fallen on the level. In the sky band. */
   aurora: { region: 'mannville', moonTaps: 1, night: true },
   /**
+   * GAG WAVE 3, BAKKEN (wave3.ts, on the standard Bakken scene: the round bale in the bottom strip).
+   * Tumbleweed: a truck dragged the full length of the board in one move (from one end of its lane to the other).
+   */
+  tumbleweed: { region: 'bakken', fullLength: true },
+  /** Prairie Dog Wave: this many taps on the same spot of the prairie (the bottom strip), each within `withinPx` of the last. */
+  pdogs: { region: 'bakken', sameSpotTaps: 3, withinPx: 24 },
+  /** Runaway Bale: a truck bumped into the bottom berm next to the bale (within this many cells of it, across). */
+  bale: { region: 'bakken', bottomBermBump: true, withinCells: 1 },
+  /** Personal Cloud: this many taps on the sky (between the HUD and the lease). */
+  cloud: { region: 'bakken', skyTaps: 3 },
+  /**
    * Not a gag. NIGHT: no level starts at night. After `idleMs` with no moves the lease fades to
    * night over `fadeInMs`; the next move brings the day back over `fadeOutMs`. Only where the
    * season is one of `themes`: Montney (spring), Duvernay (winter), Mannville (late fall) and Bakken
@@ -81,7 +92,7 @@ export const GAG_TRIGGERS = {
  * the level is won. NO GAG COMES FROM WAITING (Jay, Oct 5): every one is set off by something the
  * player does. Sitting idle only brings the night (and its nudge).
  */
-export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'muskeg' | 'catTrain' | 'beaver' | 'aurora';
+export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'muskeg' | 'catTrain' | 'beaver' | 'aurora' | 'tumbleweed' | 'pdogs' | 'bale' | 'cloud';
 
 /** Is a bump a push at a wrong-colour gate? (A truck in line with a gate that is not its own; `hit` is what it ran into.) */
 export const wrongGateBump = (
@@ -120,6 +131,10 @@ export const PREVIEWS: Record<string, { gag: GagId; region: string; level: numbe
   cattrain: { gag: 'catTrain', region: 'mannville', level: 3 },
   beaver: { gag: 'beaver', region: 'mannville', level: 3 },
   aurora: { gag: 'aurora', region: 'mannville', level: 3 },
+  tumbleweed: { gag: 'tumbleweed', region: 'bakken', level: 3 },
+  pdogs: { gag: 'pdogs', region: 'bakken', level: 3 },
+  bale: { gag: 'bale', region: 'bakken', level: 3 },
+  cloud: { gag: 'cloud', region: 'bakken', level: 3 },
 };
 
 /**
@@ -132,7 +147,7 @@ export const SHARES: Record<GagId, string[]> = {
   worker: ['worker'],
   moose: [],
   nearMiss: ['gopher'],
-  landowner: [],
+  landowner: ['landowner'],
   biffyA: ['biffy'],
   biffyB: ['biffy'],
   marshmallow: ['worker'],
@@ -152,6 +167,11 @@ export const SHARES: Record<GagId, string[]> = {
   catTrain: [],
   beaver: ['aspen'],
   aurora: [],
+  // (The rancher who chases the bale is the landowner himself; the man under the cloud is the worker in red.)
+  tumbleweed: [],
+  pdogs: [],
+  bale: ['bale', 'landowner'],
+  cloud: ['worker'],
 };
 /** Must this gag wait for one of those playing? */
 export const mustWait = (id: GagId, playing: Iterable<GagId>): boolean => [...playing].some((p) => p === id || SHARES[p].some((x) => SHARES[id].includes(x)));
@@ -185,9 +205,13 @@ export class Wiggle {
   }
 }
 
-/** A bump of a truck up into the top berm, or down into the bottom one (not into a truck or equipment). */
+/**
+ * A bump of a truck up into the top berm, or down into the bottom one (not into a truck or
+ * equipment). A gate that is shut to it counts as berm: a wrong-colour gate, a convoy gate waiting
+ * for the other truck, a tanker's gate before it has loaded, a clock gate on the wrong move.
+ */
 export const bermBump = (orient: 'h' | 'v', direction: 1 | -1, hit: string): 'top' | 'bottom' | null =>
-  orient === 'v' && (hit === 'wall' || hit === 'convoy') ? (direction === -1 ? 'top' : 'bottom') : null;
+  orient === 'v' && ['wall', 'convoy', 'load', 'shift'].includes(hit) ? (direction === -1 ? 'top' : 'bottom') : null;
 
 /** Counts the landowner's trigger: the same truck moved again and again, reversing each time. */
 export class BackAndForth {

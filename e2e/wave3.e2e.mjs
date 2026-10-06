@@ -1,12 +1,15 @@
-// Gag wave 3 (Playwright): the Mannville gags on the standard Mannville scene (scene-stage.ts,
-// wave3.ts). WebKit at an iPhone's DPR 3 for the look, the triggers and the frames; Chromium with a
+// Gag wave 3 (Playwright): the Mannville gags on the standard Mannville scene and the Bakken gags on
+// the standard Bakken scene (scene-stage.ts, wave3.ts). WebKit at an iPhone's DPR 3 for the look, the triggers and the frames; Chromium with a
 // 4x slower CPU for the frame rate.
 //  - the standard scene is permanent scenery on EVERY Mannville level: the six trees, the three
 //    muskeg puddles, and the lane aspen kept IN FRONT of the strip's gag layers
 //  - each gag's first and last frames are the empty standard scene, by the pixels of a screenshot,
 //    at 390x844 and 375x667; in the middle it is on screen
 //  - the real triggers: three taps on the big puddle, three on the lane aspen, a convoy out in
-//    order back to back, a tap on the moon at night; beats in order; a new sighting in the log
+//    order back to back, a tap on the moon at night; in Bakken a truck dragged the full length of
+//    the board, three taps on one spot of the prairie, a bump into the bottom berm by the bale,
+//    three taps on the sky; beats in order; a new sighting in the log
+//  - Bakken's round bale is permanent scenery in the same spot on every level
 //  - no gag layer ever takes a touch: a truck can be dragged right through a gag
 //  - reduced motion: a still; a strip too short for the scene: no gag, no error
 //  - 60 fps at 390 and 375 wide with a 4x slower CPU
@@ -33,16 +36,22 @@ const check = (ok, text) => {
 };
 const N = LOG_ENTRIES.length;
 const mann = REGIONS.findIndex((r) => r.id === 'mannville');
+const bakk = REGIONS.findIndex((r) => r.id === 'bakken');
 // Everything else that could walk on is kept away, so each check sees one gag.
 const QUIET = 'cover=0&bird=0&nap=0&surveyor=0&tourists=0&lunch=0&off=sam,landowner,biffya,biffyb,deer,geese';
 const GAGS = [
-  { id: 'muskeg', log: 'Muskeg Boots', night: false },
-  { id: 'catTrain', log: 'Cat Train', night: false },
-  { id: 'beaver', log: 'Beaver', night: false },
-  { id: 'aurora', log: 'Aurora Howl', night: true },
+  { id: 'muskeg', log: 'Muskeg Boots', night: false, region: mann, level: 2 },
+  { id: 'catTrain', log: 'Cat Train', night: false, region: mann, level: 1 },
+  { id: 'beaver', log: 'Beaver', night: false, region: mann, level: 2 },
+  { id: 'aurora', log: 'Aurora Howl', night: true, region: mann, level: 2 },
+  { id: 'tumbleweed', log: 'Tumbleweed', night: false, region: bakk, level: 2 },
+  { id: 'pdogs', log: 'Prairie Dog Wave', night: false, region: bakk, level: 2 },
+  // (Bakken 1 has a truck that can be bumped into the bottom berm in a lane beside the bale.)
+  { id: 'bale', log: 'Runaway Bale', night: false, region: bakk, level: 0 },
+  { id: 'cloud', log: 'Personal Cloud', night: false, region: bakk, level: 2 },
 ].filter((g) => !ONLY || g.id.toLowerCase() === ONLY.toLowerCase());
 
-async function open(browser, { width = 390, height = 844, dpr = 3, query = 'night=0', level = 2, progress = UNLOCKED, reducedMotion = 'no-preference' } = {}) {
+async function open(browser, { width = 390, height = 844, dpr = 3, query = 'night=0', region = mann, level = 2, progress = UNLOCKED, reducedMotion = 'no-preference' } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: dpr, hasTouch: true, reducedMotion });
   const page = await context.newPage();
   page.on('pageerror', (e) => { failures++; console.log('ERR', e.message); });
@@ -50,7 +59,7 @@ async function open(browser, { width = 390, height = 844, dpr = 3, query = 'nigh
   if (!query.includes('gag=')) {
     await page.evaluate((p) => { localStorage.clear(); localStorage.setItem('rush-hour-rigs:v2', p); }, progress);
     await page.reload({ waitUntil: 'networkidle' });
-    await page.locator('.region-tab').nth(mann).click();
+    await page.locator('.region-tab').nth(region).click();
     await page.locator('.level-btn').nth(level).click();
   }
   await page.waitForSelector('.board .truck.sprite-on');
@@ -78,11 +87,12 @@ const spots = (page) => page.evaluate(() => {
   const mid = (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height }; };
   const puddles = [...document.querySelectorAll('.mann-layer path[fill="#4f4a2c"]')].map(mid).sort((a, b) => b.w - a.w);
   const moon = document.querySelector('.night-sky circle[stroke]');
-  return { puddle: puddles[0], aspen: mid(document.querySelector('.mann-front svg svg')), moon: moon ? mid(moon) : null };
+  const aspen = document.querySelector('.mann-front svg svg');
+  return { puddle: puddles[0], aspen: aspen ? mid(aspen) : null, moon: moon ? mid(moon) : null };
 });
 /** Follows a gag from its first layer to its last: the beats it shows, in order, and what the layers do with touches. */
 const follow = (page, id, ms = 22000) => page.evaluate(([id, limit]) => new Promise((res) => {
-  const beats = []; let seen = false; const t0 = performance.now(); const touch = new Set(); let order = '';
+  const beats = []; let seen = false; const t0 = performance.now(); const touch = new Set(); let order = ''; const said = []; let baleHidden = false;
   const tick = () => {
     const layers = [...document.querySelectorAll(`.strip-layer[data-gag="${id}"]`)];
     if (layers.length) {
@@ -92,9 +102,11 @@ const follow = (page, id, ms = 22000) => page.evaluate(([id, limit]) => new Prom
       for (const l of layers) for (const el of [l, ...l.querySelectorAll('svg')]) touch.add(getComputedStyle(el).pointerEvents);
       const kids = [...document.querySelector('.screen.game').children];
       const at = (sel) => kids.findIndex((k) => k.matches(sel));
-      order ||= JSON.stringify({ gag: at(`.strip-layer[data-gag="${id}"]:not(.scene-over)`), front: at('.scene-front'), over: at('.scene-over'), shade: at('.night-shade'), back: at('.mann-layer') });
-    } else if (seen) return res({ beats, touch: [...touch], order: JSON.parse(order), secs: (performance.now() - t0) / 1000 });
-    if (performance.now() - t0 > limit) return res({ beats, touch: [...touch], order: order ? JSON.parse(order) : null, secs: -1 });
+      order ||= JSON.stringify({ gag: at(`.strip-layer[data-gag="${id}"]:not(.scene-over)`), front: at('.scene-front'), over: at('.scene-over'), shade: at('.night-shade'), back: at('.mann-layer'), bale: at('.bakken-layer') });
+      const bub = document.querySelector('.bubble'); if (bub && !said.includes(bub.textContent)) said.push(bub.textContent);
+      const own = document.querySelector('.bakken-layer svg'); if (own && getComputedStyle(own).visibility === 'hidden') baleHidden = true;
+    } else if (seen) return res({ beats, touch: [...touch], order: JSON.parse(order), said, baleHidden, secs: (performance.now() - t0) / 1000 });
+    if (performance.now() - t0 > limit) return res({ beats, touch: [...touch], order: order ? JSON.parse(order) : null, said, baleHidden, secs: -1 });
     requestAnimationFrame(tick);
   };
   tick();
@@ -144,11 +156,42 @@ if (!ONLY) {
   await context.close();
 }
 
+// ---------- 1b. The standard Bakken scene: the round bale, on every level ----------
+if (!ONLY) {
+  console.log('\nwebkit 390x844 @3x: the standard Bakken scene');
+  const { context, page } = await open(wk, { region: bakk, level: 0 });
+  let bad = [], first = null;
+  for (let li = 0; li < 10; li++) {
+    if (li) {
+      await page.locator('.hud [data-act="levels"]').click();
+      await page.locator('.level-btn').nth(li).click();
+      await page.waitForSelector('.board .truck');
+      await wait(250);
+    }
+    const s = await page.evaluate(() => {
+      const board = document.querySelector('.board').getBoundingClientRect(), note = document.querySelector('.note').getBoundingClientRect();
+      const bales = [...document.querySelectorAll('.bakken-layer svg circle[r="27"]')];
+      const r = bales[0]?.getBoundingClientRect();
+      const hit = (el) => { const q = el.getBoundingClientRect(); return r && q.right > r.left && q.left < r.right && q.bottom > r.top && q.top < r.bottom; };
+      const kids = [...document.querySelector('.screen.game').children];
+      return { n: bales.length, layers: document.querySelectorAll('.bakken-layer').length, x: r && Math.round(r.left + r.width / 2), up: r && Math.round(note.top - r.bottom), w: r && Math.round(r.width), inside: r && r.top >= board.bottom && r.bottom <= note.top && r.right <= innerWidth,
+        touch: [...document.querySelectorAll('.bakken-layer, .bakken-layer svg')].map((e) => getComputedStyle(e).pointerEvents).join(), trees: [...document.querySelectorAll('.scenery svg, .scenery use, .scenery img')].filter(hit).length,
+        props: ['.biffy-layer svg', '.sign-layer svg'].filter((sel) => hit(document.querySelector(sel))).length, under: kids.findIndex((k) => k.matches('.bakken-layer')) < kids.findIndex((k) => k.matches('.night-shade')) };
+    });
+    first ??= s;
+    const ok = s.n === 1 && s.layers === 1 && s.inside && s.touch === 'none,none' && s.trees === 0 && s.props === 0 && s.under && Math.abs(s.x - first.x) <= 1 && Math.abs(s.up - first.up) <= 1 && s.w === first.w;
+    if (!ok) bad.push(`level ${li + 1}: ${JSON.stringify(s)}`);
+    if (li === 0) await page.screenshot({ path: join(OUT, 'bakken_scene.png') });
+  }
+  check(bad.length === 0 && first.x > 330 && first.x < 372, `all 10 levels: one round bale, ${first.w} px across, in the same spot of the bottom strip (x ${first.x}, ${first.up} px above the tip line), under the night's shade, taking no touch, with no tree, biffy or sign on it${bad.length ? ` (${bad.join(' | ').slice(0, 700)})` : ''}`);
+  await context.close();
+}
+
 // ---------- 2. First and last frames are the empty standard scene (pixels, DPR 3) ----------
 for (const [width, height] of [[390, 844], [375, 667]]) {
   console.log(`\nwebkit ${width}x${height} @3x: every gag starts and ends on the empty scene`);
   for (const g of GAGS) {
-    const { context, page } = await open(wk, { width, height, query: `gagtest=1&night=${g.night ? 1 : 0}`, reducedMotion: 'reduce' });
+    const { context, page } = await open(wk, { width, height, region: g.region, level: g.level, query: `gagtest=1&night=${g.night ? 1 : 0}`, reducedMotion: 'reduce' });
     await wait(900);
     const diff = (a, b) => page.evaluate(async ([x, y]) => {
       const load = async (b64) => { const img = new Image(); img.src = `data:image/png;base64,${b64}`; await img.decode(); const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0); return ctx.getImageData(0, 0, c.width, c.height); };
@@ -166,6 +209,10 @@ for (const [width, height] of [[390, 844], [375, 667]]) {
     if (!held) { check(false, `${g.id}: could not be set`); await context.close(); continue; }
     await wait(80);
     const first = await shot();
+    // (The middle: the busier of two moments, since the tumbleweed's script has an empty beat.)
+    await page.evaluate(([id, t]) => window.__rhrGag.hold(id, t), [g.id, end * 0.66]);
+    await wait(80);
+    const later = await shot();
     await page.evaluate(([id, t]) => window.__rhrGag.hold(id, t), [g.id, end * 0.42]);
     await wait(80);
     const middle = await shot();
@@ -176,7 +223,7 @@ for (const [width, height] of [[390, 844], [375, 667]]) {
     await page.evaluate((id) => window.__rhrGag.release(id), g.id);
     await wait(80);
     const after = await shot();
-    const [a, m, z, same] = [await best(before, first), await best(before, middle), await best(last, after), await best(before, last)];
+    const [a, m, z, same] = [await best(before, first), Math.max(await best(before, middle), await best(before, later)), await best(last, after), await best(before, last)];
     check(m > 400 && a <= 9 && same <= 9 && z <= 9, `${g.id} (${end.toFixed(1)} s): its first frame is the empty scene (${a} px differ), its last frame too (${same} px against the start, ${z} against the level it leaves); in the middle it is on screen (${m} px)`);
     await context.close();
   }
@@ -185,9 +232,9 @@ for (const [width, height] of [[390, 844], [375, 667]]) {
 // ---------- 3. The real triggers, the beats, touches, the log ----------
 console.log('\nwebkit 390x844 @3x: triggers');
 for (const g of GAGS) {
-  const { context, page } = await open(wk, { query: g.night ? 'idle=0.1' : 'night=0', level: g.id === 'catTrain' ? 1 : 2 });
+  const { context, page } = await open(wk, { query: g.night ? 'idle=0.1' : 'night=0', region: g.region, level: g.level });
   await watchToasts(page);
-  const lv = REGIONS[mann].levels[g.id === 'catTrain' ? 1 : 2];
+  const lv = REGIONS[g.region].levels[g.level];
   let touched = null;
   if (g.id === 'muskeg' || g.id === 'beaver') {
     const at = (await spots(page))[g.id === 'muskeg' ? 'puddle' : 'aspen'];
@@ -215,6 +262,44 @@ for (const g of GAGS) {
         break;
       }
     }
+  } else if (g.id === 'tumbleweed') {
+    // Play the level's solution until some truck can be driven from one end of its lane to the other, and drive it.
+    let s = newGame(lv), done = false;
+    const full = (st) => { for (const t of st.trucks) { const r = getMoveRange(st, t.id), far = 6 - t.length, at = t.orient === 'h' ? t.col : t.row; if (at === 0 && r.max >= far && r.exitDelta !== far) return { id: t.id, delta: far }; if (at === far && r.min <= -far && r.exitDelta !== -far) return { id: t.id, delta: -far }; } return null; };
+    for (const m of [null, ...solve(lv)]) {
+      if (m) { const r = tryMove(s, m.id, m.delta); await drag(page, m.id, m.delta + Math.sign(m.delta) * (r.exited ? 0.4 : 0)); s = r.state; }
+      const f = full(s);
+      if (f) { check(!(await page.$('.strip-layer[data-gag="tumbleweed"]')), 'tumbleweed: shorter moves bring nothing'); await drag(page, f.id, f.delta, 60); done = true; break; }
+    }
+    if (!done) check(false, 'tumbleweed: no truck on this level can be driven the full length of the board');
+  } else if (g.id === 'pdogs') {
+    const at = await page.evaluate(() => { const b = document.querySelector('.board').getBoundingClientRect(), n = document.querySelector('.note').getBoundingClientRect(); return { x: innerWidth * 0.3, y: n.top - 14, far: b.bottom + 30 }; });
+    // Three taps, but not on one spot: nothing. Then three on the same spot.
+    await tapAt(page, at.x, at.y); await wait(80); await tapAt(page, at.x + 60, at.y); await wait(80); await tapAt(page, at.x + 120, at.y); await wait(150);
+    check(!(await page.$('.strip-layer[data-gag="pdogs"]')), 'pdogs: three taps on three spots bring nothing');
+    for (let i = 0; i < 3; i++) { await tapAt(page, at.x + i * 4, at.y - i * 3); await wait(80); }
+  } else if (g.id === 'cloud') {
+    const sky = await page.evaluate(() => { const h = document.querySelector('.hud').getBoundingClientRect(), b = document.querySelector('.board').getBoundingClientRect(); return { y: (h.bottom + b.top) / 2 }; });
+    await tapAt(page, 120, sky.y); await wait(80); await tapAt(page, 250, sky.y + 10); await wait(150);
+    check(!(await page.$('.strip-layer[data-gag="cloud"]')), 'cloud: two taps on the sky bring nothing');
+    await tapAt(page, 180, sky.y - 8);
+  } else if (g.id === 'bale') {
+    // A truck is bumped down into the bottom berm in a lane next to the bale (the last two columns); one further left brings nothing.
+    let s = newGame(lv), done = false;
+    const bump = (st, cols) => st.trucks.map((t) => ({ t, r: getMoveRange(st, t.id) })).find(({ t, r }) => t.orient === 'v' && cols.includes(t.col) && r.exitDelta !== r.max && t.row + t.length + r.max === 6);
+    for (const m of [null, ...solve(lv)]) {
+      if (m) { const r = tryMove(s, m.id, m.delta); await drag(page, m.id, m.delta + Math.sign(m.delta) * (r.exited ? 0.4 : 0)); s = r.state; }
+      const near = bump(s, [4, 5]);
+      if (near) {
+        const far = bump(s, [0, 1, 2]);
+        if (far) { await drag(page, far.t.id, far.r.max + 0.6, 250); if (far.r.max) s = tryMove(s, far.t.id, far.r.max).state; check(!(await page.$('.strip-layer[data-gag="bale"]')), `bale: a bump into the bottom berm far from the bale (column ${far.t.col + 1}) does not move it`); }
+        const again = bump(s, [4, 5]);
+        await drag(page, again.t.id, again.r.max + 0.6, 60);
+        done = true;
+        break;
+      }
+    }
+    if (!done) check(false, 'bale: no truck on this level can be bumped into the bottom berm beside the bale');
   } else {
     // Night falls by itself (idle); then the moon is tapped.
     await page.waitForFunction(() => document.querySelector('.screen.game').classList.contains('night'), null, { timeout: 9000 });
@@ -225,7 +310,7 @@ for (const g of GAGS) {
   const following = follow(page, g.id);
   await page.waitForSelector(`.strip-layer[data-gag="${g.id}"]`, { state: 'attached', timeout: 4000 }).catch(() => {});
   // A truck is dragged while the gag is on: nothing in the way. (Not at night: any move ends the night.)
-  if (!g.night && g.id !== 'catTrain') {
+  if (g.id === 'muskeg' || g.id === 'beaver' || g.id === 'pdogs' || g.id === 'cloud') {
     await wait(2500);
     const s0 = newGame(lv);
     const mv = s0.trucks.map((t) => ({ t, r: getMoveRange(s0, t.id) })).find(({ r }) => r && ((r.max > 0 && r.exitDelta !== r.max) || (r.min < 0 && r.exitDelta !== r.min)));
@@ -237,20 +322,27 @@ for (const g of GAGS) {
     touched = mid.on && mid.truck && moved === before + 1;
   }
   const run = await following;
+  run.order ??= {};
   const want = beatsOf(g.id);
   let at = -1;
   const inOrder = run.beats.every((b) => { const i = want.indexOf(b); const ok = i > at; at = i; return ok; });
   check(run.secs > 0 && inOrder && want.filter((b) => run.beats.includes(b)).length >= want.length - 1, `${g.id}: it plays ${run.secs.toFixed(1)} s, beats in the reference's order: ${run.beats.join(' > ')}`);
   check(run.touch.join() === 'none' && (touched === null || touched), `${g.id}: its layers take no touches${touched === null ? '' : ', and a truck is dragged a cell while it plays'}`);
   if (g.id === 'aurora') check(run.order.gag > run.order.shade, 'aurora: its layer lies over the night, in the sky band');
-  else check(run.order.back < run.order.gag && run.order.gag < run.order.front && run.order.front < run.order.shade && (run.order.over < 0 || run.order.over > run.order.front), `${g.id}: the scenery is behind it and the lane aspen in front of it${run.order.over > 0 ? ', its sound words over the aspen' : ''}`);
-  await wait(900);
+  else if (g.region === mann) check(run.order.back < run.order.gag && run.order.gag < run.order.front && run.order.front < run.order.shade && (run.order.over < 0 || run.order.over > run.order.front), `${g.id}: the scenery is behind it and the lane aspen in front of it${run.order.over > 0 ? ', its sound words over the aspen' : ''}`);
+  else check(run.order.bale >= 0 && run.order.bale < run.order.gag && run.order.gag < run.order.shade, `${g.id}: it plays over the standard scene, under the night's shade`);
+  if (g.id === 'bale') check(run.said.includes('Hey!') && run.baleHidden && (await page.evaluate(() => getComputedStyle(document.querySelector('.bakken-layer svg')).visibility)) === 'visible', 'bale: the landowner shouts "Hey!" in the game\'s own bubble; the gag draws the bale while it plays, and the scenery\'s own is back at the end');
+  // (Toasts show one at a time: this one may be waiting behind another gag's.)
+  await page.waitForFunction((name) => window.__toasts.some((t) => t.includes(name)), g.log, { timeout: 10000 }).catch(() => {});
+  await wait(300);
   const toast = await page.evaluate(() => window.__toasts);
   const saved = JSON.parse((await page.evaluate(() => localStorage.getItem('rush-hour-rigs:log'))) ?? '{"found":[]}').found;
   // (Before the aurora, the night itself was a sighting: Night Shift.)
   const nth = g.night ? 2 : 1;
-  check(toast.some((t) => t === `New sighting! ${g.log} (${nth}/${N})`) && saved.length === nth, `${g.id}: "${toast[nth - 1]}", saved in the log`);
-  check((await page.$$('.strip-layer[data-gag]')).length === 0, `${g.id}: nothing of it is left on the screen`);
+  // (A bump brings others too: the biffy's occupant, perhaps Safety Sam. Only the bale's own sighting is looked for.)
+  if (g.id === 'bale') check(toast.some((t) => t.startsWith(`New sighting! ${g.log} (`)) && saved.includes('bale'), `bale: "${toast.find((t) => t.includes(g.log))}", saved in the log`);
+  else check(toast.some((t) => t === `New sighting! ${g.log} (${nth}/${N})`) && saved.length === nth, `${g.id}: "${toast[nth - 1]}", saved in the log`);
+  check((await page.$$(`.strip-layer[data-gag="${g.id}"]`)).length === 0, `${g.id}: nothing of it is left on the screen`);
   await context.close();
 }
 
@@ -262,8 +354,8 @@ if (!ONLY) {
     await page.locator('.hud [data-act="levels"]').click();
     await page.locator('.binoculars').click();
     await page.waitForSelector('.log-card');
-    const cards = await page.evaluate(() => ['muskeg', 'cattrain', 'beaver', 'aurora'].map((id) => { const c = document.querySelector(`.log-card[data-id="${id}"]`), s = c?.querySelector('.art svg'), r = s?.getBoundingClientRect(), vb = s?.viewBox.baseVal; return { id, text: c?.querySelector('p').textContent, shapes: s?.querySelectorAll('path, circle, rect, ellipse').length, fit: r && Math.abs(r.width / r.height / (vb.width / vb.height) - 1) < 0.03 && r.width <= 105 && r.height <= 85 }; }));
-    check(cards.every((c) => c.shapes > 12 && c.fit) && cards.map((c) => c.text).join('|') === 'In Mannville, tap the big muskeg puddle three times.|In Mannville, drive a convoy out in order, one right after the other.|In Mannville, tap the tall aspen three times.|In Mannville, wait for night, then tap the moon.', `the four cards have flat puppet stills at their own shape and plain hints: ${cards.map((c) => `${c.id} (${c.shapes} shapes)`).join(', ')}`);
+    const cards = await page.evaluate(() => ['muskeg', 'cattrain', 'beaver', 'aurora', 'tumbleweed', 'pdogs', 'bale', 'cloud'].map((id) => { const c = document.querySelector(`.log-card[data-id="${id}"]`), s = c?.querySelector('.art svg'), r = s?.getBoundingClientRect(), vb = s?.viewBox.baseVal; return { id, text: c?.querySelector('p').textContent, shapes: s?.querySelectorAll('path, circle, rect, ellipse').length, fit: r && Math.abs(r.width / r.height / (vb.width / vb.height) - 1) < 0.03 && r.width <= 105 && r.height <= 85 }; }));
+    check(cards.every((c) => c.shapes > 12 && c.fit) && cards.map((c) => c.text).join('|') === 'In Mannville, tap the big muskeg puddle three times.|In Mannville, drive a convoy out in order, one right after the other.|In Mannville, tap the tall aspen three times.|In Mannville, wait for night, then tap the moon.|In Bakken, slide a truck from one end of the pad to the other in one move.|In Bakken, tap the same spot on the prairie three times.|In Bakken, bump a truck into the bottom berm beside the round bale.|In Bakken, tap the sky three times.', `the eight cards have flat puppet stills at their own shape and plain hints: ${cards.map((c) => `${c.id} (${c.shapes} shapes)`).join(', ')}`);
     await page.screenshot({ path: join(OUT, 'wave3_log_cards.png') });
     await context.close();
   }
@@ -297,6 +389,7 @@ for (const [width, height] of [[390, 844], [375, 667]]) {
   console.log(`\nchromium ${width}x${height} @3x: frame rate with a 4x slower CPU`);
   for (const g of GAGS) {
     const { context, page } = await open(cr, { width, height, query: `gag=${g.id.toLowerCase()}` });
+    await page.waitForSelector(g.region === mann ? '.mann-layer' : '.bakken-layer');
     const cdp = await context.newCDPSession(page);
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
     // One whole run of the preview, from its first layer to its last.

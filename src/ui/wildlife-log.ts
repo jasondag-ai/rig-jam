@@ -6,7 +6,7 @@
 import { STORAGE_PREFIX } from './progress.ts';
 import { dressCamo } from './sprites.ts';
 
-export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'night' | 'bull' | 'bear' | 'muskeg' | 'cattrain' | 'beaver' | 'aurora';
+export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'night' | 'bull' | 'bear' | 'muskeg' | 'cattrain' | 'beaver' | 'aurora' | 'tumbleweed' | 'pdogs' | 'bale' | 'cloud';
 
 export interface LogEntry {
   id: Sighting;
@@ -40,6 +40,10 @@ export const LOG_ENTRIES: LogEntry[] = [
   { id: 'cattrain', name: 'Cat Train', caption: 'One always falls behind.', hint: "In Mannville, drive a convoy out in order, one right after the other." },
   { id: 'beaver', name: 'Beaver', caption: 'Measure twice. Bonk once.', hint: "In Mannville, tap the tall aspen three times." },
   { id: 'aurora', name: 'Aurora Howl', caption: 'Nobody heard that.', hint: "In Mannville, wait for night, then tap the moon." },
+  { id: 'tumbleweed', name: 'Tumbleweed', caption: 'Brought the whole family.', hint: "In Bakken, slide a truck from one end of the pad to the other in one move." },
+  { id: 'pdogs', name: 'Prairie Dog Wave', caption: 'One always misses his cue.', hint: "In Bakken, tap the same spot on the prairie three times." },
+  { id: 'bale', name: 'Runaway Bale', caption: 'It rolled one more inch.', hint: "In Bakken, bump a truck into the bottom berm beside the round bale." },
+  { id: 'cloud', name: 'Personal Cloud', caption: 'Some days are like that.', hint: "In Bakken, tap the sky three times." },
   { id: 'night', name: 'Night Shift', caption: 'Lights out on the lease.', hint: "Leave a Montney or Duvernay level alone for a while." },
   { id: 'bull', name: 'Bull and Cow', caption: 'Spring in the Montney.', hint: "In Montney, tap the cow." },
   { id: 'bear', name: 'Bear', caption: 'Does what bears do in the woods.', hint: "In Duvernay, tap the snowy bush three times. He comes one time in three.", legendary: true },

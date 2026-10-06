@@ -308,7 +308,7 @@ something, give exact clicks and one command at a time.
   - `npm run test:e2e:strip` checks all of it in WebKit (beats, real triggers, off-screen entry and
     exit, hole clip, biffy placement, reduced motion, log), 60 fps at 4x throttle in Chromium, and
     saves `gag47_*.webm` clips.
-- GAG WAVE 3 (Mannville now, Bakken next; Jay, Oct 6): ported from
+- GAG WAVE 3 (Mannville and Bakken; Jay, Oct 6): ported from
   `~/Desktop/RHR Art Inbox/mannville_bakken_gags_reference.html` (saved Oct 6 03:41). That page
   draws each gag as ONE SVG string per frame on a 390 x 190 strip in its own coordinates (berm's
   foot y 30, walking lane's ground `GY` 150), and so does the game:
@@ -338,6 +338,20 @@ something, give exact clicks and one command at a time.
     fades with the night; Mannville's moon is always shown where the sky band has room,
     `AURORA_SKY`). `?gag=muskeg|cattrain|beaver|aurora` (the aurora's preview pins the night).
     Log cards: `wave3Still`. No sounds yet (`GAG_SOUNDS` rows are empty). Witness lines are stand-ins.
+  - THE STANDARD BAKKEN SCENE (`BakkenProp`, every Bakken level): the round bale at the reference's
+    spot (`BALE_AT`, world x 352, on the lane's ground line), `.bakken-layer`. The generic prairie
+    scenery stays, with the bale's box and the walking lane (`lane()`) kept clear of trees.
+  - TUMBLEWEED (a truck driven the full length of the board in one move: from one end of its lane
+    to the other, or out through a gate from at least that far), PRAIRIE DOG WAVE (3 taps on the
+    same spot of the bottom strip, each within 24 px of the last; the mounds push up fresh and
+    settle flat: they are drawn by the gag, never scenery), RUNAWAY BALE (a bump down into the
+    bottom berm in a lane within a cell of the bale; the gag hides the scenery's bale and draws it
+    itself, ending exactly where it stood; the rancher is the reference's own drawing of the
+    landowner on foot, not the quad puppet; he shouts `BALE_LINE` "Hey!" in the game's bubble,
+    whose tail follows him), PERSONAL CLOUD (3 taps on the sky band; it plays in the bottom
+    strip, as in the reference). `?gag=tumbleweed|pdogs|bale|cloud`.
+  - A SHUT GATE COUNTS AS BERM for bump triggers (`bermBump`): a wrong-colour gate, a convoy gate
+    waiting, a tanker's gate before it has loaded, a clock gate on the wrong move.
   - `npm run test:e2e:wave3` (WebKit at DPR 3; Chromium 4x throttle): the scene on all 10 levels,
     first and last frames against the empty scene by pixels at 390x844 and 375x667, the real
     triggers, beats, touches never blocked, log, reduced motion, a 22 px strip, 60 fps.
@@ -653,7 +667,7 @@ something, give exact clicks and one command at a time.
   crossfades want an ear check on a phone.
 
 ## Wildlife Log
-- `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game plus Night Shift (23: the four Mannville gags of wave 3 come after Tourists;
+- `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game plus Night Shift (27: the four Mannville gags and the four Bakken gags of wave 3 come after Tourists;
   Magpie, Sleepy Worker, Moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll,
   Marshmallow, Lost Goose, Porcupine, Gopher Lunch, Safety Sam, Frozen Tongue, Surveyor, Back
   Scratcher, Tourists, Night Shift, Bull and Cow, Bear),

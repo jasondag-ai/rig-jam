@@ -55,6 +55,11 @@ export const GAG_SOUNDS: Record<GagId, Record<string, string[]>> = {
   catTrain: {},
   beaver: {},
   aurora: {},
+  // Wave 3 (Bakken): none yet either.
+  tumbleweed: {},
+  pdogs: {},
+  bale: {},
+  cloud: {},
 };
 
 /** The loops a gag may run, and the sound each repeats. `every`: a one-shot repeated that often (s); none: the file itself loops. */

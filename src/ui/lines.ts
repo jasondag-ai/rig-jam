@@ -175,6 +175,8 @@ export const FOURTH_WALL_ODDS = 3;
 
 // GAG LINES. A gag with more than one line never says the same one twice in a row.
 export const MAGPIE_LINES = ['Seriously?', 'Not the windshield!', 'Every. Single. Day.', 'Somebody get the pressure washer.'];
+/** The Runaway Bale: what the landowner shouts as he runs after it (the reference's line). */
+export const BALE_LINE = 'Hey!';
 export const LANDOWNER_LINES = ["Who's paying for these ruts?", "That's my hay field!", "I'm calling the land man.", 'Fix these ruts by Friday.'];
 const lastFrom = new Map<readonly string[], string>();
 /** A line from a pool, never the one it gave last time. */
@@ -237,4 +239,8 @@ export const WITNESS_LINES = {
   catTrain: 'Now that is a cat train.',
   beaver: 'Give him a hard hat.',
   aurora: 'Nobody heard that.',
+  tumbleweed: 'Whole family came out.',
+  pdogs: 'They do that at hockey games too.',
+  bale: 'Not our bale. Keep driving.',
+  cloud: 'Glad that one is his.',
 };
