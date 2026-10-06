@@ -1,5 +1,5 @@
 // The Wildlife Log: each gag is collected the first time it fully plays; its card shows a still of
-// its own puppet. Every gag is an Easter egg: a card's hint (how to set the gag off) shows in demo
+// its own puppet. Every gag is a sighting to find: a card's hint (how to set the gag off) shows in demo
 // mode only. Finding them all unlocks camo pickups (on by default once earned, with a switch in
 // Settings). Saved on this phone under a `rush-hour-rigs:` key, so "Reset progress" clears it too.
 // `?log=all` previews a full log.

@@ -185,7 +185,8 @@ console.log('\nwebkit 390x844: the depth gauge, the stopwatch and Dug Through');
   const N = LOG_ENTRIES.length;
   const { context, page } = await open(wk);
   const swipe = () => page.evaluate(() => document.querySelector('.screen.log').dispatchEvent(new Event('touchstart', { bubbles: true })));
-  const hiddenAtFirst = await page.evaluate(() => [document.querySelector('.log-card[data-id="dug"]') === null, document.querySelectorAll('.log-card').length, document.querySelector('.log-count').textContent]);
+  const hiddenAtFirst = await page.evaluate(() => [document.querySelector('.log-card[data-id="dug"]') === null, document.querySelectorAll('.log-card').length, document.querySelector('.log-count').textContent, document.querySelector('.log-reward').textContent, /easter|\begg/i.test(document.querySelector('.screen.log').textContent)]);
+  check(hiddenAtFirst[3] === `Sightings. Find all ${N} to unlock camo pickups.` && !hiddenAtFirst[4], `the log's footer: "${hiddenAtFirst[3]}" (the word is "sighting", never "Easter egg")`);
   check(hiddenAtFirst[0] && hiddenAtFirst[1] === SHOWN && hiddenAtFirst[2] === `0/${N}`, `Dug Through is hidden until it is earned: ${hiddenAtFirst[1]} cards, none of them its own, and the log reads ${hiddenAtFirst[2]}`);
   const at = (y) => page.evaluate(async (y) => { const s = document.querySelector('.screen.log'); s.scrollTop = y === 'end' ? s.scrollHeight : y; await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))); const c = document.querySelector('.dig-clock'), g = document.querySelector('.dig-gauge-pill').getBoundingClientRect(); return { depth: document.querySelector('.dig-depth').textContent, km: +document.querySelector('.dig-col').dataset.km, clock: c.hidden ? null : c.textContent, final: c.classList.contains('final'), top: s.scrollTop, max: s.scrollHeight - s.clientHeight, pill: [g.left, g.right, g.top, g.height] }; }, y);
   const start = await at(0);
@@ -208,12 +209,12 @@ console.log('\nwebkit 390x844: the depth gauge, the stopwatch and Dug Through');
   check(seen.every((k, i) => i === 0 || k > seen[i - 1]) && seen[0] > 0 && seen.at(-1) < 12742, `it climbs all the way: ${seen.map((k) => Math.round(k)).join(', ')} km`);
   const end = await at('end');
   await wait(400);
-  const card = () => page.evaluate(() => { const a = document.querySelector('.dig-arrival'), r = a.getBoundingClientRect(), log = JSON.parse(localStorage.getItem('rush-hour-rigs:log')); return { shown: !a.hidden, title: a.querySelector('b')?.textContent, lines: [...a.querySelectorAll('span')].map((x) => x.textContent), inView: r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth, toasts: [...document.querySelectorAll('.toast')].map((t) => t.textContent), count: document.querySelector('.log-count').textContent, found: log.found, dug: log.dug, swipes: log.dugSwipes }; });
+  const card = () => page.evaluate(() => { const a = document.querySelector('.dig-arrival'), r = a.getBoundingClientRect(), log = JSON.parse(localStorage.getItem('rush-hour-rigs:log')); return { shown: !a.hidden, title: a.querySelector('b')?.textContent, lines: [...a.querySelectorAll('span')].map((x) => x.textContent), inView: r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth, toasts: [...document.querySelectorAll('.toast')].map((t) => t.textContent), confetti: document.querySelectorAll('.confetti.over-page i').length, hats: document.querySelectorAll('.confetti.over-page i.hat').length, count: document.querySelector('.log-count').textContent, found: log.found, dug: log.dug, swipes: log.dugSwipes }; });
   const first = await card();
   check(end.depth === '12,742 km' && end.final && /^\d+:\d\d\.\d$/.test(end.clock), `at the end it reads "${end.depth}" and the stopwatch stops at ${end.clock}`);
   await page.screenshot({ path: join(OUT, 'log_dig_kerguelen.png') });
   check(first.toasts[0] === `New sighting! Dug Through (1/${N})` && first.count === `1/${N}` && first.found.join() === 'dug' && first.dug > 0 && first.swipes === 3, `reaching the island is a new sighting: "${first.toasts[0]}"; the log reads ${first.count}; the time and the swipes are saved (${Math.round(first.dug)} ms, ${first.swipes} swipes)`);
-  check(first.shown && first.inView && first.title === 'Dug Through!' && first.lines[0] === `3 swipes in ${end.clock}`, `an arrival card at the island: "${first.title}" "${first.lines.join('" "')}"`);
+  check(first.shown && first.inView && first.title === 'New sighting!' && first.lines.join('|') === `Dug Through added to your Wildlife Log.|3 swipes in ${end.clock}|Best: 3 swipes, ${end.clock}` && first.confetti > 20, `an arrival card at the island leads with the news, then this dig, then the best, in a burst of hard-hat confetti: "${first.title}" "${first.lines.join('" "')}"`);
   // Back at the top the stopwatch is ready again. A slower dig with more swipes keeps the bests; a quick one-swipe dig beats both.
   const again = await at(0);
   const gone = await page.evaluate(() => document.querySelector('.dig-arrival').hidden);
@@ -224,7 +225,7 @@ console.log('\nwebkit 390x844: the depth gauge, the stopwatch and Dug Through');
   const slow = await at('end');
   await wait(300);
   const kept = await card();
-  check(again.clock === null && slow.final && kept.dug === first.dug && kept.swipes === 3 && kept.lines.join('|') === `5 swipes in ${slow.clock}|Best: 3 swipes, ${end.clock}`, `a slower dig keeps the best: "${kept.lines.join('" "')}"`);
+  check(again.clock === null && slow.final && kept.dug === first.dug && kept.swipes === 3 && kept.title === 'Dug Through!' && kept.lines.join('|') === `5 swipes in ${slow.clock}|Best: 3 swipes, ${end.clock}`, `a slower dig keeps the best: "${kept.lines.join('" "')}"`);
   await at(0);
   await wait(1700);
   await swipe();
@@ -247,18 +248,21 @@ console.log('\nwebkit 390x844: the depth gauge, the stopwatch and Dug Through');
     most = Math.max(most, t.n); far += t.far; if (!t.covered || t.shapes > 1400) bare++;
   }
   check(most > 0 && most <= 12 && far === 0 && bare === 0, `the dirt is drawn only near the screen: never more than ${most} tiles on the page in ${Math.round(start.max / 844)} screens of scroll, none far from the screen, none missing where the screen is`);
-  // The oddities on the way down.
-  let odd = [];
+  // The finds on the way down: each gives a tiny wiggle as it slides into view, and wiggles and speaks on a tap.
+  let odd = [], glanced = 0;
   for (const o of ODDITIES) {
     await page.evaluate((id) => document.querySelector(`.oddity[data-id="${id}"]`).scrollIntoView({ block: 'center' }), o.id);
     await wait(120);
+    await wait(120);
+    if (await page.evaluate((id) => { const el = document.querySelector(`.oddity[data-id="${id}"]`); return el.classList.contains('glance') && getComputedStyle(el.firstElementChild).animationName === 'find-glance'; }, o.id)) glanced++;
     const seenIt = await page.evaluate((id) => { const el = document.querySelector(`.oddity[data-id="${id}"]`), r = el.getBoundingClientRect(); return { layer: el.closest('.deep-layer').dataset.layer, top: el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)), w: r.width, h: r.height, clear: r.right < document.querySelector('.dig-gauge-pill').getBoundingClientRect().left || r.bottom < document.querySelector('.dig-gauge-pill').getBoundingClientRect().top || r.top > document.querySelector('.dig-gauge-pill').getBoundingClientRect().bottom }; }, o.id);
     await tap(page, `.oddity[data-id="${o.id}"]`);
     await wait(90);
     const said = await page.evaluate((id) => ({ text: document.querySelector('.dig-bubble')?.textContent, wiggle: document.querySelector(`.oddity[data-id="${id}"]`).classList.contains('wiggle'), fits: (() => { const q = document.querySelector('.dig-bubble')?.getBoundingClientRect(); return q && q.left >= 0 && q.right <= innerWidth + 0.5; })() }), o.id);
     if (!(seenIt.layer === o.layer && seenIt.top && seenIt.w >= 44 && seenIt.h >= 44 && said.text === BURIED_LINES[o.id] && said.wiggle && said.fits)) odd.push(`${o.id}: ${JSON.stringify({ seenIt, said })}`);
   }
-  check(odd.length === 0, `the diamond in the mantle, the lunchbox at the centre and the whale in the Southern Ocean each wiggle and speak on a tap ("${ODDITIES.map((o) => BURIED_LINES[o.id]).join('" "')}")${odd.length ? ` (wrong: ${odd.join(' | ')})` : ''}`);
+  check(odd.length === 0 && ODDITIES.length === 9, `${ODDITIES.length} finds in the dirt (${ODDITIES.map((o) => o.id).join(', ')}): each lies in its layer and wiggles and speaks on a tap${odd.length ? ` (wrong: ${odd.join(' | ').slice(0, 600)})` : ''}`);
+  check(glanced === ODDITIES.length, `each gives a tiny wiggle as it slides into view (${glanced} of ${ODDITIES.length})`);
   await context.close();
 }
 {
@@ -297,6 +301,9 @@ console.log('\nwebkit: reduced motion');
   const egg = await page.evaluate(() => { const e = document.querySelector('.buried-egg'); return { anims: ['svg', '.egg-crack', '.egg-peek', '.egg-eye'].map((s) => getComputedStyle(e.querySelector(s)).animationName), eye: +getComputedStyle(e.querySelector('.egg-peek')).opacity }; });
   check(still.anim === 'none' && still.bubbleAnim === 'none' && still.bubble === BURIED_LINES.tusk && still.glints.length >= 6 && still.glints.every((a) => a === 'none'), 'a tap shows the line with no wiggle and no pop; neither the oil nor the mantle and core shimmer');
   check(egg.anims.every((a) => a === 'none') && egg.eye === 1, 'the egg simply shows its eye while its line is up');
+  await page.evaluate(() => document.querySelector('.oddity[data-id="nugget"]').scrollIntoView({ block: 'center' }));
+  await wait(250);
+  check(await page.evaluate(() => !document.querySelector('.oddity[data-id="nugget"]').classList.contains('glance') && document.querySelectorAll('.confetti').length === 0), 'a find sliding into view does not wiggle, and there is no confetti');
   await context.close();
 }
 await wk.close();

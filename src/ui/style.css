@@ -3080,14 +3080,14 @@ img.hat { width: 100%; height: auto; }
 
 /* Confetti on a perfect solve: small hard hats and orange and yellow scraps fall for about a
    second and a half BEHIND the card (so never over its buttons). Not made under reduced motion. */
-.win .confetti {
+.confetti {
   position: absolute;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
 }
-.win .confetti i {
+.confetti i {
   position: absolute;
   top: -24px;
   left: var(--x);
@@ -3098,14 +3098,14 @@ img.hat { width: 100%; height: auto; }
   opacity: 0;
   animation: confetti-fall var(--t) cubic-bezier(0.3, 0.1, 0.7, 1) var(--d) 1 both;
 }
-.win .confetti i.hat { background: var(--ui-hat) center / contain no-repeat; border-radius: 0; }
+.confetti i.hat { background: var(--ui-hat) center / contain no-repeat; border-radius: 0; }
 @keyframes confetti-fall {
   0% { opacity: 1; transform: translate3d(0, 0, 0) rotate(0deg); }
   85% { opacity: 1; }
   100% { opacity: 0; transform: translate3d(var(--dx), var(--fall), 0) rotate(var(--spin)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .win .confetti { display: none; }
+  .confetti { display: none; }
 }
 
 /* The Daily Pad button once today's pad is cleared: green, with no box behind it (the old flat
@@ -4090,4 +4090,19 @@ svg.dig-tunnel {
 @media (prefers-reduced-motion: reduce) {
   .regions::before,
   .regions::after { transition: none; }
+}
+
+/* The dig's arrival: the hard-hat confetti over the whole page (never over a tap: it takes none). */
+.confetti.over-page { position: fixed; z-index: 30; }
+
+/* A find gives a tiny wiggle as it slides into view, to catch the eye mid-swipe. */
+.buried.glance svg { animation: find-glance 460ms ease-in-out; }
+@keyframes find-glance {
+  0%, 100% { transform: rotate(0); }
+  30% { transform: rotate(-5deg); }
+  65% { transform: rotate(4deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buried.glance svg { animation: none; }
 }

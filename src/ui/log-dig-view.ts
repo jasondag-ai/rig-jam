@@ -5,6 +5,7 @@ import { BURIED, FORMATIONS, GLINTS, GRASS, GROUP, buriedArt, buriedBox, layersF
 import { DEEP as DEEP_LAYERS, DIG, ODDITIES, clockText, depthKm, gaugeLine, kerguelenSvg, kmText, layerBackground, layerEdge, marksFrom, oddityArt, oddityBox, seabedSvg, tileSvg, tilesNear, type DeepId, type Mark } from './log-deep.ts';
 import { BURIED_LINES } from './lines.ts';
 import { onTap } from './tap.ts';
+import { confettiBurst } from './confetti.ts';
 
 const BUBBLE_MS = 2600;
 /** Formations whose `after` is more than this lie below every card. */
@@ -16,9 +17,9 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
  * page plus `layout`, to call once it is there (and it lays itself out again when its size changes).
  * `open(regionId)` says whether a region is unlocked (its formation's pill is greyed until then).
  * `onArrive(ms, swipes)` is called each time the page is scrolled from the grass right through to
- * Kerguelen; what it returns (a title and lines) is shown on the arrival card there.
+ * Kerguelen; what it returns (a title, lines, and whether to throw confetti) is shown on the arrival card there.
  */
-export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regionId: string) => boolean, onArrive: (ms: number, swipes: number) => { title: string; lines: string[] } | null = () => null): { el: HTMLElement; layout: () => void } {
+export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regionId: string) => boolean, onArrive: (ms: number, swipes: number) => { title: string; lines: string[]; confetti?: boolean } | null = () => null): { el: HTMLElement; layout: () => void } {
   const col = document.createElement('div');
   col.className = 'dig-col';
   // (The gauge rides down the side of the screen: a sticky rail of no height, the pill hung from it.)
@@ -151,7 +152,7 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
       if (surface) surface.innerHTML = kerguelenSvg(width);
       lane.sec.querySelectorAll<HTMLElement>('.oddity').forEach((btn) => {
         const o = ODDITIES.find((x) => x.id === btn.dataset.id)!;
-        const box = oddityBox(o, colBox.width, lane.height);
+        const box = oddityBox(o, colBox.width);
         Object.assign(btn.style, { left: `${left + box.left}px`, top: `${box.top}px`, width: `${box.hitW}px`, height: `${box.hitH}px` });
       });
     }
@@ -211,6 +212,8 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
         arrival.querySelector('b')!.textContent = card.title;
         arrival.querySelectorAll('span').forEach((el, i) => (el.textContent = card.lines[i]));
         arrival.hidden = false;
+        // The hard-hat confetti, over the page (not with reduced motion).
+        if (card.confetti && !reducedMotion()) confettiBurst(document.body, window.innerHeight, 'over-page');
       }
     }
     if (top <= 0 && (done || started)) {
@@ -223,6 +226,18 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
     }
   }
   const onScroll = () => { frame ||= requestAnimationFrame(update); };
+  // A find gives a tiny wiggle as it slides into view, to catch the eye mid-swipe (style.css
+  // `.glance`; nothing with reduced motion). Once each time it comes on screen.
+  if (typeof IntersectionObserver !== 'undefined') {
+    const eye = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        const el = e.target as HTMLElement;
+        if (!e.isIntersecting) el.classList.remove('glance');
+        else if (!el.classList.contains('wiggle') && !reducedMotion()) el.classList.add('glance');
+      }
+    }, { threshold: 0.7 });
+    deep.querySelectorAll('.oddity').forEach((el) => eye.observe(el));
+  }
   let listening: HTMLElement | null = null;
   const listen = () => {
     const sc = scroller();

@@ -1,5 +1,5 @@
 // EVERY GAG TRIGGER IN ONE PLACE, so they can be tuned after playing (GAME_BIBLE, Oct 4). Gags are
-// Easter eggs: each is set off by something the player does, never by waiting. Times are in
+// Sightings (the gags): each is set off by something the player does, never by waiting. Times are in
 // milliseconds. `?idle=0.1` makes the night's idle time 10x shorter (tests).
 export const GAG_TRIGGERS = {
   /** Gag 1, the magpie: the player taps a truck without dragging it, with this chance each tap. Any region. Demo mode: every time. */

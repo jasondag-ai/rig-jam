@@ -681,6 +681,9 @@ something, give exact clicks and one command at a time.
   crossfades want an ear check on a phone.
 
 ## Wildlife Log
+- THE WORD IS "SIGHTING" (Jay, Oct 6): never "Easter egg" or "egg" in anything the player reads
+  (the dinosaur egg in the dig is a real egg). The log's footer: "Sightings. Find all N to unlock
+  camo pickups.", N being the real number of entries.
 - `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game plus Night Shift (28: the four Mannville gags and the four Bakken gags of wave 3 come after Tourists, and Dug Through, which is not a gag, comes before the Bear;
   Magpie, Sleepy Worker, Moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll,
   Marshmallow, Lost Goose, Porcupine, Gopher Lunch, Safety Sam, Frozen Tongue, Surveyor, Back
@@ -738,7 +741,7 @@ something, give exact clicks and one command at a time.
   - LENGTH IS ONE SETTING: `DIG` (`screens` 60 phone screens of `screenPx` 844: about 51,000 px of
     dirt; the log is about 55,000 px tall). `PLAN` gives each layer its share: basement granite,
     mantle, outer core, inner core (the CENTRE OF THE EARTH is the dashed line across its middle),
-    then mirrored back up: outer core, mantle, ocean crust, seafloor, the Southern Ocean; then the
+    then mirrored back up: outer core, mantle, ocean crust, seafloor, the Southern Ocean (ten screens deep); then the
     surface at the Kerguelen Islands (`SURFACE_PX`, one picture, `kerguelenSvg`). THE FAR SIDE IS
     UPSIDE DOWN (we come up underneath it): the seabed is above the sea, the island hangs from
     the waterline with a king penguin and an elephant seal on it, sky and clouds below.
@@ -749,11 +752,17 @@ something, give exact clicks and one command at a time.
     twin's tiles in reverse, turned over). `showTiles` (on scroll) keeps only the tiles within a
     screen of what shows (`tilesNear`): never more than about 8 on the page. Mantle and outer
     core tiles carry one `.deep-glow` light (opacity only).
-  - FINDS (`dig-finds.ts`, a data file for Jay): `DIG_FINDS`, tapped like buried things (wiggle,
-    one line from `BURIED_LINES`; drawings in `FIND_ART`): a diamond in the mantle, a lost
-    lunchbox dead on the centre, a whale in the ocean (belly up to us). `DIG_SLOTS`: 14 EMPTY
-    marked slots through the dirt for future gag finds (nothing drawn; at least half a screen
-    from each other and from the finds). To fill one: move it to `DIG_FINDS`, add its drawing and line.
+  - FINDS (`dig-finds.ts`, a data file for Jay): `DIG_FINDS`, nine, tapped like buried things
+    (wiggle, one line from `BURIED_LINES`; drawings in `FIND_ART`): a gold nugget in a quartz vein
+    (granite), a frozen burrito, a diamond and the magpie's stolen spoon (mantle), the sleepy
+    worker's pail and the lost lunchbox dead on the centre (inner core), a mole in a headlamp
+    (mantle, on the way back up), a whale and a giant squid (the ocean, both belly up to us).
+    Each is placed by `screen` (phone screens below the reservoir). THE RHYTHM: a PLACE (a find
+    or an empty slot) every 3 to 4 screens, slightly uneven, never two on one screen, and NOTHING
+    in the last `QUIET_SCREENS` (5) before the island. `DIG_SLOTS`: 7 EMPTY marked slots for
+    future gag finds (keep at least 3): they are the gaps in the rhythm, so until they are
+    filled the outer core and the way back up are long quiet stretches. A find gives a tiny
+    wiggle by itself as it slides into view (`.glance`, an IntersectionObserver; not with reduced motion).
   - DEPTH PILL (`.dig-gauge`, a sticky rail in the column, the pill on the right): real km at a
     line that moves from the screen's top (page top) to its foot (page end) as the page scrolls
     (`gaugeLine`), read off marks at every layer's end (`marksFrom`, `depthKm`; `UPPER_KM` for the
@@ -766,7 +775,9 @@ something, give exact clicks and one command at a time.
     the end of the page stops it: `arrived` (main.ts) calls `recordDig`, which finds the entry and
     keeps the BESTS in the log (`dug` ms, `dugSwipes`: the shortest time and the fewest swipes,
     each on its own; the demo log has its own), and the ARRIVAL CARD (`.dig-arrival`, in the far
-    side's sky) shows "n swipes in m:ss.t" and the best. Back at the very top the stopwatch is
+    side's sky) leads with "New sighting!" / "Dug Through added to your Wildlife Log." the first
+    time, then "n swipes in m:ss.t", then the bests, in a burst of hard-hat confetti
+    (`confetti.ts` `confettiBurst`, shared with the win card; again whenever a best is beaten). Back at the very top the stopwatch is
     ready again. Its log card (once earned) reads "Best: n swipes, m:ss.t".
 - CAMO PICKUPS keep their gate colour (Log v2): the reward is the pickup's own sprite in camo,
   `pickup-<colour>-camo(@2x).webp`, blotches of a deep shade and a pale tint of ITS OWN gate colour
