@@ -25,7 +25,7 @@ import { onTap } from './ui/tap.ts';
 import { shouldShowCover, showCover } from './ui/cover.ts';
 import { applyUiArt, uiImg } from './ui/ui-art.ts';
 import { preloadSprites } from './ui/sprites.ts';
-import { LOG_ENTRIES, applyCamo, cardHint, complete, foundCount, loadLog, previewAll, recordDig, saveLog, sightingToast, type Sighting } from './ui/wildlife-log.ts';
+import { LOG_ENTRIES, applyCamo, cardHint, complete, foundCount, loadLog, previewAll, recordDig, saveLog, shownEntries, sightingToast, type Sighting } from './ui/wildlife-log.ts';
 import { clockText, dugStill } from './ui/log-deep.ts';
 import { PREVIEWS, type GagId } from './ui/gag-triggers.ts';
 import { workerStill } from './ui/worker.ts';
@@ -400,7 +400,8 @@ function showLog(regionIndex: number): void {
     </header>
     <p class="log-reward"></p>`;
   const cards: HTMLElement[] = [];
-  for (const e of entries) {
+  // (A hidden entry has no card until it is found: Dug Through.)
+  for (const e of shownEntries(log)) {
     const found = log.found.includes(e.id);
     const li = document.createElement('li');
     li.className = `log-card ${found ? 'found' : 'unfound'}${e.legendary ? ' legendary' : ''}`;
@@ -410,7 +411,7 @@ function showLog(regionIndex: number): void {
     li.querySelector('h2')!.textContent = found ? e.name : '???';
     // Easter eggs: demo mode shows how to find each one; the game keeps it a secret.
     // (Dug Through shows the player's best time through the Earth.)
-    li.querySelector('p')!.textContent = found ? (e.id === 'dug' && log.dug ? `Best time ${clockText(log.dug)}` : e.caption) : cardHint(e, demo);
+    li.querySelector('p')!.textContent = found ? (e.id === 'dug' && log.dug ? `Best: ${log.dugSwipes ?? '?'} swipes, ${clockText(log.dug)}` : e.caption) : cardHint(e, demo);
     cards.push(li);
   }
   screen.querySelector('.log-reward')!.textContent = demo
@@ -420,33 +421,33 @@ function showLog(regionIndex: number): void {
       : log.camoEarned
         ? `Camo pickups unlocked. ${entries.length - have} new sightings to find.`
         : `Easter eggs. Find all ${entries.length} to unlock camo pickups.`;
+  // Every card found but the hidden one: a nudge to keep going down.
+  if (!demo && !complete(log) && shownEntries(log).every((e) => log.found.includes(e.id))) screen.querySelector('.log-reward')!.textContent = `Every card found, but the log reads ${have}/${entries.length}. One sighting is hidden. Keep digging.`;
   // The deep dig: the cards stand over one continuous cross-section down to the oil (log-dig.ts).
   const progress = loadProgress();
-  // Scrolled from the grass right through the Earth to Kerguelen: Dug Through is found (it counts
-  // toward the camo like any entry), this dig's time is shown on its card and the best one kept.
-  const arrived = (ms: number): void => {
+  // Scrolled from the grass right through the Earth to Kerguelen: Dug Through is found (a hidden
+  // entry until then; it counts toward the camo like any other) and the bests are kept. What comes
+  // back is the arrival card: this dig's swipes and time, and the best.
+  const swipesText = (n: number) => `${n} ${n === 1 ? 'swipe' : 'swipes'}`;
+  const arrived = (ms: number, swipes: number): { title: string; lines: string[] } => {
     const time = clockText(ms);
-    if (previewAll(location.search)) return void toast(`Dug through in ${time}`);
-    const r = recordDig(loadLog(demo), ms);
+    const now = `${swipesText(swipes)} in ${time}`;
+    if (previewAll(location.search)) return { title: 'Dug Through!', lines: [now] };
+    const r = recordDig(loadLog(demo), ms, swipes);
     saveLog(r.log, demo);
-    const card = cards.find((c) => c.dataset.id === 'dug');
-    if (card) {
-      card.classList.replace('unfound', 'found');
-      card.querySelector('h2')!.textContent = 'Dug Through';
-      card.querySelector('p')!.textContent = r.newBest ? `Best time ${time}` : `${time} this dig. Best ${clockText(r.best)}`;
-    }
     if (r.isNew) {
       const count = screen.querySelector('.log-count')!;
       count.textContent = `${r.count}/${entries.length}`;
       count.setAttribute('aria-label', `${r.count} of ${entries.length} found`);
       void toast(sightingToast('dug', r.count, demo));
-      void toast(`Dug through in ${time}`);
       if (r.completed && demo) void toast('Demo log complete!', { sub: 'Your real log is unchanged', big: true, ms: 3200 });
       else if (r.completed) {
         void toast('Wildlife Log complete!', { sub: log.camoEarned ? 'Every sighting found' : 'Camo pickups unlocked', big: true, ms: 3200 });
         applyCamo(r.log);
       }
-    } else void toast(r.newBest ? `Dug through in ${time}. New best!` : `Dug through in ${time}. Best ${clockText(r.best)}.`);
+    }
+    const best = `Best: ${swipesText(r.bestSwipes)}, ${clockText(r.best)}`;
+    return { title: 'Dug Through!', lines: [now, r.isNew ? 'Alberta to the Kerguelen Islands.' : r.newBest || r.fewest ? `New best! ${best.slice(6)}` : best] };
   };
   const dig = mountDig(cards, screen.querySelector<HTMLElement>('.log-reward')!, (id) => regionOpen(REGIONS, REGIONS.findIndex((r) => r.id === id), progress.best, progress.demo), arrived);
   screen.append(dig.el);

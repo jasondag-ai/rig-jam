@@ -2,7 +2,7 @@
 // four with a window on the formation between the groups, the strata drawn behind everything
 // once the page is laid out, the formation pills, the buried objects and what they say.
 import { BURIED, FORMATIONS, GLINTS, GRASS, GROUP, buriedArt, buriedBox, layersFrom, pillLocked, strataSvg, tunnelSvg, type FormationId } from './log-dig.ts';
-import { DEEP as DEEP_LAYERS, ODDITIES, clockText, deepSvg, depthKm, gaugeLine, kmText, marksFrom, oddityArt, oddityBox, type Mark } from './log-deep.ts';
+import { DEEP as DEEP_LAYERS, DIG, ODDITIES, clockText, depthKm, gaugeLine, kerguelenSvg, kmText, layerBackground, layerEdge, marksFrom, oddityArt, oddityBox, seabedSvg, tileSvg, tilesNear, type DeepId, type Mark } from './log-deep.ts';
 import { BURIED_LINES } from './lines.ts';
 import { onTap } from './tap.ts';
 
@@ -15,9 +15,10 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
  * Builds the dig round the log's cards and its closing line, and returns the column to put on the
  * page plus `layout`, to call once it is there (and it lays itself out again when its size changes).
  * `open(regionId)` says whether a region is unlocked (its formation's pill is greyed until then).
- * `onArrive(ms)` is called each time the page is scrolled from the grass right through to Kerguelen.
+ * `onArrive(ms, swipes)` is called each time the page is scrolled from the grass right through to
+ * Kerguelen; what it returns (a title and lines) is shown on the arrival card there.
  */
-export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regionId: string) => boolean, onArrive: (ms: number) => void = () => {}): { el: HTMLElement; layout: () => void } {
+export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regionId: string) => boolean, onArrive: (ms: number, swipes: number) => { title: string; lines: string[] } | null = () => null): { el: HTMLElement; layout: () => void } {
   const col = document.createElement('div');
   col.className = 'dig-col';
   // (The gauge rides down the side of the screen: a sticky rail of no height, the pill hung from it.)
@@ -61,7 +62,9 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
     for (const f of FORMATIONS) if (f.window && (f.after <= DEEP ? f.after === g + 1 && g < groups - 1 : g === groups - 1)) col.append(windowFor(f.id, f.window));
   }
 
-  // Past the reservoir: right through the Earth and out the other side (log-deep.ts), one block a layer.
+  // Past the reservoir: right through the Earth and out the other side (log-deep.ts). One block a
+  // layer, in the layer's own slowly changing colour; the dirt in it is drawn a tile at a time,
+  // and only the tiles near the screen are on the page (`showTiles`).
   const deep = document.createElement('div');
   deep.className = 'dig-deep';
   for (const l of DEEP_LAYERS) {
@@ -69,10 +72,13 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
     sec.className = 'deep-layer';
     sec.dataset.layer = l.id;
     sec.style.height = `${l.height}px`;
-    sec.innerHTML = `<span class="deep-art-slot" aria-hidden="true"></span><span class="dig-pill" data-layer="${l.id}">${l.name}</span>` + (l.id === 'innerCore' ? '<span class="dig-pill centre">Centre of the Earth</span>' : '');
-    // The mantle and the outer core glow: a few soft lights that brighten and fade (opacity only).
-    if (/mantle|outerCore/i.test(l.id)) sec.insertAdjacentHTML('beforeend', GLINTS.map((g, i) => `<i class="oil-glint deep-glow" style="left:${(g.x * 100).toFixed(1)}%;top:${(((i * 0.137 + g.y * 0.5) % 1) * 92 + 4).toFixed(1)}%;width:${g.size * 4}px;height:${g.size * 4}px;animation-delay:${g.delay}s"></i>`).join(''));
-    for (const o of ODDITIES.filter((x) => x.in === l.id)) {
+    sec.style.background = layerBackground(l.id);
+    sec.innerHTML =
+      (l.id === 'kerguelen' ? '<span class="deep-surface-slot" aria-hidden="true"></span><div class="dig-arrival" role="status" hidden></div>' : '<div class="deep-tiles" aria-hidden="true"></div><span class="deep-edge-slot" aria-hidden="true"></span>') +
+      (l.id === 'seafloor' ? '<span class="deep-seabed-slot" aria-hidden="true"></span>' : '') +
+      `<span class="dig-pill" data-layer="${l.id}">${l.name}</span>` +
+      (l.id === 'innerCore' ? '<i class="deep-centre" aria-hidden="true"></i><span class="dig-pill centre">Centre of the Earth</span>' : '');
+    for (const o of ODDITIES.filter((x) => x.layer === l.id)) {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = `buried oddity buried-${o.id}`;
@@ -88,6 +94,32 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
   const bg = col.querySelector<HTMLElement>('.dig-bg')!;
   let drawn = '';
   let marks: Mark[] = [];
+  // Where each deep layer lies down the column (px), and how wide the dirt is drawn: set by `layout`.
+  let lanes: { sec: HTMLElement; tiles: HTMLElement | null; id: DeepId; top: number; height: number }[] = [];
+  let dirtW = 0;
+  /**
+   * Draws the dirt near the screen and takes away the rest: for each layer, the tiles within a
+   * screen of the stretch showing (`from`..`to`, px down the column).
+   */
+  const showTiles = (from: number, to: number): void => {
+    for (const lane of lanes) {
+      if (!lane.tiles) continue;
+      const want = to < lane.top - DIG.screenPx || from > lane.top + lane.height + DIG.screenPx ? [] : tilesNear(lane.id, from - lane.top, to - lane.top);
+      const have = new Map([...lane.tiles.children].map((el) => [Number((el as HTMLElement).dataset.k), el as HTMLElement]));
+      for (const [k, el] of have) if (!want.includes(k)) el.remove();
+      for (const k of want) {
+        if (have.has(k)) continue;
+        const el = document.createElement('div');
+        el.className = 'deep-tile';
+        el.dataset.k = String(k);
+        el.style.top = `${k * DIG.tile}px`;
+        // (The mantle and the outer core glow: one soft light a tile, brightening and fading.)
+        const glow = /mantle|outerCore/i.test(lane.id) ? `<i class="oil-glint deep-glow" style="left:${(k * 37) % 80 + 6}%;top:${(k * 53) % 70 + 10}%;width:${48 + ((k * 17) % 30)}px;height:${48 + ((k * 17) % 30)}px;animation-delay:${-((k * 0.7) % 4).toFixed(1)}s"></i>` : '';
+        el.innerHTML = tileSvg(lane.id as Exclude<DeepId, 'kerguelen'>, k, dirtW) + glow;
+        lane.tiles.append(el);
+      }
+    }
+  };
   const layout = () => {
     const screen = col.closest<HTMLElement>('.screen');
     if (!screen || !col.isConnected) return;
@@ -103,19 +135,27 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
     const key = `${width}|${left}|${Math.round(colBox.width)}|${Object.values(ends).join()}`;
     if (key === drawn) return;
     drawn = key;
-    // The deep layers run the full width of the screen, one small drawing each.
+    // The deep layers run the full width of the screen.
     deep.style.marginLeft = `${-left}px`;
     deep.style.width = `${width}px`;
     deep.style.setProperty('--dig-left', `${left}px`);
-    deep.querySelectorAll<HTMLElement>('.deep-layer').forEach((sec) => {
-      const id = sec.dataset.layer as (typeof DEEP_LAYERS)[number]['id'];
-      sec.querySelector('.deep-art-slot')!.innerHTML = deepSvg(id, width);
-      sec.querySelectorAll<HTMLElement>('.oddity').forEach((btn) => {
+    dirtW = width;
+    lanes = [...deep.querySelectorAll<HTMLElement>('.deep-layer')].map((sec) => ({ sec, tiles: sec.querySelector<HTMLElement>('.deep-tiles'), id: sec.dataset.layer as DeepId, top: deep.offsetTop + sec.offsetTop, height: sec.offsetHeight }));
+    for (const lane of lanes) {
+      lane.tiles?.replaceChildren();
+      const edge = lane.sec.querySelector('.deep-edge-slot');
+      if (edge) edge.innerHTML = layerEdge(lane.id, width);
+      const seabed = lane.sec.querySelector('.deep-seabed-slot');
+      if (seabed) seabed.innerHTML = seabedSvg(width);
+      const surface = lane.sec.querySelector('.deep-surface-slot');
+      if (surface) surface.innerHTML = kerguelenSvg(width);
+      lane.sec.querySelectorAll<HTMLElement>('.oddity').forEach((btn) => {
         const o = ODDITIES.find((x) => x.id === btn.dataset.id)!;
-        const box = oddityBox(o, colBox.width, sec.offsetHeight);
+        const box = oddityBox(o, colBox.width, lane.height);
         Object.assign(btn.style, { left: `${left + box.left}px`, top: `${box.top}px`, width: `${box.hitW}px`, height: `${box.hitH}px` });
       });
-    });
+    }
+    update();
     bg.style.left = `${-left}px`;
     bg.style.width = `${width}px`;
     bg.innerHTML = strataSvg(width, layersFrom(ends), left + Math.round(colBox.width / 2), GRASS - 6);
@@ -133,6 +173,9 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
   // past the grass and stops on reaching the end; back at the very top it is ready to go again.
   const depthEl = col.querySelector<HTMLElement>('.dig-depth')!, clockEl = col.querySelector<HTMLElement>('.dig-clock')!;
   let frame = 0, started = 0, done = false, ticker = 0, shown = '';
+  // Swipes: every finger put down on the page (or burst of the mouse wheel) while the dig is timed.
+  let gestures = 0, lastGesture = -1e9, lastWheel = -1e9, fromGesture = 0;
+  const arrival = col.querySelector<HTMLElement>('.dig-arrival');
   const scroller = () => col.closest<HTMLElement>('.screen');
   function update(): void {
     frame = 0;
@@ -144,9 +187,13 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
     const text = kmText(km);
     if (text !== shown) depthEl.textContent = shown = text;
     col.dataset.km = km.toFixed(3);
+    showTiles(top - colTop, top - colTop + sc.clientHeight);
     const now = performance.now();
     if (!started && !done && top > 0 && km > 0) {
       started = now;
+      // (The swipe that set it off counts.)
+      fromGesture = gestures - (now - lastGesture < 1500 ? 1 : 0);
+      if (arrival) arrival.hidden = true;
       clockEl.hidden = false;
       clockEl.classList.remove('final');
       clockEl.textContent = clockText(0);
@@ -158,7 +205,13 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
       const ms = now - started;
       clockEl.textContent = clockText(ms);
       clockEl.classList.add('final');
-      onArrive(ms);
+      const card = onArrive(ms, Math.max(1, gestures - fromGesture));
+      if (arrival && card) {
+        arrival.innerHTML = `<b></b>${card.lines.map(() => '<span></span>').join('')}`;
+        arrival.querySelector('b')!.textContent = card.title;
+        arrival.querySelectorAll('span').forEach((el, i) => (el.textContent = card.lines[i]));
+        arrival.hidden = false;
+      }
     }
     if (top <= 0 && (done || started)) {
       // Back on the grass: the next dig starts from nothing.
@@ -172,7 +225,10 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
   let listening: HTMLElement | null = null;
   const listen = () => {
     const sc = scroller();
-    if (sc && sc !== listening) (listening = sc).addEventListener('scroll', onScroll, { passive: true });
+    if (!sc || sc === listening) return;
+    (listening = sc).addEventListener('scroll', onScroll, { passive: true });
+    sc.addEventListener('touchstart', () => { gestures++; lastGesture = performance.now(); }, { passive: true });
+    sc.addEventListener('wheel', () => { const now = performance.now(); if (now - lastWheel > 220) { gestures++; lastGesture = now; } lastWheel = now; }, { passive: true });
   };
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { listen(); layout(); }).observe(col);
 
