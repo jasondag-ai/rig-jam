@@ -378,6 +378,8 @@ function showSettings(screen: HTMLElement): void {
   screen.append(panel);
 }
 
+const swipesText = (n: number) => `${n} ${n === 1 ? 'swipe' : 'swipes'}`;
+
 /** The Wildlife Log: a card per gag. Found ones show the character and a caption; the rest a silhouette and a hint. */
 function showLog(regionIndex: number): void {
   game?.leave();
@@ -411,7 +413,7 @@ function showLog(regionIndex: number): void {
     li.querySelector('h2')!.textContent = found ? e.name : '???';
     // Easter eggs: demo mode shows how to find each one; the game keeps it a secret.
     // (Dug Through shows the player's best time through the Earth.)
-    li.querySelector('p')!.textContent = found ? (e.id === 'dug' && log.dug ? `Best: ${log.dugSwipes ?? '?'} swipes, ${clockText(log.dug)}` : e.caption) : cardHint(e, demo);
+    li.querySelector('p')!.textContent = found ? (e.id === 'dug' && log.dug ? `Best: ${swipesText(log.dugSwipes ?? 1)}, ${clockText(log.dug)}` : e.caption) : cardHint(e, demo);
     cards.push(li);
   }
   screen.querySelector('.log-reward')!.textContent = demo
@@ -428,7 +430,6 @@ function showLog(regionIndex: number): void {
   // Scrolled from the grass right through the Earth to Kerguelen: Dug Through is found (a hidden
   // entry until then; it counts toward the camo like any other) and the bests are kept. What comes
   // back is the arrival card: this dig's swipes and time, and the best.
-  const swipesText = (n: number) => `${n} ${n === 1 ? 'swipe' : 'swipes'}`;
   const arrived = (ms: number, swipes: number): { title: string; lines: string[] } => {
     const time = clockText(ms);
     const now = `${swipesText(swipes)} in ${time}`;

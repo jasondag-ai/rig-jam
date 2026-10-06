@@ -18,6 +18,8 @@ const check = (ok, text) => {
 };
 const ALL = ['magpie', 'spotter', 'moose', 'nearmiss', 'landowner', 'biffy', 'biffyB', 'marshmallow', 'geese', 'porcupine', 'lunch', 'sam', 'tongue', 'surveyor', 'deer', 'tourists', 'muskeg', 'cattrain', 'beaver', 'aurora', 'tumbleweed', 'pdogs', 'bale', 'cloud', 'night', 'bull', 'dug', 'bear'];
 const N = ALL.length;
+// (Dug Through is hidden until earned: a new player's log has a card for every entry but that one.)
+const CARDS = ALL.filter((id) => id !== 'dug');
 // Night, Safety Sam and the other idle gags are kept out of the way; the idle cooldown is off.
 const QUIET = 'night=0&cooldown=0&off=lunch,tongue,sam,porcupine';
 const PROGRESS = UNLOCKED;
@@ -94,7 +96,7 @@ await fresh();
 const btn = await page.$eval('.binoculars', (b) => { const r = b.getBoundingClientRect(), g = document.querySelector('.gear').getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height), beside: Math.abs(r.top - g.top) < 8, label: b.getAttribute('aria-label') }; });
 check(btn.w >= 44 && btn.h >= 44 && btn.beside, `binoculars button next to the gear (${btn.w}x${btn.h}, "${btn.label}")`);
 let log = await openLog();
-check(log.count === `0/${N}` && log.cards.length === N && log.cards.map((c) => c.id).join() === ALL.join() && log.cards.every((c) => !c.found && c.title === '???'), `${N} cards, one per gag in the game, none found (${log.count})`);
+check(log.count === `0/${N}` && log.cards.length === CARDS.length && log.cards.map((c) => c.id).join() === CARDS.join() && log.cards.every((c) => !c.found && c.title === '???'), `${CARDS.length} cards, one per gag in the game, none found (${log.count})`);
 check(log.cards.every((c) => c.text === 'Not seen yet.'), 'unfound cards keep their secret in the game (hints show in demo mode only)');
 const art = await page.$$eval('.log-card', (cs) => cs.map((c) => ({ id: c.dataset.id, puppet: !!c.querySelector('.art svg'), sprite: !!c.querySelector('.art img, .art .anim-still, .art [style*="background-image"]') })));
 check(art.every((a) => a.puppet && !a.sprite), 'every card is a still of its own puppet: no sprite anywhere on the page');
@@ -297,7 +299,7 @@ check((await page.evaluate(() => [localStorage.getItem('rush-hour-rigs:log'), lo
       });
     }).flat());
     const bad = arts.filter((a) => a.off > 0.02 || !a.in || !a.clear || /none/.test(a.par ?? ''));
-    check(arts.length >= N && bad.length === 0, `${w} wide: all ${N} cards' pictures keep their own shape, inside their box${bad.length ? ` (wrong: ${bad.map((a) => `${a.id} ${a.off.toFixed(2)}`).join(', ')})` : ''}`);
+    check(arts.length >= CARDS.length && bad.length === 0, `${w} wide: all ${arts.length} cards' pictures keep their own shape, inside their box${bad.length ? ` (wrong: ${bad.map((a) => `${a.id} ${a.off.toFixed(2)}`).join(', ')})` : ''}`);
   }
   await page.setViewportSize({ width: 390, height: 664 });
   const roll = await page.evaluate(() => ({ biffy: document.querySelector('.log-card[data-id="biffy"] .art svg').getBoundingClientRect().toJSON(), roll: !!document.querySelector('.log-card[data-id="biffyB"] .art svg.roll-still') }));

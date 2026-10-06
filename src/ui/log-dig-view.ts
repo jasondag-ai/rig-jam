@@ -219,6 +219,7 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
       started = 0;
       done = false;
       clockEl.hidden = true;
+      if (arrival) arrival.hidden = true;
     }
   }
   const onScroll = () => { frame ||= requestAnimationFrame(update); };
