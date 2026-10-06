@@ -12,6 +12,7 @@ import { join } from 'node:path';
 import { REGIONS } from '../src/levels/regions.ts';
 import { getMoveRange, newGame } from '../src/engine/index.ts';
 import { DEER_BEATS, SURVEY_BEATS, TOUR_BEATS } from '../src/ui/sign-gags.ts';
+import { LOG_ENTRIES } from '../src/ui/wildlife-log.ts';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
 const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
@@ -268,7 +269,7 @@ for (const [mode, progress] of [['game', UNLOCKED], ['demo', DEMO]]) {
   await page.waitForSelector('.log-card');
   const cards = await page.evaluate(() => [...document.querySelectorAll('.log-card')].map((c) => ({ id: c.dataset.id, art: !!c.querySelector('.art svg'), text: c.querySelector('p').textContent })));
   const by = Object.fromEntries(cards.map((c) => [c.id, c]));
-  if (mode === 'game') check(cards.length === 19 && ['surveyor', 'deer', 'tourists'].every((id) => by[id]?.art && by[id].text === 'Not seen yet.'), `the log has ${cards.length} cards; Surveyor, Back Scratcher and Tourists have puppet art and keep their secrets`);
+  if (mode === 'game') check(cards.length === LOG_ENTRIES.length && ['surveyor', 'deer', 'tourists'].every((id) => by[id]?.art && by[id].text === 'Not seen yet.'), `the log has ${cards.length} cards; Surveyor, Back Scratcher and Tourists have puppet art and keep their secrets`);
   else check(by.surveyor.text === 'Press Restart. He may come to check the sign.' && by.deer.text === 'Tap the lease sign (spring to fall).' && by.tourists.text === 'Play the Daily Pad. They may show up on your first move (spring to fall).', 'demo mode shows their hints');
   await context.close();
 }

@@ -308,6 +308,39 @@ something, give exact clicks and one command at a time.
   - `npm run test:e2e:strip` checks all of it in WebKit (beats, real triggers, off-screen entry and
     exit, hole clip, biffy placement, reduced motion, log), 60 fps at 4x throttle in Chromium, and
     saves `gag47_*.webm` clips.
+- GAG WAVE 3 (Mannville now, Bakken next; Jay, Oct 6): ported from
+  `~/Desktop/RHR Art Inbox/mannville_bakken_gags_reference.html` (saved Oct 6 03:41). That page
+  draws each gag as ONE SVG string per frame on a 390 x 190 strip in its own coordinates (berm's
+  foot y 30, walking lane's ground `GY` 150), and so does the game:
+  - `src/ui/wave3.ts` (@ts-nocheck): the reference's helpers and puppets copied as written
+    (worker, cat, beaver, coyote, prairie dog, pipe, bale, tumbleweed, cloud, umbrella, `sfx` sound
+    words) and each gag as `WAVE3.<key>`: `beats`, `dur`, `still`, `render(t, E)` (the MOVING part
+    only), `over(t, E)` (sound words and Zs, drawn over the lane aspen), `lead(E)`, `tail(E)`.
+  - `src/ui/scene-stage.ts` (typed, tested): `sceneGeom` shows that world in the game's real
+    bottom strip at the scale the strip's HEIGHT allows (`s = min(W/390, stripH/138)`), centred,
+    standing on the strip's floor. On a short strip the screen is wider than the world by `E`
+    units a side, so every walk-in starts `E` further out and every walk-off goes `E` further AT
+    THE REFERENCE'S SPEED: the gag's clock starts `lead(E)` early and ends `tail(E)` late; every
+    beat between keeps the reference's time (`sceneDef` shifts the beats). Under `SCENE_MIN`
+    (0.45: about 62 px of strip) the gags do not play. `skyGeom` does the same for the sky band.
+  - THE STANDARD MANNVILLE SCENE (`MannProp`, every Mannville level; the generic scenery puts no
+    trees below the board there): `.mann-layer` = the reference's six trees IN THE BOARD'S OWN
+    DRAWINGS (`MANN_TREES`; the left grove 56 right of the reference, clear of the biffy), tufts,
+    and the three muskeg puddles with cattails (`MUSKEG`, the reference's drawing; the small left
+    one 54 right, clear of the sleepy worker's spot); `.mann-front` = the LANE ASPEN (`LANE_ASPEN`,
+    x 288), which `GameView.mount` keeps OVER every strip gag layer (`.scene-front`), with a gag's
+    own sound words over that (`.scene-over`). The lease sign stands at `MANN_SIGN_X` (0.44) on
+    Mannville, left of the aspen's crown (`setSignX`).
+  - MUSKEG BOOTS (3 taps on the big puddle, `hitPuddle`), CAT TRAIN (a convoy out in order, back
+    to back: truck 1 then truck 2 on the very next move, `convoyOut`), BEAVER (3 taps on the lane
+    aspen, `hitAspen`; it shakes on the other taps), AURORA HOWL (a tap on the moon once night has
+    fallen, `onMoon`; in the sky band: its layer goes OVER the night's shade, `.aurora-layer`, and
+    fades with the night; Mannville's moon is always shown where the sky band has room,
+    `AURORA_SKY`). `?gag=muskeg|cattrain|beaver|aurora` (the aurora's preview pins the night).
+    Log cards: `wave3Still`. No sounds yet (`GAG_SOUNDS` rows are empty). Witness lines are stand-ins.
+  - `npm run test:e2e:wave3` (WebKit at DPR 3; Chromium 4x throttle): the scene on all 10 levels,
+    first and last frames against the empty scene by pixels at 390x844 and 375x667, the real
+    triggers, beats, touches never blocked, log, reduced motion, a 22 px strip, 60 fps.
 - THE SLEEPY WORKER (gag 2; trigger: a truck slides into another truck, 1 in 2, no idle timer; `src/ui/worker.ts` pure and tested, runner `WorkerGag` in
   `src/ui/egg-gags.ts`; spec: `~/Desktop/RHR Art Inbox/worker_moose_puppet_reference.html`, ported as
   written). He has a clearing in the bottom strip by the screen's LEFT edge (`workerSpot`; scenery
@@ -620,7 +653,7 @@ something, give exact clicks and one command at a time.
   crossfades want an ear check on a phone.
 
 ## Wildlife Log
-- `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game plus Night Shift (19:
+- `src/ui/wildlife-log.ts` (pure + storage, tested): `LOG_ENTRIES`, one per gag in the game plus Night Shift (23: the four Mannville gags of wave 3 come after Tourists;
   Magpie, Sleepy Worker, Moose, Near Miss, Angry Landowner, Occupied, The Runaway Roll,
   Marshmallow, Lost Goose, Porcupine, Gopher Lunch, Safety Sam, Frozen Tongue, Surveyor, Back
   Scratcher, Tourists, Night Shift, Bull and Cow, Bear),
@@ -867,6 +900,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)
 - `npm run test:e2e:dig` – the Wildlife Log's dig: the cross-section, pills, buried things and their bubbles, reduced motion, scroll frame rate (start the dev server first)
+- `npm run test:e2e:wave3` – gag wave 3: the standard Mannville scene and its four gags (`ONLY=beaver` runs one; start the dev server first)
 - `npm run test:e2e:audio` – sound: lazy loading, every cue, gag sounds, the three music styles, gapless loops, Credits (start the dev server first)
 
 ## Out of scope (M2)

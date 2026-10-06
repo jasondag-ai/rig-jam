@@ -16,6 +16,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { BURIED, FORMATIONS } from '../src/ui/log-dig.ts';
 import { BURIED_LINES } from '../src/ui/lines.ts';
+import { LOG_ENTRIES } from '../src/ui/wildlife-log.ts';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
 const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
@@ -60,14 +61,20 @@ for (const [width, height] of [[390, 844], [375, 667]]) {
     return {
       svgs: document.querySelectorAll('.dig-bg svg').length, layers: [...svg.querySelectorAll('.stratum')].map((g) => g.dataset.layer),
       wide: s.left <= sc.left + 0.5 && s.right >= sc.left + screen.clientWidth - 0.5, top: Math.abs(s.top - c.top), tall: s.height - c.height, below: s.bottom - last.bottom,
-      cards: cards.length, groups: [...document.querySelectorAll('.dig-col .log-cards')].map((u) => u.children.length),
+      order: [...document.querySelector('.dig-col').children].filter((c) => c.matches('.log-cards, .dig-window')).map((c) => (c.matches('.dig-window') ? c.dataset.layer : 'cards')), cards: cards.length, groups: [...document.querySelectorAll('.dig-col .log-cards')].map((u) => u.children.length),
       boreTop: +bore.dataset.top, td: +bore.dataset.td + s.top, reef: { top: reef.top, bottom: reef.bottom }, wellhead: !!svg.querySelector('.wellhead'),
       scrollX: screen.scrollWidth > screen.clientWidth + 1, end: Math.round(screen.scrollHeight - (s.bottom - sc.top + screen.scrollTop)),
     };
   });
   check(dig.svgs === 1 && dig.layers.join() === FORMATIONS.map((f) => f.id).join(), `ONE drawing behind the grid, ${dig.layers.length} formations top to bottom: ${dig.layers.join(', ')}`);
   check(dig.wide && dig.top < 1 && Math.abs(dig.tall) < 2 && !dig.scrollX, 'it spans the whole screen width and the whole height of the log, with no sideways scroll');
-  check(dig.cards === 19 && dig.groups.join() === '4,4,4,4,3' && dig.below > 500, `the 19 cards stand over it in groups of four; below the last card it keeps going down another ${Math.round(dig.below)} px`);
+  {
+    // Groups of four; a window after each of the first four groups; every later group, then the deep formations.
+    const groups = Math.ceil(LOG_ENTRIES.length / 4), wins = FORMATIONS.filter((f) => f.window).map((f) => f.id), want = [];
+    for (let g = 1; g <= groups; g++) { want.push('cards'); if (g <= 4 && g < groups) want.push(wins[g - 1]); }
+    want.push(...wins.slice(Math.min(4, groups - 1)));
+    check(dig.cards === LOG_ENTRIES.length && dig.groups.every((n, i) => n === Math.min(4, dig.cards - i * 4)) && dig.order.join() === want.join() && dig.below > 500, `the ${dig.cards} cards stand over it in groups of four with a window on the rock between them (${dig.order.join(' ')}); below the last card it keeps going down another ${Math.round(dig.below)} px`);
+  }
   check(dig.wellhead && dig.boreTop <= 16 && dig.td > dig.reef.top + 40 && dig.td < dig.reef.bottom, 'a wellbore runs from a wellhead at the surface down into the reservoir');
   check(dig.end === 0, `the page ends in the reservoir, with no grass under the oil (${dig.end} px left over)`);
 

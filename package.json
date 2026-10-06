@@ -32,7 +32,8 @@
     "test:e2e:signs": "node e2e/signs.e2e.mjs",
     "test:e2e:exits": "node e2e/exits.e2e.mjs",
     "test:e2e:regions": "node e2e/regions45.e2e.mjs",
-    "test:e2e:dig": "node e2e/dig.e2e.mjs"
+    "test:e2e:dig": "node e2e/dig.e2e.mjs",
+    "test:e2e:wave3": "node e2e/wave3.e2e.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
