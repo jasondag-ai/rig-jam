@@ -3,6 +3,7 @@ import { REGIONS } from '../levels/regions.ts';
 import { BORE_CLEAR, BURIED, FORMATIONS, GLINTS, GRASS, GROUP, buriedArt, buriedBox, layersFrom, pillLocked, strataSvg, tunnelSvg, type FormationId } from './log-dig.ts';
 import { BURIED_LINES } from './lines.ts';
 import { LOG_ENTRIES } from './wildlife-log.ts';
+import { DIG_FINDS } from './dig-finds.ts';
 
 const WIDTHS = [343, 358, 398]; // the cards' column at 375, 390 and 430 px
 const ends = () => {
@@ -78,8 +79,8 @@ describe('the dig: buried things', () => {
   });
 
   it('each has a drawing with the toy outline and one short line, with no em dash', () => {
-    // (Besides the buried things: the oil's own line, and the three oddities deeper down, log-deep.ts.)
-    expect(Object.keys(BURIED_LINES).sort()).toEqual([...BURIED.map((b) => b.id), 'reservoir', 'diamond', 'lunchbox', 'whale'].sort());
+    // (Besides the buried things: the oil's own line, and the finds deeper down, log-deep.ts.)
+    expect(Object.keys(BURIED_LINES).sort()).toEqual([...BURIED.map((b) => b.id), 'reservoir', ...DIG_FINDS.map((f) => f.id)].sort());
     expect(BURIED_LINES.reservoir).toBe('You made it. The pumpjack says hi.');
     expect(BURIED_LINES.reservoir.length).toBeLessThanOrEqual(40);
     for (const b of BURIED) {

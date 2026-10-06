@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DIG_FINDS, DIG_SLOTS } from './dig-finds.ts';
-import { DEEP, DIG, EARTH, ODDITIES, SURFACE_PX, UPPER_KM, clockText, depthKm, dugStill, gaugeLine, kerguelenSvg, kmText, layerBackground, layerEdge, marksFrom, oddityArt, oddityBox, seabedSvg, tileSvg, tilesIn, tilesNear } from './log-deep.ts';
+import { DIG_FINDS, DIG_SLOTS, QUIET_SCREENS } from './dig-finds.ts';
+import { DEEP, DIG, EARTH, ODDITIES, SURFACE_PX, UPPER_KM, clockText, depthKm, dugStill, gaugeLine, kerguelenSvg, kmText, layerAt, layerBackground, layerEdge, layerTop, marksFrom, oddityArt, oddityBox, seabedSvg, tileSvg, tilesIn, tilesNear } from './log-deep.ts';
 import { FORMATIONS } from './log-dig.ts';
 import { BURIED_LINES } from './lines.ts';
 import { LOG_ENTRIES, complete, parseLog, record, recordDig, shownEntries, type Sighting } from './wildlife-log.ts';
@@ -183,41 +183,75 @@ describe('Dug Through: a hidden entry, the stopwatch and the swipes', () => {
 });
 
 describe('finds in the dirt (dig-finds.ts)', () => {
-  it('sparse: a diamond in the mantle, a lunchbox dead on the centre, a whale in the ocean, with their lines', () => {
+  const places = [...DIG_FINDS.map((f) => ({ name: f.id as string, layer: f.layer, screen: f.screen, x: f.x, find: true })), ...DIG_SLOTS.map((p) => ({ name: p.slot, layer: p.layer, screen: p.screen, x: p.x, find: false }))].sort((a, b) => a.screen - b.screen);
+  const screens = DIRT.reduce((sum, l) => sum + l.height, 0) / DIG.screenPx;
+
+  it('nine finds, each where Jay put it, with its line', () => {
     expect(ODDITIES).toBe(DIG_FINDS);
-    expect(DIG_FINDS.map((o) => [o.id, o.layer])).toEqual([['diamond', 'mantle'], ['lunchbox', 'innerCore'], ['whale', 'ocean']]);
-    expect(BURIED_LINES.diamond).toBe('Pressure makes diamonds.');
-    expect(BURIED_LINES.lunchbox).toBe('Halfway. Snack break.');
-    expect(BURIED_LINES.whale).toBe('Long way from Alberta.');
-    expect(DIG_FINDS.find((o) => o.id === 'lunchbox')!.at).toBe(0.5);
+    expect(DIG_FINDS.map((o) => [o.id, o.layer])).toEqual([['nugget', 'granite'], ['burrito', 'mantle'], ['diamond', 'mantle'], ['spoon', 'mantle'], ['pail', 'innerCore'], ['lunchbox', 'innerCore'], ['mole', 'mantleUp'], ['whale', 'ocean'], ['squid', 'ocean']]);
+    expect(BURIED_LINES).toMatchObject({
+      nugget: 'Not today, prospector.', burrito: 'Still frozen in the middle.', diamond: 'Pressure makes diamonds.', spoon: 'Shiny.', pail: "He'll want that back.",
+      lunchbox: 'Halfway. Snack break.', mole: 'Is this Alberta?', whale: 'Long way from Alberta.', squid: 'Just passing through.',
+    });
+    // The burrito is in the UPPER mantle, the pail near the centre, the lunchbox dead on it.
+    const at = (id: string) => DIG_FINDS.find((f) => f.id === id)!.screen * DIG.screenPx;
+    expect(at('burrito') - layerTop('mantle')).toBeLessThan(DEEP[1].height / 4);
+    expect(at('lunchbox')).toBe(layerTop('innerCore') + DEEP[3].height / 2);
+    expect(Math.abs(at('pail') - at('lunchbox')) / DIG.screenPx).toBeLessThan(3);
     for (const o of DIG_FINDS) {
-      expect(oddityArt(o.id)).toContain(`viewBox="0 0 ${o.w} ${o.h}"`);
+      expect(BURIED_LINES[o.id].length, o.id).toBeLessThanOrEqual(40);
+      expect(oddityArt(o.id), o.id).toContain(`viewBox="0 0 ${o.w} ${o.h}"`);
+      expect(oddityArt(o.id), o.id).toContain('#2a1a0c');
+    }
+  });
+
+  it('every place lies in the layer it says, as a full tap target clear of the depth pill', () => {
+    for (const p of places) expect(layerAt(p.screen), p.name).toBe(p.layer);
+    for (const o of DIG_FINDS) {
+      const layer = DEEP.find((l) => l.id === o.layer)!;
       for (const w of [343, 358, 398]) {
-        const layer = DEEP.find((l) => l.id === o.layer)!, b = oddityBox(o, w, layer.height);
-        expect(Math.min(b.hitW, b.hitH)).toBeGreaterThanOrEqual(44);
-        expect(b.left).toBeGreaterThanOrEqual(0);
-        expect(b.left + b.hitW).toBeLessThanOrEqual(w - 60); // clear of the depth pill on the right
-        expect(b.top).toBeGreaterThan(40);
-        expect(b.top + b.hitH).toBeLessThan(layer.height);
+        const b = oddityBox(o, w);
+        expect(Math.min(b.hitW, b.hitH), o.id).toBeGreaterThanOrEqual(44);
+        expect(b.left, o.id).toBeGreaterThanOrEqual(0);
+        expect(b.left + b.hitW, o.id).toBeLessThanOrEqual(w - 60);
+        expect(b.top, o.id).toBeGreaterThan(40);
+        expect(b.top + b.hitH, o.id).toBeLessThan(layer.height);
       }
     }
   });
 
-  it('empty slots are marked for future gag finds: spread through the dirt, clear of the finds and of each other', () => {
-    expect(DIG_SLOTS.length).toBeGreaterThanOrEqual(12);
-    expect(new Set(DIG_SLOTS.map((s) => s.slot)).size).toBe(DIG_SLOTS.length);
-    const y = (layer: string, at: number) => deepTop(layer) + at * DEEP.find((l) => l.id === layer)!.height;
-    const places = [...DIG_SLOTS.map((s) => ({ name: s.slot, y: y(s.layer, s.at), x: s.x })), ...DIG_FINDS.map((f) => ({ name: f.id, y: y(f.layer, f.at), x: f.x }))].sort((a, b) => a.y - b.y);
-    for (const s of DIG_SLOTS) {
-      expect(DIRT.some((l) => l.id === s.layer), s.slot).toBe(true);
-      expect(s.at).toBeGreaterThan(0.05);
-      expect(s.at).toBeLessThan(0.95);
-      expect(s.x).toBeGreaterThanOrEqual(0.2);
-      expect(s.x).toBeLessThanOrEqual(0.82);
+  it('THE RHYTHM: a place (a find or an empty slot) every 3 to 4 screens or so, slightly uneven, never two on one screen', () => {
+    const gaps = places.slice(1).map((p, i) => +(p.screen - places[i].screen).toFixed(2));
+    expect(places[0].screen).toBeGreaterThan(1);
+    expect(places[0].screen).toBeLessThan(3);
+    for (const [i, g] of gaps.entries()) {
+      expect(g, `${places[i].name} to ${places[i + 1].name}`).toBeGreaterThan(1.5);
+      expect(g, `${places[i].name} to ${places[i + 1].name}`).toBeLessThanOrEqual(4.01);
     }
-    // At least half a screen of dirt between any two places.
-    for (let i = 1; i < places.length; i++) expect(places[i].y - places[i - 1].y, `${places[i - 1].name} and ${places[i].name}`).toBeGreaterThan(DIG.screenPx / 2);
-    // And they reach from the granite to the ocean.
-    expect(new Set(DIG_SLOTS.map((s) => s.layer)).size).toBeGreaterThanOrEqual(7);
+    // All but the pail and the lunchbox (both by the centre) are 3 screens or more apart.
+    expect(gaps.filter((g) => g < 3)).toHaveLength(1);
+    // Slightly uneven: not one fixed step.
+    expect(new Set(gaps).size).toBeGreaterThanOrEqual(5);
+    // Never two finds on one screen, whatever the screen's height.
+    const finds = places.filter((p) => p.find);
+    for (let i = 1; i < finds.length; i++) expect(finds[i].screen - finds[i - 1].screen, finds[i].name).toBeGreaterThan(1.5);
+  });
+
+  it('the last five screens before the island stay empty', () => {
+    expect(QUIET_SCREENS).toBe(5);
+    const last = places.at(-1)!;
+    const foot = DIG_FINDS.find((f) => f.id === last.name)!;
+    expect(last.name).toBe('squid');
+    expect(last.screen * DIG.screenPx + foot.h / 2).toBeLessThanOrEqual((screens - QUIET_SCREENS) * DIG.screenPx);
+    expect(screens).toBeGreaterThanOrEqual(60);
+  });
+
+  it('at least three slots stay empty, marked for future gag finds', () => {
+    expect(DIG_SLOTS.length).toBeGreaterThanOrEqual(3);
+    expect(new Set(DIG_SLOTS.map((p) => p.slot)).size).toBe(DIG_SLOTS.length);
+    for (const p of DIG_SLOTS) {
+      expect(p.x).toBeGreaterThanOrEqual(0.2);
+      expect(p.x).toBeLessThanOrEqual(0.82);
+    }
   });
 });

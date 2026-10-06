@@ -36,17 +36,18 @@ export interface DeepLayer {
  */
 export const DIG = { screens: 60, screenPx: 844, tile: 422 } as const;
 
-/** Each layer's share of the dig (they add up to 1), and the depth at its foot (km, straight through the Earth). */
+/** Each layer's share of the dig (about 1 in all), and the depth at its foot (km, straight through the Earth). */
 const PLAN: { id: DeepId; name: string; share: number; km: number }[] = [
   { id: 'granite', name: 'Basement granite', share: 0.05, km: 35 },
-  { id: 'mantle', name: 'Mantle', share: 0.21, km: 2890 },
-  { id: 'outerCore', name: 'Outer core', share: 0.15, km: 5150 },
+  { id: 'mantle', name: 'Mantle', share: 0.2, km: 2890 },
+  { id: 'outerCore', name: 'Outer core', share: 0.12, km: 5150 },
   { id: 'innerCore', name: 'Inner core', share: 0.1, km: EARTH.far - 5150 },
-  { id: 'outerCoreUp', name: 'Outer core', share: 0.15, km: EARTH.far - 2890 },
-  { id: 'mantleUp', name: 'Mantle', share: 0.21, km: EARTH.far - 11 },
+  { id: 'outerCoreUp', name: 'Outer core', share: 0.12, km: EARTH.far - 2890 },
+  { id: 'mantleUp', name: 'Mantle', share: 0.2, km: EARTH.far - 11 },
   { id: 'oceanCrust', name: 'Ocean crust', share: 0.035, km: EARTH.far - 4.4 },
   { id: 'seafloor', name: 'Seafloor', share: 0.015, km: EARTH.far - 4 },
-  { id: 'ocean', name: 'Southern Ocean', share: 0.08, km: EARTH.far },
+  // (The sea is ten screens deep: two finds, then five empty screens of suspense before the island.)
+  { id: 'ocean', name: 'Southern Ocean', share: 0.17, km: EARTH.far },
 ];
 /** The far surface: one screen-high picture at the very end (not part of the dirt's length). */
 export const SURFACE_PX = 460;
@@ -126,6 +127,40 @@ const pic = (w: number, h: number, body: string) => `<svg viewBox="0 0 ${w} ${h}
 
 /** A find's drawing, by its id (dig-finds.ts). */
 const FIND_ART: Record<OddityId, () => string> = {
+  nugget: () =>
+    // A vein of milky quartz across the granite, a gold nugget set in it.
+    pic(70, 52,
+      `<path d="M2 34 L16 20 L30 24 L46 10 L68 14 L66 26 L50 30 L38 44 L18 40 L6 46 Z" fill="#f4f1ea" ${ol}/><path d="M12 34 L28 30 L40 20 L58 18" fill="none" stroke="#cfcac0" stroke-width="2" stroke-linecap="round"/>` +
+      `<path d="M26 22 Q30 14 38 17 Q46 15 46 23 Q50 30 42 34 Q34 38 28 33 Q22 29 26 22 Z" fill="#f2c230" ${ol}/><path d="M30 23 Q34 19 39 21" fill="none" stroke="#fff1a8" stroke-width="2.4" stroke-linecap="round"/><circle cx="41" cy="29" r="1.6" fill="#c9951a"/>` +
+      `<path d="M52 6 l1.4 3.4 l3.4 1.4 l-3.4 1.4 l-1.4 3.4 l-1.4 -3.4 l-3.4 -1.4 l3.4 -1.4 z" fill="#fff" stroke="${O}" stroke-width="1"/>`),
+  burrito: () =>
+    // Wrapped in foil, frosted over: still frozen in the middle, even down here.
+    pic(68, 42,
+      `<path d="M8 22 Q8 8 34 8 Q60 8 60 22 Q60 36 34 36 Q8 36 8 22 Z" fill="#d9c08a" ${ol}/>` +
+      `<path d="M8 22 Q8 8 34 8 L40 8 L36 36 L34 36 Q8 36 8 22 Z" fill="#c9ccd2" ${ol}/><path d="M16 14 l8 6 M14 26 l10 4 M26 12 l4 10 M24 28 l8 -4" stroke="#f4f6f8" stroke-width="1.8" stroke-linecap="round"/>` +
+      `<path d="M46 16 q4 3 8 1 M46 26 q5 -2 9 1" fill="none" stroke="#a8874a" stroke-width="1.8" stroke-linecap="round"/>` +
+      `<g stroke="#8fd3ff" stroke-width="2" stroke-linecap="round"><path d="M60 6 v10 M55 11 h10 M56.5 7.5 l7 7 M63.5 7.5 l-7 7"/></g>`),
+  spoon: () =>
+    pic(34, 64,
+      `<g transform="rotate(14 17 32)"><path d="M17 4 Q28 4 28 16 Q28 27 19.5 29 L19.5 56 Q19.5 60 17 60 Q14.5 60 14.5 56 L14.5 29 Q6 27 6 16 Q6 4 17 4 Z" fill="#dfe4e9" ${ol}/><ellipse cx="17" cy="15" rx="6.5" ry="8" fill="#f4f6f8"/><path d="M12 12 Q14 8 18 8" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>` +
+      `<path d="M28 40 l1.4 3.4 l3.4 1.4 l-3.4 1.4 l-1.4 3.4 l-1.4 -3.4 l-3.4 -1.4 l3.4 -1.4 z" fill="#fff" stroke="${O}" stroke-width="1"/>`),
+  pail: () =>
+    // The sleepy worker's pail: he forgot it once already.
+    pic(50, 52,
+      `<path d="M9 18 Q25 -6 41 18" fill="none" stroke="${O}" stroke-width="5" stroke-linecap="round"/><path d="M9 18 Q25 -6 41 18" fill="none" stroke="#9aa3ad" stroke-width="2" stroke-linecap="round"/>` +
+      `<path d="M6 17 L44 17 L39 48 L11 48 Z" fill="#b9c0c8" ${ol}/><ellipse cx="25" cy="17" rx="19" ry="4.5" fill="#8d96a1" ${ol}/>` +
+      `<path d="M9 27 L41 27 M10.5 37 L39.5 37" stroke="#8d96a1" stroke-width="2"/><path d="M13 22 L16 44" stroke="#e6eaee" stroke-width="2.4" stroke-linecap="round"/>`),
+  mole: () =>
+    // A mole in a miner's headlamp, on his way somewhere.
+    pic(60, 58,
+      `<path d="M48 12 l10 -6 l-3 10 z" fill="#fff3a8" opacity="0.8"/>` +
+      `<ellipse cx="28" cy="36" rx="20" ry="18" fill="#5d5568" ${ol}/><ellipse cx="29" cy="42" rx="11" ry="9" fill="#776d85"/>` +
+      `<path d="M38 28 Q52 26 54 34 Q50 40 40 38 Z" fill="#6a6176" ${ol}/><circle cx="54" cy="33.5" r="3" fill="#f2a0a8" ${thin}/>` +
+      `<circle cx="40" cy="28" r="1.8" fill="${O}"/><path d="M44 36 q3 2 6 0" fill="none" ${thin}/>` +
+      `<path d="M16 22 Q28 10 42 20" fill="none" stroke="${O}" stroke-width="6" stroke-linecap="round"/><path d="M16 22 Q28 10 42 20" fill="none" stroke="#e5484d" stroke-width="3" stroke-linecap="round"/>` +
+      `<circle cx="42" cy="18" r="5" fill="#ffe27a" ${thin}/>` +
+      `<g fill="#f2a0a8" ${thin}><path d="M12 46 l-8 4 l3 -7 l-6 0 l8 -4 z"/><path d="M40 50 l6 5 l-8 0 l2 4 l-8 -5 z"/></g>`),
+
   diamond: () =>
     pic(50, 46,
       `<path d="M10 16 L18 5 L32 5 L40 16 L25 42 Z" fill="#9fe3f5" ${ol}/><path d="M10 16 L40 16 M18 5 L22 16 L25 42 L28 16 L32 5" fill="none" ${thin}/>` +
@@ -146,13 +181,27 @@ const FIND_ART: Record<OddityId, () => string> = {
       `<path d="M52 44 Q58 58 74 60 Q70 50 64 44 Z" fill="#4a7393" ${thin}/>` +
       `<circle cx="28" cy="30" r="2.6" fill="${O}"/><path d="M14 40 Q24 44 36 43" fill="none" ${thin}/>` +
       `<path d="M56 12 q-2 -7 -8 -9 M58 12 q2 -8 9 -9" fill="none" stroke="#bfe3f5" stroke-width="2.4" stroke-linecap="round"/></g>`),
+  squid: () =>
+    // A giant squid, head down to us (this side of the world is upside down), arms trailing up.
+    pic(96, 150,
+      `<g transform="rotate(180 48 75)">` +
+      `<path d="M48 6 Q70 30 66 62 Q64 78 48 80 Q32 78 30 62 Q26 30 48 6 Z" fill="#d9574a" ${ol}/><path d="M48 8 Q30 22 24 40 Q34 38 40 30 Z" fill="#c2463c" ${thin}/><path d="M48 8 Q66 22 72 40 Q62 38 56 30 Z" fill="#c2463c" ${thin}/>` +
+      `<circle cx="40" cy="64" r="7" fill="#fff" ${thin}/><circle cx="41" cy="65" r="3.4" fill="${O}"/><circle cx="57" cy="64" r="6" fill="#fff" ${thin}/><circle cx="57.5" cy="65" r="3" fill="${O}"/>` +
+      [[34, -10, 126], [40, -4, 140], [46, 2, 134], [52, 4, 142], [58, 8, 130], [63, 14, 122]].map(([x, bend, end]) => `<path d="M${x} 78 Q${x + bend} ${(78 + end) / 2} ${x + bend * 0.4} ${end}" fill="none" stroke="${O}" stroke-width="8" stroke-linecap="round"/><path d="M${x} 78 Q${x + bend} ${(78 + end) / 2} ${x + bend * 0.4} ${end}" fill="none" stroke="#d9574a" stroke-width="4.4" stroke-linecap="round"/>`).join('') +
+      `<path d="M30 76 Q10 100 14 142 M66 76 Q88 100 84 144" fill="none" stroke="${O}" stroke-width="6" stroke-linecap="round"/><path d="M30 76 Q10 100 14 142 M66 76 Q88 100 84 144" fill="none" stroke="#e8786a" stroke-width="2.8" stroke-linecap="round"/>` +
+      `<ellipse cx="14" cy="142" rx="5" ry="7" fill="#e8786a" ${thin}/><ellipse cx="84" cy="144" rx="5" ry="7" fill="#e8786a" ${thin}/></g>`),
 };
 /** An oddity's drawing. */
 export const oddityArt = (id: OddityId): string => FIND_ART[id]();
+/** How far below the reservoir a layer starts (px). */
+export const layerTop = (id: DeepId): number => DEEP.slice(0, DEEP.findIndex((l) => l.id === id)).reduce((sum, l) => sum + l.height, 0);
+/** The layer a place `screen` phone screens below the reservoir falls in. */
+export const layerAt = (screen: number): DeepId => DEEP.find((l) => screen * DIG.screenPx < layerTop(l.id) + l.height)?.id ?? 'kerguelen';
+
 /** A find's box inside its layer, for cards `width` px wide (a tap target of at least 44 px each way). */
-export function oddityBox(o: Oddity, width: number, layerH: number): { left: number; top: number; hitW: number; hitH: number } {
+export function oddityBox(o: Oddity, width: number): { left: number; top: number; hitW: number; hitH: number } {
   const hitW = Math.max(44, o.w), hitH = Math.max(44, o.h);
-  return { left: Math.round(o.x * width - hitW / 2), top: Math.round(o.at * layerH - hitH / 2), hitW, hitH };
+  return { left: Math.round(o.x * width - hitW / 2), top: Math.round(o.screen * DIG.screenPx - layerTop(o.layer) - hitH / 2), hitW, hitH };
 }
 
 // ---------- The dirt, drawn a tile at a time ----------

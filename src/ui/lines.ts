@@ -213,6 +213,12 @@ export const BURIED_LINES = {
   diamond: 'Pressure makes diamonds.',
   lunchbox: 'Halfway. Snack break.',
   whale: 'Long way from Alberta.',
+  nugget: 'Not today, prospector.',
+  burrito: 'Still frozen in the middle.',
+  spoon: 'Shiny.',
+  pail: "He'll want that back.",
+  mole: 'Is this Alberta?',
+  squid: 'Just passing through.',
 } as const;
 
 /**
