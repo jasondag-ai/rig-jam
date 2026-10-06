@@ -13,5 +13,15 @@
     "mean": "#c5d2e8",
     "dark": "#bac8de",
     "light": "#d0dcef"
+  },
+  "grass-fall": {
+    "mean": "#82703f",
+    "dark": "#746538",
+    "light": "#917c46"
+  },
+  "grass-prairie": {
+    "mean": "#a99e62",
+    "dark": "#9c9058",
+    "light": "#b6ac6b"
   }
 }

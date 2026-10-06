@@ -1,0 +1,299 @@
+[
+  {
+    "id": "n01", "name": "Muskeg", "par": 14,
+    "hint": "Muskeg! A truck that drives onto it keeps sliding until it hits something.",
+    "trucks": [
+      {"id":"A","color":"blue","row":0,"col":4,"length":3,"orient":"v","kind":"frac"},
+      {"id":"B","color":"yellow","row":3,"col":2,"length":3,"orient":"v","kind":"water"},
+      {"id":"C","color":"green","row":4,"col":0,"length":2,"orient":"v","kind":"picker"},
+      {"id":"D","color":"red","row":2,"col":2,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"E","color":"orange","row":4,"col":3,"length":3,"orient":"h","kind":"vac"},
+      {"id":"F","color":"purple","row":0,"col":0,"length":3,"orient":"h","kind":"frac"},
+      {"id":"G","color":"blue","row":0,"col":3,"length":2,"orient":"v","kind":"picker"},
+      {"id":"H","color":"red","row":1,"col":1,"length":2,"orient":"h","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"blue","side":"bottom","index":4},
+      {"color":"yellow","side":"top","index":2},
+      {"color":"green","side":"top","index":0},
+      {"color":"red","side":"right","index":2},
+      {"color":"orange","side":"left","index":4},
+      {"color":"purple","side":"right","index":0},
+      {"color":"blue","side":"bottom","index":3},
+      {"color":"red","side":"right","index":1},
+      {"color":"blue","side":"right","index":3}
+    ],
+    "obstacles": [],
+    "muskeg": [{"row":2,"col":1}, {"row":2,"col":5}, {"row":4,"col":5}, {"row":2,"col":3}, {"row":0,"col":1}]
+  },
+  {
+    "id": "n02", "name": "Soft Ground", "par": 14,
+    "trucks": [
+      {"id":"A","color":"blue","row":0,"col":4,"length":3,"orient":"v","kind":"frac"},
+      {"id":"B","color":"yellow","row":3,"col":2,"length":2,"orient":"v","kind":"picker"},
+      {"id":"C","color":"green","row":3,"col":0,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"D","color":"red","row":2,"col":0,"length":2,"orient":"h","convoy":1,"kind":"picker"},
+      {"id":"E","color":"orange","row":3,"col":3,"length":3,"orient":"h","kind":"vac"},
+      {"id":"F","color":"purple","row":1,"col":0,"length":3,"orient":"h","kind":"water"},
+      {"id":"G","color":"blue","row":1,"col":3,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"H","color":"red","row":5,"col":2,"length":3,"orient":"h","convoy":2,"kind":"frac"}
+    ],
+    "gates": [
+      {"color":"blue","side":"bottom","index":4},
+      {"color":"yellow","side":"top","index":2},
+      {"color":"green","side":"top","index":0},
+      {"color":"red","side":"right","index":2},
+      {"color":"orange","side":"left","index":3},
+      {"color":"purple","side":"right","index":1},
+      {"color":"blue","side":"bottom","index":3},
+      {"color":"red","side":"right","index":5},
+      {"color":"blue","side":"right","index":3}
+    ],
+    "obstacles": [],
+    "muskeg": [{"row":0,"col":2}, {"row":5,"col":3}, {"row":5,"col":5}]
+  },
+  {
+    "id": "n03", "name": "Corduroy Road", "par": 15,
+    "trucks": [
+      {"id":"A","color":"blue","row":1,"col":2,"length":2,"orient":"v","kind":"picker"},
+      {"id":"B","color":"yellow","row":4,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"C","color":"green","row":1,"col":3,"length":2,"orient":"h","kind":"picker"},
+      {"id":"D","color":"orange","row":1,"col":1,"length":3,"orient":"v","kind":"frac"},
+      {"id":"E","color":"purple","row":3,"col":2,"length":3,"orient":"h","kind":"vac"},
+      {"id":"F","color":"blue","row":2,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"G","color":"red","row":2,"col":5,"length":3,"orient":"v","convoy":2,"kind":"water"},
+      {"id":"H","color":"red","row":4,"col":1,"length":3,"orient":"h","convoy":1,"kind":"frac"}
+    ],
+    "gates": [
+      {"color":"blue","side":"bottom","index":2},
+      {"color":"yellow","side":"top","index":4},
+      {"color":"green","side":"left","index":1},
+      {"color":"orange","side":"bottom","index":1},
+      {"color":"purple","side":"right","index":3},
+      {"color":"blue","side":"left","index":2},
+      {"color":"red","side":"bottom","index":5},
+      {"color":"red","side":"right","index":4},
+      {"color":"yellow","side":"top","index":2},
+      {"color":"blue","side":"right","index":1}
+    ],
+    "obstacles": [
+      {"row":0,"col":5,"kind":"wellhead"}
+    ],
+    "muskeg": [{"row":3,"col":0}, {"row":4,"col":5}, {"row":0,"col":4}]
+  },
+  {
+    "id": "n04", "name": "Rig Mats", "par": 16,
+    "trucks": [
+      {"id":"A","color":"yellow","row":4,"col":4,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"B","color":"blue","row":2,"col":3,"length":3,"orient":"v","convoy":1,"kind":"vac"},
+      {"id":"C","color":"red","row":0,"col":2,"length":3,"orient":"h","convoy":2,"kind":"frac"},
+      {"id":"D","color":"green","row":3,"col":1,"length":3,"orient":"v","kind":"water"},
+      {"id":"E","color":"blue","row":2,"col":0,"length":3,"orient":"h","convoy":2,"kind":"vac"},
+      {"id":"F","color":"orange","row":1,"col":5,"length":3,"orient":"v","kind":"frac"},
+      {"id":"G","color":"purple","row":1,"col":4,"length":3,"orient":"v","kind":"water"},
+      {"id":"H","color":"red","row":3,"col":2,"length":3,"orient":"v","convoy":1,"kind":"vac"}
+    ],
+    "gates": [
+      {"color":"yellow","side":"left","index":4},
+      {"color":"blue","side":"top","index":3},
+      {"color":"red","side":"right","index":0},
+      {"color":"green","side":"top","index":1},
+      {"color":"blue","side":"right","index":2},
+      {"color":"orange","side":"bottom","index":5},
+      {"color":"purple","side":"top","index":4},
+      {"color":"red","side":"top","index":2},
+      {"color":"yellow","side":"bottom","index":1},
+      {"color":"yellow","side":"bottom","index":4}
+    ],
+    "obstacles": [
+      {"row":0,"col":0,"kind":"pumpjack"}
+    ],
+    "muskeg": [{"row":5,"col":3}, {"row":3,"col":1}, {"row":2,"col":1}]
+  },
+  {
+    "id": "n05", "name": "Winch Line", "par": 17,
+    "trucks": [
+      {"id":"A","color":"blue","row":3,"col":3,"length":3,"orient":"h","convoy":2,"kind":"frac"},
+      {"id":"B","color":"red","row":0,"col":1,"length":3,"orient":"h","convoy":2,"kind":"water"},
+      {"id":"C","color":"yellow","row":1,"col":1,"length":3,"orient":"h","kind":"vac"},
+      {"id":"D","color":"green","row":2,"col":1,"length":3,"orient":"v","kind":"frac"},
+      {"id":"E","color":"red","row":4,"col":3,"length":2,"orient":"v","convoy":1,"kind":"picker"},
+      {"id":"F","color":"orange","row":0,"col":0,"length":3,"orient":"v","kind":"water"},
+      {"id":"G","color":"purple","row":5,"col":0,"length":3,"orient":"h","kind":"vac"},
+      {"id":"H","color":"blue","row":3,"col":2,"length":2,"orient":"v","convoy":1,"kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"blue","side":"left","index":3},
+      {"color":"red","side":"left","index":0},
+      {"color":"yellow","side":"left","index":1},
+      {"color":"green","side":"bottom","index":1},
+      {"color":"red","side":"top","index":3},
+      {"color":"orange","side":"bottom","index":0},
+      {"color":"purple","side":"right","index":5},
+      {"color":"blue","side":"top","index":2},
+      {"color":"yellow","side":"right","index":3},
+      {"color":"yellow","side":"right","index":0}
+    ],
+    "obstacles": [
+      {"row":0,"col":5,"kind":"tank"}
+    ],
+    "muskeg": [{"row":0,"col":3}, {"row":5,"col":2}, {"row":4,"col":2}, {"row":3,"col":3}]
+  },
+  {
+    "id": "n06", "name": "Sump", "par": 18,
+    "trucks": [
+      {"id":"A","color":"yellow","row":1,"col":3,"length":3,"orient":"h","kind":"water"},
+      {"id":"B","color":"green","row":5,"col":1,"length":3,"orient":"h","kind":"frac"},
+      {"id":"C","color":"orange","row":4,"col":0,"length":3,"orient":"h","kind":"vac"},
+      {"id":"D","color":"blue","row":2,"col":4,"length":2,"orient":"h","convoy":2,"kind":"picker"},
+      {"id":"E","color":"blue","row":3,"col":5,"length":3,"orient":"v","convoy":1,"kind":"water"},
+      {"id":"F","color":"purple","row":1,"col":1,"length":3,"orient":"v","kind":"frac"},
+      {"id":"G","color":"red","row":0,"col":1,"length":2,"orient":"h","convoy":2,"kind":"pickup"},
+      {"id":"H","color":"red","row":1,"col":2,"length":2,"orient":"v","convoy":1,"kind":"picker"},
+      {"id":"I","color":"yellow","row":4,"col":4,"length":2,"orient":"v","kind":"pickup"}
+    ],
+    "gates": [
+      {"color":"yellow","side":"left","index":1},
+      {"color":"green","side":"right","index":5},
+      {"color":"orange","side":"right","index":4},
+      {"color":"blue","side":"left","index":2},
+      {"color":"blue","side":"top","index":5},
+      {"color":"purple","side":"top","index":1},
+      {"color":"red","side":"left","index":0},
+      {"color":"red","side":"bottom","index":2},
+      {"color":"yellow","side":"top","index":4},
+      {"color":"yellow","side":"right","index":2},
+      {"color":"yellow","side":"bottom","index":5}
+    ],
+    "obstacles": [
+      {"row":0,"col":3,"kind":"pumpjack"}
+    ],
+    "muskeg": [{"row":4,"col":1}, {"row":0,"col":2}, {"row":4,"col":5}, {"row":1,"col":3}]
+  },
+  {
+    "id": "n07", "name": "Bogged Down", "par": 18,
+    "trucks": [
+      {"id":"A","color":"yellow","row":2,"col":1,"length":3,"orient":"h","kind":"vac"},
+      {"id":"B","color":"blue","row":1,"col":2,"length":3,"orient":"h","convoy":2,"kind":"frac"},
+      {"id":"C","color":"red","row":4,"col":3,"length":2,"orient":"v","convoy":1,"kind":"pickup"},
+      {"id":"D","color":"green","row":4,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"E","color":"orange","row":3,"col":2,"length":3,"orient":"h","kind":"water"},
+      {"id":"F","color":"purple","row":2,"col":0,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"G","color":"blue","row":0,"col":1,"length":2,"orient":"v","convoy":1,"kind":"picker"},
+      {"id":"H","color":"red","row":2,"col":5,"length":3,"orient":"v","convoy":2,"kind":"vac"},
+      {"id":"I","color":"yellow","row":0,"col":3,"length":3,"orient":"h","kind":"frac"}
+    ],
+    "gates": [
+      {"color":"yellow","side":"right","index":2},
+      {"color":"blue","side":"right","index":1},
+      {"color":"red","side":"top","index":3},
+      {"color":"green","side":"right","index":4},
+      {"color":"orange","side":"right","index":3},
+      {"color":"purple","side":"bottom","index":0},
+      {"color":"blue","side":"bottom","index":1},
+      {"color":"red","side":"top","index":5},
+      {"color":"yellow","side":"left","index":0},
+      {"color":"yellow","side":"left","index":1},
+      {"color":"green","side":"left","index":2}
+    ],
+    "obstacles": [
+      {"row":5,"col":5,"kind":"wellhead"}
+    ],
+    "muskeg": [{"row":4,"col":4}, {"row":1,"col":1}, {"row":3,"col":2}, {"row":3,"col":5}]
+  },
+  {
+    "id": "n08", "name": "Cat Train", "par": 19,
+    "trucks": [
+      {"id":"A","color":"yellow","row":5,"col":2,"length":3,"orient":"h","kind":"frac"},
+      {"id":"B","color":"red","row":3,"col":3,"length":2,"orient":"v","convoy":1,"kind":"pickup"},
+      {"id":"C","color":"red","row":1,"col":1,"length":3,"orient":"h","convoy":2,"kind":"vac"},
+      {"id":"D","color":"green","row":3,"col":0,"length":2,"orient":"h","kind":"picker"},
+      {"id":"E","color":"orange","row":3,"col":2,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"F","color":"blue","row":4,"col":1,"length":2,"orient":"v","convoy":1,"kind":"picker"},
+      {"id":"G","color":"purple","row":3,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"H","color":"yellow","row":0,"col":0,"length":2,"orient":"v","kind":"picker"},
+      {"id":"I","color":"blue","row":2,"col":2,"length":3,"orient":"h","convoy":2,"kind":"water"}
+    ],
+    "gates": [
+      {"color":"yellow","side":"left","index":5},
+      {"color":"red","side":"bottom","index":3},
+      {"color":"red","side":"right","index":1},
+      {"color":"green","side":"right","index":3},
+      {"color":"orange","side":"top","index":2},
+      {"color":"blue","side":"top","index":1},
+      {"color":"purple","side":"bottom","index":4},
+      {"color":"yellow","side":"bottom","index":0},
+      {"color":"blue","side":"left","index":2},
+      {"color":"yellow","side":"bottom","index":1},
+      {"color":"yellow","side":"left","index":1}
+    ],
+    "obstacles": [
+      {"row":2,"col":5,"kind":"wellhead"}
+    ],
+    "muskeg": [{"row":5,"col":5}, {"row":1,"col":4}, {"row":4,"col":3}, {"row":3,"col":0}]
+  },
+  {
+    "id": "n09", "name": "Freeze Up", "par": 19,
+    "trucks": [
+      {"id":"A","color":"yellow","row":1,"col":2,"length":3,"orient":"v","kind":"frac"},
+      {"id":"B","color":"blue","row":2,"col":3,"length":2,"orient":"v","convoy":1,"kind":"picker"},
+      {"id":"C","color":"green","row":1,"col":3,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"D","color":"orange","row":0,"col":1,"length":3,"orient":"v","kind":"vac"},
+      {"id":"E","color":"red","row":4,"col":1,"length":3,"orient":"h","convoy":1,"kind":"water"},
+      {"id":"F","color":"blue","row":3,"col":5,"length":2,"orient":"v","convoy":2,"kind":"picker"},
+      {"id":"G","color":"purple","row":3,"col":0,"length":2,"orient":"h","kind":"pickup"},
+      {"id":"H","color":"red","row":0,"col":2,"length":3,"orient":"h","convoy":2,"kind":"frac"},
+      {"id":"I","color":"yellow","row":3,"col":4,"length":3,"orient":"v","kind":"vac"}
+    ],
+    "gates": [
+      {"color":"yellow","side":"top","index":2},
+      {"color":"blue","side":"top","index":3},
+      {"color":"green","side":"left","index":1},
+      {"color":"orange","side":"bottom","index":1},
+      {"color":"red","side":"right","index":4},
+      {"color":"blue","side":"bottom","index":5},
+      {"color":"purple","side":"right","index":3},
+      {"color":"red","side":"right","index":0},
+      {"color":"yellow","side":"top","index":4},
+      {"color":"yellow","side":"left","index":4},
+      {"color":"yellow","side":"top","index":1}
+    ],
+    "obstacles": [
+      {"row":1,"col":5,"kind":"wellhead"},
+      {"row":2,"col":5,"kind":"pumpjack"}
+    ],
+    "muskeg": [{"row":2,"col":1}, {"row":5,"col":3}, {"row":0,"col":5}, {"row":2,"col":3}]
+  },
+  {
+    "id": "n10", "name": "Road Ban", "par": 20,
+    "trucks": [
+      {"id":"A","color":"blue","row":4,"col":1,"length":2,"orient":"h","convoy":1,"kind":"picker"},
+      {"id":"B","color":"blue","row":0,"col":2,"length":3,"orient":"v","convoy":2,"kind":"vac"},
+      {"id":"C","color":"red","row":1,"col":0,"length":2,"orient":"h","convoy":1,"kind":"pickup"},
+      {"id":"D","color":"red","row":5,"col":2,"length":3,"orient":"h","convoy":2,"kind":"frac"},
+      {"id":"E","color":"yellow","row":2,"col":0,"length":3,"orient":"v","kind":"water"},
+      {"id":"F","color":"green","row":3,"col":1,"length":2,"orient":"h","kind":"picker"},
+      {"id":"G","color":"orange","row":2,"col":4,"length":2,"orient":"v","kind":"pickup"},
+      {"id":"H","color":"purple","row":1,"col":5,"length":3,"orient":"v","kind":"vac"},
+      {"id":"I","color":"yellow","row":2,"col":3,"length":3,"orient":"v","kind":"frac"}
+    ],
+    "gates": [
+      {"color":"blue","side":"left","index":4},
+      {"color":"blue","side":"bottom","index":2},
+      {"color":"red","side":"right","index":1},
+      {"color":"red","side":"right","index":5},
+      {"color":"yellow","side":"top","index":0},
+      {"color":"green","side":"left","index":3},
+      {"color":"orange","side":"bottom","index":4},
+      {"color":"purple","side":"top","index":5},
+      {"color":"yellow","side":"bottom","index":3},
+      {"color":"yellow","side":"top","index":2},
+      {"color":"yellow","side":"bottom","index":5}
+    ],
+    "obstacles": [
+      {"row":5,"col":1,"kind":"pumpjack"},
+      {"row":5,"col":0,"kind":"wellhead"}
+    ],
+    "muskeg": [{"row":3,"col":1}, {"row":2,"col":0}, {"row":5,"col":5}, {"row":4,"col":1}, {"row":5,"col":3}]
+  }
+]

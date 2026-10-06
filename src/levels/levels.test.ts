@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { LEVEL_OBSTACLE_KINDS, OBSTACLE_KINDS, TRUCK_KINDS, solve } from '../engine/index.ts';
-import { convoyRaisesPar, everyPumpjackInTheWay, withoutConvoys } from '../../tools/generator.ts';
+import { convoyRaisesPar, everyPumpjackInTheWay, slidesIn, withoutConvoys, withoutShifts } from '../../tools/generator.ts';
 import { DAILY_LEVELS, REGIONS } from './regions.ts';
 
 describe('shipped levels', () => {
-  it('has three regions of 10 levels with unique ids', () => {
+  it('has five regions of 10 levels with unique ids', () => {
     expect(REGIONS.map((r) => [r.id, r.levels.length])).toEqual([
       ['cardium', 10],
       ['montney', 10],
       ['duvernay', 10],
+      ['mannville', 10],
     ]);
     const ids = REGIONS.flatMap((r) => r.levels.map((l) => l.id));
     expect(new Set(ids).size).toBe(ids.length);
@@ -131,5 +132,81 @@ describe('Duvernay convoys', () => {
     const withObstacles = duvernay.filter((l) => l.obstacles.length > 0);
     expect(withObstacles.length).toBeGreaterThanOrEqual(5);
     for (const l of withObstacles) expect(everyPumpjackInTheWay(l, solve(l)!)).toBe(true);
+  });
+});
+
+describe('Mannville (region 4): muskeg', () => {
+  const levels = REGIONS.find((r) => r.id === 'mannville')!.levels;
+
+  it('level 1 brings in muskeg and nothing else: no equipment, no convoy, and its tip says the rule', () => {
+    expect(levels[0].hint).toMatch(/[Mm]uskeg/);
+    expect(levels[0].obstacles).toHaveLength(0);
+    expect(levels[0].trucks.some((t) => t.convoy)).toBe(false);
+  });
+
+  it.each(levels.map((l) => [l.id, l] as const))('%s has muskeg in a truck lane, and its best solution slides on it', (_id, level) => {
+    expect(level.muskeg.length).toBeGreaterThan(0);
+    for (const c of level.muskeg) expect(level.trucks.some((t) => (t.orient === 'h' ? t.row === c.row : t.col === c.col))).toBe(true);
+    expect(slidesIn(level, solve(level)!)).toBeGreaterThan(0);
+    expect(level.racks).toHaveLength(0);
+    expect(level.gates.some((g) => g.shift)).toBe(false);
+  });
+
+  it('EVERY level is par 14 to 20, the first included', () => {
+    for (const l of levels) {
+      expect(l.par, l.id).toBeGreaterThanOrEqual(14);
+      expect(l.par, l.id).toBeLessThanOrEqual(20);
+    }
+    expect(levels.at(-1)!.par).toBe(20);
+  });
+});
+
+// HELD (Jay, Oct 5): Bakken is not in the game until its levels have had a second pass. These
+// are the rules its levels must meet when it comes in.
+describe.skip('Bakken (region 5): load racks and shift-change gates', () => {
+  const levels = REGIONS.find((r) => r.id === 'bakken')?.levels ?? [];
+  const tankers = (l: (typeof levels)[number]) => l.trucks.filter((t) => t.load);
+
+  it('level 1 has load racks and no clock gate; level 2 brings in one shift-change gate', () => {
+    expect(tankers(levels[0]).length).toBeGreaterThan(0);
+    expect(levels[0].gates.some((g) => g.shift)).toBe(false);
+    expect(levels[0].hint).toMatch(/rack/);
+    expect(levels[1].gates.filter((g) => g.shift)).toHaveLength(1);
+    expect(levels[1].hint).toMatch(/even/);
+  });
+
+  it.each(levels.map((l) => [l.id, l] as const))('%s: every tanker has a rack in its lane, and looks like a tanker; nothing else does', (_id, level) => {
+    expect(tankers(level).length).toBeGreaterThan(0);
+    expect(level.racks.length).toBe(tankers(level).length);
+    for (const t of tankers(level)) {
+      expect(t.length).toBe(3);
+      expect(['water', 'vac']).toContain(t.kind);
+      expect(level.racks.some((r) => (t.orient === 'h' ? r.row === t.row : r.col === t.col))).toBe(true);
+    }
+    for (const t of level.trucks.filter((x) => !x.load)) expect(['water', 'vac']).not.toContain(t.kind);
+    expect(level.muskeg).toHaveLength(0);
+  });
+
+  it.each(levels.slice(1).map((l) => [l.id, l] as const))('%s: the clock matters (without it the level is shorter)', (_id, level) => {
+    expect(level.gates.some((g) => g.shift)).toBe(true);
+    expect(solve(withoutShifts(level))!.length).toBeLessThan(level.par);
+  });
+
+  it('EVERY level is par 18 to 24, the first included', () => {
+    for (const l of levels) {
+      expect(l.par, l.id).toBeGreaterThanOrEqual(18);
+      expect(l.par, l.id).toBeLessThanOrEqual(24);
+    }
+  });
+});
+
+describe('regions 4 and 5: more 3-cell rigs', () => {
+  const share = (id: string) => {
+    const trucks = REGIONS.find((r) => r.id === id)!.levels.flatMap((l) => l.trucks);
+    return trucks.filter((t) => t.length === 3).length / trucks.length;
+  };
+  it('a bigger share of long trucks than any region before them', () => {
+    const before = Math.max(share('cardium'), share('montney'), share('duvernay'));
+    expect(share('mannville')).toBeGreaterThan(before);
   });
 });
