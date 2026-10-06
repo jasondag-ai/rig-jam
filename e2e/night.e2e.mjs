@@ -152,8 +152,9 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     {
       const m = {};
       for (const mode of ['night', 'day']) {
-        const { context, page } = await open(browser, { query: `?gag=biffyb&night=${mode === 'night' ? 1 : 0}`, reducedMotion: 'reduce' });
-        await page.waitForSelector('.shuffler-layer svg.pup', { state: 'attached', timeout: 8000 });
+        // (Safety Sam stands in the middle of the strip; the lease sign is a permanent prop with clear grass beside it.)
+        const { context, page } = await open(browser, { query: `?gag=sam&night=${mode === 'night' ? 1 : 0}`, reducedMotion: 'reduce' });
+        await page.waitForSelector('.sam-layer svg.pup', { state: 'attached', timeout: 8000 });
         await wait(1100);
         const order = await page.evaluate(() => {
           const kids = [...document.querySelector('.screen.game').children], shade = kids.findIndex((k) => k.classList.contains('night-shade'));
@@ -162,11 +163,11 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
         });
         if (mode === 'night') check(order, 'every strip gag layer and prop is put on the screen under the night\'s shade');
         const box = (sel) => page.evaluate((q) => { const r = [...document.querySelectorAll(q)].at(-1).getBoundingClientRect(); return { x: r.x + r.width * 0.2, y: r.y + r.height * 0.2, width: r.width * 0.6, height: r.height * 0.6 }; }, sel);
-        m[mode] = { shuffler: await patch(page, await box('.shuffler-layer svg.pup .head')), biffy: await patch(page, await box('.biffy-layer svg.pup .door')), grass: await patch(page, { x: 4, y: (await box('.biffy-layer svg.pup .door')).y, width: 20, height: 10 }) };
+        m[mode] = { shuffler: await patch(page, await box('.sam-layer svg.pup .torso')), biffy: await patch(page, await box('.sign-layer svg.pup .sg')), grass: await patch(page, { x: 330, y: (await box('.sign-layer svg.pup .sg')).y, width: 20, height: 10 }) };
         await context.close();
       }
       const ratio = (k) => m.night[k] / m.day[k];
-      check(ratio('shuffler') < 0.65 && ratio('biffy') < 0.65 && Math.abs(ratio('shuffler') - ratio('biffy')) < 0.12 && Math.abs(ratio('shuffler') - ratio('grass')) < 0.15, `Biffy B at night: the shuffler ${ratio('shuffler').toFixed(2)}, the biffy ${ratio('biffy').toFixed(2)} and the grass ${ratio('grass').toFixed(2)} of their daytime brightness: equally dim`);
+      check(ratio('shuffler') < 0.65 && ratio('biffy') < 0.65 && Math.abs(ratio('shuffler') - ratio('biffy')) < 0.12 && Math.abs(ratio('shuffler') - ratio('grass')) < 0.15, `Safety Sam at night: Sam ${ratio('shuffler').toFixed(2)}, the lease sign ${ratio('biffy').toFixed(2)} and the grass ${ratio('grass').toFixed(2)} of their daytime brightness: equally dim`);
     }
 
     // ---------- The look, by pixels against the same level by day ----------

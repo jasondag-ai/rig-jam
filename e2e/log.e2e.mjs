@@ -107,11 +107,34 @@ await page.$eval('.log-head .back', (b) => b.click());
 await wait(200);
 check(!!(await page.$('.level-btn')), '"‹ Levels" goes back');
 
-// 2. Play: sit idle. The magpie, then the sleepy worker once he has dozed off, each a new sighting with a toast.
-await fresh('?idle=0.1');
+// 2. Play: tap a truck (the magpie), then slide a truck into a truck (the sleepy worker, who counts
+// once he has dozed off): each a new sighting with a toast. (?bird=1 and ?nap=1 win their rolls.)
+await fresh('?bird=1&nap=1&night=0');
 await enter(cardium, 5);
 await watchToasts();
-// The magpie's gag runs about 12 s (it is not sped up); the worker comes after it and counts once asleep.
+await page.evaluate(() => {
+  const el = document.querySelector('.truck'); const r = el.getBoundingClientRect();
+  for (const type of ['pointerdown', 'pointerup']) el.dispatchEvent(new PointerEvent(type, { pointerId: 8, pointerType: 'touch', isPrimary: true, clientX: r.x + r.width / 2, clientY: r.y + r.height / 2, bubbles: true, cancelable: true, buttons: type === 'pointerdown' ? 1 : 0 }));
+});
+// The magpie's gag runs about 12 s. Then a truck parked against another truck is pushed into it.
+await page.waitForFunction(() => window.__toasts.length >= 1, null, { timeout: 30000 }).catch(() => {});
+await wait(1500);
+{
+  const s0 = newGame(REGIONS[cardium].levels[5]);
+  const at = (row, col) => s0.trucks.find((t) => (t.orient === 'h' ? t.row === row && col >= t.col && col < t.col + t.length : t.col === col && row >= t.row && row < t.row + t.length));
+  let pick = null;
+  for (const t of s0.trucks) for (const d of [1, -1]) {
+    const far = d === 1 ? t.length : -1;
+    const [row, col] = t.orient === 'h' ? [t.row, t.col + far] : [t.row + far, t.col];
+    if (!pick && row >= 0 && row < 6 && col >= 0 && col < 6 && at(row, col)) pick = { id: t.id, dx: t.orient === 'h' ? d : 0, dy: t.orient === 'v' ? d : 0 };
+  }
+  await page.evaluate(async ([id, dx, dy]) => {
+    const el = document.querySelector(`.truck[data-id="${id}"]`); const r = el.getBoundingClientRect();
+    let x = r.x + r.width / 2, y = r.y + r.height / 2;
+    const ev = (type) => el.dispatchEvent(new PointerEvent(type, { pointerId: 12, pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, bubbles: true, cancelable: true, buttons: 1 }));
+    ev('pointerdown'); for (let k = 0; k < 8; k++) { x += dx * 12; y += dy * 12; ev('pointermove'); await new Promise((q) => requestAnimationFrame(q)); } ev('pointerup');
+  }, [pick.id, pick.dx, pick.dy]);
+}
 await page.waitForFunction(() => window.__toasts.length >= 2 && window.__toasts.every((t) => t.gone), null, { timeout: 60000 }).catch(() => {});
 let t = await toasts();
 check(t[0]?.text === `New sighting! Magpie (1/${N})`, `toast: "${t[0]?.text}"`);
@@ -202,7 +225,7 @@ await page.reload({ waitUntil: 'networkidle' });
 const demoLog = () => page.evaluate(() => JSON.parse(localStorage.getItem('rush-hour-rigs:demo-log') ?? '{"found":[]}').found);
 log = await openLog();
 const hints = Object.fromEntries(log.cards.map((c) => [c.id, c.text]));
-check(log.count === `0/${N}` && hints.magpie === 'Sit tight for 10 seconds.' && hints.biffy === 'Bump a truck into the bottom berm.' && hints.bear === 'Tap the snowy bush three times in Duvernay. One time in three.' && log.cards.every((c) => c.text.length > 10 && c.text !== 'Not seen yet.'), 'demo mode: the demo log starts empty and every card shows its hint');
+check(log.count === `0/${N}` && hints.magpie === 'Tap a truck without dragging it. One time in two.' && hints.biffy === 'Bump a truck into the bottom berm.' && hints.bear === 'Tap the snowy bush three times in Duvernay. One time in three.' && log.cards.every((c) => c.text.length > 10 && c.text !== 'Not seen yet.'), 'demo mode: the demo log starts empty and every card shows its hint');
 await page.$eval('.log-head .back', (b) => b.click());
 await wait(200);
 await enter(cardium, bumpLevel);
