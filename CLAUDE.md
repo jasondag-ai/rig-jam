@@ -646,6 +646,37 @@ something, give exact clicks and one command at a time.
 - Camo is earned (`camoEarned`) by finding every entry; camo earned under an earlier, shorter log is
   kept. Camo pickups: `.v-camo` blotches in the pickup SVG over the truck's own paint, shown by
   `body.camo-pickups`. On once earned; switch in Settings (locked until then).
+- THE DIG (Log v2, Jay Oct 6; `src/ui/log-dig.ts` pure and tested, `log-dig-view.ts` on the page,
+  styles under "The dig"): the log is a deep dig. Behind the cards lies ONE continuous
+  cross-section drawn in code (`strataSvg`, one static SVG, seeded, no filters or gradients):
+  grass, topsoil, glacial till, badlands, Cardium, Mannville (coal seams), Montney, Bakken,
+  Duvernay shale, reef reservoir with oil (`FORMATIONS`, in that order). The cards stand in groups
+  of four (`GROUP`); after each group a WINDOW (`.dig-window`) opens on the formation at that depth,
+  and below the last card the section keeps going down to the reef, where the page ends. A
+  wellbore runs from a wellhead on the grass, down the gutter between the two columns of cards,
+  into the reservoir. `mountDig` measures where each window ends and draws the layers to match
+  (again whenever the column changes size). Each formation has a pill (`.dig-pill`); a region's
+  pill is greyed (`.locked`, `pillLocked`) until that region is unlocked.
+  BURIED THINGS (`BURIED`, 15; NOT log entries: no count, no toast, nothing saved): car keys, TV
+  remote, one sock, golf ball, the gopher's den with the crust on a plate, a dropped phone in his
+  tunnel (topsoil); pirate chest, mammoth tusk, vintage silver plane (till); dinosaur egg and
+  skeleton (badlands); plesiosaur (Cardium); ammonite (Montney); the lost drill bit and fishing
+  tool (Bakken); trilobite (Duvernay). Each is a button of at least 44 px in its own half of its
+  window, clear of the wellbore and the pill (unit-tested at 375, 390 and 430). A tap wiggles it
+  and shows its ONE line (`BURIED_LINES` in lines.ts, 40 characters at most) in `.dig-bubble`
+  above it, one bubble at a time; the egg cracks, one eye peeks and blinks, and it closes
+  (`.peek`). ONLY small elements ever animate here (the tapped thing, the bubble, `.oil-glint`
+  opacity): never the strata, so scrolling stays at 60 fps. Reduced motion: nothing moves.
+  `npm run test:e2e:dig` checks it in WebKit (pixels of the margin at every depth included) and the
+  frame rate in Chromium at 4x throttle, 390 and 375 wide. THE LINES ARE STAND-INS: Jay's own list
+  did not come through ("[paste the list above]"); put his in `BURIED_LINES` when it does.
+- CAMO PICKUPS keep their gate colour (Log v2): the reward is the pickup's own sprite in camo,
+  `pickup-<colour>-camo(@2x).webp`, blotches of a deep shade and a pale tint of ITS OWN gate colour
+  baked by `tools/truck-sprites.py` (`camo`, `CAMO_DARK` / `CAMO_LIGHT`), measured into
+  `truck-sprites.json` (`camo`) and held to the same tests as plain trucks (reads as its gate
+  colour, colours stay apart, stands out from every pad). `spriteSrc` picks it while
+  `body.camo-pickups` is on; `dressCamo` swaps pickups already on the page. (The old blotches lived
+  on the hidden SVG fallback and never showed on the sprites.)
 - The Bear's entry is `legendary`: gold frame and LEGENDARY tag on its card, found or not.
 - Demo log: with demo mode on, sightings are saved to `rush-hour-rigs:demo-log` instead, toasts say
   "Demo sighting!", and the log page shows the demo log (DEMO tag). It never counts toward the real
@@ -835,6 +866,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:sprites` – truck sprites, lease ground, berm, gates, fallback, drag frame rate (start the dev server first)
 - `npm run test:e2e:cover` – cover screen (start the dev server first)
 - `npm run test:e2e:log` – Wildlife Log, toasts, camo pickups (start the dev server first)
+- `npm run test:e2e:dig` – the Wildlife Log's dig: the cross-section, pills, buried things and their bubbles, reduced motion, scroll frame rate (start the dev server first)
 - `npm run test:e2e:audio` – sound: lazy loading, every cue, gag sounds, the three music styles, gapless loops, Credits (start the dev server first)
 
 ## Out of scope (M2)

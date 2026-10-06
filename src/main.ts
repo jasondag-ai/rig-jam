@@ -28,6 +28,7 @@ import { preloadSprites } from './ui/sprites.ts';
 import { LOG_ENTRIES, applyCamo, cardHint, complete, foundCount, loadLog, saveLog, type Sighting } from './ui/wildlife-log.ts';
 import { PREVIEWS, type GagId } from './ui/gag-triggers.ts';
 import { workerStill } from './ui/worker.ts';
+import { mountDig } from './ui/log-dig-view.ts';
 import { mooseStill } from './ui/moose.ts';
 import { sceneryHtml } from './ui/scenery.ts';
 import { THEMES, applyTheme, themeOverride } from './ui/themes.ts';
@@ -384,9 +385,8 @@ function showLog(regionIndex: number): void {
       <h1>Wildlife Log${demo ? '<span class="demo-tag">DEMO</span>' : ''}</h1>
       <span class="log-count" aria-label="${have} of ${entries.length} found">${have}/${entries.length}</span>
     </header>
-    <ul class="log-cards"></ul>
     <p class="log-reward"></p>`;
-  const list = screen.querySelector('.log-cards')!;
+  const cards: HTMLElement[] = [];
   for (const e of entries) {
     const found = log.found.includes(e.id);
     const li = document.createElement('li');
@@ -397,7 +397,7 @@ function showLog(regionIndex: number): void {
     li.querySelector('h2')!.textContent = found ? e.name : '???';
     // Easter eggs: demo mode shows how to find each one; the game keeps it a secret.
     li.querySelector('p')!.textContent = found ? e.caption : cardHint(e, demo);
-    list.append(li);
+    cards.push(li);
   }
   screen.querySelector('.log-reward')!.textContent = demo
     ? `Demo log: ${have} of ${entries.length}. These sightings don't count toward your real log or camo.`
@@ -406,8 +406,14 @@ function showLog(regionIndex: number): void {
       : log.camoEarned
         ? `Camo pickups unlocked. ${entries.length - have} new sightings to find.`
         : `Easter eggs. Find all ${entries.length} to unlock camo pickups.`;
+  // The deep dig: the cards stand over one continuous cross-section down to the oil (log-dig.ts).
+  const progress = loadProgress();
+  const dig = mountDig(cards, screen.querySelector<HTMLElement>('.log-reward')!, (id) => regionOpen(REGIONS, REGIONS.findIndex((r) => r.id === id), progress.best, progress.demo));
+  screen.append(dig.el);
   onTap(screen.querySelector('.log-head')!, '.back', () => showLevels(regionIndex));
   app.replaceChildren(screen);
+  dig.layout();
+  void document.fonts?.ready.then(() => dig.layout());
   // A tree line along the horizon under the title, as on the level list.
   const rect = screen.getBoundingClientRect();
   const horizon = screen.querySelector('.log-head')!.getBoundingClientRect().bottom - rect.top + 8;

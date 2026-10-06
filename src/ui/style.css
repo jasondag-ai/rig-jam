@@ -3649,3 +3649,212 @@ canvas.berm-night { opacity: 0; transition: opacity var(--night-out) ease-in-out
 .region-tab .rlock { font-size: 9.5px; padding: 0 1px; }
 .region-tab.locked .rname { flex-direction: column; gap: 0; }
 .region-tab.locked img.padlock { width: 13px; height: 13px; flex: none; }
+
+/* ---------- The dig (Wildlife Log v2: log-dig.ts, log-dig-view.ts) ----------
+   One continuous cross-section behind the cards, down to the oil. The strata are ONE static SVG
+   (never animated: anything that moves here is a small element of its own, so scrolling stays
+   smooth). Cards stand in groups of four; between the groups a window opens on the formation. */
+.dig-col {
+  position: relative;
+  margin-top: 12px;
+  /* (The page's own bottom padding is below the reservoir.) */
+}
+
+.dig-bg {
+  position: absolute;
+  top: 0;
+  pointer-events: none;
+}
+
+.dig-bg svg.strata {
+  display: block;
+  overflow: visible; /* the wellhead stands up out of the grass */
+}
+
+/* The log ends in the reservoir: no strip of grass under the oil. */
+.screen.log { padding-bottom: 0; }
+.dig-window[data-layer='reef'] { box-sizing: content-box; padding-bottom: var(--safe-bottom); }
+
+.dig-col .log-cards {
+  position: relative;
+  margin: 0;
+}
+
+.dig-top {
+  position: relative;
+  height: 34px;
+}
+
+.dig-col .log-reward {
+  position: relative;
+  margin: 14px 4px 0;
+  background: rgba(255, 247, 230, 0.94);
+  border: 3px solid var(--outline);
+}
+
+.dig-window {
+  position: relative;
+}
+
+/* A formation's label: a small pill. A region's formation is greyed until that region is unlocked. */
+.dig-pill {
+  position: absolute;
+  left: 0;
+  top: 12px;
+  z-index: 1;
+  padding: 2px 10px 3px;
+  border: 2.5px solid var(--outline);
+  border-radius: 999px;
+  background: var(--cream);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 2px 0 var(--outline);
+}
+
+.dig-top .dig-pill { top: 5px; }
+
+.dig-pill.locked {
+  background: #cfc8ba;
+  color: #8a8276;
+  border-color: #7d7568;
+  box-shadow: 0 2px 0 #7d7568;
+}
+
+/* A buried thing: a button the size of its drawing (never under 44 px), its drawing centred. */
+.buried {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.buried svg {
+  display: block;
+  overflow: visible;
+  transform-origin: 50% 60%;
+}
+
+.buried.wiggle svg {
+  animation: buried-wiggle 520ms ease-in-out;
+}
+
+@keyframes buried-wiggle {
+  0%, 100% { transform: rotate(0) scale(1); }
+  15% { transform: rotate(-9deg) scale(1.06); }
+  35% { transform: rotate(8deg) scale(1.08); }
+  55% { transform: rotate(-6deg) scale(1.05); }
+  75% { transform: rotate(4deg) scale(1.02); }
+}
+
+/* The dinosaur egg: it cracks, one eye peeks out, blinks and it closes again. */
+.buried-egg .egg-peek,
+.buried-egg .egg-crack { opacity: 0; }
+.buried-egg .egg-eye { transform-box: fill-box; transform-origin: center; }
+.buried-egg.peek svg { animation: egg-rock 2400ms ease-in-out; }
+.buried-egg.peek .egg-crack { animation: egg-crack 2400ms linear; }
+.buried-egg.peek .egg-peek { animation: egg-open 2400ms linear; }
+.buried-egg.peek .egg-eye { animation: egg-blink 2400ms linear; }
+
+@keyframes egg-rock {
+  0%, 22%, 100% { transform: rotate(0); }
+  5% { transform: rotate(-7deg); }
+  11% { transform: rotate(6deg); }
+  17% { transform: rotate(-3deg); }
+}
+
+@keyframes egg-crack {
+  0%, 8% { opacity: 0; }
+  14%, 90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes egg-open {
+  0%, 22% { opacity: 0; }
+  28%, 80% { opacity: 1; }
+  88%, 100% { opacity: 0; }
+}
+
+@keyframes egg-blink {
+  0%, 50%, 62%, 100% { transform: scaleY(1); }
+  56% { transform: scaleY(0.1); }
+}
+
+/* The gopher's tunnel from his den down to where the phone fell (log-dig.ts tunnelSvg). */
+.dig-tunnel-slot,
+svg.dig-tunnel {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+/* What a buried thing says: one line, over it, with a tail pointing down at it. */
+.dig-bubble {
+  position: absolute;
+  z-index: 3;
+  width: max-content;
+  max-width: 100%;
+  white-space: nowrap;
+  padding: 7px 12px;
+  border: 3px solid var(--outline);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  transform-origin: var(--tail, 50%) calc(100% + 10px);
+  animation: pop-bubble 200ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+
+.dig-bubble::before,
+.dig-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  border: solid transparent;
+}
+
+.dig-bubble::before { left: calc(var(--tail, 50%) - 10px); border-width: 10px; border-top-color: var(--outline); }
+.dig-bubble::after { left: calc(var(--tail, 50%) - 6px); border-width: 6px; border-top-color: #fff; }
+
+/* Oil glistening in the reservoir: a few soft glints that brighten and fade (opacity only). */
+.oil-glint {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 226, 150, 0.95) 0 18%, rgba(255, 176, 46, 0.55) 40%, rgba(255, 176, 46, 0) 70%);
+  opacity: 0.25;
+  pointer-events: none;
+  will-change: opacity;
+  animation: oil-glint 3.2s ease-in-out infinite;
+}
+
+@keyframes oil-glint {
+  0%, 100% { opacity: 0.18; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buried.wiggle svg,
+  .buried-egg.peek svg,
+  .buried-egg.peek .egg-crack,
+  .buried-egg.peek .egg-peek,
+  .buried-egg.peek .egg-eye,
+  .dig-bubble,
+  .oil-glint { animation: none; }
+  /* The egg simply shows its eye while its line is up. */
+  .buried-egg.peek .egg-crack,
+  .buried-egg.peek .egg-peek { opacity: 1; }
+  .oil-glint { opacity: 0.7; }
+}
