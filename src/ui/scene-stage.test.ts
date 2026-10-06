@@ -54,7 +54,7 @@ describe('the standard Mannville scene', () => {
   it("has the reference's six trees (in the board's own drawings), three muskeg puddles, and the lane aspen apart, in front", () => {
     expect(MANN_TREES.map((t) => t.species)).toEqual(['spruce', 'aspen', 'willow', 'willow', 'aspen', 'spruce']);
     // The right grove and the bush are where the reference has them; the left grove is 56 right, clear of the biffy.
-    expect(MANN_TREES.map((t) => t.x)).toEqual([80, 110, 138, 238, 334, 366]);
+    expect(MANN_TREES.map((t) => t.x)).toEqual([80, 110, 138, 268, 334, 366]);
     for (const [w, strip] of STRIPS) {
       const g = sceneGeom(w, strip);
       const back = mannScene(g), front = mannFront();

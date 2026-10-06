@@ -3,6 +3,8 @@
 // Each gag is a timeline ported from its approved reference; `TimelineGag` runs one: its layers
 // cover the whole game screen and take no touches, so characters enter from fully off screen and
 // leave until fully off screen, never clipped (the gopher alone is cut off at his hole).
+import { setGround } from './puppet-stage.ts';
+import { LANE_UP } from './scenery.ts';
 import { markBeat } from './gag-beat.ts';
 import { sound } from '../audio/engine.ts';
 import type { GagId } from './gag-triggers.ts';
@@ -32,7 +34,24 @@ const beatAt = (beats: [number, string, string][], t: number) => beats.reduce((n
 export function stripGeom(screenW: number, strip: { top: number; bottom: number }): { ground: number; scale: number } {
   // Sized so the biffy (the tallest thing here, about 80 px at 390) stands clear of the berm above.
   const full = BIFFY_FRAC * screenW * 1.34;
-  return { ground: strip.bottom - 4, scale: Math.max(0.36, Math.min(1, (strip.bottom - strip.top - 12) / full)) };
+  return { ground: strip.bottom - LANE_UP, scale: Math.max(0.36, Math.min(1, (strip.bottom - strip.top - 12) / full)) };
+}
+/**
+ * THE STRIP'S DEPTH LINES (STANDING_RULES 1: lower on the screen is nearer, and draws in front).
+ * From the back: the BACK ROW up by the berm (the biffy, the lease sign and its visitors);
+ * PROP ROW 2 (the riser, the gopher's mound) and PROP ROW 1 (the gag bushes, the cow), each
+ * `propBack` behind the next; then the WALKING LANE (`stripGeom().ground`), where everybody who
+ * crosses the strip walks, clearly in front of every prop; and the scenery's front trees on the
+ * strip's floor, in front of the lane. A gag about a prop plays on that prop's own row, and the
+ * two rows are apart so that it passes the other row's prop clearly in front of it (the bear and
+ * the riser, the porcupine and the mound) or clearly behind it (the frozen worker's buddy and
+ * the bear's bush).
+ */
+export const propBack = (screenW: number, scale: number): number => Math.max(4, Math.round((8 * scale * screenW) / 390));
+/** The ground line of a prop row (screen px): row 1 is just behind the walking lane, row 2 behind that. */
+export function propLine(screenW: number, strip: { top: number; bottom: number }, row: 1 | 2): number {
+  const { ground, scale } = stripGeom(screenW, strip);
+  return ground - row * propBack(screenW, scale);
 }
 /** Where the biffy stands across the screen (a share of its width): in the corner of the bottom strip. */
 export const BIFFY_X = 0.08;
@@ -47,7 +66,8 @@ export function biffyStand(screenW: number, strip: { top: number; bottom: number
 /** The patch of the strip the biffy stands on (scenery keeps trees off it). */
 export function biffyBox(screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
   const { ground, width: w } = biffyStand(screenW, strip);
-  return { x: BIFFY_X * screenW - w * 0.5, y: ground - w * 1.3, width: w, height: w * 1.3 };
+  // (Its door swings open to the right: that side is kept clear of trees too, a door's width.)
+  return { x: BIFFY_X * screenW - w * 0.5, y: ground - w * 1.3, width: w * 2, height: w * 1.3 };
 }
 
 /** The lane from the biffy to the screen edge nearest it, where the roll and the shuffler leave (scenery keeps trees off it). */
@@ -107,7 +127,7 @@ export const BUSH_X = 0.76;
 export function bearBox(screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
   const { ground, scale } = stripGeom(screenW, strip);
   const left = (BUSH_X - BEAR_GAP * scale - BEAR_FRAC * scale * 0.3) * screenW, right = (BUSH_X + BUSH_FRAC * scale * 0.5) * screenW;
-  const h = BUSH_FRAC * scale * screenW * 0.6;
+  const h = BUSH_FRAC * scale * screenW * 1.1;
   return { x: left, y: ground - h, width: right - left, height: h };
 }
 
@@ -138,8 +158,9 @@ export class BushProp {
   /** Where it stands (shares of the screen) and how big the scene is. */
   spot(): { x: number; y: number; scale: number } {
     const screen = this.host.screen.getBoundingClientRect();
-    const { ground, scale } = stripGeom(screen.width, this.host.strip());
-    return { x: this.x, y: ground / (screen.height || 1), scale };
+    const { scale } = stripGeom(screen.width, this.host.strip());
+    // (Prop row 1: everybody crossing the strip passes in front of it.)
+    return { x: this.x, y: propLine(screen.width, this.host.strip(), 1) / (screen.height || 1), scale };
   }
 
   layout(): void {
@@ -181,26 +202,39 @@ export class BushProp {
   }
 }
 
-/** Where the porcupine's bush stands in Cardium (the reference: 0.52; a little left of that here, so the
- * worker at lunch by the mound sits clear of it), about where the scenery's own bush stood. */
-export const PORC_BUSH_X = 0.48;
+/** Where the porcupine's bush stands in Cardium: left of the stage (see `STAGE`), right of the sleepy worker's spot. (The reference: 0.52.) */
+export const PORC_BUSH_X = 0.31;
+/**
+ * THE STAGE (depth rule): the middle of the strip is where the walkers stop and act (the landowner
+ * on his quad, Safety Sam, the sitting bear). No prop stands there and the scenery keeps its
+ * trees out of it, so nobody ever stands parked in front of one (a pipe sticking up behind the
+ * bear's head). Props stand to its left or its right.
+ */
+export const STAGE = { from: 0.34, to: 0.67 } as const;
+export function stageBox(screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
+  return { x: STAGE.from * screenW, y: strip.top, width: (STAGE.to - STAGE.from) * screenW, height: strip.bottom - strip.top };
+}
+/** Where the lease sign stands on a Duvernay level: left of the stage (the sitting bear would cover it at its usual spot). */
+export const WINTER_SIGN_X = 0.3;
 /** The patch of the strip a gag bush stands on (scenery keeps trees off it). */
 export function bushBox(x: number, screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
   const { ground, scale } = stripGeom(screenW, strip);
   const w = BUSH_FRAC * scale * screenW;
-  return { x: x * screenW - w / 2, y: ground - w * 0.6, width: w, height: w * 0.6 };
+  // (Tall enough that no tree stands close behind the bush, where the bush would cover it.)
+  return { x: x * screenW - w / 2, y: ground - w * 1.1, width: w, height: w * 1.1 };
 }
 /** Where the Cardium mound stands for the gags: on the strip's ground line, its heap the size of the reference's. */
 export function moundSpot(screenW: number, strip: { top: number; bottom: number }): { baseY: number; w: number } {
-  const { ground, scale } = stripGeom(screenW, strip);
-  return { baseY: ground, w: moundWidthFor(screenW, scale) };
+  const { scale } = stripGeom(screenW, strip);
+  // (Prop row 2: the porcupine, bolting off along the bush's row, passes in front of it.)
+  return { baseY: propLine(screenW, strip, 2), w: moundWidthFor(screenW, scale) };
 }
 
 /**
- * Where the frosty riser stands on winter levels (a share of the screen's width): between the biffy
- * and the bear's bush, with room on both sides of it (the buddy comes back on its far side).
+ * Where the frosty riser stands on winter levels (a share of the screen's width): left of the stage
+ * (see `STAGE`: the bear sits in the middle), with room on both sides of it (the buddy comes back on its far side).
  */
-export const RISER_X = 0.5;
+export const RISER_X = 0.24;
 /** The patch of the strip the riser and the stuck worker stand on (scenery keeps trees off it). */
 export function riserBox(screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {
   const { ground, scale } = stripGeom(screenW, strip);
@@ -235,9 +269,10 @@ export class RiserProp {
     const screen = this.host.screen.getBoundingClientRect();
     if (!screen.height) return;
     const strip = this.host.strip();
-    const { ground, scale } = stripGeom(screen.width, strip);
+    const { scale } = stripGeom(screen.width, strip);
     this.pup.frac = RISER_FRAC * scale;
-    this.pup.spot = { x: RISER_X, y: ground / screen.height };
+    // (Prop row 2: the bear, walking in along his bush's row, passes in front of it.)
+    this.pup.spot = { x: RISER_X, y: propLine(screen.width, strip, 2) / screen.height };
     place(this.pup);
     // No room under the berm for it (a very short strip): it is left out rather than drawn over the lease.
     const berm = this.host.board.querySelector('canvas.berm')?.getBoundingClientRect();
@@ -293,9 +328,10 @@ export class CowProp {
   layout(): void {
     const screen = this.host.screen.getBoundingClientRect();
     if (!screen.height) return;
-    const { ground, scale } = stripGeom(screen.width, this.host.strip());
+    const { scale } = stripGeom(screen.width, this.host.strip());
     this.pup.frac = COW_FRAC * scale;
-    this.pup.spot = { x: COW_X, y: ground / screen.height };
+    // (Prop row 1: the landowner's quad and everybody else on the walking lane pass in front of her.)
+    this.pup.spot = { x: COW_X, y: propLine(screen.width, this.host.strip(), 1) / screen.height };
     this.rest();
   }
 
@@ -494,7 +530,7 @@ export const nearMissDef: TimelineDef = {
   end: N_END,
   stillAt: 6.6,
   build(layer, host) {
-    const mound = host.screen.querySelector<SVGElement>('.scenery [data-anchor="mound"]');
+    const mound = host.screen.querySelector<SVGElement>('[data-anchor="mound"]');
     if (!mound) return null;
     const screen = host.screen.getBoundingClientRect();
     const m = mound.getBoundingClientRect();
@@ -505,7 +541,7 @@ export const nearMissDef: TimelineDef = {
     const under = layer('gopher-layer');
     under.style.height = `${hole.y}px`;
     const over = layer('hotshot-layer');
-    const scene = nearMissScene(under, over, { x: hole.x / screen.width, y: 1 }, Math.min(hole.y + 12 * (screen.width / 390), stripGeom(screen.width, host.strip()).ground) / screen.height, scale);
+    const scene = nearMissScene(under, over, { x: hole.x / screen.width, y: 1 }, stripGeom(screen.width, host.strip()).ground / screen.height, scale);
     scene.holeY = hole.y;
     const w = GOPHER_FRAC * scale * screen.width;
     return { apply: (t) => nApply(scene, nPose(t), t), bubble: { from: 6.0, to: 7.8, text: NEAR_MISS_LINE, who: () => scene.g.q('.head'), at: () => ({ x: hole.x + (hole.x > screen.width * 0.6 ? -1 : 1) * w * 1.6, y: hole.y - w * 0.7 }) } };
@@ -534,7 +570,8 @@ export const biffyADef = (biffy: BiffyProp): TimelineDef => ({
   end: A_END,
   stillAt: 2.2,
   build(layer) {
-    layer('biffy-mark');
+    // (An empty layer that marks the gag; it stands with the biffy.)
+    setGround(layer('biffy-mark'), Number(biffy.layer.dataset.ground), 'set');
     const scene = { p: biffy.pup };
     return {
       apply: (t) => aApply(scene, t),
@@ -677,7 +714,7 @@ export const lunchDef: TimelineDef = {
   end: LUNCH_END,
   stillAt: 10.9,
   build(layer, host) {
-    const moundEl = host.screen.querySelector<SVGElement>('.scenery [data-anchor="mound"]');
+    const moundEl = host.screen.querySelector<SVGElement>('[data-anchor="mound"]');
     if (!moundEl) return null;
     const screen = host.screen.getBoundingClientRect();
     const m = moundEl.getBoundingClientRect();

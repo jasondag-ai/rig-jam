@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { BackAndForth, GAG_TRIGGERS, SHARES, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump } from './gag-triggers.ts';
 import { BEAR_BEATS, BEAR_END, bPose } from './bear.ts';
 import { BUSH_X, COW_X, PORC_BUSH_X, bearBox, bushBox, cowBox, moundSpot } from './strip-gags.ts';
+import { STAGE, propBack, propLine, signStand as signStandLine } from './strip-gags.ts';
+import { LANE_UP } from './scenery.ts';
 import { BUSH_BOX, BUSH_FRAC, bushMarkup } from './gag-bush.ts';
 import { LUNCH_BEATS, LUNCH_END, MOUND_DRAWN, lunchPose, moundWidthFor } from './gopher-lunch.ts';
 import { PC_BEATS, PC_END, SHIFT, pcPose } from './porcupine.ts';
@@ -142,7 +144,9 @@ describe('the bottom strip: the permanent biffy', () => {
     for (const [w, strip] of [[390, { top: 548, bottom: 730 }], [430, { top: 612, bottom: 810 }]] as const) {
       const box = biffyBox(w, strip);
       const worker = workerSpot(w, strip)!;
-      expect(Math.abs(box.x + box.width / 2 - BIFFY_X * w)).toBeLessThan(0.01);
+      // (The box runs from the biffy's left side to a door's width past its right: the door swings open that way.)
+      expect(box.x).toBeLessThan(BIFFY_X * w);
+      expect(box.x + box.width).toBeGreaterThan(BIFFY_X * w + box.width / 4);
       // Both are in the corner: the biffy up at the berm, the worker down by the tip line.
       expect(box.y + box.height).toBeLessThan(worker.clearing.y);
     }
@@ -390,11 +394,13 @@ describe('the porcupine (gag 12)', () => {
     expect(pcPose(PC_END + SHIFT).s.show).toBe(false);
   });
 
-  it('its bush stands between the biffy and the mound', () => {
+  it('its bush stands right of the biffy and LEFT OF THE STAGE (nobody stops in front of it)', () => {
     for (const [w, strip] of [[390, { top: 600, bottom: 700 }], [375, { top: 470, bottom: 538 }]] as const) {
-      const bush = bushBox(PORC_BUSH_X, w, strip), biffy = biffyBox(w, strip);
-      expect(bush.x).toBeGreaterThan(biffy.x + biffy.width);
-      expect(bush.x + bush.width).toBeLessThan(w * 0.66);
+      const bush = bushBox(PORC_BUSH_X, w, strip);
+      expect(bush.x).toBeGreaterThan(BIFFY_X * w + biffyStand(w, strip).width / 2);
+      // Sam stands at the middle, a worker's width wide: the bush is clear of him.
+      expect(bush.x + bush.width).toBeLessThanOrEqual(w * 0.5 - (0.19 * stripGeom(w, strip).scale * w) / 2 + 1);
+      expect(PORC_BUSH_X).toBeLessThan(STAGE.from);
     }
   });
 });
@@ -448,10 +454,11 @@ describe('gopher lunch (gag 13)', () => {
     expect(end.a.show).toBe(false);
     expect(end.food).toBe('gone');
   });
-  it("the board's mound is set on the strip's ground line with its heap the size of the reference's", () => {
+  it("the board's mound stands on prop row 2, behind the walking lane, with its heap the size of the reference's", () => {
     const strip = { top: 600, bottom: 700 };
     const spot = moundSpot(390, strip);
-    expect(spot.baseY).toBe(stripGeom(390, strip).ground);
+    expect(spot.baseY).toBe(propLine(390, strip, 2));
+    expect(spot.baseY).toBeLessThan(stripGeom(390, strip).ground - 6);
     expect((spot.w * MOUND_DRAWN) / 64).toBeCloseTo(0.13 * 390 * 0.92, 1);
     expect(moundWidthFor(390, 0.5)).toBeCloseTo(spot.w / 2, 5);
   });
@@ -549,12 +556,14 @@ describe('the frozen tongue (gag 15)', () => {
     expect(BUDDY).not.toContain('M48 39 Q50 54 64 54'); // no beard
   });
 
-  it('the riser stands between the biffy and the bear\'s bush, with room on both sides for the two of them', () => {
+  it('the riser stands right of the biffy and left of the stage (clear of the sitting bear), with room on both sides for the two of them', () => {
     for (const [w, strip] of [[390, { top: 600, bottom: 700 }], [375, { top: 470, bottom: 538 }], [430, { top: 660, bottom: 780 }]] as const) {
       const sc = stripGeom(w, strip).scale, u = (0.19 * sc * w) / 120, x = RISER_X * w;
       const biffy = biffyBox(w, strip);
       // The stuck worker stands clear of the biffy; the buddy's far spot is short of the bush; the riser itself is between them.
-      expect(x + (STAND - 5 - 18) * u).toBeGreaterThan(biffy.x + biffy.width - 2);
+      void biffy;
+      expect(x + (STAND - 5 - 18) * u).toBeGreaterThan(BIFFY_X * w + biffyStand(w, strip).width / 2 - 2);
+      expect(RISER_X).toBeLessThan(STAGE.from);
       expect(x + (BUDDY_FAR + 18) * u).toBeLessThan(BUSH_X * w - 0.09 * sc * w + 2);
       expect(riserBox(w, strip).x).toBeLessThan(x - 40 * sc);
       // About the worker's height, and inside a full strip.
@@ -669,5 +678,21 @@ describe('the sign gags (16 to 18)', () => {
     expect(end.swarm).toBeNull();
     expect(end.last).toBe(1);
     expect(TOUR_BEATS.length).toBe(10);
+  });
+});
+
+describe('the depth rule: the strip has one front-to-back order', () => {
+  it('back row, prop row 2, prop row 1, the walking lane, the floor: each clearly apart, at every strip size', () => {
+    for (const [w, strip] of [[390, { top: 580, bottom: 737 }], [390, { top: 537, bottom: 637 }], [375, { top: 489, bottom: 560 }], [360, { top: 520, bottom: 673 }], [430, { top: 652, bottom: 825 }]] as const) {
+      const lane = stripGeom(w, strip).ground, row1 = propLine(w, strip, 1), row2 = propLine(w, strip, 2);
+      expect(lane).toBe(strip.bottom - LANE_UP);
+      // Apart by more than the two pixels the depth test calls a tie.
+      expect(lane - row1, `${w} ${strip.top}`).toBeGreaterThanOrEqual(4);
+      expect(row1 - row2).toBeGreaterThanOrEqual(4);
+      expect(row1 - row2).toBe(propBack(w, stripGeom(w, strip).scale));
+      // The mound is on row 2; a full-size strip keeps the rows well under the back row's line.
+      expect(moundSpot(w, strip).baseY).toBe(row2);
+      if (strip.bottom - strip.top > 140) expect(row2).toBeGreaterThan(signStandLine(w, strip).ground + 20);
+    }
   });
 });
