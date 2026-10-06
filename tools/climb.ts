@@ -5,8 +5,8 @@
 // solvable and its par went up (or stayed, so the layout can drift away from its parent). It stops
 // when par is inside the window and the level looks different from its parent and the others.
 // The solver is capped at MAX_STATES per candidate; anything over the cap is skipped.
-//   node tools/climb.ts <job id> <minutes> <out dir>
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+//   node tools/climb.ts <job id> <minutes> <out dir> [min par] [seed] [base id]
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { COLORS, SolverLimitError, parseLevel, solve } from '../src/engine/index.ts';
 import type { Level } from '../src/engine/index.ts';
 import { convoyRaisesPar, everyPumpjackInTheWay, mulberry32, slidesIn, withoutShifts } from './generator.ts';
@@ -23,11 +23,13 @@ export const JOBS: Record<string, Job> = {
   n01: { base: 'n02', region: 'mannville', min: 14, max: 14, prep: (l) => ({ ...stripConvoys(l), obstacles: [] }), plain: true, seed: 11 },
   // Bakken 1: load racks, no clock. Bakken 2: one clock.
   k01: { base: 'k03', region: 'bakken', min: 18, max: 18, prep: keepShifts(0), shifts: 0, seed: 21 },
-  k02: { base: 'k04', region: 'bakken', min: 18, max: 18, prep: keepShifts(1), shifts: 1, seed: 22 },
+  // The one-clock level: it would not come down to 18, so it is a par 19 level (Jay, Oct 6).
+  k02: { base: 'k04', region: 'bakken', min: 19, max: 19, prep: keepShifts(1), shifts: 1, seed: 22 },
   k07: { base: 'k06', region: 'bakken', min: 21, max: 22, seed: 27 },
-  k08: { base: 'k05', region: 'bakken', min: 22, max: 23, trucks: 9, seed: 28 },
+  // The two late slots, climbed from the 9-truck levels (from the 8-truck ones they stuck at 20).
+  k08: { base: 'k07', region: 'bakken', min: 21, max: 24, seed: 28 },
   k09: { base: 'k06', region: 'bakken', min: 22, max: 23, seed: 29 },
-  k10: { base: 'k05', region: 'bakken', min: 23, max: 24, trucks: 9, seed: 30 },
+  k10: { base: 'k09', region: 'bakken', min: 22, max: 24, seed: 30 },
 };
 
 const FIXED = new URL('./fixed-levels/', import.meta.url);
@@ -125,12 +127,13 @@ function sound(level: Level, par: number, job: Job): boolean {
 }
 
 function main() {
-  const [id, minutes, out] = process.argv.slice(2);
-  const job = JOBS[id];
+  const [id, minutes, out, min, seed, base] = process.argv.slice(2);
+  const job = { ...JOBS[id], ...(min ? { min: +min } : {}), ...(seed ? { seed: +seed } : {}), ...(base ? { base } : {}) };
   const deadline = Date.now() + +minutes * 60_000;
   const rng = mulberry32(job.seed * 7919);
   const parent = readFixed(job.base);
-  const others = ['n02', 'n03', 'n04', 'n05', 'n06', 'n07', 'n08', 'n09', 'n10', 'k03', 'k04', 'k05', 'k06'].filter((x) => x[0] === id[0]).map(readFixed);
+  // Every level its region already has (but not an older one in its own slot).
+  const others = readdirSync(FIXED).map((f) => f.replace('.json', '')).filter((x) => x[0] === id[0] && x !== id).map(readFixed);
   const DIFF = 4;
   mkdirSync(out, { recursive: true });
   let cur = (job.prep ?? ((x) => x))(parent);

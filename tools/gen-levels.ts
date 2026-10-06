@@ -150,8 +150,6 @@ const REGIONS: RegionConfig[] = [
     // Level 1 has racks and no clock gate; level 2 brings in one clock gate.
     id: 'bakken',
     prefix: 'k',
-    // HELD (Jay, Oct 5): Bakken waits for a second pass; Mannville shipped first.
-    held: true,
     kindSeed: 12000,
     truckKindSeed: 13000,
     slots: [
