@@ -4169,6 +4169,14 @@ svg.dig-tunnel {
 
 /* A find gives a tiny wiggle as it slides into view, to catch the eye mid-swipe. */
 .buried.glance svg { animation: find-glance 460ms ease-in-out; }
+/* The compass in the outer core: its needle spins (one small element; never under reduced motion). */
+.buried .find-spin { transform-box: fill-box; transform-origin: 50% 50%; animation: find-spin 2.6s linear infinite; }
+@keyframes find-spin {
+  0% { transform: rotate(0); }
+  35% { transform: rotate(250deg); }
+  55% { transform: rotate(200deg); }
+  100% { transform: rotate(720deg); }
+}
 @keyframes find-glance {
   0%, 100% { transform: rotate(0); }
   30% { transform: rotate(-5deg); }
@@ -4177,6 +4185,7 @@ svg.dig-tunnel {
 
 @media (prefers-reduced-motion: reduce) {
   .buried.glance svg { animation: none; }
+  .buried .find-spin { animation: none; }
 }
 
 /* ---------- Beta readiness (Job O) ---------- */

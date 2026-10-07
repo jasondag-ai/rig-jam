@@ -869,17 +869,22 @@ something, give exact clicks and one command at a time.
     twin's tiles in reverse, turned over). `showTiles` (on scroll) keeps only the tiles within a
     screen of what shows (`tilesNear`): never more than about 8 on the page. Mantle and outer
     core tiles carry one `.deep-glow` light (opacity only).
-  - FINDS (`dig-finds.ts`, a data file for Jay): `DIG_FINDS`, nine, tapped like buried things
-    (wiggle, one line from `BURIED_LINES`; drawings in `FIND_ART`): a gold nugget in a quartz vein
-    (granite), a frozen burrito, a diamond and the magpie's stolen spoon (mantle), the sleepy
-    worker's pail and the lost lunchbox dead on the centre (inner core), a mole in a headlamp
-    (mantle, on the way back up), a whale and a giant squid (the ocean, both belly up to us).
-    Each is placed by `screen` (phone screens below the reservoir). THE RHYTHM: a PLACE (a find
-    or an empty slot) every 3 to 4 screens, slightly uneven, never two on one screen, and NOTHING
-    in the last `QUIET_SCREENS` (5) before the island. `DIG_SLOTS`: 7 EMPTY marked slots for
-    future gag finds (keep at least 3): they are the gaps in the rhythm, so until they are
-    filled the outer core and the way back up are long quiet stretches. A find gives a tiny
-    wiggle by itself as it slides into view (`.glance`, an IntersectionObserver; not with reduced motion).
+  - FINDS (`dig-finds.ts`, a data file for Jay): `DIG_FINDS`, SEVENTEEN, tapped like buried things
+    (wiggle, one line from `BURIED_LINES`; drawings in `FIND_ART`): a gold nugget in a quartz vein,
+    a lost hard hat and a wooden core box (the basement); a toasted marshmallow on a stick (upper
+    mantle), a frozen burrito, a diamond and the magpie's stolen spoon (mantle); the sleepy
+    worker's pail and the lost lunchbox dead on the centre (inner core); a compass whose needle
+    spins (`.find-spin`; outer core, on the way back up); a mole in a headlamp and a rubber duck
+    (mantle, on the way back up); a black smoker with tube worms and a message in a bottle (the
+    seafloor); a whale, a giant squid and a sunk pickup (the ocean; the far side is upside down).
+    Each is placed by `screen` (phone screens below the reservoir). THE RHYTHM (Jay, Oct 6): A
+    FIND every 3 to 4 screens, EMPTY SLOTS NOT COUNTED, slightly uneven, never two on one screen,
+    and NOTHING in the last `QUIET_SCREENS` (5) before the island. THE LAYERS ARE CUT TO FIT IT
+    (`PLAN`, in tiles, 120 = 60 screens): 9.5 screens of basement for its three finds, 5 of
+    seafloor for its two, the mantle shorter on the way back up than on the way down (its tiles
+    are the twin's, mirrored from the twin's foot). `DIG_SLOTS`: 4 EMPTY marked slots for future
+    gag finds (keep at least 3), each a screen and a half or more from the finds beside it. A find
+    gives a tiny wiggle by itself as it slides into view (`.glance`; not with reduced motion).
   - DEPTH PILL (`.dig-gauge`, a sticky rail in the column, the pill on the right): real km at a
     line that moves from the screen's top (page top) to its foot (page end) as the page scrolls
     (`gaugeLine`), read off marks at every layer's end (`marksFrom`, `depthKm`; `UPPER_KM` for the

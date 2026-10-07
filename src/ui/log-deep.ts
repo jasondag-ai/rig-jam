@@ -37,18 +37,22 @@ export interface DeepLayer {
  */
 export const DIG = { screens: 60, screenPx: 844, tile: 422 } as const;
 
-/** Each layer's share of the dig (about 1 in all), and the depth at its foot (km, straight through the Earth). */
-const PLAN: { id: DeepId; name: string; share: number; km: number }[] = [
-  { id: 'granite', name: 'Precambrian basement', share: 0.05, km: 35 },
-  { id: 'mantle', name: 'Mantle', share: 0.2, km: 2890 },
-  { id: 'outerCore', name: 'Outer core', share: 0.12, km: 5150 },
-  { id: 'innerCore', name: 'Inner core', share: 0.1, km: EARTH.far - 5150 },
-  { id: 'outerCoreUp', name: 'Outer core', share: 0.12, km: EARTH.far - 2890 },
-  { id: 'mantleUp', name: 'Mantle', share: 0.2, km: EARTH.far - 11 },
-  { id: 'oceanCrust', name: 'Ocean crust', share: 0.035, km: EARTH.far - 4.4 },
-  { id: 'seafloor', name: 'Seafloor', share: 0.015, km: EARTH.far - 4 },
-  // (The sea is ten screens deep: two finds, then five empty screens of suspense before the island.)
-  { id: 'ocean', name: 'Southern Ocean', share: 0.17, km: EARTH.far },
+/**
+ * Each layer's height in TILES (half screens; 120 in all: the dig's 60 screens), and the depth at its
+ * foot (km, straight through the Earth). CUT TO THE FINDS' RHYTHM (dig-finds.ts: one every 3 to 4
+ * screens): the basement is long enough for its three finds, the seafloor for its two, the sea for
+ * three and then five empty screens; the way back up is shorter than the way down.
+ */
+const PLAN: { id: DeepId; name: string; tiles: number; km: number }[] = [
+  { id: 'granite', name: 'Precambrian basement', tiles: 19, km: 35 },
+  { id: 'mantle', name: 'Mantle', tiles: 23, km: 2890 },
+  { id: 'outerCore', name: 'Outer core', tiles: 6, km: 5150 },
+  { id: 'innerCore', name: 'Inner core', tiles: 14, km: EARTH.far - 5150 },
+  { id: 'outerCoreUp', name: 'Outer core', tiles: 6, km: EARTH.far - 2890 },
+  { id: 'mantleUp', name: 'Mantle', tiles: 14, km: EARTH.far - 11 },
+  { id: 'oceanCrust', name: 'Ocean crust', tiles: 1, km: EARTH.far - 4.4 },
+  { id: 'seafloor', name: 'Seafloor', tiles: 10, km: EARTH.far - 4 },
+  { id: 'ocean', name: 'Southern Ocean', tiles: 27, km: EARTH.far },
 ];
 /** The far surface: one screen-high picture at the very end (not part of the dirt's length). */
 export const SURFACE_PX = 460;
@@ -57,10 +61,10 @@ export const SURFACE_PX = 460;
  * Past the reservoir, top of the page to bottom. The crust ends at 35 km, the mantle at 2,890, the
  * outer core at 5,150; the centre (6,371) is the MIDDLE of the inner core. Then back up: the same
  * depths counted from the far surface, which has an ocean's crust under 4 km of sea. Every
- * layer is a whole number of tiles tall; the two mirrored layers are as tall as their twins.
+ * layer is a whole number of tiles tall.
  */
 export const DEEP: DeepLayer[] = [
-  ...PLAN.map((l) => ({ id: l.id, name: l.name, km: l.km, height: Math.max(1, Math.round((l.share * DIG.screens * DIG.screenPx) / DIG.tile)) * DIG.tile })),
+  ...PLAN.map((l) => ({ id: l.id, name: l.name, km: l.km, height: l.tiles * DIG.tile })),
   { id: 'kerguelen', name: 'Kerguelen Islands', height: SURFACE_PX, km: EARTH.far },
 ];
 
@@ -159,6 +163,62 @@ const pic = (w: number, h: number, body: string) => `<svg viewBox="0 0 ${w} ${h}
 
 /** A find's drawing, by its id (dig-finds.ts). */
 const FIND_ART: Record<OddityId, () => string> = {
+  hardhat: () =>
+    // A yellow hard hat, lost: a little scuffed, its brim to the right.
+    pic(62, 46,
+      `<path d="M8 34 Q8 8 31 8 Q54 8 54 34 Z" fill="#f2c230" ${ol}/><path d="M16 26 Q18 14 30 12" fill="none" stroke="#fde27a" stroke-width="3" stroke-linecap="round"/>` +
+      `<path d="M31 8 L31 33" stroke="${O}" stroke-width="1.6"/><rect x="3" y="32" width="56" height="7" rx="3.5" fill="#f2c230" ${ol}/>` +
+      `<path d="M40 18 l5 3 M42 24 l4 1" stroke="#b98a12" stroke-width="1.6" stroke-linecap="round"/>`),
+  corebox: () =>
+    // A wooden core box: four rows of grey rock core between its slats, nobody's writing on the end.
+    pic(88, 50,
+      `<rect x="4" y="8" width="80" height="36" rx="2" fill="#b98448" ${ol}/>` +
+      [14, 23, 32].map((y) => `<path d="M6 ${y + 2.5} H82" stroke="${O}" stroke-width="1.6"/>`).join('') +
+      [0, 1, 2, 3].map((r) => `<rect x="${9 + (r % 2) * 3}" y="${10.6 + r * 9}" width="${66 - (r % 2) * 9}" height="4.6" rx="2.3" fill="${['#9aa0a8', '#7f8791', '#b3b8bf', '#8d949d'][r]}" ${thin}/><path d="M${28 + r * 7} ${10.6 + r * 9} v4.6 M${50 - r * 5} ${10.6 + r * 9} v4.6" stroke="${O}" stroke-width="1"/>`).join('') +
+      `<rect x="78" y="8" width="6" height="36" fill="#9a6a34" ${thin}/><path d="M4 8 L10 3 L88 3 L84 8" fill="#d2a368" ${thin} transform="translate(-2 0)"/>`),
+  marshmallow: () =>
+    // A marshmallow on a stick, toasted golden (down here, at last, it is done).
+    pic(44, 80,
+      `<path d="M22 30 L26 76" stroke="${O}" stroke-width="5" stroke-linecap="round"/><path d="M22 30 L26 76" stroke="#9a6a34" stroke-width="2.2" stroke-linecap="round"/>` +
+      `<rect x="9" y="8" width="26" height="28" rx="8" fill="#f7e9c8" ${ol}/><path d="M11 22 Q14 34 22 35 Q31 34 33 22 Q30 30 22 30 Q14 30 11 22 Z" fill="#c9853a"/>` +
+      `<path d="M13 12 Q20 8 30 12" fill="none" stroke="#fffaf0" stroke-width="2.4" stroke-linecap="round"/><path d="M15 26 q2 3 5 3 M25 28 q3 -1 5 -4" fill="none" stroke="#8a5220" stroke-width="1.6" stroke-linecap="round"/>` +
+      `<path d="M16 5 q-3 -3 0 -5 M24 4 q3 -3 0 -5" fill="none" stroke="#cfc8bd" stroke-width="1.8" stroke-linecap="round" transform="translate(0 2)"/>`),
+  compass: () =>
+    // A compass whose needle cannot make up its mind (it spins: `.find-spin`, a small element, still under reduced motion).
+    pic(54, 54,
+      `<circle cx="27" cy="29" r="21" fill="#c9a24a" ${ol}/><circle cx="27" cy="29" r="16" fill="#fbf7ea" ${thin}/><rect x="23" y="2" width="8" height="7" rx="2.5" fill="#c9a24a" ${thin}/>` +
+      [0, 90, 180, 270].map((a) => `<path d="M27 15 v3.4" stroke="${O}" stroke-width="1.6" stroke-linecap="round" transform="rotate(${a} 27 29)"/>`).join('') +
+      `<g class="find-spin"><path d="M27 16 L31 29 L27 42 L23 29 Z" fill="#f4f1ea" ${thin}/><path d="M27 16 L31 29 L23 29 Z" fill="#e5484d" ${thin}/></g><circle cx="27" cy="29" r="2.2" fill="${O}"/>`),
+  duck: () =>
+    // A yellow rubber duck: it floats in anything, molten rock included.
+    pic(58, 52,
+      `<path d="M8 34 Q6 22 18 24 Q26 26 30 24 Q30 12 40 10 Q52 10 52 22 Q52 28 48 30 Q52 44 34 46 Q12 48 8 34 Z" fill="#fbd23c" ${ol}/>` +
+      `<path d="M50 20 L57 22 L50 26 Z" fill="#f08a24" ${thin}/><circle cx="43" cy="18" r="2.4" fill="${O}"/><circle cx="43.8" cy="17.2" r="0.8" fill="#fff"/>` +
+      `<path d="M16 34 Q24 30 32 34 Q26 42 16 38 Z" fill="#f2b81e" ${thin}/><path d="M34 14 Q38 11 43 12" fill="none" stroke="#fff3a8" stroke-width="2.4" stroke-linecap="round"/>`),
+  smoker: () =>
+    // A black smoker on the seafloor, hanging down to us (the far side is upside down): a dark chimney
+    // pouring black smoke, red-plumed tube worms round its foot.
+    pic(84, 116,
+      `<g transform="rotate(180 42 58)">` +
+      `<path d="M30 110 Q28 78 34 56 Q38 44 46 44 Q54 46 54 60 Q56 84 58 110 Z" fill="#3a3640" ${ol}/><path d="M36 100 Q36 78 40 60" fill="none" stroke="#5b5665" stroke-width="3" stroke-linecap="round"/>` +
+      `<path d="M38 44 Q28 36 36 28 Q28 18 40 14 Q38 4 50 6 Q62 6 58 18 Q68 22 60 32 Q66 40 54 44 Z" fill="#26232b" ${ol}/><path d="M42 36 Q38 30 44 26 M50 20 Q54 16 52 12" fill="none" stroke="#4a4652" stroke-width="2.4" stroke-linecap="round"/>` +
+      [[14, 110, 84, -6], [22, 110, 78, 2], [66, 110, 80, 4], [74, 110, 88, -4]].map(([x, y, top, lean]) => `<path d="M${x} ${y} Q${x + lean} ${(y + top) / 2} ${x + lean * 0.5} ${top}" fill="none" stroke="${O}" stroke-width="6" stroke-linecap="round"/><path d="M${x} ${y} Q${x + lean} ${(y + top) / 2} ${x + lean * 0.5} ${top}" fill="none" stroke="#f1ece2" stroke-width="3" stroke-linecap="round"/><ellipse cx="${x + lean * 0.5}" cy="${top - 4}" rx="3.6" ry="6" fill="#d9363e" ${thin}/>`).join('') +
+      `<path d="M4 112 Q42 104 80 112" fill="none" stroke="${O}" stroke-width="3" stroke-linecap="round"/></g>`),
+  bottle: () =>
+    // A corked bottle lying on the seafloor, a rolled note inside it.
+    pic(76, 44,
+      `<g transform="rotate(-10 38 22)"><path d="M8 14 Q4 22 8 30 L44 31 Q52 31 56 26 L66 25 L66 19 L56 18 Q52 13 44 13 Z" fill="#a9dcc8" fill-opacity="0.85" ${ol}/>` +
+      `<rect x="65" y="18" width="7" height="8" rx="2" fill="#b98448" ${thin}/><rect x="18" y="17" width="22" height="10" rx="2" fill="#fbf3dc" ${thin}/><path d="M22 20 h12 M22 23.5 h9" stroke="#8a7d68" stroke-width="1.2" stroke-linecap="round"/>` +
+      `<path d="M12 17 Q24 14 40 15" fill="none" stroke="#e9fbf4" stroke-width="2.2" stroke-linecap="round"/></g>`),
+  pickup: () =>
+    // A red pickup sunk nose down in the sea, wheels up to us (this side of the world is upside down), a few bubbles.
+    pic(124, 76,
+      `<g transform="rotate(168 62 40)">` +
+      `<path d="M10 44 L10 30 L44 30 L52 14 L84 14 L94 30 L112 32 Q118 34 118 44 L118 50 L10 50 Z" fill="#d9363e" ${ol}/>` +
+      `<path d="M56 18 L80 18 L88 30 L50 30 Z" fill="#bfe3f5" ${thin}/><path d="M68 18 V30" stroke="${O}" stroke-width="1.6"/><path d="M10 38 H44" stroke="#a3262d" stroke-width="2.4"/>` +
+      `<rect x="6" y="42" width="8" height="6" rx="2" fill="#c9ccd2" ${thin}/><rect x="112" y="40" width="9" height="6" rx="2" fill="#f7e9a8" ${thin}/>` +
+      [34, 94].map((x) => `<circle cx="${x}" cy="52" r="11" fill="#2a2420" ${ol}/><circle cx="${x}" cy="52" r="4.6" fill="#c9ccd2" ${thin}/>`).join('') +
+      `</g><circle cx="100" cy="14" r="3.2" fill="none" stroke="#e9f6fd" stroke-width="1.6"/><circle cx="108" cy="6" r="2" fill="none" stroke="#e9f6fd" stroke-width="1.4"/><circle cx="92" cy="6" r="1.6" fill="none" stroke="#e9f6fd" stroke-width="1.2"/>`),
   nugget: () =>
     // A vein of milky quartz across the granite, a gold nugget set in it.
     pic(70, 52,
@@ -280,7 +340,8 @@ export const tilesIn = (id: DeepId): number => (id === 'kerguelen' ? 0 : DEEP.fi
 export function tileSvg(id: Exclude<DeepId, 'kerguelen'>, k: number, width: number): string {
   const up = id === 'outerCoreUp' || id === 'mantleUp';
   const base = id === 'outerCoreUp' ? 'outerCore' : id === 'mantleUp' ? 'mantle' : id;
-  const kk = up ? tilesIn(id) - 1 - k : k;
+  // (Mirrored from the twin's own foot: the way back up starts with the deepest tile of the way down. It may be the shorter of the two.)
+  const kk = up ? tilesIn(base as Exclude<DeepId, 'kerguelen'>) - 1 - k : k;
   const h = DIG.tile;
   const rng = mulberry32(((base.charCodeAt(0) * 131 + base.length) * 7919 + kk * 104729) >>> 0);
   const r = (a: number, b: number) => a + rng() * (b - a);

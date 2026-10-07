@@ -262,7 +262,7 @@ console.log('\nwebkit 390x844: the depth gauge, the stopwatch and Dug Through');
     const said = await page.evaluate((id) => ({ text: document.querySelector('.dig-bubble')?.textContent, wiggle: document.querySelector(`.oddity[data-id="${id}"]`).classList.contains('wiggle'), fits: (() => { const q = document.querySelector('.dig-bubble')?.getBoundingClientRect(); return q && q.left >= 0 && q.right <= innerWidth + 0.5; })() }), o.id);
     if (!(seenIt.layer === o.layer && seenIt.top && seenIt.w >= 44 && seenIt.h >= 44 && said.text === BURIED_LINES[o.id] && said.wiggle && said.fits)) odd.push(`${o.id}: ${JSON.stringify({ seenIt, said })}`);
   }
-  check(odd.length === 0 && ODDITIES.length === 9, `${ODDITIES.length} finds in the dirt (${ODDITIES.map((o) => o.id).join(', ')}): each lies in its layer and wiggles and speaks on a tap${odd.length ? ` (wrong: ${odd.join(' | ').slice(0, 600)})` : ''}`);
+  check(odd.length === 0 && ODDITIES.length === 17, `${ODDITIES.length} finds in the dirt (${ODDITIES.map((o) => o.id).join(', ')}): each lies in its layer and wiggles and speaks on a tap${odd.length ? ` (wrong: ${odd.join(' | ').slice(0, 600)})` : ''}`);
   check(glanced === ODDITIES.length, `each gives a tiny wiggle as it slides into view (${glanced} of ${ODDITIES.length})`);
   await context.close();
 }

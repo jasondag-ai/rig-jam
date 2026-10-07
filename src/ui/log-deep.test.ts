@@ -25,11 +25,16 @@ describe('the dig through the Earth: how long, and what layers', () => {
 
   it('granite, mantle, outer core, inner core, then mirrored back up, ocean crust, seafloor, the Southern Ocean, and the Kerguelen Islands', () => {
     expect(DEEP.map((l) => l.name)).toEqual(['Precambrian basement', 'Mantle', 'Outer core', 'Inner core', 'Outer core', 'Mantle', 'Ocean crust', 'Seafloor', 'Southern Ocean', 'Kerguelen Islands']);
-    // Mirrored: the same heights either side of the inner core.
+    // Cut to the finds' rhythm (dig-finds.ts): the outer core is as tall either side of the inner core; the way back up
+    // through the mantle is shorter than the way down; the seafloor has room for its two finds.
     expect(DEEP[4].height).toBe(DEEP[2].height);
-    expect(DEEP[5].height).toBe(DEEP[1].height);
-    // Thick layers: the mantle alone is a dozen screens, each time.
+    expect(DEEP[5].height).toBeLessThan(DEEP[1].height);
     expect(DEEP[1].height / DIG.screenPx).toBeGreaterThan(10);
+    expect(DEEP[0].height / DIG.screenPx).toBeGreaterThanOrEqual(9);
+    expect(DEEP[7].height / DIG.screenPx).toBeGreaterThanOrEqual(5);
+    // Still sixty screens in all, every layer a whole number of tiles.
+    expect(DEEP.slice(0, 9).reduce((n, l) => n + l.height, 0)).toBe(DIG.screens * DIG.screenPx);
+    for (const l of DEEP.slice(0, 9)) expect(l.height % DIG.tile, l.id).toBe(0);
     // Real depths: crust 35 km, mantle to 2,890, outer core to 5,150, and the same counted back from the far side.
     expect(DEEP.map((l) => l.km).slice(0, 3)).toEqual([35, 2890, 5150]);
     expect(EARTH).toEqual({ centre: 6371, far: 12742 });
@@ -69,8 +74,11 @@ describe('the dirt is procedural, and only drawn near the screen', () => {
   it("the mirrored layers draw their twin's tiles in reverse order, turned over", () => {
     const body = (id: Dirt, k: number) => tileSvg(id, k, 390).replace(/^<svg[^>]*><g[^>]*>/, '');
     const n = tilesIn('mantle');
+    // (From the twin's own foot: the way back up begins with the deepest tile of the way down; it is the shorter of the two.)
+    const up = tilesIn('mantleUp');
+    expect(up).toBeLessThan(n);
     expect(body('mantleUp', 0)).toBe(body('mantle', n - 1));
-    expect(body('mantleUp', n - 1)).toBe(body('mantle', 0));
+    expect(body('mantleUp', up - 1)).toBe(body('mantle', n - up));
     expect(body('outerCoreUp', 3)).toBe(body('outerCore', tilesIn('outerCore') - 4));
     expect(tileSvg('mantleUp', 0, 390)).toContain('scale(1 -1)');
     expect(tileSvg('mantle', 0, 390)).not.toContain('scale(1 -1)');
@@ -186,23 +194,33 @@ describe('finds in the dirt (dig-finds.ts)', () => {
   const places = [...DIG_FINDS.map((f) => ({ name: f.id as string, layer: f.layer, screen: f.screen, x: f.x, find: true })), ...DIG_SLOTS.map((p) => ({ name: p.slot, layer: p.layer, screen: p.screen, x: p.x, find: false }))].sort((a, b) => a.screen - b.screen);
   const screens = DIRT.reduce((sum, l) => sum + l.height, 0) / DIG.screenPx;
 
-  it('nine finds, each where Jay put it, with its line', () => {
+  it('seventeen finds, each in the layer Jay put it, with its line', () => {
     expect(ODDITIES).toBe(DIG_FINDS);
-    expect(DIG_FINDS.map((o) => [o.id, o.layer])).toEqual([['nugget', 'granite'], ['burrito', 'mantle'], ['diamond', 'mantle'], ['spoon', 'mantle'], ['pail', 'innerCore'], ['lunchbox', 'innerCore'], ['mole', 'mantleUp'], ['whale', 'ocean'], ['squid', 'ocean']]);
+    expect(DIG_FINDS.map((o) => [o.id, o.layer])).toEqual([
+      ['nugget', 'granite'], ['hardhat', 'granite'], ['corebox', 'granite'], ['marshmallow', 'mantle'], ['burrito', 'mantle'], ['diamond', 'mantle'], ['spoon', 'mantle'],
+      ['pail', 'innerCore'], ['lunchbox', 'innerCore'], ['compass', 'outerCoreUp'], ['mole', 'mantleUp'], ['duck', 'mantleUp'], ['smoker', 'seafloor'], ['bottle', 'seafloor'],
+      ['whale', 'ocean'], ['squid', 'ocean'], ['pickup', 'ocean'],
+    ]);
     expect(BURIED_LINES).toMatchObject({
       nugget: 'Not today, prospector.', burrito: 'Still frozen in the middle.', diamond: 'Pressure makes diamonds.', spoon: 'Shiny.', pail: "He'll want that back.",
       lunchbox: 'Halfway. Snack break.', mole: 'Is this Alberta?', whale: 'Long way from Alberta.', squid: 'Just passing through.',
+      // The eight fillers, Jay's own lines.
+      hardhat: "Found it. Tuesday's hard hat.", corebox: 'Core box. Nobody logged it.', marshmallow: "Now it's done.", compass: 'North is... yes.',
+      duck: 'It floats in anything.', smoker: 'Deep-sea hot tub.', bottle: 'Return to sender: Alberta.', pickup: 'Wrong gate. Very wrong gate.',
     });
-    // The burrito is in the UPPER mantle, the pail near the centre, the lunchbox dead on it.
+    // The marshmallow is in the UPPER mantle, the lunchbox dead on the centre of the Earth, the compass in the outer core, the duck on the way back up.
     const at = (id: string) => DIG_FINDS.find((f) => f.id === id)!.screen * DIG.screenPx;
-    expect(at('burrito') - layerTop('mantle')).toBeLessThan(DEEP[1].height / 4);
+    expect(at('marshmallow') - layerTop('mantle')).toBeLessThan(DEEP[1].height / 4);
     expect(at('lunchbox')).toBe(layerTop('innerCore') + DEEP[3].height / 2);
-    expect(Math.abs(at('pail') - at('lunchbox')) / DIG.screenPx).toBeLessThan(3);
+    expect(at('duck')).toBeGreaterThan(at('lunchbox'));
     for (const o of DIG_FINDS) {
       expect(BURIED_LINES[o.id].length, o.id).toBeLessThanOrEqual(40);
+      expect(BURIED_LINES[o.id], o.id).not.toMatch(/[—–]/);
       expect(oddityArt(o.id), o.id).toContain(`viewBox="0 0 ${o.w} ${o.h}"`);
       expect(oddityArt(o.id), o.id).toContain('#2a1a0c');
     }
+    // The compass's needle is the one part that turns.
+    expect(oddityArt('compass')).toContain('class="find-spin"');
   });
 
   it('every place lies in the layer it says, as a full tap target clear of the depth pill', () => {
@@ -220,30 +238,29 @@ describe('finds in the dirt (dig-finds.ts)', () => {
     }
   });
 
-  it('THE RHYTHM: a place (a find or an empty slot) every 3 to 4 screens or so, slightly uneven, never two on one screen', () => {
-    const gaps = places.slice(1).map((p, i) => +(p.screen - places[i].screen).toFixed(2));
-    expect(places[0].screen).toBeGreaterThan(1);
-    expect(places[0].screen).toBeLessThan(3);
-    for (const [i, g] of gaps.entries()) {
-      expect(g, `${places[i].name} to ${places[i + 1].name}`).toBeGreaterThan(1.5);
-      expect(g, `${places[i].name} to ${places[i + 1].name}`).toBeLessThanOrEqual(4.01);
-    }
-    // All but the pail and the lunchbox (both by the centre) are 3 screens or more apart.
-    expect(gaps.filter((g) => g < 3)).toHaveLength(1);
-    // Slightly uneven: not one fixed step.
-    expect(new Set(gaps).size).toBeGreaterThanOrEqual(5);
-    // Never two finds on one screen, whatever the screen's height.
+  it('THE RHYTHM: a FIND every 3 to 4 screens (empty slots not counted), slightly uneven, never two on one screen', () => {
     const finds = places.filter((p) => p.find);
-    for (let i = 1; i < finds.length; i++) expect(finds[i].screen - finds[i - 1].screen, finds[i].name).toBeGreaterThan(1.5);
+    const gaps = finds.slice(1).map((p, i) => +(p.screen - finds[i].screen).toFixed(2));
+    expect(finds).toHaveLength(17);
+    expect(finds[0].screen).toBeGreaterThan(1);
+    expect(finds[0].screen).toBeLessThan(3);
+    for (const [i, g] of gaps.entries()) {
+      expect(g, `${finds[i].name} to ${finds[i + 1].name}`).toBeGreaterThanOrEqual(3);
+      expect(g, `${finds[i].name} to ${finds[i + 1].name}`).toBeLessThanOrEqual(4);
+    }
+    // Slightly uneven: not one fixed step.
+    expect(new Set(gaps).size).toBeGreaterThanOrEqual(6);
+    // An empty slot is a screen and a half or more from the finds either side of it: filled later, it shares a screen with nobody.
+    for (let i = 1; i < places.length; i++) expect(places[i].screen - places[i - 1].screen, places[i].name).toBeGreaterThanOrEqual(1.5);
   });
 
   it('the last five screens before the island stay empty', () => {
     expect(QUIET_SCREENS).toBe(5);
     const last = places.at(-1)!;
     const foot = DIG_FINDS.find((f) => f.id === last.name)!;
-    expect(last.name).toBe('squid');
+    expect(last.name).toBe('pickup');
     expect(last.screen * DIG.screenPx + foot.h / 2).toBeLessThanOrEqual((screens - QUIET_SCREENS) * DIG.screenPx);
-    expect(screens).toBeGreaterThanOrEqual(60);
+    expect(screens).toBe(60);
   });
 
   it('at least three slots stay empty, marked for future gag finds', () => {
