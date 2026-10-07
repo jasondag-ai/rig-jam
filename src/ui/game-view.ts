@@ -526,6 +526,9 @@ export class GameView {
 
   /** Call after the element is in the document and on every resize. */
   fit(): void {
+    // (The tip line's room is pinned once it is on the page and has a height: see `showLevelHint`.)
+    // (On the next frame: changing a size from inside the resize watcher's own callback makes the browser complain.)
+    if (!this.noteEl.style.minHeight && this.noteEl.textContent) requestAnimationFrame(() => { if (!this.noteEl.style.minHeight && this.noteEl.textContent && this.noteEl.offsetHeight > 0) this.noteEl.style.minHeight = `${this.noteEl.offsetHeight}px`; });
     const r = this.stage.getBoundingClientRect();
     this.board.resize(r.width, r.height);
     // Sky meets the ground just above the board; trees stand around it.
@@ -975,7 +978,17 @@ export class GameView {
 
   private showLevelHint(): void {
     clearTimeout(this.noteTimer);
-    this.noteEl.textContent = this.state.moves === 0 ? (this.level.hint ?? '') : '';
+    const tip = this.state.moves === 0 ? (this.level.hint ?? '') : '';
+    this.noteEl.textContent = tip;
+    // THE TIP LINE KEEPS ITS ROOM FOR THE WHOLE LEVEL. A tip that runs to two lines used to give
+    // its second line back when it went (on the first move), and the lease re-centred a moment
+    // later: a gag set off by that same drag (a bump, the tumbleweed, the tourists) was placed for
+    // the old layout and played its whole run a line too high. Now nothing moves when the tip goes.
+    if (tip) {
+      this.noteEl.style.minHeight = '';
+      const h = this.noteEl.offsetHeight;
+      if (h > 0) this.noteEl.style.minHeight = `${h}px`;
+    }
   }
 
   private updateHud(): void {
