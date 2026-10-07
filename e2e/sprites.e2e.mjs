@@ -270,7 +270,7 @@ for (const reducedMotion of ['no-preference', 'reduce']) {
     await wait(16);
   }
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await wait(1500);
+  await wait(2300);
   const swing = await page.evaluate(() => window.__swing);
   const opened = swing.some((b) => Math.abs(b) > 0.95);
   const shut = await page.$$eval('.gate', (gs) => gs.every((g) => !g.classList.contains('open') && new DOMMatrix(getComputedStyle(g.querySelector('.g-leaf')).transform).b === 0));
