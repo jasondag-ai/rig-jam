@@ -38,6 +38,8 @@ export const MAX_MINUTES = 10;
 /** A* gives up on one position past this many found; that scramble is then simply not kept. */
 const SOLVE_CAP = 600_000;
 const KEEP = 20;
+/** The packed breadth-first search holds this many trucks (3 bits each in one number). */
+export const BFS_TRUCKS = 17;
 
 type T = { orient: 'h' | 'v'; lane: number; pos: number; len: 2 | 3; fwd: boolean };
 export interface Candidate {
@@ -391,6 +393,8 @@ function candidate(f: Grown, id: string): Candidate {
 function proveAgain(c: Candidate, how: 'left' | 'bfs'): void {
   const level = parseLevel(c.level);
   try {
+    // (18 trucks are past what the packed breadth-first search holds: `solve` would hand them to A*, which proves nothing new.)
+    if (how === 'bfs' && level.trucks.length > BFS_TRUCKS) return;
     const got = how === 'left' ? searchAStar(level, 2_500_000, level.trucks, 0, 'left').moves : solve(level, 1_200_000);
     if (!got || got.length !== c.par) throw new Error(`${c.id}: ${how} says par ${got?.length}, A* says ${c.par}`);
     c.parAlsoBy.push(how === 'left' ? 'A* (trucks left)' : 'breadth-first');
@@ -401,7 +405,7 @@ function proveAgain(c: Candidate, how: 'left' | 'bfs'): void {
 /** How many trucks of `a` stand where no truck of `b` stands. */
 const differs = (a: Found, b: Found) => { const k = (t: T) => `${t.orient}${t.lane},${t.pos},${t.len}`; const have = new Set(b.ts.map(k)); return a.ts.filter((t) => !have.has(k(t))).length; };
 
-function table(cs: Candidate[]): string {
+export function table(cs: Candidate[]): string {
   const rows = [['#', 'id', 'trucks', 'par', 'extra', 'chain', 'rings', 'by slides', 'by re-deals', 'solve ms', 'looked at', 'par also by'], ...cs.map((c, i) => [i + 1, c.id, c.trucks, c.par, c.extraMoves, c.chain >= CHAIN_MOST ? `${CHAIN_MOST}+` : c.chain, c.rings, c.wonBy.slides, c.wonBy.redeals, c.solveMs, c.lookedAt, c.parAlsoBy.join(' + ') || '-'].map(String))];
   const w = rows[0].map((_, k) => Math.max(...rows.map((r) => r[k].length)));
   return rows.map((r, i) => r.map((x, k) => (k === 1 || k === 11 ? x.padEnd(w[k]) : x.padStart(w[k]))).join('  ') + (i === 0 ? `\n${w.map((n) => '-'.repeat(n)).join('  ')}` : '')).join('\n');
