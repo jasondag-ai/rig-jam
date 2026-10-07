@@ -1016,6 +1016,46 @@ something, give exact clicks and one command at a time.
   together and the instrument rises. Both his drawing and the standing tripod start hidden.
 - The Wildlife Log's one LEGENDARY card is the Bear (tested, found and unfound).
 
+## Big Pad spike (region 6; branch `big-pad` ONLY: never merged, never deployed)
+- THE QUESTION: can we generate 8 x 8 levels that play hard? Hardness = EXTRA MOVES, par minus the
+  number of trucks (the moves that are not a truck's own drive out). Answer: yes. No UI, art or
+  sightings for it; the game still only shows pads of 6.
+- PAD SIZE (`src/engine/types.ts`): `SIZE` is still 6; a level may carry `size: 8` (`SIZES`,
+  `sizeOf(level)`; no level file of the game names a size). `parseLevel`, `getMoveRange`,
+  `slideEnd`, `touchesGate(t, side, size)` and both solvers work along the level's own side.
+  `size.test.ts`. The UI still imports `SIZE` and draws 6.
+- THE SOLVER HAS A* (`searchAStar`, `solveAStar` in solver.ts): the same rules as `solve` (both
+  search through one `compile(level, trucks).expand`), looking first where the end seems nearest.
+  A position reached again by a shorter way is looked at again, so the answer is the shortest for
+  any estimate that never overshoots. Estimates (`Heuristic`): `'left'` = trucks left;
+  `'rings'` (the default) = that plus one for every RING of trucks in each other's way out that
+  shares no truck with another ring (none of a ring can be first out, so one of them makes a move
+  that is not its drive out), or one for every tanker not yet loaded, whichever is more.
+  `solver-astar.test.ts` holds BOTH to breadth-first's par on every level in the game (50 + 60
+  Daily Pads), mid-game too, and on random pads of 6 and of 8. `solve` hands a pad of 18 trucks or
+  more to A* (its packed number holds 17). `node tools/bench-astar.ts` compares them.
+  TRIED AND DROPPED: per-group tables (each small group of trucks solved alone, added up). They
+  were sound and matched every par, but on a pad of 8 a few trucks alone always have room, so the
+  tables said nothing the rings did not, and A* looked at exactly as many positions.
+- `tools/gen-bigpad.ts` (`node tools/gen-bigpad.ts [minutes <= 10] [seed] [workers]`): REVERSE
+  GENERATION. A PINWHEEL is laid down on purpose (four trucks round a box, each in the next one's
+  way out: `pinwheel`; one horizontal and one vertical truck can never each be in the other's way
+  out, the cell where their lanes cross would have to hold both, so a ring of four is the smallest
+  knot), TAILS are hung on it (`tail`, 1 to 3: the chain 3 to 5 deep beyond the ring), every other
+  truck starts AT ITS GATE END, and the pad is scrambled with BACKWARD MOVES (one truck slid along
+  its lane), kept if the forward par (A*) did not fall. WHAT THE SPIKE FOUND: slides alone stall
+  (hundreds of thousands of slides of one layout never passed 4 extra moves: on a pad of 8
+  everybody has room to step aside), so now and then ONE TRUCK IS RE-DEALT (another lane, turned
+  to leave by the other end, a cell longer or shorter), kept by the same rule. Each pad climbs to
+  its own target inside 6 to 15 extra moves. The whole run keeps inside its minutes (78% scramble,
+  the rest proves the candidates). Six gate colours are dealt to the lane ends (the two ends of a
+  lane never the same), so with 14 to 18 trucks COLOURS REPEAT: a UI question for later.
+- `levels/bigpad-candidates.json`: the best 20 by extra moves (id, size, par, trucks, extraMoves,
+  chain, rings, wonBy, parAlsoBy, solveMs, lookedAt, hintPath, level). `node
+  --max-old-space-size=8000 tools/check-bigpad.ts` proves each again (A* both ways, the hint path
+  in the game itself, breadth-first where it gets through 12 million positions) and reprints the
+  table. `tools/gen-bigpad.test.ts` holds the file to the targets.
+
 ## Stack
 - TypeScript + Vite, DOM + CSS transforms, Pointer Events. No game engine, no frameworks. GSAP (free
   standard license) for character animation only.
@@ -1169,6 +1209,8 @@ something, give exact clicks and one command at a time.
 - `npm run build` – type-check + production build into `dist/`
 - `npm run gen-levels [-- c05 m08]` – regenerate levels (named slots are forced to rerun)
 - `npm run check-levels` – print levels and solutions
+- `node tools/gen-bigpad.ts [minutes] [seed] [workers]` – Big Pad spike (branch `big-pad`): 20 candidates of 8 x 8 into `levels/bigpad-candidates.json` and a table, 10 minutes at most
+- `node --max-old-space-size=8000 tools/check-bigpad.ts` – proves every Big Pad candidate again (breadth-first too, where it gets through) and reprints the table
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
 - `npm run test:e2e:gags` – every puppet gag suite in turn: magpie, eggs, strip, eggs2 (start the dev server first)
 - `npm run test:e2e:bubbles` – every speech bubble's tail on its speaker, following it, clear of the HUD and buttons; witness lines (start the dev server first)
