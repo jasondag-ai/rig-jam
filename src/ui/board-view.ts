@@ -15,15 +15,15 @@ import { TrackLayer } from './track-layer.ts';
 import type { Ground } from './themes.ts';
 import { SYMBOL } from './palette.ts';
 import { sound } from '../audio/engine.ts';
-import { EXIT_FADE, EXIT_PAST, exitDistance } from './exit.ts';
+import { EXIT_MOST_MS, exitPlan } from './exit.ts';
 
 const FENCE_RATIO = 0.42;
 const GAP = 3; // px between a truck and its cell edge
 const WAVE_MS = 260; // gate arm lifts and the driver waves before pulling out
-const DRIVE_MS = 460;
 /** When the gate's dust comes up (a share of the drive), and how long a puff lasts. */
-const GATE_DUST_AT = 0.12;
+const GATE_DUST_AT = 0.35; // how far into the roll the dust comes up at the gate
 const GATE_DUST_MS = 800;
+const GATE_PUFFS = 8, GATE_PUFF_GAP = 45; // the puffs at the gate, and the ms between them
 /** How far back (cells) the finger must turn for a reversal to count toward a wiggle. */
 const WIGGLE_TURN = 0.25;
 const BUMP_PUSH = 0.25; // cells of push past a blocker before it counts as a bump
@@ -363,9 +363,10 @@ export class BoardView {
   }
 
   // ---------- Drive-out: gate arm lifts, driver waves, truck pulls out in a cloud of dust ----------
-  // The truck never meets a hard edge: the yard's clip is lifted while it leaves (`.letting-out`), it
-  // drives only a little way past the gate (EXIT_PAST) and fades to nothing over the last part of
-  // the drive (EXIT_FADE) inside a big puff of dust at the gate. Plain opacity, no masks (Safari).
+  // THE TAIL CLEARS THE GATE, THEN IT FADES (exit.ts `exitPlan`). The yard's clip is lifted while it
+  // leaves (`.letting-out`); it ROLLS, solid, until its tail is right through the gate, kicking up
+  // dust there as it goes; only then does it fade, over a short coast. Plain opacity, no masks
+  // (Safari). Outside the lease it passes UNDER the HUD and the buttons (style.css).
 
   private driveOut(el: HTMLElement): void {
     const side = el.dataset.cab as Side;
@@ -379,51 +380,60 @@ export class BoardView {
     el.classList.add('waving');
     sound.exit();
     const from = this.currentXY(el);
-    const dist = exitDistance(side, from, el.offsetWidth, el.offsetHeight, this.cell, this.fence);
-    const dx = side === 'left' ? -dist : side === 'right' ? dist : 0;
-    const dy = side === 'top' ? -dist : side === 'bottom' ? dist : 0;
+    const plan = exitPlan(side, from, el.offsetWidth, el.offsetHeight, this.cell, this.fence);
+    const out = side === 'left' || side === 'top' ? -1 : 1, horizontal = side === 'left' || side === 'right';
+    const to = (d: number) => `translate3d(${from.x + (horizontal ? out * d : 0)}px, ${from.y + (horizontal ? 0 : out * d)}px, 0)`;
     this.leaving++;
     this.yard.classList.add('letting-out');
-    setTimeout(() => {
-      const fade = DRIVE_MS * EXIT_FADE;
-      el.style.transition = `transform ${DRIVE_MS}ms cubic-bezier(0.5, 0, 0.9, 0.6), opacity ${fade}ms ease-in-out ${DRIVE_MS - fade}ms`;
-      el.style.transform = `translate3d(${from.x + dx}px, ${from.y + dy}px, 0)`;
+    // Its tail is through: now, and only now, it fades, coasting on a little; then it is taken
+    // away, and only then the gate's arm comes down. (Begun by the END OF THE ROLL ITSELF, not by a
+    // clock beside it: a clock can run a frame or two ahead of the drawing, and the fade must not.)
+    let fading = false;
+    const fade = () => {
+      if (fading) return;
+      fading = true;
+      el.classList.add('tail-clear');
+      el.style.transition = `transform ${plan.fadeMs}ms linear, opacity ${plan.fadeMs}ms ease-in`;
+      el.style.transform = to(plan.roll + plan.coast);
       el.style.opacity = '0';
-      this.kickUpDust(el, from, dx, dy);
-      setTimeout(() => this.gateDust(side, el, from), DRIVE_MS * GATE_DUST_AT);
+      setTimeout(() => el.remove(), plan.fadeMs + 40);
+      setTimeout(() => gate?.classList.remove('open'), plan.fadeMs + 200);
+    };
+    setTimeout(() => {
+      // The roll: solid all the way, picking up speed.
+      el.style.transition = `transform ${plan.rollMs}ms cubic-bezier(0.45, 0, 0.85, 0.75)`;
+      el.style.transform = to(plan.roll);
+      el.addEventListener('transitionend', (e) => { if (e.target === el && e.propertyName === 'transform') fade(); });
+      // (Should the browser never say the roll has ended: a little after it must have.)
+      setTimeout(fade, plan.rollMs + 250);
+      this.kickUpDust(el, from, horizontal ? out * plan.roll : 0, horizontal ? 0 : out * plan.roll, plan.rollMs);
+      setTimeout(() => this.gateDust(side, el, from), plan.rollMs * GATE_DUST_AT);
     }, WAVE_MS);
-    // Gone (faded right out), and only then the gate's arm comes down.
-    setTimeout(() => el.remove(), WAVE_MS + DRIVE_MS + 40);
-    // (The clip comes back only when its dust has cleared too.)
+    const gone = WAVE_MS + plan.rollMs + plan.fadeMs;
+    // (The clip comes back only when it has gone and its dust has cleared too.)
     setTimeout(() => {
       if (--this.leaving <= 0) {
         this.leaving = 0;
         this.yard.classList.remove('letting-out');
       }
-    }, WAVE_MS + DRIVE_MS * GATE_DUST_AT + GATE_DUST_MS + 300);
-    setTimeout(() => gate?.classList.remove('open'), WAVE_MS + DRIVE_MS + 200);
+    }, Math.max(gone + 350, WAVE_MS + plan.rollMs * GATE_DUST_AT + GATE_PUFFS * GATE_PUFF_GAP + GATE_DUST_MS + 120));
   }
 
-  /** The big puff at the gate that the leaving truck fades into: it comes up as the fade begins. */
+  /** The dust the leaving truck kicks up at the gate as it goes through (it is not what hides it: it fades out beyond the gate). */
   private gateDust(side: Side, el: HTMLElement, from: { x: number; y: number }): void {
     const { cell, fence } = this;
     const pad = cell * SIZE;
     const horizontal = side === 'left' || side === 'right';
-    // The gate's middle, in the pad's own px; the puffs lie along the lane from just inside the pad
-    // to where the cab ends up, and a little to each side.
+    // The gate's middle, in the pad's own px; the puffs lie along the lane through the gate's gap, and a little to each side.
     const lane = horizontal ? from.y + el.offsetHeight / 2 : from.x + el.offsetWidth / 2;
     const out = side === 'left' || side === 'top' ? -1 : 1;
     const edge = out < 0 ? 0 : pad;
-    const reach = fence + cell * EXIT_PAST;
-    // (From where the truck's tail is as it starts to fade, still on the pad, out to where its cab ends.)
-    const back = Math.max(cell * 0.6, (horizontal ? el.offsetWidth : el.offsetHeight) - reach * 0.4);
-    const puffs = 10;
-    for (let i = 0; i < puffs; i++) {
+    for (let i = 0; i < GATE_PUFFS; i++) {
       setTimeout(() => {
         const puff = document.createElement('div');
         puff.className = `dust gate-dust on-${this.ground}`;
-        const size = cell * (1.3 + Math.random() * 0.6);
-        const along = edge + out * (-back + (reach + back) * ((i % 5) / 4)) + (Math.random() - 0.5) * cell * 0.3;
+        const size = cell * (0.9 + Math.random() * 0.5);
+        const along = edge + out * (-cell * 0.5 + (fence + cell * 0.9) * ((i % 4) / 3)) + (Math.random() - 0.5) * cell * 0.3;
         const across = lane + (Math.random() - 0.5) * cell * 0.45;
         Object.assign(puff.style, {
           width: `${size}px`,
@@ -433,7 +443,7 @@ export class BoardView {
         });
         this.pad.append(puff);
         setTimeout(() => puff.remove(), GATE_DUST_MS);
-      }, i * 8);
+      }, i * GATE_PUFF_GAP);
     }
   }
 
@@ -444,7 +454,7 @@ export class BoardView {
     return this.el.querySelector<HTMLElement>(`.gate[data-side="${side}"][data-index="${index}"]`);
   }
 
-  private kickUpDust(el: HTMLElement, from: { x: number; y: number }, dx: number, dy: number): void {
+  private kickUpDust(el: HTMLElement, from: { x: number; y: number }, dx: number, dy: number, ms: number): void {
     const w = el.offsetWidth;
     const h = el.offsetHeight;
     // Dust comes off the back of the truck, opposite the cab.
@@ -466,7 +476,7 @@ export class BoardView {
         });
         this.pad.append(puff);
         setTimeout(() => puff.remove(), 700);
-      }, (i * DRIVE_MS) / puffs);
+      }, (i * ms) / puffs);
     }
   }
 
@@ -757,7 +767,7 @@ export class BoardView {
     this.endDrag();
     const delta = Math.max(d.range.min, Math.min(d.range.max, Math.round(d.offset / this.cell)));
     // Keep laying marks while the truck snaps into place, or all the way out through its gate.
-    const settle = delta !== 0 && delta === d.range.exitDelta ? WAVE_MS + DRIVE_MS + 80 : 260;
+    const settle = delta !== 0 && delta === d.range.exitDelta ? WAVE_MS + EXIT_MOST_MS + 80 : 260;
     this.tracks.release(delta !== 0, settle);
     this.movingUntil = performance.now() + settle;
     sound.reversing(false);

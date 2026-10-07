@@ -1,3 +1,4 @@
+import { EXIT_MOST_MS } from './exit.ts';
 import { SolverLimitError, canUndo, getMoveRange, isWon, newGame, nextMove, tryMove, undo, type GameState, type Level, type Move, SIZE } from '../engine/index.ts';
 import { seedFrom } from '../engine/rng.ts';
 import { BoardView } from './board-view.ts';
@@ -40,6 +41,8 @@ const COACH_LEVEL = 'c01';
 const TAPPED = '.win [data-act], .hud [data-act="levels"]';
 
 const WIN_DELAY_MS = 900;
+/** The gate's arm lifts and the driver waves for this long before the truck pulls out (board-view.ts `WAVE_MS`). */
+const EXIT_WAVE_MS = 260;
 const NOTE_MS = 2600;
 /**
  * "Pad cleared!" as SVG text on a shallow arc, so it follows the curve of the win card's banner.
@@ -618,7 +621,8 @@ export class GameView {
       this.board.stopAmbient();
       window.clearInterval(this.eggTimer);
       this.clearEggs();
-      setTimeout(() => this.showWin(), WIN_DELAY_MS);
+      // (Not before the last truck has rolled right out and faded: exit.ts.)
+      setTimeout(() => this.showWin(), Math.max(WIN_DELAY_MS, EXIT_WAVE_MS + EXIT_MOST_MS + 60));
     }
   }
 

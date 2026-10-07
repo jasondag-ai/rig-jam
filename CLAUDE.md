@@ -494,16 +494,19 @@ something, give exact clicks and one command at a time.
   degrees (260ms ease-out): outward on top/bottom, inward on the sides; none with reduced motion.
   Wrong-color gates simply stay shut. Convoy gates shift the badge toward the hinge and put the
   waiting-number chip (gate color, white numeral) on the latch post. Fallback: the colored tabs.
-- GATE EXITS (Job J; `src/ui/exit.ts` pure and tested, `BoardView.driveOut`): a leaving truck never
-  meets a hard edge. The yard's clip is lifted while it leaves (`.yard.letting-out`, until its dust
-  has cleared); it drives only until its cab is `EXIT_PAST` (1) cell past the gate
-  (`exitDistance`), in the same `DRIVE_MS`; its opacity eases from 1 to 0 over the last
-  `EXIT_FADE` (45%) of the drive; a big puff comes up at the gate early in the drive
-  (`gateDust`, `.dust.gate-dust`: 10 puffs of 1.3 to 1.9 cells from the truck's tail to where its
-  cab ends, in the ground's colour: dust, mud or powder) and covers it while it fades; the gate's
-  arm comes down once it has gone. Plain opacity only: NO mask-image or clip-path (iPhone Safari).
-  Reduced motion: the truck is simply removed. `npm run test:e2e:exits` checks all four sides in
-  WebKit, frame by frame and by the pixels of a mid-fade screenshot.
+- GATE EXITS (`src/ui/exit.ts` pure and tested, `BoardView.driveOut`): THE TAIL CLEARS THE GATE,
+  THEN IT FADES (Jay, Oct 6). The yard's clip is lifted while a truck leaves (`.yard.letting-out`,
+  until its dust has cleared); it ROLLS, solid, until its tail is `EXIT_CLEAR` (0.12 cell) past the
+  berm's outer edge (`exitPlan`: `roll`, `rollMs` at a steady pace, 460 to 760 ms), kicking up dust
+  at the gate as it goes through (`gateDust`); only then does it fade, over `EXIT_FADE_MS` (240)
+  and a short coast (`EXIT_COAST`). The fade is begun by the END OF THE ROLL ITSELF
+  (`transitionend`), never by a timer beside it (a timer ran a frame or two ahead and it faded
+  with its tail still in the gate). NOT A FRAME OF FADING WHILE ANY OF IT IS IN THE GATE. Outside
+  the lease it passes UNDER the HUD, the tip line and the buttons (they are z 2). The gate's arm
+  comes down once it has gone; the win card waits for the last truck (`EXIT_MOST_MS`). Plain
+  opacity only: NO mask-image or clip-path (iPhone Safari). Reduced motion: the truck is simply
+  removed. `npm run test:e2e:exits` checks all four sides in WebKit, frame by frame and by the
+  pixels of a screenshot half way through the gate.
 - Light: ONE soft neutral vignette at the outer screen edges (`.vignette`, z 0: over the scenery,
   under the board, HUD and buttons) and nothing else: no hotspot or diagonal shade on the pad (it
   reads as a stain), no warm wash outside. Soft down-right drop shadows on gates, trees and HUD.

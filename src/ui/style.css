@@ -573,8 +573,13 @@ canvas.berm {
   overflow: hidden;
 }
 
-/* A truck on its way out drives a little way past the gate and fades away in its dust there, so
-   nothing may cut it off: the clip is lifted while it leaves (board-view.ts driveOut). */
+/* A truck on its way out rolls right through its gate (its tail clear of the berm) and only then
+   fades, so nothing may cut it off: the clip is lifted while it leaves (board-view.ts driveOut).
+   Out there it passes UNDER the HUD, the tip line and the buttons, never over them. */
+/* (!important: the screen's own rule for its children is the more specific one.) */
+.screen.game > .hud,
+.screen.game > .note,
+.screen.game > .controls { z-index: 2 !important; }
 .yard.letting-out,
 .yard.letting-out .pad {
   overflow: visible;
