@@ -220,6 +220,41 @@ console.log('\nwebkit: reduced motion');
   await c2.close();
 }
 
+console.log('\nwebkit: the driver\'s arm');
+{
+  const { context: c3, page: p3 } = await open();
+  const sizes = {};
+  for (let li = 0; li < 10 && !(sizes.pickup && sizes.rig); li++) {
+    await enter(p3, 0, li);
+    const got = await p3.evaluate(() => {
+      const cell = parseFloat(document.querySelector('.board').style.getPropertyValue('--cell'));
+      return [...document.querySelectorAll('.truck')].map((el) => {
+        el.classList.add('waving');
+        const box = el.getBoundingClientRect(), parts = [...el.querySelectorAll('.driver-arm i')].map((i) => i.getBoundingClientRect());
+        const l = Math.min(...parts.map((q) => q.left)), r = Math.max(...parts.map((q) => q.right)), t = Math.min(...parts.map((q) => q.top)), b = Math.max(...parts.map((q) => q.bottom));
+        const up = el.querySelector('.driver-arm .upper').getBoundingClientRect(), cs = getComputedStyle(el.querySelector('.driver-arm .hand'));
+        const out = { kind: el.dataset.kind, cells: Math.round(Math.max(box.width, box.height) / cell), across: Math.min(box.width, box.height), cell,
+          long: Math.max(r - l, b - t), outside: Math.max(box.left - l, r - box.right, box.top - t, b - box.bottom),
+          sill: up.left >= box.left && up.right <= box.right && up.top >= box.top && up.bottom <= box.bottom,
+          hand: el.querySelector('.driver-arm .hand').getBoundingClientRect().width, skin: cs.backgroundColor, line: cs.borderTopColor,
+          waves: getComputedStyle(el.querySelector('.driver-arm .fore')).animationName };
+        el.classList.remove('waving');
+        return out;
+      });
+    });
+    sizes.pickup ??= got.find((t) => t.kind === 'pickup');
+    sizes.rig ??= got.find((t) => t.cells === 3);
+  }
+  for (const [name, a] of Object.entries(sizes)) {
+    if (!a) { check(false, `${name}: no such truck found`); continue; }
+    check(a.long <= a.across / 2 && a.outside <= a.cell * 0.12, `${name}: the whole arm is ${a.long.toFixed(1)} px long, under half the cab's width (${a.across.toFixed(0)} px), and shows ${a.outside.toFixed(1)} px past the truck's box`);
+    check(a.sill && a.waves === 'wave', `${name}: the upper arm rests on the door sill (inside the truck's own box) and the forearm is what waves`);
+    check(a.hand < a.cell * 0.1 && a.skin === 'rgb(240, 192, 154)' && a.line === 'rgb(43, 30, 22)', `${name}: a small hand (${a.hand.toFixed(1)} px) in the worker puppets' skin and outline`);
+  }
+  check(sizes.pickup && sizes.rig && Math.abs(sizes.pickup.long - sizes.rig.long) < 0.5, 'the same arm on a pickup and on a 3-cell rig');
+  await c3.close();
+}
+
 await browser.close();
 console.log(failures ? `\nFAILED: ${failures} check(s)` : '\nPASS');
 process.exit(failures ? 1 : 0);

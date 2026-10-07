@@ -507,6 +507,13 @@ something, give exact clicks and one command at a time.
   opacity only: NO mask-image or clip-path (iPhone Safari). Reduced motion: the truck is simply
   removed. `npm run test:e2e:exits` checks all four sides in WebKit, frame by frame and by the
   pixels of a screenshot half way through the gate.
+- THE DRIVER'S ARM (Jay, Oct 6; `.driver-arm` in the truck's `.cab`, styles under "Drive-out"): a
+  leaving truck's driver waves a NORMAL ARM OUT THE WINDOW, about 40% of the first one's size: the
+  upper arm (`.upper`) rests on the door sill, the forearm (`.fore`) with a small hand waves from
+  the elbow (`wave`). Skin `#f0c09a` and outline `#2b1e16` are the worker puppets' own. Sized in
+  shares of a cell, so it is the same arm on every truck; `--sill` is how far in from the truck's
+  box its door lies (0.115 pickup and picker, 0.175 the 3-cell rigs, whose cabs are narrower).
+  The whole arm is under half the cab's width. Checked in `test:e2e:exits`.
 - Light: ONE soft neutral vignette at the outer screen edges (`.vignette`, z 0: over the scenery,
   under the board, HUD and buttons) and nothing else: no hotspot or diagonal shade on the pad (it
   reads as a stain), no warm wash outside. Soft down-right drop shadows on gates, trees and HUD.

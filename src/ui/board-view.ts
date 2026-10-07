@@ -333,7 +333,7 @@ export class BoardView {
       `<div class="body"><div class="art">${spriteImg(kind, t.color)}${VEHICLE_SVG[kind]}<i class="coat"></i></div>` +
       `<div class="bed"><span class="sym">${SYMBOL[t.color]}</span>${t.load ? `<span class="load-tag" aria-label="tanker: must load">${DROP}</span>` : ''}</div>` +
       `<i class="lamps"></i>` +
-      `<div class="cab"><span class="driver-arm"></span>${t.convoy ? `<span class="convoy-no" aria-label="convoy ${t.convoy}">${t.convoy}</span>` : ''}</div></div>`;
+      `<div class="cab"><span class="driver-arm"><i class="upper"></i><i class="fore"><i class="hand"></i></i></span>${t.convoy ? `<span class="convoy-no" aria-label="convoy ${t.convoy}">${t.convoy}</span>` : ''}</div></div>`;
     wireSprite(el);
     el.addEventListener('pointerdown', (e) => this.onPointerDown(e, t.id, el));
     el.addEventListener('pointermove', (e) => this.onPointerMove(e));
