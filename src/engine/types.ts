@@ -1,4 +1,10 @@
+/** The pad's side in cells, unless a level says otherwise (`Level.size`). */
 export const SIZE = 6;
+/** The pad sizes the engine and solver support. 8 is the Big Pad (a spike: no UI for it yet). */
+export const SIZES = [6, 8] as const;
+export type PadSize = (typeof SIZES)[number];
+/** A level's side in cells: its own `size`, or 6. */
+export const sizeOf = (level: { size?: number }): number => level.size ?? SIZE;
 
 export const COLORS = ['red', 'blue', 'yellow', 'green', 'orange', 'purple'] as const;
 export type Color = (typeof COLORS)[number];
@@ -16,9 +22,9 @@ export type TruckKind = (typeof TRUCK_KINDS)[2 | 3][number];
 export interface Truck {
   id: string;
   color: Color;
-  /** Row of the truck's top-left cell (0-5). */
+  /** Row of the truck's top-left cell (0 to size - 1). */
   row: number;
-  /** Column of the truck's top-left cell (0-5). */
+  /** Column of the truck's top-left cell (0 to size - 1). */
   col: number;
   length: 2 | 3;
   orient: Orient;
@@ -74,6 +80,8 @@ export interface Level {
   id: string;
   name: string;
   par: number;
+  /** The pad's side in cells. Missing means 6 (every level in the game); 8 is the Big Pad. */
+  size?: PadSize;
   /** Optional one-line tip shown under the board. */
   hint?: string;
   trucks: Truck[];

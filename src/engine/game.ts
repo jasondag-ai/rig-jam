@@ -1,5 +1,5 @@
 import { gateFor } from './level.ts';
-import { SIZE, type Cell, type GameState, type Level, type Truck } from './types.ts';
+import { sizeOf, type Cell, type GameState, type Level, type Truck } from './types.ts';
 
 export interface MoveRange {
   /** Most negative legal delta (0 if blocked), toward the left or top. */
@@ -21,7 +21,7 @@ export function newGame(level: Level): GameState {
   return { level, trucks: level.trucks.map((t) => ({ ...t })), moves: 0, history: [] };
 }
 
-function occupancy(trucks: readonly Truck[], obstacles: readonly Cell[]): (string | null)[] {
+function occupancy(trucks: readonly Truck[], obstacles: readonly Cell[], SIZE: number): (string | null)[] {
   const grid: (string | null)[] = new Array(SIZE * SIZE).fill(null);
   for (const o of obstacles) grid[o.row * SIZE + o.col] = '#';
   for (const t of trucks) {
@@ -38,7 +38,8 @@ function occupancy(trucks: readonly Truck[], obstacles: readonly Cell[]): (strin
 export function getMoveRange(state: GameState, id: string): MoveRange | null {
   const truck = state.trucks.find((t) => t.id === id);
   if (!truck) return null;
-  const grid = occupancy(state.trucks, state.level.obstacles);
+  const SIZE = sizeOf(state.level);
+  const grid = occupancy(state.trucks, state.level.obstacles, SIZE);
   const h = truck.orient === 'h';
   const pos = h ? truck.col : truck.row;
   const empty = (p: number) => grid[h ? truck.row * SIZE + p : p * SIZE + truck.col] === null;
@@ -95,6 +96,7 @@ const has = (cells: readonly { row: number; col: number }[], row: number, col: n
 export function slideEnd(state: GameState, truck: Truck, delta: number, range: MoveRange): number {
   const muskeg = state.level.muskeg;
   if (!muskeg.length) return delta;
+  const SIZE = sizeOf(state.level);
   const h = truck.orient === 'h';
   const dir = Math.sign(delta);
   const pos = h ? truck.col : truck.row;

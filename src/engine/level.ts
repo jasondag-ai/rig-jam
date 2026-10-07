@@ -1,4 +1,4 @@
-import { COLORS, OBSTACLE_KINDS, SIZE, TRUCK_KINDS, type Cell, type Color, type FloorCell, type Gate, type Level, type ObstacleKind, type Side, type Truck, type TruckKind } from './types.ts';
+import { COLORS, OBSTACLE_KINDS, SIZE, SIZES, TRUCK_KINDS, type Cell, type Color, type FloorCell, type Gate, type Level, type ObstacleKind, type PadSize, type Side, type Truck, type TruckKind } from './types.ts';
 
 export class LevelError extends Error {}
 
@@ -31,17 +31,17 @@ export function gateFor(level: Level, t: Truck): Gate {
   return gate;
 }
 
-/** True when the truck is flush against the fence on its gate's side. */
-export function touchesGate(t: Truck, side: Side): boolean {
+/** True when the truck is flush against the fence on its gate's side (`size`: the pad's side in cells). */
+export function touchesGate(t: Truck, side: Side, size: number = SIZE): boolean {
   switch (side) {
     case 'left':
       return t.col === 0;
     case 'top':
       return t.row === 0;
     case 'right':
-      return t.col + t.length - 1 === SIZE - 1;
+      return t.col + t.length - 1 === size - 1;
     case 'bottom':
-      return t.row + t.length - 1 === SIZE - 1;
+      return t.row + t.length - 1 === size - 1;
   }
 }
 
@@ -49,22 +49,22 @@ function isObj(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-function isIndex(v: unknown): v is number {
-  return Number.isInteger(v) && (v as number) >= 0 && (v as number) < SIZE;
+function isIndex(v: unknown, size: number): v is number {
+  return Number.isInteger(v) && (v as number) >= 0 && (v as number) < size;
 }
 
 function isColor(v: unknown): v is Color {
   return (COLORS as readonly unknown[]).includes(v);
 }
 
-function parseTruck(raw: unknown, where: string): Truck {
+function parseTruck(raw: unknown, where: string, size: number): Truck {
   if (!isObj(raw)) throw new LevelError(`${where}: truck must be an object`);
   const { id, color, row, col, length, orient, kind, convoy, load } = raw;
   if (typeof id !== 'string' || id === '') throw new LevelError(`${where}: truck id must be a string`);
   if (!isColor(color)) throw new LevelError(`${where}: truck ${id} has unknown color ${String(color)}`);
   if (length !== 2 && length !== 3) throw new LevelError(`${where}: truck ${id} length must be 2 or 3`);
   if (orient !== 'h' && orient !== 'v') throw new LevelError(`${where}: truck ${id} orient must be h or v`);
-  if (!isIndex(row) || !isIndex(col)) throw new LevelError(`${where}: truck ${id} row/col out of range`);
+  if (!isIndex(row, size) || !isIndex(col, size)) throw new LevelError(`${where}: truck ${id} row/col out of range`);
   const truck: Truck = { id, color, row, col, length, orient };
   if (kind !== undefined) {
     if (!(TRUCK_KINDS[length] as readonly unknown[]).includes(kind)) {
@@ -83,40 +83,43 @@ function parseTruck(raw: unknown, where: string): Truck {
   }
   if ('loaded' in raw) throw new LevelError(`${where}: truck ${id}: "loaded" is set during play, not in a level`);
   const end = orient === 'h' ? col + length - 1 : row + length - 1;
-  if (end >= SIZE) throw new LevelError(`${where}: truck ${id} runs off the pad`);
+  if (end >= size) throw new LevelError(`${where}: truck ${id} runs off the pad`);
   return truck;
 }
 
-function parseGate(raw: unknown, where: string): Gate {
+function parseGate(raw: unknown, where: string, size: number): Gate {
   if (!isObj(raw)) throw new LevelError(`${where}: gate must be an object`);
   const { color, side, index, shift } = raw;
   if (!isColor(color)) throw new LevelError(`${where}: gate has unknown color ${String(color)}`);
   if (!SIDES.includes(side as Side)) throw new LevelError(`${where}: gate side must be top/right/bottom/left`);
-  if (!isIndex(index)) throw new LevelError(`${where}: gate index out of range`);
+  if (!isIndex(index, size)) throw new LevelError(`${where}: gate index out of range`);
   if (shift !== undefined && shift !== true) throw new LevelError(`${where}: gate shift must be true`);
   return { color, side: side as Side, index, ...(shift ? { shift: true as const } : {}) };
 }
 
-function parseCell(raw: unknown, where: string): Cell {
-  if (!isObj(raw) || !isIndex(raw.row) || !isIndex(raw.col)) throw new LevelError(`${where}: obstacle needs row/col 0-5`);
+function parseCell(raw: unknown, where: string, size: number): Cell {
+  if (!isObj(raw) || !isIndex(raw.row, size) || !isIndex(raw.col, size)) throw new LevelError(`${where}: obstacle needs row/col 0-${size - 1}`);
   const { kind } = raw;
   if (kind === undefined) return { row: raw.row, col: raw.col };
   if (!OBSTACLE_KINDS.includes(kind as ObstacleKind)) throw new LevelError(`${where}: unknown obstacle kind ${String(kind)}`);
   return { row: raw.row, col: raw.col, kind: kind as ObstacleKind };
 }
 
-function parseFloor(raw: unknown, where: string, what: string): FloorCell {
-  if (!isObj(raw) || !isIndex(raw.row) || !isIndex(raw.col)) throw new LevelError(`${where}: ${what} needs row/col 0-5`);
+function parseFloor(raw: unknown, where: string, what: string, size: number): FloorCell {
+  if (!isObj(raw) || !isIndex(raw.row, size) || !isIndex(raw.col, size)) throw new LevelError(`${where}: ${what} needs row/col 0-${size - 1}`);
   return { row: raw.row, col: raw.col };
 }
 
 /** Validates raw JSON and returns a Level, or throws LevelError explaining what is wrong. */
 export function parseLevel(raw: unknown): Level {
   if (!isObj(raw)) throw new LevelError('level must be an object');
-  const { id, name, par, hint, trucks, gates, obstacles = [], muskeg = [], racks = [] } = raw;
+  const { id, name, par, hint, size: rawSize, trucks, gates, obstacles = [], muskeg = [], racks = [] } = raw;
   if (typeof id !== 'string' || id === '') throw new LevelError('level id must be a string');
   const where = `level ${id}`;
   if (typeof name !== 'string') throw new LevelError(`${where}: name must be a string`);
+  // The pad's side: 6 unless the level says so (a level file of the game never does).
+  if (rawSize !== undefined && !(SIZES as readonly unknown[]).includes(rawSize)) throw new LevelError(`${where}: size must be one of ${SIZES.join(', ')}`);
+  const size = (rawSize as PadSize | undefined) ?? SIZE;
   if (!Number.isInteger(par) || (par as number) < 1) throw new LevelError(`${where}: par must be a positive integer`);
   if (hint !== undefined && typeof hint !== 'string') throw new LevelError(`${where}: hint must be a string`);
   if (!Array.isArray(trucks) || trucks.length === 0) throw new LevelError(`${where}: needs at least one truck`);
@@ -130,11 +133,12 @@ export function parseLevel(raw: unknown): Level {
     name,
     par: par as number,
     ...(hint === undefined ? {} : { hint }),
-    trucks: trucks.map((t) => parseTruck(t, where)),
-    gates: gates.map((g) => parseGate(g, where)),
-    obstacles: obstacles.map((o) => parseCell(o, where)),
-    muskeg: muskeg.map((c) => parseFloor(c, where, 'muskeg')),
-    racks: racks.map((c) => parseFloor(c, where, 'load rack')),
+    ...(size === SIZE ? {} : { size: size as PadSize }),
+    trucks: trucks.map((t) => parseTruck(t, where, size)),
+    gates: gates.map((g) => parseGate(g, where, size)),
+    obstacles: obstacles.map((o) => parseCell(o, where, size)),
+    muskeg: muskeg.map((c) => parseFloor(c, where, 'muskeg', size)),
+    racks: racks.map((c) => parseFloor(c, where, 'load rack', size)),
   };
 
   const ids = new Set<string>();
@@ -192,7 +196,7 @@ export function parseLevel(raw: unknown): Level {
     const aligned = alignedGates(level.gates, t);
     if (aligned.length === 0) throw new LevelError(`${where}: truck ${t.id} has no ${t.color} gate in line with it`);
     if (aligned.length > 1) throw new LevelError(`${where}: truck ${t.id} has two ${t.color} gates in line with it`);
-    if (touchesGate(t, aligned[0].side)) throw new LevelError(`${where}: truck ${t.id} starts touching its gate`);
+    if (touchesGate(t, aligned[0].side, size)) throw new LevelError(`${where}: truck ${t.id} starts touching its gate`);
   }
 
   return level;
