@@ -954,6 +954,12 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:quick` checks all of the above (start the dev server first).
 
 ## Final-pass fixes (Job U, Oct 6)
+- THE TIP LINE KEEPS ITS ROOM FOR THE WHOLE LEVEL (`GameView.showLevelHint` pins the note's
+  `min-height` to the tip's own height). A two-line tip used to give a line back when it went on
+  the first move and the lease re-centred a moment later, so a gag set off by that same drag (a
+  bump for the bale, the tumbleweed, the tourists) was placed for the old layout and played its
+  whole run about 21 px too high. NOTHING MAY SHIFT THE LEASE WHILE A LEVEL IS PLAYED.
+  `test:e2e:wave3` checks a really-triggered gag is drawn in the scenery's own box.
 - THE UPDATE BAR HAS ITS OWN ROOM: while it shows, `--bar-room` (66 px) is added to the top
   padding of every screen it shows over and of any overlay open there (and toasts drop below it),
   so it never lies over the header's buttons. Never give it a z-index fight instead.
@@ -1111,6 +1117,16 @@ something, give exact clicks and one command at a time.
 - Engine functions are pure: they return new state and never mutate inputs.
 - Keep commits small; run `npm test` and `npm run build` before committing.
 - Deploy: push to `main` → GitHub Action tests, builds and publishes to GitHub Pages.
+- NEVER SAY "LIVE" WITHOUT CHECKING: after every push run `sh tools/check-live.sh` (it compares the
+  live `version.json` build id with `origin/main`, waiting for the deploy). On Oct 6 the sound
+  pass sat pushed but NOT deployed for two and a half hours (the Action's deploy job stuck
+  "waiting") while Jay was told it was live. A stuck run: `gh run cancel <id>`, then
+  `gh run rerun <id>`.
+- NEW FILES ALWAYS REPLACE OLD ONES ON A PHONE without hashed file names: the service worker's
+  cache name carries a hash of every built and public file (sounds included), so any change makes
+  a new worker with a new cache (filled with `cache: 'no-cache'` fetches, past the browser's own
+  cache), and the build id in `version.json` changes with every commit, which is what brings the
+  "New version, tap to update" bar.
 
 ## Commands
 - `npm run dev -- --host` – dev server reachable from a phone on the same Wi-Fi
