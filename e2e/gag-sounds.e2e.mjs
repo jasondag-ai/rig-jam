@@ -130,6 +130,7 @@ if (!process.env.ONLY) {
   await wait(800);
   const early = fetched.filter((f) => LAZY_KEYS.includes(f));
   check([...new Set(fetched)].length === CORE_KEYS.length && early.length === 0, `on the menus and a Cardium level: the game's ${CORE_KEYS.length} sounds, none of the ${LAZY_KEYS.length} that only wave 3 uses`);
+  const had = new Set();
   for (const [tab, region, gags] of [[3, 'Mannville', ['muskeg', 'catTrain', 'beaver', 'aurora']], [4, 'Bakken', ['tumbleweed', 'pdogs', 'bale', 'cloud']]]) {
     await page.locator('.hud [data-act="levels"]').click();
     await page.locator('.region-tab').nth(tab).click();
@@ -137,8 +138,10 @@ if (!process.env.ONLY) {
     await page.locator('.level-btn').nth(2).click();
     await page.waitForSelector('.board .truck');
     await wait(1500);
-    const want = [...new Set(gags.flatMap(gagKeys).filter((k) => LAZY_KEYS.includes(k)))].sort();
+    // (A sound an earlier level already fetched is in hand: it is not asked for twice. The mother cat's sigh is the rancher's too.)
+    const want = [...new Set(gags.flatMap(gagKeys).filter((k) => LAZY_KEYS.includes(k) && !had.has(k)))].sort();
     const got = [...new Set(fetched.filter((f) => LAZY_KEYS.includes(f)))].sort();
+    got.forEach((k) => had.add(k));
     check(got.join() === want.join(), `a ${region} level fetches its own gags' sounds as it opens (${got.length}: ${got.join(', ')})`);
   }
   const { context: c2, page: p2, fetched: f2 } = await (async () => { const o = await open('?audiolog&cover=0&night=0'); await o.page.evaluate(() => localStorage.setItem('rush-hour-rigs-audio', JSON.stringify({ sfx: false, music: false, style: 'country' }))); await o.page.reload({ waitUntil: 'networkidle' }); o.fetched.length = 0; return o; })();

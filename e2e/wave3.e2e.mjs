@@ -100,9 +100,10 @@ const follow = (page, id, ms = 22000) => page.evaluate(([id, limit]) => new Prom
       const b = layers.map((l) => l.dataset.beat).find(Boolean);
       if (b && beats[beats.length - 1] !== b) beats.push(b);
       for (const l of layers) for (const el of [l, ...l.querySelectorAll('svg')]) touch.add(getComputedStyle(el).pointerEvents);
-      const kids = [...document.querySelector('.screen.game').children];
-      const at = (sel) => kids.findIndex((k) => k.matches(sel));
-      order ||= JSON.stringify({ gag: at(`.strip-layer[data-gag="${id}"]:not(.scene-over)`), front: at('.scene-front'), over: at('.scene-over'), shade: at('.night-shade'), back: at('.mann-layer'), bale: at('.bakken-layer') });
+      // Where a layer lies front to back: its place among the screen's children, and inside the depth strip its ground line (z-index), then the order it was put on.
+      const at = ((sel) => { const el = document.querySelector(`.screen.game > ${sel}, .screen.game > .depth-strip > ${sel}`); if (!el) return -1; const kids = [...document.querySelector('.screen.game').children]; const top = el.parentElement.classList.contains('depth-strip') ? el.parentElement : el; return kids.indexOf(top) * 1e7 + (top === el ? 0 : (+getComputedStyle(el).zIndex || 0) * 1000 + [...top.children].indexOf(el) + 1); });
+      window.__same ??= (() => { const pr = document.querySelector('.bakken-layer svg.scene-svg, .mann-layer svg.scene-svg'), gg = document.querySelector(`.strip-layer[data-gag="${id}"] svg.scene-svg`); return pr && gg ? Math.abs(parseFloat(pr.style.top) - parseFloat(gg.style.top)) + Math.abs(parseFloat(pr.style.height) - parseFloat(gg.style.height)) : null; })();
+      order ||= JSON.stringify({ same: window.__same, gag: at(`.strip-layer[data-gag="${id}"]:not(.scene-over)`), front: at('.scene-front'), over: at('.scene-over'), shade: at('.night-shade'), back: at('.mann-layer'), bale: at('.bakken-layer') });
       const bub = document.querySelector('.bubble'); if (bub && !said.includes(bub.textContent)) said.push(bub.textContent);
       const own = document.querySelector('.bakken-layer svg'); if (own && getComputedStyle(own).visibility === 'hidden') baleHidden = true;
     } else if (seen) return res({ beats, touch: [...touch], order: JSON.parse(order), said, baleHidden, secs: (performance.now() - t0) / 1000 });
@@ -138,7 +139,7 @@ if (!ONLY) {
       const below = [...document.querySelectorAll('.scenery svg, .scenery use, .scenery img')].filter((t) => t.getBoundingClientRect().top > board.bottom).length;
       return {
         layers: [document.querySelectorAll('.mann-layer').length, document.querySelectorAll('.mann-front').length], trees: trees.map(sp), puddles: puddles.map(sp), aspen: sp(aspen),
-        inside: [...trees, ...puddles, aspen].every(inStrip), frontOver: kids.findIndex((k) => k.matches('.mann-front')) > kids.findIndex((k) => k.matches('.mann-layer')) && kids.findIndex((k) => k.matches('.mann-front')) < kids.findIndex((k) => k.matches('.night-shade')),
+        inside: [...trees, ...puddles, aspen].every(inStrip), frontOver: (() => { const at = ((sel) => { const el = document.querySelector(`.screen.game > ${sel}, .screen.game > .depth-strip > ${sel}`); if (!el) return -1; const kids = [...document.querySelector('.screen.game').children]; const top = el.parentElement.classList.contains('depth-strip') ? el.parentElement : el; return kids.indexOf(top) * 1e7 + (top === el ? 0 : (+getComputedStyle(el).zIndex || 0) * 1000 + [...top.children].indexOf(el) + 1); }); return at('.mann-front') > at('.mann-layer') && at('.mann-front') < at('.night-shade'); })(),
         touch: [back, front, aspen, ...trees].map((e) => getComputedStyle(e).pointerEvents), below, biffy: sp(document.querySelector('.biffy-layer svg')), sign: sp(document.querySelector('.sign-layer svg')),
       };
     });
@@ -330,7 +331,9 @@ for (const g of GAGS) {
   check(run.touch.join() === 'none' && (touched === null || touched), `${g.id}: its layers take no touches${touched === null ? '' : ', and a truck is dragged a cell while it plays'}`);
   if (g.id === 'aurora') check(run.order.gag > run.order.shade, 'aurora: its layer lies over the night, in the sky band');
   else if (g.region === mann) check(run.order.back < run.order.gag && run.order.gag < run.order.front && run.order.front < run.order.shade && (run.order.over < 0 || run.order.over > run.order.front), `${g.id}: the scenery is behind it and the lane aspen in front of it${run.order.over > 0 ? ', its sound words over the aspen' : ''}`);
-  else check(run.order.bale >= 0 && run.order.bale < run.order.gag && run.order.gag < run.order.shade, `${g.id}: it plays over the standard scene, under the night's shade`);
+  else check(run.order.bale >= 0 && run.order.bale < run.order.gag && run.order.gag < run.order.shade, `${g.id}: it plays over the standard scene (on the bale's own ground line, drawn after it), under the night's shade`);
+  // (A gag set off by a real drag: the lease must not have shifted between its being placed and its being drawn.)
+  if (g.id !== 'aurora' && g.id !== 'cloud') check(run.order.same !== null && run.order.same < 1, `${g.id}: set off for real, it is drawn in the scenery's own box (not a line too high: the tip line keeps its room)`);
   if (g.id === 'bale') check(run.said.includes('Hey!') && run.baleHidden && (await page.evaluate(() => getComputedStyle(document.querySelector('.bakken-layer svg')).visibility)) === 'visible', 'bale: the landowner shouts "Hey!" in the game\'s own bubble; the gag draws the bale while it plays, and the scenery\'s own is back at the end');
   // (Toasts show one at a time: this one may be waiting behind another gag's.)
   await page.waitForFunction((name) => window.__toasts.some((t) => t.includes(name)), g.log, { timeout: 10000 }).catch(() => {});

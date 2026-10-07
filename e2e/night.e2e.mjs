@@ -157,9 +157,12 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
         await page.waitForSelector('.sam-layer svg.pup', { state: 'attached', timeout: 8000 });
         await wait(1100);
         const order = await page.evaluate(() => {
+          // (The depth rule: they are all units of the depth strip, which lies under the shade with a z-index of 0;
+          // inside it each is drawn by its ground line.)
           const kids = [...document.querySelector('.screen.game').children], shade = kids.findIndex((k) => k.classList.contains('night-shade'));
-          const layers = kids.map((k, i) => ({ k, i })).filter(({ k }) => k.matches('.strip-layer:not(.over-lease), .worker-layer, .prop-layer, .biffy-layer'));
-          return layers.length > 1 && layers.every(({ k, i }) => i < shade && getComputedStyle(k).zIndex === '0');
+          const strip = document.querySelector('.depth-strip'), at = kids.indexOf(strip);
+          const layers = [...document.querySelectorAll('.strip-layer:not(.over-lease), .worker-layer, .prop-layer, .biffy-layer')];
+          return layers.length > 1 && at >= 0 && at < shade && getComputedStyle(strip).zIndex === '0' && layers.every((k) => k.parentElement === strip && Number(k.dataset.ground) > 0);
         });
         if (mode === 'night') check(order, 'every strip gag layer and prop is put on the screen under the night\'s shade');
         const box = (sel) => page.evaluate((q) => { const r = [...document.querySelectorAll(q)].at(-1).getBoundingClientRect(); return { x: r.x + r.width * 0.2, y: r.y + r.height * 0.2, width: r.width * 0.6, height: r.height * 0.6 }; }, sel);
