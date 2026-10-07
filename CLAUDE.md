@@ -727,7 +727,7 @@ something, give exact clicks and one command at a time.
 - REAL FILES, no synth (the old synth engine, `synth.ts` / `sfx.ts` / `music.ts`, is DELETED: do not
   bring it back). Jay's picked cartoon sounds and music live in `public/audio/` (`sfx/<key>.mp3`, 42
   of them; `music/<style>_<menu|play>.{ogg|opus,mp3}`, six loops), built by
-  `python3 tools/audio-pack.py` from the packs in `~/Desktop/RHR Art Inbox/Sound files/`
+  `python3 tools/audio-pack.py` (it re-encodes the music's Opus files a little differently each run: `git checkout public/audio/music` if only effects changed) from the packs in `~/Desktop/RHR Art Inbox/Sound files/`
   (`rhr_cartoon_sounds`, `rhr_music_styles`; needs ffmpeg). The script copies ONLY the picks, trims
   leading silence, cuts long files to the part the game uses, fades every one-shot's end, and writes
   `src/audio/pack.json` (length and measured loudness of each file) and `credits.json`. To change a
@@ -740,7 +740,7 @@ something, give exact clicks and one command at a time.
   audioSession.type = 'ambient'` where supported, so the iPhone's silent switch mutes it. NOTHING is
   fetched before that tap, nor while its switch is off: the game's own effects (0.9 MB; not gag wave 3's, see LAZY below) load when Sound
   effects is on, ONE music loop only when Music is on. The UI only calls `sound.*` cues; every
-  button pops by itself (`tap`, and `back` for Back/Close: a pointer listener in `install`).
+  button clicks by itself (`click`: a pointer listener in `install`, see THE BUTTONS' CLICK).
   `sound.quiet()` when leaving the game screen; `GameView.leave()` stops its gags (and their sounds).
 - Cues: drag (`drag` + the `motor` loop, pitched with speed), backing up (`reverse` loop), bump then
   `radio` before the bubble, an exit (`clack`; exits within `CHAIN_MS` add the toy `horn` as
@@ -792,6 +792,26 @@ something, give exact clicks and one command at a time.
     the output under `?audiolog`: `__rhrAudio.peak()`), the new cues land on their beats, the
     lazy loading holds. NOBODY HAS LISTENED in these tests: the levels are measured, not heard.
   - The bear's business uses the magpie's dropping sound (`bear.relief`: `splat`, then `puff`).
+- THE BUTTONS' CLICK (Jay, Oct 6): EVERY button tap plays ONE sound, `click`, the same everywhere
+  (menus, Settings, Undo, Hint, Restart, region tabs, level rows, the log and its cards, the win
+  card, Back and Close): a soft wooden toy click, 60 ms (`ui_click` in `tools/sound-picks.py`,
+  exported to `tools/sfx-art/click.wav`), a notch under the truck's own sounds in the mix
+  (`VOLUME.click`; a unit test holds it under drag, clack and bump). The old soap-bubble `back`
+  pop is gone, file and code; `tap` (the pop) is kept only for the win card's hard hats and three
+  gags. One listener in `engine.ts` `install`: a touch that lifts on the button it landed on
+  (`BUTTONS`), within `TAP_SLOP` 10 px (a swipe of the region bar is silent), NEVER anything on
+  the lease (`NOT_BUTTONS` `.board`: a truck drag has its own sounds). It respects the Sound
+  effects switch like every cue.
+- HAPTICS (`src/audio/haptics.ts`): one light tick on every button tap and on each truck's exit
+  (`sound.exit`). THEY FOLLOW THE SOUND EFFECTS SWITCH (no toggle of their own), so they are off
+  by default. Android: `navigator.vibrate(TICK_MS)` (8 ms). iPhone: Safari has no vibration, so
+  the iOS 18 workaround: ONE hidden `<input type="checkbox" switch>` in a label
+  (`label.haptic-switch`: in the page, unseen, never touchable) whose label is clicked. WHETHER
+  AN IPHONE REALLY TICKS CANNOT BE TESTED BY A SCRIPT: Jay tries it in Safari and as the
+  home-screen app; if it is not dependable, delete `iosTick` and leave the iPhone without.
+  `?haptics=0` turns them off; `?hapticlog` records ticks in `window.__rhrHaptics`.
+  `npm run test:e2e:click` (Chromium as a Pixel 7, WebKit as an iPhone 13) checks every kind of
+  button, the click's length, no click on a drag, a tick per exit, and silence with the switch off.
 - Test hook: `?audiolog` exposes `window.__rhrAudio` (its `log` lists cues as they fire and files as
   they load; `musicState()`, `loopRunning(name)`). `npm run test:e2e:audio` checks the lazy loading,
   every cue, gag sounds, the styles, and that every loop file decodes (Chromium and WebKit) to
@@ -1177,6 +1197,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:depth` – the depth rule on every region's standard scene at three phone sizes: order, one lane, no ties, nobody lost behind a prop (`ONLY=surveyor`, `REGION=1`, `SIZE=iPhone` narrow it; start the dev server first)
 - `npm run test:e2e:gagsounds` – every gag (all 26) with sound on in WebKit: cues, timing, output level, lazy loading (`ONLY=beaver` runs one; start the dev server first)
 - `npm run test:e2e:offline` – the built site under the Pages base path: the service worker registers, fills its cache through 503s, and the game plays with the network gone (builds first; needs no dev server)
+- `npm run test:e2e:click` – the buttons' one click and the haptic tick: every kind of button, never on a drag, a tick per truck out, nothing with the switch off (start the dev server first)
 - `npm run test:e2e:audio` – sound: lazy loading, every cue, gag sounds, the three music styles, gapless loops, Credits (start the dev server first)
 
 ## Out of scope (M2)

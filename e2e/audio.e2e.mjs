@@ -164,7 +164,7 @@ console.log('\nchromium iPhone 13: every cue, at its moment (Sound effects on)')
   await tapOn(page, cdp, '.tutorial [data-t="next"]');
   await tapOn(page, cdp, '.tutorial [data-t="close"]');
   let log = await heard(page);
-  check(count(log, 'tap') === 2 && count(log, 'back') === 1, `buttons pop when tapped, and Close has the softer pop (${list(log)})`);
+  check(count(log, 'click') === 3 && count(log, 'tap') === 0, `every button, Close included, has the one click (${list(log)})`);
 
   // A level where a truck can back up, and one that is blocked.
   let pick = null;

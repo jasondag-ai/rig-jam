@@ -17,7 +17,9 @@ export const VOLUME: Record<SfxKey, number> = {
   // The player's truck
   drag: 0.45, motor: 0.22, reverse: 0.3, bump: 0.8, clack: 0.55, horn: 0.5, radio: 0.3,
   // Results and menus
-  tada: 0.8, lose: 0.7, streak: 0.7, tap: 0.4, back: 0.4,
+  tada: 0.8, lose: 0.7, streak: 0.7, tap: 0.4,
+  // EVERY button's tap, the same everywhere: a notch under the truck's own sounds (drag, clack, bump)
+  click: 0.32,
   // People and engines in the gags
   step: 0.3, quad_start: 0.4, quad_idle: 0.3, quad_rev: 0.36, snore: 0.5, cord: 0.5,
   // Animals

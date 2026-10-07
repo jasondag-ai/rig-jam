@@ -50,7 +50,7 @@ SFX = {
     'lose': ('sfx/08_win_over_par_wah_wah_horn_c.mp3', None, False),
     'streak': ('sfx/09_streak_up_winning_chimes_b.mp3', None, False),
     'tap': ('sfx/10_button_tap_oga_pop1_c.mp3', None, False),
-    'back': ('sfx/11_back_button_soap_bubble_a.mp3', None, False),
+    'click': ('art/click.wav', None, False),        # EVERY button's tap: one wooden toy click (the soap-bubble Back pop is gone)
     'step': ('sfx/13_footsteps_kenney_wood_000_c.mp3', None, False),
     'quad_start': ('sfx/14_quad_start_motor_seamless_03_a.mp3', 1.2, False),
     'quad_idle': ('sfx/14_quad_idle_motor_seamless_04_a.mp3', None, True),
@@ -110,7 +110,7 @@ ART_SRC = ROOT / 'tools' / 'sfx-art'
 # THE SOUND PASS'S FILES ARE LEVELLED as they are built: each is brought to the same average level
 # (LEVEL_MEAN, the mix's own target in src/audio/pack.ts), but never so far that its peak passes
 # LEVEL_PEAK. The mix table then only has to give each its place.
-LEVELLED = {'knock', 'tada', 'clack', 'squelch', 'shluck', 'blup', 'mew', 'yawn', 'pats', 'bonk', 'tailslap', 'shimmer', 'howl', 'rustle', 'whistle', 'squeak',
+LEVELLED = {'knock', 'tada', 'clack', 'click', 'squelch', 'shluck', 'blup', 'mew', 'yawn', 'pats', 'bonk', 'tailslap', 'shimmer', 'howl', 'rustle', 'whistle', 'squeak',
             'aww', 'rumble', 'sigh', 'rain', 'umbrella', 'downpour'}
 LEVEL_MEAN = -19.0
 LEVEL_PEAK = -1.5

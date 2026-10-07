@@ -4,6 +4,7 @@
 // Nothing is fetched before that first tap, and nothing at all while its switch is off: the effects
 // load when Sound effects is on, a music loop only when Music is on. Where Safari supports it the
 // session is "ambient", so the iPhone's silent switch mutes the game.
+import { haptic } from './haptics.ts';
 import { STEP_CELLS, chordLift, nextChain, winCue } from './cues.ts';
 import { GAG_LOOPS, GAG_SOUNDS, gagKeys, parseCue, type GagLoop } from './gag-sounds.ts';
 import { CORE_KEYS, LAZY_KEYS, MUSIC_FADE, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, sfxInfo, type MusicKey, type Scene, type SfxKey } from './pack.ts';
@@ -43,7 +44,7 @@ class AudioEngine {
   private installed = false;
   private meter: AnalyserNode | null = null;
 
-  /** Listens for the first tap/key to start audio, and for taps on buttons (the UI's pops). Safe to call more than once. */
+  /** Listens for the first tap/key to start audio, and for taps on buttons (the UI's click). Safe to call more than once. */
   install(): void {
     if (this.installed) return;
     this.installed = true;
@@ -54,14 +55,25 @@ class AudioEngine {
       if (document.hidden) void this.ctx.suspend();
       else void this.ctx.resume();
     });
-    // Every button pops when tapped (a touch that lifts on the button it landed on): a softer pop for Back and Close.
+    // EVERY BUTTON TAP PLAYS ONE CLICK (Jay, Oct 6): the same soft wooden click everywhere, and a
+    // light haptic tick (haptics.ts; it follows the Sound effects switch). A tap = a
+    // touch that lifts on the button it landed on, within TAP_SLOP of where it landed (so a swipe
+    // of the region bar is silent). Never anything on the board: a truck drag has its own sounds.
     let down: Element | null = null;
-    document.addEventListener('pointerdown', (e) => (down = (e.target as Element | null)?.closest?.(BUTTONS) ?? null), { capture: true });
+    let at = { x: 0, y: 0 };
+    const button = (e: Event) => {
+      const t = e.target as Element | null;
+      return t?.closest?.(NOT_BUTTONS) ? null : (t?.closest?.(BUTTONS) ?? null);
+    };
+    document.addEventListener('pointerdown', (e) => ((down = button(e)), (at = { x: e.clientX, y: e.clientY })), { capture: true });
     document.addEventListener(
       'pointerup',
       (e) => {
-        const on = (e.target as Element | null)?.closest?.(BUTTONS) ?? null;
-        if (on && on === down && !(on as HTMLButtonElement).disabled) this.play(on.matches(BACKS) ? 'back' : 'tap');
+        const on = button(e);
+        if (on && on === down && !(on as HTMLButtonElement).disabled && Math.hypot(e.clientX - at.x, e.clientY - at.y) <= TAP_SLOP) {
+          this.play('click');
+          haptic(this.settings.sfx);
+        }
         down = null;
       },
       { capture: true },
@@ -359,8 +371,10 @@ class AudioEngine {
 }
 
 /** What pops when tapped, and which of those are a way back. */
-const BUTTONS = 'button, .btn, [role="tab"], [role="radio"], label.switch, a[href]';
-const BACKS = '[data-act="levels"], [data-act="close"], [data-act="cancel"], [data-t="close"], .back, .t-x';
+const BUTTONS = 'button, .btn, [role="tab"], [role="radio"], [role="button"], label.switch, a[href]';
+/** Never a button's click: anything on the lease (trucks, equipment, gates). */
+const NOT_BUTTONS = '.board';
+const TAP_SLOP = 10;
 
 export const audio = new AudioEngine();
 
@@ -411,6 +425,7 @@ export const sound = {
   /** A truck drives out: a light wooden clack at the gate; quick exits in a row sound the toy horn as a chord that climbs. */
   exit(): void {
     audio.play('clack');
+    haptic(audio.settings.sfx);
     const now = performance.now();
     chain = nextChain(lastExitAt, now, chain);
     lastExitAt = now;

@@ -48,10 +48,10 @@
    "peak": -1.9,
    "loop": false
   },
-  "back": {
-   "seconds": 0.23,
-   "mean": -15.6,
-   "peak": -0.4,
+  "click": {
+   "seconds": 0.06,
+   "mean": -19.7,
+   "peak": -6.2,
    "loop": false
   },
   "step": {

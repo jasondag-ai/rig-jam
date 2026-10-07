@@ -257,6 +257,12 @@ def exit_clack():
     return finish(mix(0.3, (knock(620, 0.035, 8), 0, 1), (knock(520, 0.03, 9), 0.065, 0.5)), peak_db=-8)
 
 
+def ui_click():
+    """Every button's tap: one soft wooden toy click, 60 ms from start to silence (Jay: under 80 ms)."""
+    x = knock(680, 0.014, 11)[:int(0.06 * SR)]
+    return finish(x, peak_db=-8, top=5200, tail=0.03)
+
+
 def exit_chime():
     d = 0.9
     return finish(struck(d, [(1318.5, 1, 0.28), (1975.5, 0.4, 0.2), (2637, 0.12, 0.1)]) * env(d, 0.006), peak_db=-10, tail=0.2)
@@ -726,6 +732,7 @@ PICKED = {
     'knock': sign_rattle_a,        # sign_rattle A
     'tada': tada_xylo,             # level_complete B
     'clack': exit_clack,           # gate_exit B
+    'click': ui_click,             # every button tap (Oct 6: one click everywhere)
     'mew': cat_mews_a,             # cat_mews A
     'yawn': cat_yawn_a,            # cat_yawn A
     'pats': beaver_pats,           # beaver_pats A

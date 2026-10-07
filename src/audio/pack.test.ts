@@ -19,10 +19,19 @@ describe("the sound pack: Jay's picks, as files", () => {
     expect(readdirSync(pub('music')).sort()).toEqual(music.sort());
   });
 
+  it('every button has ONE click, a notch under the truck\'s own sounds', () => {
+    expect(SFX_KEYS).toContain('click');
+    expect(SFX_KEYS).not.toContain('back');
+    for (const truck of ['drag', 'clack', 'bump'] as const) expect(gainFor('click'), truck).toBeLessThan(gainFor(truck));
+    expect(gainFor('click')).toBeGreaterThan(0.25);
+  });
+
   it('nothing ends abruptly: every one-shot was given a fade, and the long ones were cut to what the game uses', () => {
     for (const key of SFX_KEYS) {
       const i = sfxInfo(key);
-      expect(i.seconds, key).toBeGreaterThan(0.1);
+      // (The buttons' click is the one short one: under 80 ms, by Jay's order.)
+      if (key === 'click') expect(i.seconds, key).toBeLessThan(0.08);
+      else expect(i.seconds, key).toBeGreaterThan(0.1);
       if (!i.loop) expect(i.seconds, key).toBeLessThan(3.5);
     }
     // The 7 s cartoon drive is only its first rev; the goose is one honk.
@@ -269,8 +278,8 @@ describe('credits', () => {
     }
     const groups = sfxCredits();
     expect(groups.reduce((n, g) => n + g.count, 0)).toBe(60);
-    // (The outhouse door, the pumpjack, and the seventeen synthesized picks of the sound pass.)
-    expect(groups.find((g) => g.author === 'Synthesized for Rush Hour Rigs')?.count).toBe(19);
+    // (The outhouse door, the pumpjack, and the seventeen synthesized picks of the sound pass, and the buttons' click.)
+    expect(groups.find((g) => g.author === 'Synthesized for Rush Hour Rigs')?.count).toBe(20);
     // Nothing picked needs an attribution licence (no CC BY track): Pixabay, Mixkit, CC0 and our own.
     for (const c of CREDITS) expect(c.licence, c.file).toMatch(/Pixabay|Mixkit|CC0|Original/);
   });
