@@ -1,27 +1,79 @@
 {
  "size": 8,
- "target": {
-  "trucks": [
-   14,
-   18
-  ],
-  "extra": [
-   6,
-   15
-  ]
- },
- "seed": 1,
- "minutes": 10,
- "seconds": 527,
- "workers": 8,
- "seedsTried": 2715,
- "padsGrown": 60,
- "padsInTarget": 59,
- "padsWith10OrMore": 37,
- "extraMovesWonBy": {
-  "slides": 218,
-  "redeals": 221
- },
+ "batches": [
+  {
+   "target": {
+    "trucks": [
+     14,
+     18
+    ],
+    "extra": [
+     6,
+     15
+    ]
+   },
+   "seed": 1,
+   "minutes": 10,
+   "seconds": 527,
+   "workers": 8,
+   "seedsTried": 2715,
+   "padsGrown": 60,
+   "padsInTarget": 59,
+   "padsWith10OrMore": 37,
+   "extraMovesWonBy": {
+    "slides": 218,
+    "redeals": 221
+   }
+  },
+  {
+   "target": {
+    "trucks": [
+     12,
+     15
+    ],
+    "extra": [
+     6,
+     10
+    ]
+   },
+   "seed": 7,
+   "minutes": 4,
+   "seconds": 224,
+   "workers": 8,
+   "seedsTried": 912,
+   "padsGrown": 85,
+   "padsInTarget": 83,
+   "padsWith10OrMore": 12,
+   "extraMovesWonBy": {
+    "slides": 229,
+    "redeals": 228
+   }
+  },
+  {
+   "target": {
+    "trucks": [
+     15,
+     16
+    ],
+    "extra": [
+     11,
+     15
+    ]
+   },
+   "seed": 11,
+   "minutes": 4,
+   "seconds": 216,
+   "workers": 8,
+   "seedsTried": 784,
+   "padsGrown": 16,
+   "padsInTarget": 10,
+   "padsWith10OrMore": 14,
+   "extraMovesWonBy": {
+    "slides": 66,
+    "redeals": 73
+   }
+  }
+ ],
  "candidates": [
   {
    "id": "bp01",
@@ -1717,6 +1769,680 @@
    }
   },
   {
+   "id": "bp31",
+   "size": 8,
+   "par": 30,
+   "trucks": 16,
+   "extraMoves": 14,
+   "chain": 8,
+   "rings": 1,
+   "wonBy": {
+    "slides": 3,
+    "redeals": 9
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 480,
+   "lookedAt": 214819,
+   "hintPath": [
+    {
+     "id": "N",
+     "delta": 1
+    },
+    {
+     "id": "C",
+     "delta": 1
+    },
+    {
+     "id": "B",
+     "delta": 1
+    },
+    {
+     "id": "I",
+     "delta": 1
+    },
+    {
+     "id": "H",
+     "delta": 1
+    },
+    {
+     "id": "J",
+     "delta": 5
+    },
+    {
+     "id": "H",
+     "delta": -1
+    },
+    {
+     "id": "A",
+     "delta": 2
+    },
+    {
+     "id": "D",
+     "delta": -4
+    },
+    {
+     "id": "K",
+     "delta": -3
+    },
+    {
+     "id": "A",
+     "delta": -1
+    },
+    {
+     "id": "B",
+     "delta": -1
+    },
+    {
+     "id": "L",
+     "delta": -3
+    },
+    {
+     "id": "C",
+     "delta": -5
+    },
+    {
+     "id": "B",
+     "delta": 2
+    },
+    {
+     "id": "H",
+     "delta": 2
+    },
+    {
+     "id": "I",
+     "delta": 1
+    },
+    {
+     "id": "G",
+     "delta": -2
+    },
+    {
+     "id": "P",
+     "delta": 1
+    },
+    {
+     "id": "F",
+     "delta": 6
+    },
+    {
+     "id": "E",
+     "delta": 2
+    },
+    {
+     "id": "O",
+     "delta": 5
+    },
+    {
+     "id": "M",
+     "delta": -3
+    },
+    {
+     "id": "L",
+     "delta": -2
+    },
+    {
+     "id": "D",
+     "delta": -2
+    },
+    {
+     "id": "G",
+     "delta": -4
+    },
+    {
+     "id": "I",
+     "delta": -4
+    },
+    {
+     "id": "H",
+     "delta": -4
+    },
+    {
+     "id": "B",
+     "delta": -6
+    },
+    {
+     "id": "A",
+     "delta": 4
+    }
+   ],
+   "level": {
+    "id": "bp31",
+    "name": "Big Pad 31",
+    "par": 30,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "green",
+      "row": 4,
+      "col": 1,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "red",
+      "row": 4,
+      "col": 4,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "green",
+      "row": 6,
+      "col": 4,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "purple",
+      "row": 6,
+      "col": 2,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "green",
+      "row": 1,
+      "col": 3,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "F",
+      "color": "blue",
+      "row": 0,
+      "col": 6,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "yellow",
+      "row": 3,
+      "col": 6,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "red",
+      "row": 2,
+      "col": 4,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "orange",
+      "row": 2,
+      "col": 5,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "J",
+      "color": "orange",
+      "row": 2,
+      "col": 0,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "K",
+      "color": "purple",
+      "row": 7,
+      "col": 3,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "L",
+      "color": "yellow",
+      "row": 5,
+      "col": 1,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "M",
+      "color": "blue",
+      "row": 3,
+      "col": 0,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "N",
+      "color": "orange",
+      "row": 5,
+      "col": 7,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "O",
+      "color": "green",
+      "row": 1,
+      "col": 0,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "P",
+      "color": "red",
+      "row": 7,
+      "col": 5,
+      "length": 2,
+      "orient": "h"
+     }
+    ],
+    "gates": [
+     {
+      "color": "red",
+      "side": "right",
+      "index": 7
+     },
+     {
+      "color": "blue",
+      "side": "bottom",
+      "index": 6
+     },
+     {
+      "color": "purple",
+      "side": "left",
+      "index": 7
+     },
+     {
+      "color": "yellow",
+      "side": "left",
+      "index": 3
+     },
+     {
+      "color": "green",
+      "side": "right",
+      "index": 4
+     },
+     {
+      "color": "orange",
+      "side": "bottom",
+      "index": 7
+     },
+     {
+      "color": "red",
+      "side": "top",
+      "index": 4
+     },
+     {
+      "color": "orange",
+      "side": "right",
+      "index": 2
+     },
+     {
+      "color": "blue",
+      "side": "top",
+      "index": 0
+     },
+     {
+      "color": "green",
+      "side": "left",
+      "index": 6
+     },
+     {
+      "color": "purple",
+      "side": "top",
+      "index": 2
+     },
+     {
+      "color": "yellow",
+      "side": "top",
+      "index": 1
+     },
+     {
+      "color": "green",
+      "side": "right",
+      "index": 1
+     },
+     {
+      "color": "orange",
+      "side": "top",
+      "index": 5
+     }
+    ]
+   }
+  },
+  {
+   "id": "bp32",
+   "size": 8,
+   "par": 29,
+   "trucks": 15,
+   "extraMoves": 14,
+   "chain": 8,
+   "rings": 2,
+   "wonBy": {
+    "slides": 5,
+    "redeals": 7
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 23,
+   "lookedAt": 9009,
+   "hintPath": [
+    {
+     "id": "E",
+     "delta": 1
+    },
+    {
+     "id": "A",
+     "delta": -1
+    },
+    {
+     "id": "N",
+     "delta": -3
+    },
+    {
+     "id": "B",
+     "delta": 2
+    },
+    {
+     "id": "D",
+     "delta": -3
+    },
+    {
+     "id": "L",
+     "delta": 4
+    },
+    {
+     "id": "F",
+     "delta": 1
+    },
+    {
+     "id": "G",
+     "delta": 1
+    },
+    {
+     "id": "M",
+     "delta": -1
+    },
+    {
+     "id": "K",
+     "delta": -1
+    },
+    {
+     "id": "F",
+     "delta": 1
+    },
+    {
+     "id": "O",
+     "delta": -4
+    },
+    {
+     "id": "E",
+     "delta": -3
+    },
+    {
+     "id": "B",
+     "delta": -3
+    },
+    {
+     "id": "I",
+     "delta": 3
+    },
+    {
+     "id": "D",
+     "delta": 5
+    },
+    {
+     "id": "C",
+     "delta": 6
+    },
+    {
+     "id": "F",
+     "delta": 2
+    },
+    {
+     "id": "K",
+     "delta": 5
+    },
+    {
+     "id": "M",
+     "delta": 3
+    },
+    {
+     "id": "O",
+     "delta": -1
+    },
+    {
+     "id": "H",
+     "delta": 6
+    },
+    {
+     "id": "N",
+     "delta": -1
+    },
+    {
+     "id": "A",
+     "delta": -1
+    },
+    {
+     "id": "J",
+     "delta": -5
+    },
+    {
+     "id": "E",
+     "delta": -2
+    },
+    {
+     "id": "G",
+     "delta": 4
+    },
+    {
+     "id": "F",
+     "delta": -6
+    },
+    {
+     "id": "B",
+     "delta": -3
+    }
+   ],
+   "level": {
+    "id": "bp32",
+    "name": "Big Pad 32",
+    "par": 29,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "red",
+      "row": 1,
+      "col": 2,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "purple",
+      "row": 4,
+      "col": 6,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "blue",
+      "row": 6,
+      "col": 0,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "red",
+      "row": 3,
+      "col": 4,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "purple",
+      "row": 4,
+      "col": 5,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "F",
+      "color": "green",
+      "row": 2,
+      "col": 3,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "green",
+      "row": 2,
+      "col": 0,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "blue",
+      "row": 0,
+      "col": 0,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "blue",
+      "row": 6,
+      "col": 2,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "J",
+      "color": "red",
+      "row": 1,
+      "col": 5,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "K",
+      "color": "orange",
+      "row": 5,
+      "col": 1,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "L",
+      "color": "yellow",
+      "row": 4,
+      "col": 1,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "M",
+      "color": "blue",
+      "row": 3,
+      "col": 0,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "N",
+      "color": "orange",
+      "row": 0,
+      "col": 4,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "O",
+      "color": "yellow",
+      "row": 3,
+      "col": 5,
+      "length": 3,
+      "orient": "h"
+     }
+    ],
+    "gates": [
+     {
+      "color": "red",
+      "side": "bottom",
+      "index": 4
+     },
+     {
+      "color": "green",
+      "side": "top",
+      "index": 3
+     },
+     {
+      "color": "orange",
+      "side": "right",
+      "index": 5
+     },
+     {
+      "color": "blue",
+      "side": "bottom",
+      "index": 0
+     },
+     {
+      "color": "yellow",
+      "side": "right",
+      "index": 4
+     },
+     {
+      "color": "purple",
+      "side": "top",
+      "index": 6
+     },
+     {
+      "color": "blue",
+      "side": "right",
+      "index": 6
+     },
+     {
+      "color": "red",
+      "side": "left",
+      "index": 1
+     },
+     {
+      "color": "orange",
+      "side": "left",
+      "index": 0
+     },
+     {
+      "color": "green",
+      "side": "right",
+      "index": 2
+     },
+     {
+      "color": "yellow",
+      "side": "left",
+      "index": 3
+     },
+     {
+      "color": "purple",
+      "side": "top",
+      "index": 5
+     }
+    ]
+   }
+  },
+  {
    "id": "bp06",
    "size": 8,
    "par": 28,
@@ -3037,6 +3763,338 @@
       "color": "blue",
       "side": "bottom",
       "index": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "bp33",
+   "size": 8,
+   "par": 28,
+   "trucks": 15,
+   "extraMoves": 13,
+   "chain": 8,
+   "rings": 2,
+   "wonBy": {
+    "slides": 5,
+    "redeals": 4
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 35,
+   "lookedAt": 7529,
+   "hintPath": [
+    {
+     "id": "M",
+     "delta": -1
+    },
+    {
+     "id": "J",
+     "delta": -1
+    },
+    {
+     "id": "O",
+     "delta": -1
+    },
+    {
+     "id": "B",
+     "delta": 3
+    },
+    {
+     "id": "C",
+     "delta": 2
+    },
+    {
+     "id": "G",
+     "delta": -1
+    },
+    {
+     "id": "L",
+     "delta": 2
+    },
+    {
+     "id": "E",
+     "delta": -3
+    },
+    {
+     "id": "D",
+     "delta": 2
+    },
+    {
+     "id": "A",
+     "delta": -2
+    },
+    {
+     "id": "B",
+     "delta": -5
+    },
+    {
+     "id": "M",
+     "delta": -2
+    },
+    {
+     "id": "J",
+     "delta": 1
+    },
+    {
+     "id": "O",
+     "delta": 1
+    },
+    {
+     "id": "D",
+     "delta": 3
+    },
+    {
+     "id": "K",
+     "delta": 4
+    },
+    {
+     "id": "I",
+     "delta": 6
+    },
+    {
+     "id": "E",
+     "delta": 5
+    },
+    {
+     "id": "L",
+     "delta": -5
+    },
+    {
+     "id": "F",
+     "delta": -2
+    },
+    {
+     "id": "J",
+     "delta": -5
+    },
+    {
+     "id": "G",
+     "delta": 6
+    },
+    {
+     "id": "N",
+     "delta": 6
+    },
+    {
+     "id": "H",
+     "delta": 5
+    },
+    {
+     "id": "A",
+     "delta": -3
+    },
+    {
+     "id": "F",
+     "delta": -3
+    },
+    {
+     "id": "O",
+     "delta": -5
+    },
+    {
+     "id": "M",
+     "delta": 6
+    }
+   ],
+   "level": {
+    "id": "bp33",
+    "name": "Big Pad 33",
+    "par": 28,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "purple",
+      "row": 1,
+      "col": 5,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "orange",
+      "row": 2,
+      "col": 7,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "red",
+      "row": 4,
+      "col": 3,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "green",
+      "row": 0,
+      "col": 4,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "blue",
+      "row": 3,
+      "col": 3,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "F",
+      "color": "orange",
+      "row": 5,
+      "col": 3,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "red",
+      "row": 6,
+      "col": 1,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "yellow",
+      "row": 0,
+      "col": 0,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "red",
+      "row": 4,
+      "col": 0,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "J",
+      "color": "green",
+      "row": 7,
+      "col": 5,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "K",
+      "color": "purple",
+      "row": 2,
+      "col": 1,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "L",
+      "color": "orange",
+      "row": 3,
+      "col": 2,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "M",
+      "color": "blue",
+      "row": 3,
+      "col": 6,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "N",
+      "color": "yellow",
+      "row": 0,
+      "col": 1,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "O",
+      "color": "purple",
+      "row": 5,
+      "col": 5,
+      "length": 3,
+      "orient": "h"
+     }
+    ],
+    "gates": [
+     {
+      "color": "blue",
+      "side": "bottom",
+      "index": 6
+     },
+     {
+      "color": "yellow",
+      "side": "bottom",
+      "index": 1
+     },
+     {
+      "color": "red",
+      "side": "right",
+      "index": 6
+     },
+     {
+      "color": "orange",
+      "side": "top",
+      "index": 3
+     },
+     {
+      "color": "purple",
+      "side": "left",
+      "index": 1
+     },
+     {
+      "color": "green",
+      "side": "left",
+      "index": 7
+     },
+     {
+      "color": "orange",
+      "side": "top",
+      "index": 2
+     },
+     {
+      "color": "green",
+      "side": "bottom",
+      "index": 4
+     },
+     {
+      "color": "yellow",
+      "side": "bottom",
+      "index": 0
+     },
+     {
+      "color": "blue",
+      "side": "right",
+      "index": 3
+     },
+     {
+      "color": "red",
+      "side": "right",
+      "index": 4
+     },
+     {
+      "color": "purple",
+      "side": "left",
+      "index": 5
+     },
+     {
+      "color": "purple",
+      "side": "right",
+      "index": 2
+     },
+     {
+      "color": "orange",
+      "side": "top",
+      "index": 7
      }
     ]
    }
@@ -4985,6 +6043,652 @@
    }
   },
   {
+   "id": "bp34",
+   "size": 8,
+   "par": 27,
+   "trucks": 15,
+   "extraMoves": 12,
+   "chain": 8,
+   "rings": 1,
+   "wonBy": {
+    "slides": 4,
+    "redeals": 6
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 228,
+   "lookedAt": 67112,
+   "hintPath": [
+    {
+     "id": "K",
+     "delta": -1
+    },
+    {
+     "id": "C",
+     "delta": 1
+    },
+    {
+     "id": "L",
+     "delta": 3
+    },
+    {
+     "id": "B",
+     "delta": 5
+    },
+    {
+     "id": "G",
+     "delta": 1
+    },
+    {
+     "id": "N",
+     "delta": -2
+    },
+    {
+     "id": "K",
+     "delta": -1
+    },
+    {
+     "id": "D",
+     "delta": 2
+    },
+    {
+     "id": "M",
+     "delta": 1
+    },
+    {
+     "id": "C",
+     "delta": -3
+    },
+    {
+     "id": "J",
+     "delta": 2
+    },
+    {
+     "id": "G",
+     "delta": 3
+    },
+    {
+     "id": "F",
+     "delta": 2
+    },
+    {
+     "id": "E",
+     "delta": 6
+    },
+    {
+     "id": "N",
+     "delta": -2
+    },
+    {
+     "id": "H",
+     "delta": -2
+    },
+    {
+     "id": "I",
+     "delta": -5
+    },
+    {
+     "id": "O",
+     "delta": -1
+    },
+    {
+     "id": "K",
+     "delta": -1
+    },
+    {
+     "id": "C",
+     "delta": -2
+    },
+    {
+     "id": "F",
+     "delta": 4
+    },
+    {
+     "id": "G",
+     "delta": -5
+    },
+    {
+     "id": "D",
+     "delta": -5
+    },
+    {
+     "id": "L",
+     "delta": -5
+    },
+    {
+     "id": "A",
+     "delta": -5
+    },
+    {
+     "id": "J",
+     "delta": 2
+    },
+    {
+     "id": "M",
+     "delta": -6
+    }
+   ],
+   "level": {
+    "id": "bp34",
+    "name": "Big Pad 34",
+    "par": 27,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "red",
+      "row": 7,
+      "col": 5,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "purple",
+      "row": 0,
+      "col": 4,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "yellow",
+      "row": 4,
+      "col": 4,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "purple",
+      "row": 3,
+      "col": 3,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "orange",
+      "row": 0,
+      "col": 0,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "F",
+      "color": "blue",
+      "row": 0,
+      "col": 2,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "yellow",
+      "row": 2,
+      "col": 1,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "green",
+      "row": 2,
+      "col": 0,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "green",
+      "row": 5,
+      "col": 0,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "J",
+      "color": "red",
+      "row": 1,
+      "col": 5,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "K",
+      "color": "green",
+      "row": 5,
+      "col": 3,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "L",
+      "color": "orange",
+      "row": 6,
+      "col": 2,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "M",
+      "color": "green",
+      "row": 5,
+      "col": 5,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "N",
+      "color": "blue",
+      "row": 4,
+      "col": 1,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "O",
+      "color": "red",
+      "row": 7,
+      "col": 1,
+      "length": 3,
+      "orient": "h"
+     }
+    ],
+    "gates": [
+     {
+      "color": "yellow",
+      "side": "left",
+      "index": 2
+     },
+     {
+      "color": "blue",
+      "side": "bottom",
+      "index": 2
+     },
+     {
+      "color": "green",
+      "side": "top",
+      "index": 0
+     },
+     {
+      "color": "red",
+      "side": "bottom",
+      "index": 5
+     },
+     {
+      "color": "orange",
+      "side": "right",
+      "index": 0
+     },
+     {
+      "color": "purple",
+      "side": "top",
+      "index": 3
+     },
+     {
+      "color": "orange",
+      "side": "left",
+      "index": 6
+     },
+     {
+      "color": "blue",
+      "side": "top",
+      "index": 1
+     },
+     {
+      "color": "green",
+      "side": "left",
+      "index": 5
+     },
+     {
+      "color": "yellow",
+      "side": "left",
+      "index": 4
+     },
+     {
+      "color": "purple",
+      "side": "bottom",
+      "index": 4
+     },
+     {
+      "color": "red",
+      "side": "left",
+      "index": 7
+     }
+    ]
+   }
+  },
+  {
+   "id": "bp35",
+   "size": 8,
+   "par": 27,
+   "trucks": 15,
+   "extraMoves": 12,
+   "chain": 8,
+   "rings": 2,
+   "wonBy": {
+    "slides": 7,
+    "redeals": 3
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 1365,
+   "lookedAt": 375747,
+   "hintPath": [
+    {
+     "id": "B",
+     "delta": 1
+    },
+    {
+     "id": "J",
+     "delta": 2
+    },
+    {
+     "id": "N",
+     "delta": 1
+    },
+    {
+     "id": "C",
+     "delta": 1
+    },
+    {
+     "id": "M",
+     "delta": 2
+    },
+    {
+     "id": "K",
+     "delta": 3
+    },
+    {
+     "id": "O",
+     "delta": -5
+    },
+    {
+     "id": "I",
+     "delta": -1
+    },
+    {
+     "id": "A",
+     "delta": 2
+    },
+    {
+     "id": "F",
+     "delta": -4
+    },
+    {
+     "id": "H",
+     "delta": 1
+    },
+    {
+     "id": "E",
+     "delta": -3
+    },
+    {
+     "id": "F",
+     "delta": 3
+    },
+    {
+     "id": "K",
+     "delta": -2
+    },
+    {
+     "id": "A",
+     "delta": -2
+    },
+    {
+     "id": "D",
+     "delta": -5
+    },
+    {
+     "id": "G",
+     "delta": 4
+    },
+    {
+     "id": "H",
+     "delta": 1
+    },
+    {
+     "id": "L",
+     "delta": -5
+    },
+    {
+     "id": "M",
+     "delta": 2
+    },
+    {
+     "id": "F",
+     "delta": 2
+    },
+    {
+     "id": "N",
+     "delta": -6
+    },
+    {
+     "id": "C",
+     "delta": -6
+    },
+    {
+     "id": "B",
+     "delta": 4
+    },
+    {
+     "id": "K",
+     "delta": 4
+    },
+    {
+     "id": "I",
+     "delta": 6
+    },
+    {
+     "id": "A",
+     "delta": 4
+    }
+   ],
+   "level": {
+    "id": "bp35",
+    "name": "Big Pad 35",
+    "par": 27,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "orange",
+      "row": 1,
+      "col": 1,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "red",
+      "row": 0,
+      "col": 6,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "orange",
+      "row": 4,
+      "col": 5,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "yellow",
+      "row": 5,
+      "col": 4,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "orange",
+      "row": 4,
+      "col": 3,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "F",
+      "color": "green",
+      "row": 4,
+      "col": 2,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "green",
+      "row": 7,
+      "col": 1,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "blue",
+      "row": 4,
+      "col": 1,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "purple",
+      "row": 3,
+      "col": 1,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "J",
+      "color": "blue",
+      "row": 0,
+      "col": 4,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "K",
+      "color": "blue",
+      "row": 2,
+      "col": 0,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "L",
+      "color": "yellow",
+      "row": 6,
+      "col": 5,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "M",
+      "color": "red",
+      "row": 1,
+      "col": 5,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "N",
+      "color": "yellow",
+      "row": 5,
+      "col": 5,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "O",
+      "color": "purple",
+      "row": 5,
+      "col": 0,
+      "length": 3,
+      "orient": "v"
+     }
+    ],
+    "gates": [
+     {
+      "color": "blue",
+      "side": "right",
+      "index": 2
+     },
+     {
+      "color": "yellow",
+      "side": "left",
+      "index": 6
+     },
+     {
+      "color": "red",
+      "side": "bottom",
+      "index": 5
+     },
+     {
+      "color": "orange",
+      "side": "right",
+      "index": 1
+     },
+     {
+      "color": "purple",
+      "side": "top",
+      "index": 0
+     },
+     {
+      "color": "green",
+      "side": "right",
+      "index": 7
+     },
+     {
+      "color": "blue",
+      "side": "bottom",
+      "index": 1
+     },
+     {
+      "color": "purple",
+      "side": "right",
+      "index": 3
+     },
+     {
+      "color": "green",
+      "side": "bottom",
+      "index": 2
+     },
+     {
+      "color": "red",
+      "side": "bottom",
+      "index": 6
+     },
+     {
+      "color": "yellow",
+      "side": "top",
+      "index": 4
+     },
+     {
+      "color": "orange",
+      "side": "left",
+      "index": 4
+     },
+     {
+      "color": "blue",
+      "side": "right",
+      "index": 0
+     },
+     {
+      "color": "yellow",
+      "side": "left",
+      "index": 5
+     }
+    ]
+   }
+  },
+  {
    "id": "bp16",
    "size": 8,
    "par": 26,
@@ -6559,6 +8263,3320 @@
       "color": "green",
       "side": "right",
       "index": 6
+     }
+    ]
+   }
+  },
+  {
+   "id": "bp36",
+   "size": 8,
+   "par": 26,
+   "trucks": 15,
+   "extraMoves": 11,
+   "chain": 8,
+   "rings": 2,
+   "wonBy": {
+    "slides": 6,
+    "redeals": 3
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 339,
+   "lookedAt": 97228,
+   "hintPath": [
+    {
+     "id": "N",
+     "delta": -1
+    },
+    {
+     "id": "C",
+     "delta": -1
+    },
+    {
+     "id": "B",
+     "delta": 2
+    },
+    {
+     "id": "E",
+     "delta": -2
+    },
+    {
+     "id": "H",
+     "delta": -2
+    },
+    {
+     "id": "G",
+     "delta": -1
+    },
+    {
+     "id": "F",
+     "delta": 3
+    },
+    {
+     "id": "I",
+     "delta": 6
+    },
+    {
+     "id": "J",
+     "delta": 1
+    },
+    {
+     "id": "L",
+     "delta": -2
+    },
+    {
+     "id": "G",
+     "delta": 1
+    },
+    {
+     "id": "H",
+     "delta": 1
+    },
+    {
+     "id": "K",
+     "delta": 5
+    },
+    {
+     "id": "A",
+     "delta": 2
+    },
+    {
+     "id": "O",
+     "delta": 2
+    },
+    {
+     "id": "D",
+     "delta": 1
+    },
+    {
+     "id": "M",
+     "delta": -3
+    },
+    {
+     "id": "H",
+     "delta": -4
+    },
+    {
+     "id": "E",
+     "delta": 3
+    },
+    {
+     "id": "C",
+     "delta": 5
+    },
+    {
+     "id": "B",
+     "delta": -5
+    },
+    {
+     "id": "N",
+     "delta": 4
+    },
+    {
+     "id": "O",
+     "delta": 4
+    },
+    {
+     "id": "G",
+     "delta": -6
+    },
+    {
+     "id": "L",
+     "delta": 6
+    },
+    {
+     "id": "D",
+     "delta": 4
+    }
+   ],
+   "level": {
+    "id": "bp36",
+    "name": "Big Pad 36",
+    "par": 26,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "green",
+      "row": 2,
+      "col": 3,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "red",
+      "row": 3,
+      "col": 4,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "blue",
+      "row": 4,
+      "col": 1,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "red",
+      "row": 1,
+      "col": 1,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "blue",
+      "row": 4,
+      "col": 5,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "F",
+      "color": "orange",
+      "row": 2,
+      "col": 7,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "yellow",
+      "row": 6,
+      "col": 6,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "purple",
+      "row": 5,
+      "col": 5,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "orange",
+      "row": 0,
+      "col": 7,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "J",
+      "color": "purple",
+      "row": 0,
+      "col": 5,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "K",
+      "color": "yellow",
+      "row": 3,
+      "col": 0,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "L",
+      "color": "purple",
+      "row": 2,
+      "col": 6,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "M",
+      "color": "green",
+      "row": 1,
+      "col": 3,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "N",
+      "color": "orange",
+      "row": 7,
+      "col": 2,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "O",
+      "color": "blue",
+      "row": 0,
+      "col": 2,
+      "length": 2,
+      "orient": "v"
+     }
+    ],
+    "gates": [
+     {
+      "color": "yellow",
+      "side": "left",
+      "index": 6
+     },
+     {
+      "color": "orange",
+      "side": "bottom",
+      "index": 7
+     },
+     {
+      "color": "purple",
+      "side": "right",
+      "index": 0
+     },
+     {
+      "color": "red",
+      "side": "bottom",
+      "index": 1
+     },
+     {
+      "color": "blue",
+      "side": "right",
+      "index": 4
+     },
+     {
+      "color": "green",
+      "side": "left",
+      "index": 1
+     },
+     {
+      "color": "red",
+      "side": "top",
+      "index": 4
+     },
+     {
+      "color": "green",
+      "side": "right",
+      "index": 2
+     },
+     {
+      "color": "blue",
+      "side": "bottom",
+      "index": 2
+     },
+     {
+      "color": "orange",
+      "side": "right",
+      "index": 7
+     },
+     {
+      "color": "purple",
+      "side": "top",
+      "index": 5
+     },
+     {
+      "color": "yellow",
+      "side": "right",
+      "index": 3
+     },
+     {
+      "color": "purple",
+      "side": "bottom",
+      "index": 6
+     }
+    ]
+   }
+  },
+  {
+   "id": "bp21",
+   "size": 8,
+   "par": 25,
+   "trucks": 15,
+   "extraMoves": 10,
+   "chain": 8,
+   "rings": 2,
+   "wonBy": {
+    "slides": 6,
+    "redeals": 1
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 39,
+   "lookedAt": 13649,
+   "hintPath": [
+    {
+     "id": "G",
+     "delta": 1
+    },
+    {
+     "id": "M",
+     "delta": 1
+    },
+    {
+     "id": "D",
+     "delta": 1
+    },
+    {
+     "id": "N",
+     "delta": 3
+    },
+    {
+     "id": "K",
+     "delta": -3
+    },
+    {
+     "id": "D",
+     "delta": -1
+    },
+    {
+     "id": "M",
+     "delta": -2
+    },
+    {
+     "id": "G",
+     "delta": -2
+    },
+    {
+     "id": "A",
+     "delta": -2
+    },
+    {
+     "id": "J",
+     "delta": -2
+    },
+    {
+     "id": "I",
+     "delta": 1
+    },
+    {
+     "id": "H",
+     "delta": 2
+    },
+    {
+     "id": "L",
+     "delta": 5
+    },
+    {
+     "id": "O",
+     "delta": 4
+    },
+    {
+     "id": "K",
+     "delta": -2
+    },
+    {
+     "id": "D",
+     "delta": -3
+    },
+    {
+     "id": "E",
+     "delta": -6
+    },
+    {
+     "id": "I",
+     "delta": 4
+    },
+    {
+     "id": "N",
+     "delta": 3
+    },
+    {
+     "id": "C",
+     "delta": -6
+    },
+    {
+     "id": "F",
+     "delta": -5
+    },
+    {
+     "id": "G",
+     "delta": 3
+    },
+    {
+     "id": "M",
+     "delta": 5
+    },
+    {
+     "id": "B",
+     "delta": 1
+    },
+    {
+     "id": "A",
+     "delta": 3
+    }
+   ],
+   "level": {
+    "id": "bp21",
+    "name": "Big Pad 21",
+    "par": 25,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "blue",
+      "row": 7,
+      "col": 5,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "orange",
+      "row": 5,
+      "col": 0,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "purple",
+      "row": 0,
+      "col": 6,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "orange",
+      "row": 3,
+      "col": 2,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "red",
+      "row": 4,
+      "col": 6,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "F",
+      "color": "red",
+      "row": 5,
+      "col": 7,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "blue",
+      "row": 6,
+      "col": 4,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "purple",
+      "row": 3,
+      "col": 5,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "green",
+      "row": 1,
+      "col": 6,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "J",
+      "color": "purple",
+      "row": 0,
+      "col": 2,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "K",
+      "color": "green",
+      "row": 5,
+      "col": 1,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "L",
+      "color": "purple",
+      "row": 0,
+      "col": 5,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "M",
+      "color": "blue",
+      "row": 6,
+      "col": 2,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "N",
+      "color": "yellow",
+      "row": 3,
+      "col": 0,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "O",
+      "color": "yellow",
+      "row": 1,
+      "col": 1,
+      "length": 3,
+      "orient": "h"
+     }
+    ],
+    "gates": [
+     {
+      "color": "orange",
+      "side": "top",
+      "index": 2
+     },
+     {
+      "color": "purple",
+      "side": "left",
+      "index": 0
+     },
+     {
+      "color": "red",
+      "side": "top",
+      "index": 7
+     },
+     {
+      "color": "yellow",
+      "side": "right",
+      "index": 3
+     },
+     {
+      "color": "green",
+      "side": "bottom",
+      "index": 6
+     },
+     {
+      "color": "blue",
+      "side": "right",
+      "index": 6
+     },
+     {
+      "color": "orange",
+      "side": "bottom",
+      "index": 0
+     },
+     {
+      "color": "blue",
+      "side": "right",
+      "index": 7
+     },
+     {
+      "color": "red",
+      "side": "left",
+      "index": 4
+     },
+     {
+      "color": "green",
+      "side": "top",
+      "index": 1
+     },
+     {
+      "color": "yellow",
+      "side": "right",
+      "index": 1
+     },
+     {
+      "color": "purple",
+      "side": "bottom",
+      "index": 5
+     }
+    ]
+   }
+  },
+  {
+   "id": "bp22",
+   "size": 8,
+   "par": 25,
+   "trucks": 15,
+   "extraMoves": 10,
+   "chain": 8,
+   "rings": 2,
+   "wonBy": {
+    "slides": 3,
+    "redeals": 4
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 981,
+   "lookedAt": 196694,
+   "hintPath": [
+    {
+     "id": "L",
+     "delta": -1
+    },
+    {
+     "id": "H",
+     "delta": -1
+    },
+    {
+     "id": "F",
+     "delta": 1
+    },
+    {
+     "id": "A",
+     "delta": -4
+    },
+    {
+     "id": "K",
+     "delta": 1
+    },
+    {
+     "id": "E",
+     "delta": -1
+    },
+    {
+     "id": "D",
+     "delta": -4
+    },
+    {
+     "id": "C",
+     "delta": -5
+    },
+    {
+     "id": "F",
+     "delta": 1
+    },
+    {
+     "id": "B",
+     "delta": 2
+    },
+    {
+     "id": "G",
+     "delta": 5
+    },
+    {
+     "id": "F",
+     "delta": -2
+    },
+    {
+     "id": "L",
+     "delta": 3
+    },
+    {
+     "id": "O",
+     "delta": 5
+    },
+    {
+     "id": "H",
+     "delta": 5
+    },
+    {
+     "id": "I",
+     "delta": -4
+    },
+    {
+     "id": "E",
+     "delta": -2
+    },
+    {
+     "id": "F",
+     "delta": -3
+    },
+    {
+     "id": "D",
+     "delta": -1
+    },
+    {
+     "id": "K",
+     "delta": -5
+    },
+    {
+     "id": "J",
+     "delta": -5
+    },
+    {
+     "id": "N",
+     "delta": -5
+    },
+    {
+     "id": "B",
+     "delta": -5
+    },
+    {
+     "id": "M",
+     "delta": 4
+    },
+    {
+     "id": "L",
+     "delta": 2
+    }
+   ],
+   "level": {
+    "id": "bp22",
+    "name": "Big Pad 22",
+    "par": 25,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "blue",
+      "row": 3,
+      "col": 4,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "red",
+      "row": 3,
+      "col": 6,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "purple",
+      "row": 6,
+      "col": 5,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "blue",
+      "row": 5,
+      "col": 4,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "yellow",
+      "row": 2,
+      "col": 3,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "F",
+      "color": "red",
+      "row": 3,
+      "col": 3,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "orange",
+      "row": 4,
+      "col": 0,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "yellow",
+      "row": 1,
+      "col": 1,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "purple",
+      "row": 0,
+      "col": 4,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "J",
+      "color": "yellow",
+      "row": 2,
+      "col": 5,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "K",
+      "color": "yellow",
+      "row": 1,
+      "col": 4,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "L",
+      "color": "orange",
+      "row": 5,
+      "col": 1,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "M",
+      "color": "green",
+      "row": 7,
+      "col": 2,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "N",
+      "color": "red",
+      "row": 5,
+      "col": 7,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "O",
+      "color": "green",
+      "row": 0,
+      "col": 0,
+      "length": 3,
+      "orient": "v"
+     }
+    ],
+    "gates": [
+     {
+      "color": "blue",
+      "side": "top",
+      "index": 4
+     },
+     {
+      "color": "yellow",
+      "side": "bottom",
+      "index": 1
+     },
+     {
+      "color": "purple",
+      "side": "left",
+      "index": 6
+     },
+     {
+      "color": "green",
+      "side": "right",
+      "index": 7
+     },
+     {
+      "color": "red",
+      "side": "top",
+      "index": 6
+     },
+     {
+      "color": "orange",
+      "side": "right",
+      "index": 5
+     },
+     {
+      "color": "orange",
+      "side": "right",
+      "index": 4
+     },
+     {
+      "color": "red",
+      "side": "top",
+      "index": 7
+     },
+     {
+      "color": "purple",
+      "side": "left",
+      "index": 0
+     },
+     {
+      "color": "green",
+      "side": "bottom",
+      "index": 0
+     },
+     {
+      "color": "yellow",
+      "side": "left",
+      "index": 2
+     },
+     {
+      "color": "blue",
+      "side": "left",
+      "index": 3
+     },
+     {
+      "color": "red",
+      "side": "top",
+      "index": 3
+     },
+     {
+      "color": "yellow",
+      "side": "left",
+      "index": 1
+     }
+    ]
+   }
+  },
+  {
+   "id": "bp23",
+   "size": 8,
+   "par": 24,
+   "trucks": 15,
+   "extraMoves": 9,
+   "chain": 8,
+   "rings": 2,
+   "wonBy": {
+    "slides": 4,
+    "redeals": 0
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 52,
+   "lookedAt": 12899,
+   "hintPath": [
+    {
+     "id": "K",
+     "delta": 2
+    },
+    {
+     "id": "D",
+     "delta": 1
+    },
+    {
+     "id": "L",
+     "delta": 2
+    },
+    {
+     "id": "I",
+     "delta": -3
+    },
+    {
+     "id": "A",
+     "delta": -2
+    },
+    {
+     "id": "M",
+     "delta": -3
+    },
+    {
+     "id": "D",
+     "delta": -3
+    },
+    {
+     "id": "C",
+     "delta": -3
+    },
+    {
+     "id": "O",
+     "delta": -1
+    },
+    {
+     "id": "H",
+     "delta": -2
+    },
+    {
+     "id": "E",
+     "delta": -2
+    },
+    {
+     "id": "N",
+     "delta": -5
+    },
+    {
+     "id": "F",
+     "delta": -5
+    },
+    {
+     "id": "G",
+     "delta": 2
+    },
+    {
+     "id": "J",
+     "delta": 5
+    },
+    {
+     "id": "L",
+     "delta": 2
+    },
+    {
+     "id": "K",
+     "delta": 2
+    },
+    {
+     "id": "E",
+     "delta": -3
+    },
+    {
+     "id": "H",
+     "delta": 4
+    },
+    {
+     "id": "C",
+     "delta": -1
+    },
+    {
+     "id": "M",
+     "delta": 5
+    },
+    {
+     "id": "D",
+     "delta": 5
+    },
+    {
+     "id": "B",
+     "delta": 6
+    },
+    {
+     "id": "A",
+     "delta": 6
+    }
+   ],
+   "level": {
+    "id": "bp23",
+    "name": "Big Pad 23",
+    "par": 24,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "orange",
+      "row": 1,
+      "col": 2,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "blue",
+      "row": 0,
+      "col": 4,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "orange",
+      "row": 3,
+      "col": 4,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "purple",
+      "row": 2,
+      "col": 2,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "green",
+      "row": 4,
+      "col": 5,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "F",
+      "color": "red",
+      "row": 5,
+      "col": 6,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "purple",
+      "row": 6,
+      "col": 3,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "blue",
+      "row": 4,
+      "col": 4,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "blue",
+      "row": 2,
+      "col": 3,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "J",
+      "color": "purple",
+      "row": 6,
+      "col": 0,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "K",
+      "color": "red",
+      "row": 2,
+      "col": 1,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "L",
+      "color": "yellow",
+      "row": 1,
+      "col": 0,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "M",
+      "color": "yellow",
+      "row": 3,
+      "col": 3,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "N",
+      "color": "green",
+      "row": 5,
+      "col": 7,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "O",
+      "color": "red",
+      "row": 1,
+      "col": 6,
+      "length": 2,
+      "orient": "v"
+     }
+    ],
+    "gates": [
+     {
+      "color": "orange",
+      "side": "right",
+      "index": 1
+     },
+     {
+      "color": "purple",
+      "side": "bottom",
+      "index": 2
+     },
+     {
+      "color": "blue",
+      "side": "bottom",
+      "index": 4
+     },
+     {
+      "color": "yellow",
+      "side": "bottom",
+      "index": 0
+     },
+     {
+      "color": "green",
+      "side": "left",
+      "index": 4
+     },
+     {
+      "color": "red",
+      "side": "bottom",
+      "index": 1
+     },
+     {
+      "color": "purple",
+      "side": "right",
+      "index": 6
+     },
+     {
+      "color": "orange",
+      "side": "left",
+      "index": 3
+     },
+     {
+      "color": "blue",
+      "side": "left",
+      "index": 2
+     },
+     {
+      "color": "red",
+      "side": "top",
+      "index": 6
+     },
+     {
+      "color": "yellow",
+      "side": "bottom",
+      "index": 3
+     },
+     {
+      "color": "green",
+      "side": "top",
+      "index": 7
+     }
+    ]
+   }
+  },
+  {
+   "id": "bp24",
+   "size": 8,
+   "par": 24,
+   "trucks": 15,
+   "extraMoves": 9,
+   "chain": 8,
+   "rings": 1,
+   "wonBy": {
+    "slides": 4,
+    "redeals": 3
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 32,
+   "lookedAt": 9269,
+   "hintPath": [
+    {
+     "id": "E",
+     "delta": 1
+    },
+    {
+     "id": "H",
+     "delta": -1
+    },
+    {
+     "id": "O",
+     "delta": -2
+    },
+    {
+     "id": "L",
+     "delta": -2
+    },
+    {
+     "id": "D",
+     "delta": -1
+    },
+    {
+     "id": "A",
+     "delta": -1
+    },
+    {
+     "id": "C",
+     "delta": -2
+    },
+    {
+     "id": "K",
+     "delta": 2
+    },
+    {
+     "id": "M",
+     "delta": -1
+    },
+    {
+     "id": "I",
+     "delta": 5
+    },
+    {
+     "id": "J",
+     "delta": 1
+    },
+    {
+     "id": "F",
+     "delta": 5
+    },
+    {
+     "id": "G",
+     "delta": 5
+    },
+    {
+     "id": "O",
+     "delta": -3
+    },
+    {
+     "id": "H",
+     "delta": -5
+    },
+    {
+     "id": "A",
+     "delta": -5
+    },
+    {
+     "id": "D",
+     "delta": -2
+    },
+    {
+     "id": "M",
+     "delta": -4
+    },
+    {
+     "id": "K",
+     "delta": -5
+    },
+    {
+     "id": "B",
+     "delta": -5
+    },
+    {
+     "id": "L",
+     "delta": 5
+    },
+    {
+     "id": "C",
+     "delta": 5
+    },
+    {
+     "id": "D",
+     "delta": 4
+    },
+    {
+     "id": "N",
+     "delta": 6
+    }
+   ],
+   "level": {
+    "id": "bp24",
+    "name": "Big Pad 24",
+    "par": 24,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "red",
+      "row": 3,
+      "col": 6,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "red",
+      "row": 5,
+      "col": 5,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "orange",
+      "row": 6,
+      "col": 3,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "green",
+      "row": 5,
+      "col": 2,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "blue",
+      "row": 5,
+      "col": 7,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "F",
+      "color": "purple",
+      "row": 0,
+      "col": 3,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "green",
+      "row": 2,
+      "col": 0,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "orange",
+      "row": 6,
+      "col": 0,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "blue",
+      "row": 0,
+      "col": 7,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "J",
+      "color": "green",
+      "row": 2,
+      "col": 4,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "K",
+      "color": "yellow",
+      "row": 3,
+      "col": 4,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "L",
+      "color": "purple",
+      "row": 7,
+      "col": 2,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "M",
+      "color": "yellow",
+      "row": 4,
+      "col": 5,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "N",
+      "color": "green",
+      "row": 0,
+      "col": 2,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "O",
+      "color": "blue",
+      "row": 5,
+      "col": 1,
+      "length": 3,
+      "orient": "v"
+     }
+    ],
+    "gates": [
+     {
+      "color": "yellow",
+      "side": "left",
+      "index": 4
+     },
+     {
+      "color": "green",
+      "side": "bottom",
+      "index": 2
+     },
+     {
+      "color": "blue",
+      "side": "top",
+      "index": 1
+     },
+     {
+      "color": "orange",
+      "side": "right",
+      "index": 6
+     },
+     {
+      "color": "purple",
+      "side": "right",
+      "index": 7
+     },
+     {
+      "color": "red",
+      "side": "top",
+      "index": 5
+     },
+     {
+      "color": "green",
+      "side": "right",
+      "index": 2
+     },
+     {
+      "color": "yellow",
+      "side": "top",
+      "index": 4
+     },
+     {
+      "color": "orange",
+      "side": "top",
+      "index": 0
+     },
+     {
+      "color": "blue",
+      "side": "bottom",
+      "index": 7
+     },
+     {
+      "color": "purple",
+      "side": "bottom",
+      "index": 3
+     },
+     {
+      "color": "red",
+      "side": "left",
+      "index": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "bp25",
+   "size": 8,
+   "par": 23,
+   "trucks": 15,
+   "extraMoves": 8,
+   "chain": 8,
+   "rings": 2,
+   "wonBy": {
+    "slides": 5,
+    "redeals": 1
+   },
+   "parAlsoBy": [],
+   "solveMs": 603,
+   "lookedAt": 89658,
+   "hintPath": [
+    {
+     "id": "C",
+     "delta": 1
+    },
+    {
+     "id": "O",
+     "delta": 2
+    },
+    {
+     "id": "C",
+     "delta": -2
+    },
+    {
+     "id": "I",
+     "delta": 3
+    },
+    {
+     "id": "K",
+     "delta": 2
+    },
+    {
+     "id": "E",
+     "delta": -2
+    },
+    {
+     "id": "M",
+     "delta": 1
+    },
+    {
+     "id": "B",
+     "delta": 2
+    },
+    {
+     "id": "A",
+     "delta": 4
+    },
+    {
+     "id": "F",
+     "delta": -3
+    },
+    {
+     "id": "D",
+     "delta": -2
+    },
+    {
+     "id": "L",
+     "delta": -2
+    },
+    {
+     "id": "E",
+     "delta": -3
+    },
+    {
+     "id": "C",
+     "delta": -3
+    },
+    {
+     "id": "M",
+     "delta": 1
+    },
+    {
+     "id": "J",
+     "delta": 5
+    },
+    {
+     "id": "N",
+     "delta": -6
+    },
+    {
+     "id": "I",
+     "delta": -5
+    },
+    {
+     "id": "H",
+     "delta": 4
+    },
+    {
+     "id": "G",
+     "delta": 5
+    },
+    {
+     "id": "L",
+     "delta": -3
+    },
+    {
+     "id": "F",
+     "delta": -3
+    },
+    {
+     "id": "D",
+     "delta": -4
+    }
+   ],
+   "level": {
+    "id": "bp25",
+    "name": "Big Pad 25",
+    "par": 23,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "yellow",
+      "row": 4,
+      "col": 1,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "blue",
+      "row": 4,
+      "col": 6,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "blue",
+      "row": 7,
+      "col": 4,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "red",
+      "row": 6,
+      "col": 1,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "purple",
+      "row": 6,
+      "col": 5,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "F",
+      "color": "yellow",
+      "row": 6,
+      "col": 0,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "green",
+      "row": 2,
+      "col": 0,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "orange",
+      "row": 1,
+      "col": 3,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "yellow",
+      "row": 2,
+      "col": 7,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "J",
+      "color": "orange",
+      "row": 0,
+      "col": 5,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "K",
+      "color": "purple",
+      "row": 3,
+      "col": 4,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "L",
+      "color": "blue",
+      "row": 5,
+      "col": 2,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "M",
+      "color": "orange",
+      "row": 4,
+      "col": 5,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "N",
+      "color": "green",
+      "row": 0,
+      "col": 6,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "O",
+      "color": "red",
+      "row": 4,
+      "col": 4,
+      "length": 2,
+      "orient": "v"
+     }
+    ],
+    "gates": [
+     {
+      "color": "green",
+      "side": "right",
+      "index": 2
+     },
+     {
+      "color": "red",
+      "side": "top",
+      "index": 1
+     },
+     {
+      "color": "yellow",
+      "side": "right",
+      "index": 4
+     },
+     {
+      "color": "blue",
+      "side": "bottom",
+      "index": 6
+     },
+     {
+      "color": "orange",
+      "side": "bottom",
+      "index": 5
+     },
+     {
+      "color": "purple",
+      "side": "right",
+      "index": 3
+     },
+     {
+      "color": "yellow",
+      "side": "top",
+      "index": 7
+     },
+     {
+      "color": "blue",
+      "side": "top",
+      "index": 2
+     },
+     {
+      "color": "green",
+      "side": "left",
+      "index": 0
+     },
+     {
+      "color": "orange",
+      "side": "bottom",
+      "index": 3
+     },
+     {
+      "color": "red",
+      "side": "bottom",
+      "index": 4
+     },
+     {
+      "color": "purple",
+      "side": "left",
+      "index": 6
+     },
+     {
+      "color": "blue",
+      "side": "left",
+      "index": 7
+     },
+     {
+      "color": "yellow",
+      "side": "top",
+      "index": 0
+     }
+    ]
+   }
+  },
+  {
+   "id": "bp26",
+   "size": 8,
+   "par": 21,
+   "trucks": 13,
+   "extraMoves": 8,
+   "chain": 8,
+   "rings": 1,
+   "wonBy": {
+    "slides": 2,
+    "redeals": 3
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 6,
+   "lookedAt": 2499,
+   "hintPath": [
+    {
+     "id": "I",
+     "delta": 2
+    },
+    {
+     "id": "M",
+     "delta": -1
+    },
+    {
+     "id": "C",
+     "delta": 2
+    },
+    {
+     "id": "B",
+     "delta": 4
+    },
+    {
+     "id": "C",
+     "delta": -2
+    },
+    {
+     "id": "M",
+     "delta": 3
+    },
+    {
+     "id": "K",
+     "delta": 4
+    },
+    {
+     "id": "A",
+     "delta": 4
+    },
+    {
+     "id": "D",
+     "delta": -2
+    },
+    {
+     "id": "C",
+     "delta": -4
+    },
+    {
+     "id": "F",
+     "delta": -2
+    },
+    {
+     "id": "E",
+     "delta": 2
+    },
+    {
+     "id": "L",
+     "delta": 5
+    },
+    {
+     "id": "H",
+     "delta": -5
+    },
+    {
+     "id": "G",
+     "delta": -3
+    },
+    {
+     "id": "J",
+     "delta": -6
+    },
+    {
+     "id": "M",
+     "delta": 2
+    },
+    {
+     "id": "B",
+     "delta": 2
+    },
+    {
+     "id": "E",
+     "delta": 3
+    },
+    {
+     "id": "F",
+     "delta": 4
+    },
+    {
+     "id": "D",
+     "delta": 6
+    }
+   ],
+   "level": {
+    "id": "bp26",
+    "name": "Big Pad 26",
+    "par": 21,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "red",
+      "row": 1,
+      "col": 1,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "purple",
+      "row": 0,
+      "col": 5,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "green",
+      "row": 3,
+      "col": 4,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "blue",
+      "row": 2,
+      "col": 3,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "purple",
+      "row": 4,
+      "col": 0,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "F",
+      "color": "blue",
+      "row": 4,
+      "col": 3,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "orange",
+      "row": 6,
+      "col": 3,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "yellow",
+      "row": 5,
+      "col": 1,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "purple",
+      "row": 4,
+      "col": 4,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "J",
+      "color": "orange",
+      "row": 6,
+      "col": 6,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "K",
+      "color": "blue",
+      "row": 0,
+      "col": 2,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "L",
+      "color": "red",
+      "row": 0,
+      "col": 0,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "M",
+      "color": "green",
+      "row": 1,
+      "col": 6,
+      "length": 3,
+      "orient": "v"
+     }
+    ],
+    "gates": [
+     {
+      "color": "green",
+      "side": "bottom",
+      "index": 6
+     },
+     {
+      "color": "red",
+      "side": "bottom",
+      "index": 0
+     },
+     {
+      "color": "blue",
+      "side": "right",
+      "index": 0
+     },
+     {
+      "color": "yellow",
+      "side": "top",
+      "index": 1
+     },
+     {
+      "color": "orange",
+      "side": "left",
+      "index": 6
+     },
+     {
+      "color": "purple",
+      "side": "right",
+      "index": 4
+     },
+     {
+      "color": "blue",
+      "side": "bottom",
+      "index": 3
+     },
+     {
+      "color": "green",
+      "side": "left",
+      "index": 3
+     },
+     {
+      "color": "purple",
+      "side": "bottom",
+      "index": 5
+     },
+     {
+      "color": "red",
+      "side": "right",
+      "index": 1
+     }
+    ]
+   }
+  },
+  {
+   "id": "bp27",
+   "size": 8,
+   "par": 22,
+   "trucks": 15,
+   "extraMoves": 7,
+   "chain": 8,
+   "rings": 1,
+   "wonBy": {
+    "slides": 2,
+    "redeals": 3
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 32,
+   "lookedAt": 8741,
+   "hintPath": [
+    {
+     "id": "C",
+     "delta": -1
+    },
+    {
+     "id": "K",
+     "delta": 2
+    },
+    {
+     "id": "E",
+     "delta": 1
+    },
+    {
+     "id": "B",
+     "delta": -2
+    },
+    {
+     "id": "A",
+     "delta": 3
+    },
+    {
+     "id": "C",
+     "delta": 2
+    },
+    {
+     "id": "J",
+     "delta": 4
+    },
+    {
+     "id": "B",
+     "delta": 2
+    },
+    {
+     "id": "I",
+     "delta": 2
+    },
+    {
+     "id": "H",
+     "delta": -2
+    },
+    {
+     "id": "G",
+     "delta": 2
+    },
+    {
+     "id": "D",
+     "delta": -5
+    },
+    {
+     "id": "N",
+     "delta": 6
+    },
+    {
+     "id": "O",
+     "delta": -6
+    },
+    {
+     "id": "F",
+     "delta": 3
+    },
+    {
+     "id": "M",
+     "delta": 5
+    },
+    {
+     "id": "L",
+     "delta": -6
+    },
+    {
+     "id": "I",
+     "delta": -4
+    },
+    {
+     "id": "G",
+     "delta": -3
+    },
+    {
+     "id": "E",
+     "delta": -6
+    },
+    {
+     "id": "C",
+     "delta": -5
+    },
+    {
+     "id": "B",
+     "delta": 3
+    }
+   ],
+   "level": {
+    "id": "bp27",
+    "name": "Big Pad 27",
+    "par": 22,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "red",
+      "row": 4,
+      "col": 2,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "red",
+      "row": 2,
+      "col": 5,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "yellow",
+      "row": 6,
+      "col": 4,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "blue",
+      "row": 5,
+      "col": 2,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "purple",
+      "row": 1,
+      "col": 5,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "F",
+      "color": "green",
+      "row": 3,
+      "col": 0,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "blue",
+      "row": 2,
+      "col": 1,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "orange",
+      "row": 2,
+      "col": 3,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "purple",
+      "row": 1,
+      "col": 2,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "J",
+      "color": "green",
+      "row": 1,
+      "col": 4,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "K",
+      "color": "orange",
+      "row": 4,
+      "col": 6,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "L",
+      "color": "purple",
+      "row": 0,
+      "col": 6,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "M",
+      "color": "green",
+      "row": 0,
+      "col": 0,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "N",
+      "color": "yellow",
+      "row": 5,
+      "col": 0,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "O",
+      "color": "red",
+      "row": 6,
+      "col": 1,
+      "length": 2,
+      "orient": "v"
+     }
+    ],
+    "gates": [
+     {
+      "color": "red",
+      "side": "top",
+      "index": 1
+     },
+     {
+      "color": "green",
+      "side": "bottom",
+      "index": 0
+     },
+     {
+      "color": "blue",
+      "side": "top",
+      "index": 2
+     },
+     {
+      "color": "purple",
+      "side": "left",
+      "index": 0
+     },
+     {
+      "color": "orange",
+      "side": "top",
+      "index": 3
+     },
+     {
+      "color": "yellow",
+      "side": "left",
+      "index": 6
+     },
+     {
+      "color": "red",
+      "side": "right",
+      "index": 4
+     },
+     {
+      "color": "yellow",
+      "side": "right",
+      "index": 5
+     },
+     {
+      "color": "green",
+      "side": "bottom",
+      "index": 4
+     },
+     {
+      "color": "orange",
+      "side": "bottom",
+      "index": 6
+     },
+     {
+      "color": "purple",
+      "side": "left",
+      "index": 1
+     },
+     {
+      "color": "blue",
+      "side": "left",
+      "index": 2
+     },
+     {
+      "color": "red",
+      "side": "bottom",
+      "index": 5
+     }
+    ]
+   }
+  },
+  {
+   "id": "bp28",
+   "size": 8,
+   "par": 21,
+   "trucks": 14,
+   "extraMoves": 7,
+   "chain": 8,
+   "rings": 2,
+   "wonBy": {
+    "slides": 2,
+    "redeals": 3
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 4,
+   "lookedAt": 1051,
+   "hintPath": [
+    {
+     "id": "D",
+     "delta": -1
+    },
+    {
+     "id": "B",
+     "delta": 1
+    },
+    {
+     "id": "M",
+     "delta": 4
+    },
+    {
+     "id": "I",
+     "delta": -2
+    },
+    {
+     "id": "L",
+     "delta": 1
+    },
+    {
+     "id": "K",
+     "delta": 1
+    },
+    {
+     "id": "H",
+     "delta": 1
+    },
+    {
+     "id": "J",
+     "delta": -4
+    },
+    {
+     "id": "G",
+     "delta": -1
+    },
+    {
+     "id": "I",
+     "delta": -3
+    },
+    {
+     "id": "C",
+     "delta": -2
+    },
+    {
+     "id": "D",
+     "delta": 5
+    },
+    {
+     "id": "A",
+     "delta": -5
+    },
+    {
+     "id": "N",
+     "delta": -5
+    },
+    {
+     "id": "B",
+     "delta": -4
+    },
+    {
+     "id": "L",
+     "delta": 4
+    },
+    {
+     "id": "C",
+     "delta": 4
+    },
+    {
+     "id": "F",
+     "delta": 6
+    },
+    {
+     "id": "E",
+     "delta": 6
+    },
+    {
+     "id": "H",
+     "delta": -3
+    },
+    {
+     "id": "K",
+     "delta": -5
+    }
+   ],
+   "level": {
+    "id": "bp28",
+    "name": "Big Pad 28",
+    "par": 21,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "green",
+      "row": 2,
+      "col": 5,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "orange",
+      "row": 3,
+      "col": 6,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "yellow",
+      "row": 5,
+      "col": 4,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "red",
+      "row": 1,
+      "col": 4,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "blue",
+      "row": 0,
+      "col": 0,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "F",
+      "color": "purple",
+      "row": 0,
+      "col": 2,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "green",
+      "row": 2,
+      "col": 1,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "yellow",
+      "row": 2,
+      "col": 0,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "purple",
+      "row": 5,
+      "col": 3,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "J",
+      "color": "orange",
+      "row": 7,
+      "col": 4,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "K",
+      "color": "yellow",
+      "row": 4,
+      "col": 0,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "L",
+      "color": "blue",
+      "row": 6,
+      "col": 0,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "M",
+      "color": "red",
+      "row": 3,
+      "col": 1,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "N",
+      "color": "green",
+      "row": 5,
+      "col": 7,
+      "length": 3,
+      "orient": "v"
+     }
+    ],
+    "gates": [
+     {
+      "color": "blue",
+      "side": "right",
+      "index": 0
+     },
+     {
+      "color": "yellow",
+      "side": "right",
+      "index": 5
+     },
+     {
+      "color": "red",
+      "side": "bottom",
+      "index": 4
+     },
+     {
+      "color": "orange",
+      "side": "top",
+      "index": 6
+     },
+     {
+      "color": "purple",
+      "side": "bottom",
+      "index": 2
+     },
+     {
+      "color": "green",
+      "side": "top",
+      "index": 7
+     },
+     {
+      "color": "orange",
+      "side": "left",
+      "index": 7
+     },
+     {
+      "color": "red",
+      "side": "right",
+      "index": 3
+     },
+     {
+      "color": "yellow",
+      "side": "top",
+      "index": 0
+     },
+     {
+      "color": "green",
+      "side": "left",
+      "index": 2
+     },
+     {
+      "color": "purple",
+      "side": "top",
+      "index": 3
+     },
+     {
+      "color": "blue",
+      "side": "right",
+      "index": 6
+     }
+    ]
+   }
+  },
+  {
+   "id": "bp29",
+   "size": 8,
+   "par": 21,
+   "trucks": 15,
+   "extraMoves": 6,
+   "chain": 8,
+   "rings": 2,
+   "wonBy": {
+    "slides": 3,
+    "redeals": 1
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 26,
+   "lookedAt": 5271,
+   "hintPath": [
+    {
+     "id": "H",
+     "delta": 1
+    },
+    {
+     "id": "E",
+     "delta": -5
+    },
+    {
+     "id": "I",
+     "delta": 1
+    },
+    {
+     "id": "O",
+     "delta": 4
+    },
+    {
+     "id": "K",
+     "delta": -2
+    },
+    {
+     "id": "I",
+     "delta": -2
+    },
+    {
+     "id": "G",
+     "delta": 3
+    },
+    {
+     "id": "F",
+     "delta": -3
+    },
+    {
+     "id": "B",
+     "delta": -3
+    },
+    {
+     "id": "N",
+     "delta": 2
+    },
+    {
+     "id": "A",
+     "delta": 5
+    },
+    {
+     "id": "L",
+     "delta": -4
+    },
+    {
+     "id": "M",
+     "delta": -5
+    },
+    {
+     "id": "J",
+     "delta": -5
+    },
+    {
+     "id": "I",
+     "delta": 6
+    },
+    {
+     "id": "H",
+     "delta": 5
+    },
+    {
+     "id": "D",
+     "delta": -5
+    },
+    {
+     "id": "C",
+     "delta": -3
+    },
+    {
+     "id": "K",
+     "delta": 6
+    },
+    {
+     "id": "F",
+     "delta": 5
+    },
+    {
+     "id": "B",
+     "delta": 5
+    }
+   ],
+   "level": {
+    "id": "bp29",
+    "name": "Big Pad 29",
+    "par": 21,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "green",
+      "row": 3,
+      "col": 0,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "blue",
+      "row": 3,
+      "col": 4,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "red",
+      "row": 6,
+      "col": 3,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "green",
+      "row": 5,
+      "col": 1,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "purple",
+      "row": 0,
+      "col": 5,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "F",
+      "color": "orange",
+      "row": 3,
+      "col": 3,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "yellow",
+      "row": 2,
+      "col": 2,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "orange",
+      "row": 0,
+      "col": 0,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "blue",
+      "row": 1,
+      "col": 7,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "J",
+      "color": "red",
+      "row": 5,
+      "col": 6,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "K",
+      "color": "purple",
+      "row": 2,
+      "col": 5,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "L",
+      "color": "yellow",
+      "row": 4,
+      "col": 2,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "M",
+      "color": "blue",
+      "row": 4,
+      "col": 5,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "N",
+      "color": "orange",
+      "row": 4,
+      "col": 0,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "O",
+      "color": "red",
+      "row": 1,
+      "col": 2,
+      "length": 2,
+      "orient": "h"
+     }
+    ],
+    "gates": [
+     {
+      "color": "green",
+      "side": "right",
+      "index": 3
+     },
+     {
+      "color": "blue",
+      "side": "bottom",
+      "index": 4
+     },
+     {
+      "color": "purple",
+      "side": "left",
+      "index": 0
+     },
+     {
+      "color": "red",
+      "side": "left",
+      "index": 6
+     },
+     {
+      "color": "yellow",
+      "side": "right",
+      "index": 2
+     },
+     {
+      "color": "orange",
+      "side": "bottom",
+      "index": 3
+     },
+     {
+      "color": "orange",
+      "side": "bottom",
+      "index": 0
+     },
+     {
+      "color": "blue",
+      "side": "bottom",
+      "index": 7
+     },
+     {
+      "color": "yellow",
+      "side": "top",
+      "index": 2
+     },
+     {
+      "color": "red",
+      "side": "top",
+      "index": 6
+     },
+     {
+      "color": "green",
+      "side": "top",
+      "index": 1
+     },
+     {
+      "color": "purple",
+      "side": "bottom",
+      "index": 5
+     },
+     {
+      "color": "red",
+      "side": "right",
+      "index": 1
+     },
+     {
+      "color": "blue",
+      "side": "left",
+      "index": 4
+     }
+    ]
+   }
+  },
+  {
+   "id": "bp30",
+   "size": 8,
+   "par": 20,
+   "trucks": 14,
+   "extraMoves": 6,
+   "chain": 8,
+   "rings": 2,
+   "wonBy": {
+    "slides": 2,
+    "redeals": 2
+   },
+   "parAlsoBy": [
+    "A* (trucks left)"
+   ],
+   "solveMs": 24,
+   "lookedAt": 5422,
+   "hintPath": [
+    {
+     "id": "L",
+     "delta": 1
+    },
+    {
+     "id": "K",
+     "delta": -4
+    },
+    {
+     "id": "N",
+     "delta": -2
+    },
+    {
+     "id": "B",
+     "delta": 2
+    },
+    {
+     "id": "L",
+     "delta": 1
+    },
+    {
+     "id": "C",
+     "delta": 1
+    },
+    {
+     "id": "D",
+     "delta": 5
+    },
+    {
+     "id": "A",
+     "delta": -2
+    },
+    {
+     "id": "L",
+     "delta": -2
+    },
+    {
+     "id": "G",
+     "delta": -2
+    },
+    {
+     "id": "I",
+     "delta": -3
+    },
+    {
+     "id": "J",
+     "delta": 2
+    },
+    {
+     "id": "H",
+     "delta": 6
+    },
+    {
+     "id": "E",
+     "delta": -5
+    },
+    {
+     "id": "F",
+     "delta": -2
+    },
+    {
+     "id": "M",
+     "delta": -4
+    },
+    {
+     "id": "G",
+     "delta": 4
+    },
+    {
+     "id": "L",
+     "delta": 6
+    },
+    {
+     "id": "C",
+     "delta": 4
+    },
+    {
+     "id": "B",
+     "delta": -5
+    }
+   ],
+   "level": {
+    "id": "bp30",
+    "name": "Big Pad 30",
+    "par": 20,
+    "size": 8,
+    "trucks": [
+     {
+      "id": "A",
+      "color": "purple",
+      "row": 2,
+      "col": 2,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "B",
+      "color": "blue",
+      "row": 3,
+      "col": 3,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "C",
+      "color": "yellow",
+      "row": 4,
+      "col": 1,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "D",
+      "color": "purple",
+      "row": 0,
+      "col": 1,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "E",
+      "color": "orange",
+      "row": 1,
+      "col": 5,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "F",
+      "color": "orange",
+      "row": 2,
+      "col": 6,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "G",
+      "color": "blue",
+      "row": 3,
+      "col": 4,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "H",
+      "color": "green",
+      "row": 0,
+      "col": 4,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "I",
+      "color": "red",
+      "row": 7,
+      "col": 3,
+      "length": 3,
+      "orient": "h"
+     },
+     {
+      "id": "J",
+      "color": "yellow",
+      "row": 4,
+      "col": 5,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "K",
+      "color": "green",
+      "row": 4,
+      "col": 0,
+      "length": 2,
+      "orient": "v"
+     },
+     {
+      "id": "L",
+      "color": "blue",
+      "row": 3,
+      "col": 0,
+      "length": 2,
+      "orient": "h"
+     },
+     {
+      "id": "M",
+      "color": "orange",
+      "row": 4,
+      "col": 6,
+      "length": 3,
+      "orient": "v"
+     },
+     {
+      "id": "N",
+      "color": "red",
+      "row": 5,
+      "col": 2,
+      "length": 2,
+      "orient": "h"
+     }
+    ],
+    "gates": [
+     {
+      "color": "blue",
+      "side": "right",
+      "index": 3
+     },
+     {
+      "color": "yellow",
+      "side": "right",
+      "index": 4
+     },
+     {
+      "color": "green",
+      "side": "top",
+      "index": 0
+     },
+     {
+      "color": "red",
+      "side": "left",
+      "index": 5
+     },
+     {
+      "color": "purple",
+      "side": "left",
+      "index": 2
+     },
+     {
+      "color": "orange",
+      "side": "left",
+      "index": 1
+     },
+     {
+      "color": "blue",
+      "side": "top",
+      "index": 3
+     },
+     {
+      "color": "yellow",
+      "side": "bottom",
+      "index": 5
+     },
+     {
+      "color": "red",
+      "side": "left",
+      "index": 7
+     },
+     {
+      "color": "green",
+      "side": "bottom",
+      "index": 4
+     },
+     {
+      "color": "orange",
+      "side": "top",
+      "index": 6
+     },
+     {
+      "color": "purple",
+      "side": "bottom",
+      "index": 1
      }
     ]
    }

@@ -45,17 +45,21 @@ describe('the interlock seed', () => {
 
 const FILE = new URL('../levels/bigpad-candidates.json', import.meta.url);
 describe.runIf(existsSync(FILE))('levels/bigpad-candidates.json', () => {
-  const file = JSON.parse(readFileSync(FILE, 'utf8')) as { minutes: number; seconds: number; candidates: Candidate[] };
+  const file = JSON.parse(readFileSync(FILE, 'utf8')) as { batches: { minutes: number; seconds: number }[]; candidates: Candidate[] };
+  const COUNT = file.candidates.length;
 
-  it('the run kept inside its 10 minutes', () => {
-    expect(file.minutes).toBeLessThanOrEqual(MAX_MINUTES);
-    expect(file.seconds).toBeLessThanOrEqual(MAX_MINUTES * 60);
+  it('every run kept inside its 10 minutes', () => {
+    expect(file.batches.length).toBeGreaterThanOrEqual(2);
+    for (const b of file.batches) {
+      expect(b.minutes).toBeLessThanOrEqual(MAX_MINUTES);
+      expect(b.seconds).toBeLessThanOrEqual(MAX_MINUTES * 60);
+    }
   });
 
-  it('20 candidates, sorted by extra moves, each 14 to 18 trucks and 6 to 15 extra moves on a pad of 8', () => {
-    expect(file.candidates.length).toBe(20);
+  it('30 candidates or more (the first 20, the easier 10, a few at 15 to 16 trucks), sorted by extra moves, each 12 to 18 trucks and 6 to 15 extra moves on a pad of 8', () => {
+    expect(COUNT).toBeGreaterThanOrEqual(30);
     file.candidates.forEach((c, i) => {
-      expect(c.trucks, c.id).toBeGreaterThanOrEqual(TARGET.trucks[0]);
+      expect(c.trucks, c.id).toBeGreaterThanOrEqual(12);
       expect(c.trucks, c.id).toBeLessThanOrEqual(TARGET.trucks[1]);
       expect(c.extraMoves, c.id).toBe(c.par - c.trucks);
       expect(c.extraMoves, c.id).toBeGreaterThanOrEqual(TARGET.extra[0]);
@@ -63,7 +67,11 @@ describe.runIf(existsSync(FILE))('levels/bigpad-candidates.json', () => {
       if (i) expect(c.extraMoves, c.id).toBeLessThanOrEqual(file.candidates[i - 1].extraMoves);
       expect(c.solveMs, c.id).toBeGreaterThanOrEqual(0);
     });
-    expect(new Set(file.candidates.map((c) => c.id)).size).toBe(20);
+    expect(new Set(file.candidates.map((c) => c.id)).size).toBe(COUNT);
+  });
+
+  it('the easier batch is there: 10 or more of 12 to 15 trucks with 6 to 10 extra moves', () => {
+    expect(file.candidates.filter((c) => c.trucks >= 12 && c.trucks <= 15 && c.extraMoves >= 6 && c.extraMoves <= 10).length).toBeGreaterThanOrEqual(10);
   });
 
   it('at least 5 have 10 or more extra moves', () => {
@@ -96,6 +104,6 @@ describe.runIf(existsSync(FILE))('levels/bigpad-candidates.json', () => {
 
   it('no two candidates are the same pad', () => {
     const key = (c: Candidate) => c.level.trucks.map((t) => `${t.orient}${t.row},${t.col},${t.length}`).sort().join(' ');
-    expect(new Set(file.candidates.map(key)).size).toBe(20);
+    expect(new Set(file.candidates.map(key)).size).toBe(COUNT);
   });
 });

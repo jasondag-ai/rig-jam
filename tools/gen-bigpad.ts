@@ -22,9 +22,10 @@
 // A pad is a candidate once no truck touches its gate (the game's rule for a start) and it has 14
 // to 18 trucks and 6 to 15 extra moves.
 //
-//   node tools/gen-bigpad.ts [minutes, 10 at most] [seed] [workers]
+//   node tools/gen-bigpad.ts [minutes, 10 at most] [seed] [workers] [--trucks=12-15] [--extra=6-10] [--keep=10] [--append]
+// (--append ADDS a batch to the file, spread evenly across its range of extra moves, and keeps what is there.)
 // writes levels/bigpad-candidates.json (the best 20, by extra moves) and prints them as a table.
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { cpus } from 'node:os';
 import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { COLORS, SolverLimitError, isWon, newGame, parseLevel, searchAStar, solve, tryMove } from '../src/engine/index.ts';
@@ -32,7 +33,9 @@ import type { Color, Gate, Level, Move, Side, Truck } from '../src/engine/index.
 import { mulberry32 } from '../src/engine/rng.ts';
 
 export const N = 8;
-export const TARGET = { trucks: [14, 18], extra: [6, 15] } as const;
+/** The first batch's targets (Job 1). A later batch names its own: `--trucks=12-15 --extra=6-10`. */
+export const TARGET: Target = { trucks: [14, 18], extra: [6, 15] };
+export interface Target { trucks: [number, number]; extra: [number, number] }
 /** No run is longer than this (Jay). */
 export const MAX_MINUTES = 10;
 /** A* gives up on one position past this many found; that scramble is then simply not kept. */
@@ -313,8 +316,8 @@ export interface Grown extends Found { gains: Record<Change, number>; tried: num
  * It stops at `want` extra moves (a pad's own target inside the range), when nothing has been
  * kept for `stale` tries, or when time is up.
  */
-export function growPad(rng: Rng, until: number, want: number, stale = 2500): Grown | null {
-  const count = TARGET.trucks[0] + int(rng, TARGET.trucks[1] - TARGET.trucks[0] + 1);
+export function growPad(rng: Rng, until: number, want: number, target: Target = TARGET, stale = 2500): Grown | null {
+  const count = target.trucks[0] + int(rng, target.trucks[1] - target.trucks[0] + 1);
   const seeded = seedPad(rng, count, 3 + int(rng, 3), 0.3 + rng() * 0.7);
   if (!seeded) return null;
   let ts: T[] = seeded;
@@ -353,7 +356,7 @@ export function growPad(rng: Rng, until: number, want: number, stale = 2500): Gr
     const then = solveIt(next);
     if (!then) continue;
     const extra = then.solved.par - next.length, had = now.solved.par - ts.length;
-    if (extra < had || extra > TARGET.extra[1]) continue;
+    if (extra < had || extra > target.extra[1]) continue;
     if (extra > had) { gains[change] += extra - had; idle = 0; }
     ts = next;
     now = then;
@@ -411,60 +414,85 @@ export function table(cs: Candidate[]): string {
   return rows.map((r, i) => r.map((x, k) => (k === 1 || k === 11 ? x.padEnd(w[k]) : x.padStart(w[k]))).join('  ') + (i === 0 ? `\n${w.map((n) => '-'.repeat(n)).join('  ')}` : '')).join('\n');
 }
 
+const FILE = new URL('../levels/bigpad-candidates.json', import.meta.url);
+
 async function main() {
-  const minutes = Math.min(MAX_MINUTES, Number(process.argv[2] ?? MAX_MINUTES));
-  const seed = Number(process.argv[3] ?? 1);
-  const workers = Math.max(1, Number(process.argv[4] ?? Math.max(1, cpus().length - 2)));
+  const args = process.argv.slice(2), plain = args.filter((a) => !a.startsWith('--'));
+  const flag = (name: string) => args.find((a) => a.startsWith(`--${name}`))?.split('=')[1];
+  const pair = (text: string | undefined, or: [number, number]): [number, number] => (text ? (text.split('-').map(Number) as [number, number]) : or);
+  const minutes = Math.min(MAX_MINUTES, Number(plain[0] ?? MAX_MINUTES));
+  const seed = Number(plain[1] ?? 1);
+  const workers = Math.max(1, Number(plain[2] ?? Math.max(1, cpus().length - 2)));
+  // A batch's own targets, how many it keeps, and whether it is ADDED to the file (the pads already there are kept as they are).
+  const target: Target = { trucks: pair(flag('trucks'), TARGET.trucks), extra: pair(flag('extra'), TARGET.extra) };
+  const keep = Number(flag('keep') ?? KEEP), append = args.includes('--append');
+  const before: { candidates: Candidate[]; batches?: unknown[] } & Record<string, unknown> = append ? JSON.parse(readFileSync(FILE, 'utf8')) : { candidates: [] };
   const start = Date.now();
   // THE WHOLE RUN keeps inside `minutes`: the scramble gets most of it, the rest is kept back to prove the candidates.
   const deadline = start + minutes * 60_000 - 4000;
   const scrambleMs = minutes * 60_000 * 0.78;
-  console.log(`Big Pad: ${minutes} min at most, seed ${seed}, ${workers} workers`);
+  console.log(`Big Pad: ${minutes} min at most, seed ${seed}, ${workers} workers, ${target.trucks.join(' to ')} trucks, ${target.extra.join(' to ')} extra moves${append ? ', added to the file' : ''}`);
   const found: Grown[] = [];
   let seeds = 0;
   await Promise.all(Array.from({ length: workers }, (_, k) => new Promise<void>((done, fail) => {
-    const w = new Worker(new URL(import.meta.url), { workerData: { seed: seed * 1000 + k, ms: scrambleMs } });
+    const w = new Worker(new URL(import.meta.url), { workerData: { seed: seed * 1000 + k, ms: scrambleMs, target, even: append } });
     w.on('message', (m: Grown | 'seed') => { if (m === 'seed') seeds++; else found.push(m); });
     w.on('error', fail);
     w.on('exit', () => done());
   })));
-  // The best 20, by extra moves, no two alike (at least 5 trucks standing differently).
   found.sort((a, b) => b.extra - a.extra || b.ts.length - a.ts.length);
-  const inTarget = found.filter((f) => f.extra >= TARGET.extra[0]);
+  const inTarget = found.filter((f) => f.extra >= target.extra[0]);
   const picked: Grown[] = [];
-  for (const f of inTarget) {
-    if (picked.every((p) => differs(f, p) >= 5)) picked.push(f);
-    if (picked.length === KEEP) break;
+  const alike = (f: Grown) => picked.some((p) => differs(f, p) < 5);
+  if (append) {
+    // An added batch is kept EVEN ACROSS ITS RANGE (one of each number of extra moves in turn), not the hardest only.
+    for (let round = 0; picked.length < keep && round < keep; round++) {
+      for (let e = target.extra[1]; e >= target.extra[0] && picked.length < keep; e--) {
+        const f = inTarget.find((x) => x.extra === e && !picked.includes(x) && !alike(x));
+        if (f) picked.push(f);
+      }
+    }
+  } else {
+    // The best, by extra moves, no two alike (at least 5 trucks standing differently).
+    for (const f of inTarget) {
+      if (!alike(f)) picked.push(f);
+      if (picked.length === keep) break;
+    }
   }
-  const out = picked.map((f, i) => candidate(f, `bp${String(i + 1).padStart(2, '0')}`));
+  const first = before.candidates.length;
+  const name = (i: number) => `bp${String(first + i + 1).padStart(2, '0')}`;
+  const out = picked.map((f, i) => candidate(f, name(i)));
   out.sort((a, b) => b.extraMoves - a.extraMoves || b.par - a.par);
-  out.forEach((c, i) => { c.id = c.level.id = `bp${String(i + 1).padStart(2, '0')}`; c.level.name = `Big Pad ${i + 1}`; });
+  out.forEach((c, i) => { c.id = c.level.id = name(i); c.level.name = `Big Pad ${first + i + 1}`; });
   // Each par proved again, another way, for as long as there is time (the plain heuristic first, then breadth-first).
   for (const how of ['left', 'bfs'] as const) for (const c of out) if (Date.now() < deadline - 12_000) proveAgain(c, how);
   mkdirSync(new URL('../levels/', import.meta.url), { recursive: true });
   const tally = (pick: (f: Grown) => number) => found.reduce((n, f) => n + pick(f), 0);
   const seconds = Math.round((Date.now() - start) / 1000);
-  const summary = {
-    size: 8, target: TARGET, seed, minutes, seconds, workers, seedsTried: seeds, padsGrown: found.length, padsInTarget: inTarget.length,
+  const batch = {
+    target, seed, minutes, seconds, workers, seedsTried: seeds, padsGrown: found.length, padsInTarget: inTarget.length,
     padsWith10OrMore: found.filter((f) => f.extra >= 10).length,
     extraMovesWonBy: { slides: tally((f) => f.gains.slide), redeals: tally((f) => f.gains.lane + f.gains.turn + f.gains.length) },
-    candidates: out,
   };
-  writeFileSync(new URL('../levels/bigpad-candidates.json', import.meta.url), JSON.stringify(summary, null, 1) + '\n');
-  console.log(`${seeds} seeds, ${found.length} pads grown in ${seconds} s; ${inTarget.length} reached ${TARGET.extra[0]} extra moves or more, ${summary.padsWith10OrMore} of them 10 or more.`);
-  console.log(`Extra moves won, all pads together: ${summary.extraMovesWonBy.slides} by backward slides, ${summary.extraMovesWonBy.redeals} by re-dealing a truck.\nThe best ${out.length}, by extra moves:\n`);
+  // The file: every batch's own numbers, and all the candidates together, the hardest first.
+  const all = [...before.candidates, ...out].sort((a, b) => b.extraMoves - a.extraMoves || b.par - a.par);
+  const earlier = before.batches ?? (append ? [{ target: before.target, seed: before.seed, minutes: before.minutes, seconds: before.seconds, workers: before.workers, seedsTried: before.seedsTried, padsGrown: before.padsGrown, padsInTarget: before.padsInTarget, padsWith10OrMore: before.padsWith10OrMore, extraMovesWonBy: before.extraMovesWonBy }] : []);
+  writeFileSync(FILE, JSON.stringify({ size: 8, batches: [...earlier, batch], candidates: all }, null, 1) + '\n');
+  console.log(`${seeds} seeds, ${found.length} pads grown in ${seconds} s; ${inTarget.length} reached ${target.extra[0]} extra moves or more, ${batch.padsWith10OrMore} of them 10 or more.`);
+  console.log(`Extra moves won, all pads together: ${batch.extraMovesWonBy.slides} by backward slides, ${batch.extraMovesWonBy.redeals} by re-dealing a truck.\nThis batch's ${out.length}, by extra moves:\n`);
   console.log(table(out));
-  console.log(`\n${out.filter((c) => c.extraMoves >= 10).length} of the ${out.length} candidates have 10 or more extra moves. Written to levels/bigpad-candidates.json`);
+  console.log(`\n${all.length} candidates in levels/bigpad-candidates.json, ${all.filter((c) => c.extraMoves >= 10).length} of them with 10 or more extra moves.`);
 }
 
 function work() {
-  const { seed, ms } = workerData as { seed: number; ms: number };
+  const { seed, ms, target, even } = workerData as { seed: number; ms: number; target: Target; even: boolean };
   const rng = mulberry32(seed);
   const until = performance.now() + ms;
+  const [lo, hi] = target.extra;
   while (performance.now() < until) {
-    // Each pad has its own target inside the range: most of them 10 or more, the rest spread below.
-    const want = rng() < 0.7 ? 10 + int(rng, TARGET.extra[1] - 9) : TARGET.extra[0] + int(rng, 4);
-    const f = growPad(rng, until, want);
+    // Each pad has its own target inside the range: spread evenly for an added batch; for the first, most of them 10 or more.
+    const want = even || hi < 10 ? lo + int(rng, hi - lo + 1) : rng() < 0.7 ? 10 + int(rng, hi - 9) : lo + int(rng, 4);
+    const f = growPad(rng, until, want, target);
     parentPort!.postMessage('seed');
     if (f && f.extra >= 3) parentPort!.postMessage(f);
   }
