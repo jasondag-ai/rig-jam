@@ -81,6 +81,15 @@ export const GAG_TRIGGERS = {
    */
   golf: { region: 'clearwater', matTaps: 3 },
   cold: { region: 'clearwater', sameAs: 'golf', onceSeen: 'swings' },
+  /** Fresh Wash: a tap on the mud puddle in the front lane. */
+  wash: { region: 'clearwater', puddleTaps: 1 },
+  /**
+   * Dinner Bell and One Pea, the other stacked pair: this many trucks driven out IN A ROW (move after move, each one a
+   * truck leaving) with no Undo. Any other move, or an Undo, starts the count again. One Pea plays only once Dinner Bell
+   * is in the Wildlife Log.
+   */
+  bell: { region: 'clearwater', exitsInARow: 5 },
+  pea: { region: 'clearwater', sameAs: 'bell', onceSeen: 'bell' },
   /**
    * Not a gag. NIGHT: no level starts at night. After `idleMs` with no moves the lease fades to
    * night over `fadeInMs`; the next move brings the day back over `fadeOutMs`. Only where the
@@ -99,7 +108,7 @@ export const GAG_TRIGGERS = {
  * the level is won. NO GAG COMES FROM WAITING (Jay, Oct 5): every one is set off by something the
  * player does. Sitting idle only brings the night (and its nudge).
  */
-export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'muskeg' | 'catTrain' | 'beaver' | 'aurora' | 'tumbleweed' | 'pdogs' | 'bale' | 'cloud' | 'golf' | 'cold';
+export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'muskeg' | 'catTrain' | 'beaver' | 'aurora' | 'tumbleweed' | 'pdogs' | 'bale' | 'cloud' | 'golf' | 'cold' | 'wash' | 'bell' | 'pea';
 
 /** Is a bump a push at a wrong-colour gate? (A truck in line with a gate that is not its own; `hit` is what it ran into.) */
 export const wrongGateBump = (
@@ -144,6 +153,9 @@ export const PREVIEWS: Record<string, { gag: GagId; region: string; level: numbe
   cloud: { gag: 'cloud', region: 'bakken', level: 3 },
   golf: { gag: 'golf', region: 'clearwater', level: 1 },
   cold: { gag: 'cold', region: 'clearwater', level: 1 },
+  wash: { gag: 'wash', region: 'clearwater', level: 1 },
+  bell: { gag: 'bell', region: 'clearwater', level: 1 },
+  pea: { gag: 'pea', region: 'clearwater', level: 1 },
 };
 
 /**
@@ -184,6 +196,10 @@ export const SHARES: Record<GagId, string[]> = {
   // (Slow Moe, his shovel and the rig mats are in both; the bearded worker in red is the worker himself.)
   golf: ['moe', 'mats'],
   cold: ['moe', 'mats', 'worker'],
+  // (Moe is in all five. The crew's leader in One Pea is the bearded worker; the puddle takes the splash and the pea.)
+  wash: ['moe', 'puddle'],
+  bell: ['moe'],
+  pea: ['moe', 'worker', 'puddle'],
 };
 /** Must this gag wait for one of those playing? */
 export const mustWait = (id: GagId, playing: Iterable<GagId>): boolean => [...playing].some((p) => p === id || SHARES[p].some((x) => SHARES[id].includes(x)));

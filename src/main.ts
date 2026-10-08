@@ -58,6 +58,10 @@ const LOG_ART: Record<Sighting, () => string> = {
   // Clearwater: Moe as the shovel bites the dirt; Moe out cold, seeing stars, the bearded worker strolling in.
   swings: () => wave3Still('golf', 6.7, [84, 70, 104, 84]),
   cold: () => wave3Still('cold', 8.4, [58, 74, 172, 84]),
+  // Fresh Wash: Moe and his pickup, mud all over. Dinner Bell: Moe late, hands on his knees. One Pea: the bearded worker asks; Moe and his one pea.
+  wash: () => wave3Still('wash', 9.7, [92, 62, 196, 100]),
+  bell: () => wave3Still('bell', 9.3, [150, 80, 100, 84]),
+  pea: () => wave3Still('pea', 5.8, [176, 70, 132, 86]),
   muskeg: () => wave3Still('muskeg', 3.1, [72, 76, 134, 90], MUSKEG),
   cattrain: () => wave3Still('catTrain', 9.4, [204, 92, 96, 66]),
   beaver: () => wave3Still('beaver', 1.6, [68, 92, 146, 62]),

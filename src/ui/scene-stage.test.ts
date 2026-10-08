@@ -450,8 +450,16 @@ describe('Clearwater: Three Swings and Out Cold, as the reference has them', () 
     expect(swings.name).toBe('Three Swings');
     expect(out.name).toBe('Out Cold');
     expect(LOG_ENTRIES.indexOf(out)).toBe(LOG_ENTRIES.indexOf(swings) + 1);
-    expect(swings.hint).toBe('In Clearwater, tap the stack of rig mats three times.');
-    expect(out.hint).toBe('In Clearwater, tap the rig mats three times again, after Three Swings.');
+    // Jay's own riddles and plain hints (BIG_PAD_BRIEF.md).
+    expect(swings.hint).toBe('Tap the rig mat stack 3 times.');
+    expect(swings.riddle).toBe('Someone wants to tee off the rig mats.');
+    expect(out.hint).toBe('After Three Swings, tap the rig mats 3 times again.');
+    expect(out.riddle).toBe('Moe never quits. Give him another shot.');
+    expect(LOG_ENTRIES.filter((e) => ['wash', 'bell', 'pea'].includes(e.id)).map((e) => [e.name, e.riddle, e.hint])).toEqual([
+      ['Fresh Wash', 'Nothing stays clean near that puddle.', 'Tap the mud puddle.'],
+      ['Dinner Bell', 'Work hard, eat first.', 'Clear 5 trucks in a row without Undo.'],
+      ['One Pea', 'Somebody always misses supper.', 'After Dinner Bell, clear 5 in a row again.'],
+    ]);
     for (const [key, t] of [['golf', 6.7], ['cold', 8.4]] as [string, number][]) {
       const still = wave3Still(key, t, [60, 70, 170, 84]);
       expect(still).toContain('egg-still');

@@ -179,6 +179,9 @@ export const MAGPIE_LINES = ['Seriously?', 'Not the windshield!', 'Every. Single
 export const BALE_LINE = 'Hey!';
 /** Out Cold (Clearwater): what the bearded worker says, looking down at Moe. The reference's own line. */
 export const FORE_LINE = 'Fore.';
+/** Dinner Bell and One Pea (Clearwater): the reference's own lines, by the key the gag says them under. */
+export const BELL_LINES: Record<string, string> = { supper: 'Supper!', save: 'Save me some!' };
+export const PEA_LINES: Record<string, string> = { carbs: 'Watching your carbs, Moe?' };
 export const LANDOWNER_LINES = ["Who's paying for these ruts?", "That's my hay field!", "I'm calling the land man.", 'Fix these ruts by Friday.'];
 const lastFrom = new Map<readonly string[], string>();
 /** A line from a pool, never the one it gave last time. */
@@ -267,4 +270,7 @@ export const WITNESS_LINES = {
   // (Clearwater. These two are Claude's stand-ins: Jay to write his own.)
   golf: 'That is not a nine iron.',
   cold: 'He never yells fore.',
+  wash: 'I just washed mine too.',
+  bell: 'Is it supper already?',
+  pea: 'Somebody share with Moe.',
 };

@@ -151,12 +151,12 @@ describe('Dug Through: a hidden entry, the stopwatch and the swipes', () => {
     const entry = LOG_ENTRIES.find((e) => e.id === 'dug')!;
     expect(entry).toMatchObject({ name: 'Dug Through', hidden: true });
     expect(LOG_ENTRIES.filter((e) => e.hidden).map((e) => e.id)).toEqual(['dug']);
-    expect(LOG_ENTRIES).toHaveLength(30);
+    expect(LOG_ENTRIES).toHaveLength(33);
     const fresh = parseLog(null);
-    expect(shownEntries(fresh)).toHaveLength(29);
+    expect(shownEntries(fresh)).toHaveLength(32);
     expect(shownEntries(fresh).some((e) => e.id === 'dug')).toBe(false);
     const dug = recordDig(fresh, 60000, 40).log;
-    expect(shownEntries(dug)).toHaveLength(30);
+    expect(shownEntries(dug)).toHaveLength(33);
     expect(dugStill()).toContain('class="egg-still dug-still"');
   });
 

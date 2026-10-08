@@ -24,7 +24,7 @@ import { bearAlways, bearNever, eggOff, gagTest, lunchAlways, lunchNever, rollPi
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
 import { BackAndForth, GAG_TRIGGERS, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump, type GagId } from './gag-triggers.ts';
 import { BakkenProp, ClearProp, MANN_SIGN_X, MannProp, auroraDef, sceneDef } from './scene-stage.ts';
-import { BALE_LINE, FORE_LINE } from './lines.ts';
+import { BALE_LINE, BELL_LINES, FORE_LINE, PEA_LINES } from './lines.ts';
 import { WAVE3 } from './wave3.ts';
 import { setSignX, stageBox, WINTER_SIGN_X, BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, SignProp, deerDef, signLane, surveyorDef, touristsDef, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
@@ -172,6 +172,8 @@ export class GameView {
   /** Clearwater's standard scene (the Big Pad), and taps on its rig mat stack. */
   private clear: ClearProp | null = null;
   private matTaps = 0;
+  /** Trucks driven out one move after another (Dinner Bell, One Pea). */
+  private exitRun = 0;
   private prairieTaps: { x: number; y: number; n: number } | null = null;
   private skyTaps = 0;
   private puddleTaps = 0;
@@ -301,7 +303,7 @@ export class GameView {
       const inMann = this.regionId === GAG_TRIGGERS.muskeg.region || mannGag;
       // (Mannville's sign stands left of the lane aspen; Duvernay's left of the stage, clear of the sitting bear.)
       // Clearwater: its own standard scene (the sandy two-track, the gold aspen, the rig mat stack, the puddle) and the golf pair.
-      const inClear = this.regionId === GAG_TRIGGERS.golf.region || this.eggForced === 'golf' || this.eggForced === 'cold';
+      const inClear = this.regionId === GAG_TRIGGERS.golf.region || BIG_PAD_GAGS.includes(this.eggForced as GagId);
       setSignX(inMann ? MANN_SIGN_X : theme.season === 'winter' ? WINTER_SIGN_X : undefined);
       if (inClear) this.clear = new ClearProp(egg, theme.season);
       if (inMann) this.mann = new MannProp(egg, theme.season);
@@ -361,6 +363,9 @@ export class GameView {
         if (!eggOff('golf')) this.strips.golf = new TimelineGag(egg, sceneDef('golf', 'golf', () => clear.geom()));
         // (Out Cold's ball pings off the scenery's own aspen, which shivers; "Fore." is said in the game's bubble.)
         if (!eggOff('cold')) this.strips.cold = new TimelineGag(egg, sceneDef('cold', 'cold', () => clear.geom(), { line: FORE_LINE, frame: (t) => clear.aspen((WAVE3 as unknown as { cold: { aspen: (t: number) => number } }).cold.aspen(t)), reset: () => clear.aspen(0) }));
+        if (!eggOff('wash')) this.strips.wash = new TimelineGag(egg, sceneDef('wash', 'wash', () => clear.geom()));
+        if (!eggOff('bell')) this.strips.bell = new TimelineGag(egg, sceneDef('bell', 'bell', () => clear.geom(), { lines: BELL_LINES }));
+        if (!eggOff('pea')) this.strips.pea = new TimelineGag(egg, sceneDef('pea', 'pea', () => clear.geom(), { lines: PEA_LINES }));
       }
       // A BIG PAD HAS ONLY ITS OWN GAGS so far (the golf pair): the older ones are drawn for a pad of 6 and its scene, and are
       // not built here at all. (The biffy and the lease sign still stand, as on every level.)
@@ -408,6 +413,7 @@ export class GameView {
             if (this.mann.hitPuddle(e.clientX, e.clientY) && ++this.puddleTaps >= GAG_TRIGGERS.muskeg.puddleTaps) {
               this.puddleTaps = 0;
     this.matTaps = 0;
+    this.exitRun = 0;
               this.fire('muskeg');
             } else if (this.mann.hitAspen(e.clientX, e.clientY) && !this.eggsOn.has('beaver')) {
               if (++this.aspenTaps >= GAG_TRIGGERS.beaver.aspenTaps) {
@@ -427,6 +433,8 @@ export class GameView {
               else this.clear.shake();
             } else this.clear.shake();
           }
+          // Clearwater: a tap on the mud puddle (Fresh Wash).
+          if (this.clear?.hitPuddle(e.clientX, e.clientY) && !(e.target as Element | null)?.closest?.('button')) this.fire('wash');
           // Bakken: the same spot on the prairie tapped three times (the prairie dogs); the sky tapped three times (the cloud).
           if (this.bakken && !(e.target as Element | null)?.closest?.('button, .truck, .board')) {
             const screen = this.el.getBoundingClientRect(), strip = this.strip(), x = e.clientX - screen.left, y = e.clientY - screen.top;
@@ -627,6 +635,12 @@ export class GameView {
       if (result.exited && mover?.convoy === 2 && this.convoyOut === mover.color) this.fire('catTrain');
       this.convoyOut = result.exited && mover?.convoy === 1 ? mover.color : null;
     }
+    // Clearwater: trucks driven out one move after another (Dinner Bell; once that is in the log, One Pea).
+    this.exitRun = result.exited ? this.exitRun + 1 : 0;
+    if (this.clear && this.exitRun >= GAG_TRIGGERS.bell.exitsInARow) {
+      const next: GagId = loadLog(loadProgress().demo).found.includes('bell') ? 'pea' : 'bell';
+      if (!this.eggDone.has(next) && !this.eggsOn.has(next)) { this.exitRun = 0; this.fire(next); }
+    }
     // The tumbleweed: a truck dragged the full length of the board in one move.
     if (this.bakken && mover && (result.exited ? Math.abs(delta) >= SIZE - mover.length : Math.abs(result.delta ?? delta) === SIZE - mover.length)) this.fire('tumbleweed');
     if (result.exited) {
@@ -668,6 +682,7 @@ export class GameView {
     if (!canUndo(this.state) || isWon(this.state)) return;
     this.state = undo(this.state);
     this.played();
+    this.exitRun = 0;
     if (++this.undos >= GAG_TRIGGERS.geese.undosInARow) this.fire('geese');
     this.board.removeLastTrack();
     this.resetHint();
@@ -1209,5 +1224,5 @@ function fitRibbon(span: HTMLElement | null): void {
 
 /** Which Wildlife Log entry each egg fills in. */
 /** The gags a Big Pad (Clearwater) plays. */
-const BIG_PAD_GAGS: GagId[] = ['golf', 'cold'];
-const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull', porcupine: 'porcupine', gopherLunch: 'lunch', sam: 'sam', tongue: 'tongue', surveyor: 'surveyor', deer: 'deer', tourists: 'tourists', muskeg: 'muskeg', catTrain: 'cattrain', beaver: 'beaver', aurora: 'aurora', tumbleweed: 'tumbleweed', pdogs: 'pdogs', bale: 'bale', cloud: 'cloud', golf: 'swings', cold: 'cold' };
+const BIG_PAD_GAGS: GagId[] = ['golf', 'cold', 'wash', 'bell', 'pea'];
+const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull', porcupine: 'porcupine', gopherLunch: 'lunch', sam: 'sam', tongue: 'tongue', surveyor: 'surveyor', deer: 'deer', tourists: 'tourists', muskeg: 'muskeg', catTrain: 'cattrain', beaver: 'beaver', aurora: 'aurora', tumbleweed: 'tumbleweed', pdogs: 'pdogs', bale: 'bale', cloud: 'cloud', golf: 'swings', cold: 'cold', wash: 'wash', bell: 'bell', pea: 'pea' };

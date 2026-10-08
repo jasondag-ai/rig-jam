@@ -311,7 +311,7 @@ describe('the bull and the cow', () => {
 describe('gag rules and the gag bush', () => {
   it('gags play at the same time; only gags that share a character or a prop wait for each other', () => {
     // Every gag has an entry.
-    expect(Object.keys(SHARES).sort()).toEqual(['aurora', 'bale', 'bear', 'beaver', 'biffyA', 'biffyB', 'bull', 'catTrain', 'cloud', 'cold', 'deer', 'geese', 'golf', 'gopherLunch', 'landowner', 'magpie', 'marshmallow', 'moose', 'muskeg', 'nearMiss', 'pdogs', 'porcupine', 'sam', 'surveyor', 'tongue', 'tourists', 'tumbleweed', 'worker']);
+    expect(Object.keys(SHARES).sort()).toEqual(['aurora', 'bale', 'bear', 'beaver', 'bell', 'biffyA', 'biffyB', 'bull', 'catTrain', 'cloud', 'cold', 'deer', 'geese', 'golf', 'gopherLunch', 'landowner', 'magpie', 'marshmallow', 'moose', 'muskeg', 'nearMiss', 'pdogs', 'pea', 'porcupine', 'sam', 'surveyor', 'tongue', 'tourists', 'tumbleweed', 'wash', 'worker']);
     // The two biffy gags share the biffy; the two gopher gags share the gopher.
     expect(mustWait('biffyB', ['biffyA'])).toBe(true);
     expect(mustWait('biffyA', ['biffyB'])).toBe(true);
