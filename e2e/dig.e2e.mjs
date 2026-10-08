@@ -71,7 +71,8 @@ for (const [width, height] of [[390, 844], [375, 667]]) {
       wide: s.left <= sc.left + 0.5 && s.right >= sc.left + screen.clientWidth - 0.5, top: Math.abs(s.top - c.top), tall: (() => { const d = document.querySelector('.dig-deep').getBoundingClientRect(); return Math.abs(s.bottom - d.top) + Math.abs(d.bottom - c.bottom) + (d.left <= sc.left + 0.5 && d.right >= sc.left + screen.clientWidth - 0.5 ? 0 : 99); })(), below: s.bottom - last.bottom, deep: [...document.querySelectorAll('.deep-layer')].map((l) => l.dataset.layer),
       order: [...document.querySelector('.dig-col').children].filter((c) => c.matches('.log-cards, .dig-window')).map((c) => (c.matches('.dig-window') ? c.dataset.layer : 'cards')), cards: cards.length, groups: [...document.querySelectorAll('.dig-col .log-cards')].map((u) => u.children.length),
       boreTop: +bore.dataset.top, td: +bore.dataset.td + s.top, reef: { top: reef.top, bottom: reef.bottom }, wellhead: !!svg.querySelector('.wellhead'),
-      scrollX: screen.scrollWidth > screen.clientWidth + 1, end: Math.round(screen.scrollHeight - (document.querySelector('.dig-deep').getBoundingClientRect().bottom - sc.top + screen.scrollTop)),
+      scrollX: screen.scrollWidth > screen.clientWidth + 1, end: screen.scrollHeight - (document.querySelector('.dig-deep').getBoundingClientRect().bottom - sc.top + screen.scrollTop),
+      endSky: getComputedStyle(document.querySelector('.deep-layer[data-layer="kerguelen"]')).boxShadow,
     };
   });
   check(dig.svgs === 1 && dig.layers.join() === FORMATIONS.map((f) => f.id).join(), `ONE drawing behind the grid, ${dig.layers.length} formations top to bottom: ${dig.layers.join(', ')}`);
@@ -85,7 +86,8 @@ for (const [width, height] of [[390, 844], [375, 667]]) {
     check(dig.cards === SHOWN && dig.groups.every((n, i) => n === Math.min(4, dig.cards - i * 4)) && dig.order.join() === want.join() && dig.below > 500, `the ${dig.cards} cards stand over it in groups of four with a window on the rock between them (${dig.order.join(' ')}); below the last card it keeps going down another ${Math.round(dig.below)} px`);
   }
   check(dig.wellhead && dig.boreTop <= 16 && dig.td > dig.reef.top + 40 && dig.td < dig.reef.bottom, 'a wellbore runs from a wellhead at the surface down into the reservoir');
-  check(dig.end === 0, `the page ends at the Kerguelen Islands, with no grass under their sky (${dig.end} px left over)`);
+  // (The cards may end on half a px and the page's height is a whole number: the sky runs 1 px on under itself to cover that.)
+  check(Math.abs(dig.end) < 1 && /191, 227, 242/.test(dig.endSky) && /1px/.test(dig.endSky), `the page ends at the Kerguelen Islands, with no grass under their sky (${dig.end.toFixed(2)} px of the page past it, covered by the sky's own colour)`);
 
   // By the pixels: down the page's left margin there is rock at every depth, each formation its own colour.
   {

@@ -18,7 +18,8 @@ const check = (ok, text) => {
   if (!ok) failures++;
   console.log(`   ${ok ? 'ok  ' : 'FAIL'} ${text}`);
 };
-const ALL = ['magpie', 'spotter', 'moose', 'nearmiss', 'landowner', 'biffy', 'biffyB', 'marshmallow', 'geese', 'porcupine', 'lunch', 'sam', 'tongue', 'surveyor', 'deer', 'tourists', 'muskeg', 'cattrain', 'beaver', 'aurora', 'tumbleweed', 'pdogs', 'bale', 'cloud', 'night', 'bull', 'dug', 'bear'];
+// (Every entry there is, in the log's own order: the list grows with the game.)
+const ALL = RIDDLE_ENTRIES.map((e) => e.id);
 const N = ALL.length;
 // (Dug Through is hidden until earned: a new player's log has a card for every entry but that one.)
 const CARDS = ALL.filter((id) => id !== 'dug');
