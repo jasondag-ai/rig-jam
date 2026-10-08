@@ -1101,8 +1101,10 @@ something, give exact clicks and one command at a time.
   stack's foot is 4 units further back (`MATS_FOOT` GY-2: by the depth rule it is clearly behind
   the lane, so everybody passes in front of it, drawn as the reference draws them); the left group
   of trees stands 44 further right (clear of the biffy); the aspen is 96 tall, not 118 (its crown
-  would run up over the berm; its trunk, where the ball pings, is where it was); the lease sign
-  stands at world x 314 (`CW_SIGN_AT`, `ClearProp.signX`), over the mats, clear of the action.
+  would run up over the berm; its trunk, where the ball pings, is where it was); the spruce
+  at x 290 stands at 306 and the second fireweed at 352 (nobody parks on a prop: the cook rings
+  at 286, Moe stands at 250 to 276); the lease sign stands at world x 330 (`CW_SIGN_AT`,
+  `ClearProp.signX`), over the mats, clear of the action.
 - THE GOLF PAIR (wave3.ts `WAVE3.golf`, `WAVE3.cold`: the reference's `render` as written, with the
   game's `E`; the worker drawing is now that reference's, which adds a beard, stubble, dizzy eyes,
   a toque and an apron and changes nothing an older gag uses). SLOW MOE (orange, stubble, droopy

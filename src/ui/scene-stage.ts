@@ -248,18 +248,22 @@ export class BakkenProp {
 export const CW_TREES: { species: Species; x: number; base: number; h: number }[] = [
   { species: 'spruce', x: 64, base: 124, h: 66 },
   { species: 'spruce', x: 94, base: 120, h: 50 },
-  { species: 'spruce', x: 290, base: 118, h: 56 },
+  // (The reference stands this spruce at x 290, right behind where the cook rings his triangle (x 286): by the depth rule
+  // nobody parks on a prop, so it stands at 306.)
+  { species: 'spruce', x: 306, base: 118, h: 56 },
   { species: 'spruce', x: 372, base: 114, h: 70 },
 ];
 // (The reference's aspen is 118 tall and its crown runs up over the berm. The strip's scenery stops at the berm's foot, so it is 96 here: its trunk, where the ball pings, is where it was.)
 export const CW_ASPEN = { species: 'aspen' as Species, x: CW.ASP.x, base: CW.ASP.b, h: 96 };
 /** Fireweed [x, base, size] and red fall blueberry bushes [x, base, size] (the reference's own drawings). */
-export const CW_FIREWEED: [number, number, number][] = [[122, 126, 1], [262, 124, 0.9]];
+// (The reference's second fireweed stands at x 262, where Moe admires his truck and stands with his one pea: it stands at
+// 352 here, between the blueberry bush and the last spruce, over the rig mats, where nobody stops.)
+export const CW_FIREWEED: [number, number, number][] = [[122, 126, 1], [352, 124, 0.9]];
 export const CW_BUSHES: [number, number, number][] = [[154, 126, 0.72], [340, 122, 0.66]];
 /** The mud puddle's box in the world (the Fresh Wash gag's). */
 export const CW_PUDDLE_BOX = { x: CW.PUD.x - 36, y: CW.PUD.y - 7, w: 72, h: 14 };
-/** Where the lease sign stands on a Clearwater level, in the world: up by the berm between the right-hand spruce and the blueberry bush, over the rig mats and clear of where Moe and the bearded worker stand. */
-export const CW_SIGN_AT = 314;
+/** Where the lease sign stands on a Clearwater level, in the world: up by the berm over the blueberry bush and the rig mats and clear of where Moe and the bearded worker stand. */
+export const CW_SIGN_AT = 330;
 
 /** Clearwater's ground, flat under everything: lichen bands, the sandy two-track, the puddle, tufts. */
 export function clearGround(g: SceneGeom): string {
