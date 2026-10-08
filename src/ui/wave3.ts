@@ -7,6 +7,11 @@
 // the reference's own coordinates (ground line `GY` 150; the strip's scenery is permanent and
 // drawn once by scene-stage.ts, not here).
 //
+// CLEARWATER (region 6, the Big Pad), Oct 7: the worker is now the one from
+// `~/Desktop/RHR Art Inbox/clearwater_sightings_reference.html` (saved Oct 7 19:26), which adds a
+// beard, stubble, dizzy eyes, a cook's toque and apron to the same drawing; nothing an older gag
+// uses changed. Its Clearwater scene pieces and its first gag pair are at the end of this file.
+//
 // THE ONE CHANGE: `E`. The game shows the reference's 390-wide world at the scale the strip's
 // height allows, so on a short strip the screen is WIDER than 390 world units, by `E` on each
 // side. Nobody may pop in or out in view, so every walk-in starts `E` further out and every
@@ -33,6 +38,7 @@ function sfx(x,y,txt,size=16,rot=-6,col='#f4c430',sc=1){return`<g transform="tra
 function note(x,y,a=1,col='#fff'){return`<g opacity="${r2(a)}" transform="translate(${r2(x)} ${r2(y)})"><path d="M0 0 a3.4 2.6 -20 1 1 0.1 0 M3 -1 V-12 q4 1 6 4" fill="${col}" ${sw(1.8)}/></g>`;}
 function zz(x,y,a,s=1){return sfx(x,y,'z',9*s,-10,'#fff',1).replace('<g ',`<g opacity="${r2(a)}" `);}
 function hardHat(c){return`<path d="M-16 0 a16 15 0 0 1 32 0 z" fill="${c}" ${sw()}/><path d="M0 -14 V-1" stroke="${OL}" stroke-width="1.6" opacity=".45"/><rect x="-18" y="-2.5" width="40" height="5" rx="2.5" fill="${c}" ${sw(2.4)}/>`;}
+function toque(){return`<path d="M-12 0 V-9 Q-21 -10 -19 -19 Q-17 -27 -9 -24 Q-6 -33 3 -30 Q11 -35 15 -26 Q24 -24 21 -15 Q19 -10 13 -9 V0 z" fill="#fbfaf6" ${sw(2.6)}/><path d="M-12 -5 H13" stroke="#ddd7ca" stroke-width="3"/><path d="M-13 -20 Q-11 -25 -7 -23" fill="none" stroke="#fff" stroke-width="2"/>`;}
 function cowHat(){return`<path d="M-11 0 v-14 q11 -7 22 0 v14 z" fill="${C.cowboy}" ${sw()}/><rect x="-10" y="-5" width="20" height="3.4" fill="#5b3a21"/><ellipse cx="3" cy="1" rx="24" ry="4.6" fill="${C.cowboy}" ${sw(2.6)}/>`;}
 function worker(o){
  o=Object.assign({sockB:false,x:0,y:GY,s:.54,face:1,legF:0,legB:0,armF:0,armB:0,bob:0,lean:0,headRot:0,eye:'n',px:0,py:0,mouth:'smile',brow:0,suit:'red',hat:'hard',hatC:C.hat,hatLift:0,hatRot:0,noHat:false,socks:false,blush:0,sq:0,tache:false,legs:null,plaid:false,mud:0,hand:'',handB:'',glove:C.glove,clip:''},o);
@@ -42,20 +48,22 @@ function worker(o){
  const arm=(a,c,item)=>`<g transform="rotate(${r2(a)} 0 -70)"><rect x="-5" y="-73" width="10" height="30" rx="5" fill="${c}" ${sw()}/>${item||''}<circle cx="0" cy="-42" r="5.6" fill="${o.glove}" ${sw(2.4)}/></g>`;
  let torso=`<rect x="-15" y="-78" width="30" height="42" rx="9" fill="${S[0]}"/>`;
  if(o.plaid)torso+=`<path d="M-6 -77V-37M5 -77V-37M-14 -64H14M-14 -50H14" stroke="#7d2219" stroke-width="2.2" opacity=".75"/>`;
+ else if(o.apron)torso+=`<path d="M-3 -70 H15 V-36 H-3 z" fill="#fbfaf6" stroke="${OL}" stroke-width="1.8"/><path d="M-3 -70 L-12 -77" stroke="${OL}" stroke-width="1.6"/>`;
  else torso+=`<rect x="-14" y="-55" width="28" height="3.4" fill="${C.stripe}"/><rect x="4" y="-71" width="6" height="8" rx="1.5" fill="#f08a24" stroke="${OL}" stroke-width="1.6"/>`;
  if(o.mud>0)torso+=`<path d="M-15 -49 q4 5 8 0 q4 6 8 0 q4 5 8 0 q3 4 7 0 V-36 H-15 z" fill="${C.mud}" opacity="${r2(clamp(o.mud))}"/>`;
  torso+=`<rect x="-15" y="-78" width="30" height="42" rx="9" fill="none" ${sw()}/>`;
  const ey=1;let eye='';
- if(o.eye==='closed')eye=`<path d="M2 ${ey} q5 4 10 0" fill="none" ${sw(2.4)}/>`;
+ if(o.eye==='dizzy')eye=`<circle cx="7" cy="${ey}" r="6.4" fill="#fff" ${sw(2.2)}/><path d="M7 ${ey} a1.3 1.3 0 0 1 2.6 0 a2.6 2.6 0 0 1 -5.2 0 a3.9 3.9 0 0 1 7.8 0" fill="none" stroke="${OL}" stroke-width="1.5" transform="rotate(${r2(o.spinEye||0)} 7 ${ey})"/>`;
+ else if(o.eye==='closed')eye=`<path d="M2 ${ey} q5 4 10 0" fill="none" ${sw(2.4)}/>`;
  else if(o.eye==='happy')eye=`<path d="M2 ${ey+2} q5 -6 10 0" fill="none" ${sw(2.4)}/>`;
  else{const wide=o.eye==='wide',er=wide?8.2:6.4,pr=wide?2.5:3.2;
   eye=`<circle cx="7" cy="${ey}" r="${er}" fill="#fff" ${sw(2.2)}/><circle cx="${r2(7+o.px)}" cy="${r2(ey+o.py)}" r="${pr}" fill="${OL}"/><circle cx="${r2(5.8+o.px)}" cy="${r2(ey-1.3+o.py)}" r="1" fill="#fff"/>`;
   if(o.eye==='half')eye+=`<path d="M${r2(7-er-.4)} ${ey} a${r2(er+.4)} ${r2(er+.4)} 0 0 1 ${r2(2*er+.8)} 0 z" fill="${o.flushC||C.skin}" ${sw(2.2)}/>`;}
- const glasses=o.eye==='wide'?'':`<rect x="-2" y="${ey-8.5}" width="18" height="15" rx="6" fill="none" stroke="${OL}" stroke-width="1.4" opacity=".85"/><path d="M-2 ${ey-3} H-13" stroke="${OL}" stroke-width="1.4"/>`;
+ const glasses=(o.eye==='wide'||o.noGlasses)?'':`<rect x="-2" y="${ey-8.5}" width="18" height="15" rx="6" fill="none" stroke="${OL}" stroke-width="1.4" opacity=".85"/><path d="M-2 ${ey-3} H-13" stroke="${OL}" stroke-width="1.4"/>`;
  const M={smile:`<path d="M7 11 q5 4 10 -1" fill="none" ${sw(2.2)}/>`,grin:`<path d="M6 9 q6 9 12 -1 z" fill="#6b2a20" ${sw(2)}/>`,o:`<ellipse cx="12" cy="12" rx="2.6" ry="3" fill="#6b2a20" ${sw(1.8)}/>`,O:`<ellipse cx="12" cy="11" rx="4.2" ry="5.2" fill="#6b2a20" ${sw(2)}/>`,flat:`<path d="M8 12 h8" fill="none" ${sw(2.2)}/>`,frown:`<path d="M7 13 q5 -5 10 0" fill="none" ${sw(2.2)}/>`,grit:`<rect x="6" y="8.5" width="12" height="6" rx="2" fill="#fff" ${sw(2)}/><path d="M10 8.5 v6 M14 8.5 v6" stroke="${OL}" stroke-width="1.4"/>`,pant:`<ellipse cx="12" cy="12" rx="3.6" ry="4.4" fill="#6b2a20" ${sw(2)}/>`};
  const skin=o.flushC||C.skin;
- const hat=o.noHat?'':`<g transform="translate(0 ${r2(-11-o.hatLift)}) rotate(${r2(o.hatRot)})">${o.hat==='cowboy'?cowHat():hardHat(o.hatC)}</g>`;
- const head=`<g transform="translate(2 -94) rotate(${r2(o.headRot)})"><circle cx="0" cy="0" r="17" fill="${skin}" ${sw()}/><circle cx="-10" cy="3" r="4" fill="${skin}" ${sw(2.2)}/>${o.blush?`<ellipse cx="5" cy="9" rx="5" ry="2.8" fill="#e8786a" opacity="${r2(o.blush)}"/>`:''}${eye}${glasses}<circle cx="17" cy="4" r="3.6" fill="${C.skinD}" ${sw(2)}/>${M[o.mouth]||''}${o.tache?`<path d="M7 8 q5 -3 11 0 q2 4 -2 4 q-3 -2 -4 0 q-4 1 -5 -4 z" fill="#ddd6ca" ${sw(1.8)}/>`:''}<path d="M1 ${ey-8.5} L13 ${r2(ey-8.5+o.brow)}" fill="none" ${sw(2.2)}/>${hat}</g>`;
+ const hat=o.noHat?'':`<g transform="translate(0 ${r2(-11-o.hatLift)}) rotate(${r2(o.hatRot)})">${o.hat==='cowboy'?cowHat():o.hat==='toque'?toque():hardHat(o.hatC)}</g>`;
+ const head=`<g transform="translate(2 -94) rotate(${r2(o.headRot)})"><circle cx="0" cy="0" r="17" fill="${skin}" ${sw()}/><circle cx="-10" cy="3" r="4" fill="${skin}" ${sw(2.2)}/>${o.beard?`<path d="M-4 4 Q-3 19 8 19.5 Q18 19 19.6 7 Q13 12.5 7 12 Q1 11.5 -4 4 z" fill="#7a4f2e" ${sw(2)}/>`:''}${o.stubble?`<path d="M-3 7 Q1 16.5 10 16.5 Q16.5 15.5 17.6 9 Q8 13 -3 7 z" fill="${o.stubbleC||'#9c7656'}" opacity=".55"/><path d="M1 12 h.1 M5 14 h.1 M9 14.6 h.1 M13 13.6 h.1 M3.5 9.6 h.1" stroke="${OL}" stroke-width="1.3" stroke-linecap="round" opacity=".6"/>`:''}${o.blush?`<ellipse cx="5" cy="9" rx="5" ry="2.8" fill="#e8786a" opacity="${r2(o.blush)}"/>`:''}${eye}${glasses}<circle cx="17" cy="4" r="3.6" fill="${C.skinD}" ${sw(2)}/>${M[o.mouth]||''}${o.tache?`<path d="M7 8 q5 -3 11 0 q2 4 -2 4 q-3 -2 -4 0 q-4 1 -5 -4 z" fill="#ddd6ca" ${sw(1.8)}/>`:''}<path d="M1 ${ey-8.5} L13 ${r2(ey-8.5+o.brow)}" fill="none" ${sw(2.2)}/>${hat}</g>`;
  const sx=o.s*o.face*(1+o.sq),sy=o.s*(1-o.sq);
  return`<g ${o.clip?`clip-path="url(#${o.clip})"`:''}><g transform="translate(${r2(o.x)} ${r2(o.y)}) scale(${r2(sx)} ${r2(sy)})"><g transform="translate(0 ${r2(o.bob)})"><g transform="rotate(${r2(o.lean)} 0 -40)">${arm(o.armB,S[1],o.handB)}</g>${leg(o.legB,L[1],o.sockB)}${leg(o.legF,L[0],false)}<g transform="rotate(${r2(o.lean)} 0 -40)">${torso}${head}${arm(o.armF,S[0],o.hand)}</g></g></g></g>`;}
 
@@ -478,4 +486,168 @@ WAVE3.cloud = { name:'Personal Cloud', dur:12.4, still:9.0,
   if(cloudSeen)s+=cloud(cx,cy,mood);
   if(t<2.0&&seen){for(let k=0;k<2;k++){const ph=((((t*1.4+k*.5)%1)+1)%1);s+=note(x+16+ph*10,GY-62-ph*18,1-ph);}}
   if(t>6.3&&t<6.6)s+=sfx(x+8,GY-102,'pop!',12,-8,'#fff');
+  return s;}};
+
+
+/* ================= CLEARWATER (region 6, the Big Pad) ================= */
+/* PORTED AS WRITTEN from `clearwater_sightings_reference.html` (Oct 7 19:26): the scene's pieces
+   (the red-leaf blueberry bush, fireweed, the rig mat stack in end view, the mud puddle), Slow Moe
+   and the bearded worker, the shovel, the golf swing and the ball's flight. The reference lines
+   below are copied; the two gags after them are its `render` with the game's one change (`E`,
+   see the top of this file) and without the scene behind (permanent scenery: scene-stage.ts). */
+function bush(x,b,s=1,ca='#6f8a3e',cb='#8ea956'){const cs=[[-9,-8,9],[0,-13,10],[9,-8,9]].map(([dx,dy,r])=>[x+dx*s,b+dy*s,r*s]);return cs.map(([cx,cy,r])=>`<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r)}" fill="${OL}" stroke="${OL}" stroke-width="5"/>`).join('')+cs.map(([cx,cy,r])=>`<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r)}" fill="${ca}"/>`).join('')+cs.map(([cx,cy,r])=>`<circle cx="${r2(cx-r*.3)}" cy="${r2(cy-r*.3)}" r="${r2(r*.45)}" fill="${cb}"/>`).join('');}
+const MOE={suit:['#e8862e','#bf6418'],stubble:true,hatRot:-9};
+const ASP={x:222,b:132,h:118};
+const MATX=318, PUD={x:236,y:175};
+function fireweed(x,b,s=1){let o='';[[-4,-26],[0,-34],[5,-24]].forEach(([dx,h])=>{const X=x+dx*s,T=b+h*s;o+=`<path d="M${r2(X)} ${b} V${r2(T)}" stroke="#5f7a3a" stroke-width="2" stroke-linecap="round"/>`;for(let k=0;k<4;k++)o+=`<circle cx="${r2(X+(k%2?1.6:-1.6))}" cy="${r2(T+k*3.2)}" r="${r2(2.3-k*.25)}" fill="#c8417e" stroke="${OL}" stroke-width="1"/>`;});return o;}
+function matStack(x0,b){let s='';const tw=23.3,th=7.6;
+ for(let L=0;L<3;L++)for(let i=0;i<3;i++){const x=x0+i*tw,y=b-(L+1)*th;
+  s+=`<rect x="${r2(x)}" y="${r2(y)}" width="${r2(tw)}" height="${th}" rx="1.4" fill="#b98a4e" ${sw(2)}/><path d="M${r2(x+tw/2-5)} ${r2(y+th/2)} a5 2.4 0 0 1 10 0 M${r2(x+tw/2-2.6)} ${r2(y+th/2)} a2.6 1.3 0 0 1 5.2 0" fill="none" stroke="#8d6232" stroke-width="1.1"/><path d="M${r2(x+2)} ${r2(y+1.6)} H${r2(x+tw-4)}" stroke="#d6ac6c" stroke-width="1.3"/>`;}
+ for(let L=0;L<3;L++)s+=`<circle cx="${r2(x0+tw*3-4)}" cy="${r2(b-(L+.5)*th)}" r="1.3" fill="#5b6470"/>`;
+ return s;}
+function puddle(){return`<path d="${blob(PUD.x,PUD.y,34,6.2,31)}" fill="#6b5a3a" ${sw(2.4)}/><path d="${blob(PUD.x-9,PUD.y-1.8,11,1.8,32)}" fill="#8c7a55"/><path d="M${PUD.x+12} ${PUD.y-1} h6" stroke="#a8996f" stroke-width="1.4" stroke-linecap="round"/>`;}
+function rotP(px,py,cx,cy,deg){const a=deg*Math.PI/180,c=Math.cos(a),s=Math.sin(a),dx=px-cx,dy=py-cy;return[cx+dx*c-dy*s,cy+dx*s+dy*c];}
+function handW(o,which='F',ext=28){const d={x:0,y:GY,s:.54,face:1,bob:0,lean:0,sq:0,armF:0,armB:0};o=Object.assign({},d,o);
+ const th=which==='F'?o.armF:o.armB;let [px,py]=rotP(0,-70+ext,0,-70,th);[px,py]=rotP(px,py,0,-40,o.lean);py+=o.bob;
+ return[o.x+px*o.s*o.face*(1+o.sq),o.y+py*o.s*(1-o.sq)];}
+function star4(x,y,r,fill='#f4c430',a=1){return`<path opacity="${r2(a)}" d="M${r2(x)} ${r2(y-r)} Q${r2(x+r*.22)} ${r2(y-r*.22)} ${r2(x+r)} ${r2(y)} Q${r2(x+r*.22)} ${r2(y+r*.22)} ${r2(x)} ${r2(y+r)} Q${r2(x-r*.22)} ${r2(y+r*.22)} ${r2(x-r)} ${r2(y)} Q${r2(x-r*.22)} ${r2(y-r*.22)} ${r2(x)} ${r2(y-r)} z" fill="${fill}" stroke="${OL}" stroke-width="1.3"/>`;}
+function puff(x,y,r,a,c='#d9c79a'){return`<circle cx="${r2(x)}" cy="${r2(y)}" r="${r2(r)}" fill="${c}" stroke="#a8946a" stroke-width="1.4" opacity="${r2(clamp(a))}"/>`;}
+const SHOVEL=`<path d="M0 -52 V-7" stroke="${OL}" stroke-width="5.4" stroke-linecap="round"/><path d="M0 -52 V-7" stroke="#a8743f" stroke-width="2.8" stroke-linecap="round"/><path d="M-5 -58 h10 v4.4 h-10 z" fill="#3a3d44" ${sw(1.6)}/><path d="M-6 -9 h12 v8 q-6 9 -12 0 z" fill="#a3adb7" ${sw(2.1)}/><path d="M-3.4 -6.6 v5" stroke="#d3d9df" stroke-width="1.4"/>`;
+const THUMB=g=>`<rect x="2" y="-46" width="10" height="5.4" rx="2.7" fill="${g}" ${sw(1.8)}/>`;
+const BEARD={suit:'red',beard:true};
+const GX=120, TEE=[GX+14,GY-2.6];
+function swing(t,a,kind){const o={};const top=kind==='whiff'?150:165;
+ if(t<a+.4){o.armF=kf(t,[[a,-12],[a+.4,top]]);o.lean=-8*seg(t,a,a+.4);o.sq=t>a+.3?.06:0;}
+ else if(t<a+.45){o.armF=top;o.lean=-8;o.sq=.07;}
+ else if(kind==='dig'){o.armF=t<a+.55?kf(t,[[a+.45,top],[a+.55,3,'lin']]):3+3*Math.sin(t*70)*(1-seg(t,a+.55,a+1.0));if(t>a+.55){o.x=1.3*Math.sin(t*80)*(1-seg(t,a+.55,a+1.0));o.sq=.04*Math.sin(t*70);}}
+ else{o.armF=t<a+.57?kf(t,[[a+.45,top],[a+.57,-175,'lin']]):-175;o.lean=6;if(kind==='whiff')o.bob=t<a+.57?-14*seg(t,a+.45,a+.52):0;}
+ o.armB=o.armF;return o;}
+const ballSvg=(b)=>b?`<circle cx="${r2(b[0])}" cy="${r2(b[1])}" r="2.7" fill="#fff" ${sw(1.5)}/>`:'';
+function teeUp(p,t,a){const k=seg(t,a,a+.7),b=Math.sin(Math.PI*k);p.lean=30*b;p.armB=kf(t,[[a,0],[a+.35,-28],[a+.6,-28],[a+.7,0]]);p.armF=kf(t,[[a,150],[a+.3,-14],[a+.7,-12]]);p.mouth='smile';}
+const PICK={x:GX,lean:44,bob:20,armB:-58,armF:-12};
+const DRAG={face:1,lean:22,armF:44,armB:44};
+function lyingT(x,H){const G=[x+1,GY-5.4];const d=(GY-9)-H[1];const a=-Math.acos(clamp(-d/50.8,-1,1))*180/Math.PI;
+ const head=rotP(G[0]+.1,G[1]-45.4,G[0],G[1],a);return{tf:`translate(${r2(H[0]-G[0])} ${r2(H[1]-G[1])}) rotate(${r2(a)} ${r2(G[0])} ${r2(G[1])})`,head:[head[0]+H[0]-G[0],head[1]+H[1]-G[1]]};}
+const HF=[GX+2,GY-8];
+function outBall(t){
+ const a=3.95;
+ if(t<2.0)return null;if(t<a)return TEE;
+ if(t<a+.5){const k=seg(t,a,a+.5);return[lerp(TEE[0],MATX-2,k),lerp(TEE[1],GY-12,k)-34*Math.sin(Math.PI*k)];}
+ if(t<a+1.1){const k=seg(t,a+.5,a+1.1);return[lerp(MATX-2,ASP.x+5,k),lerp(GY-12,96,k)-38*Math.sin(Math.PI*k)];}
+ if(t<a+1.85){const k=seg(t,a+1.1,a+1.85);return[lerp(ASP.x+5,GX+2,k),lerp(96,GY-66,k)-46*Math.sin(Math.PI*k)];}
+ if(t<a+2.35){const k=seg(t,a+1.85,a+2.35);return[lerp(GX+2,GX+22,k),lerp(GY-66,GY-2.6,k*k)-12*Math.sin(Math.PI*k)];}
+ if(t<a+2.85){const k=seg(t,a+2.35,a+2.85);return[lerp(GX+22,GX+27,io(k)),GY-2.6-2*Math.sin(Math.PI*k)];}
+ if(t<9.75)return[GX+27,GY-2.6];
+ return 'hand';}
+
+/* THE ONE THING MOVED: the rig mat stack stands 4 units further back than in the reference (its
+   foot at GY-2, not GY+2). There its foot was 2 units BELOW the walking lane while everybody was
+   drawn over it; by the depth rule (STANDING_RULES 1) it is now clearly behind the lane, so the
+   bearded worker and Moe pass clearly in front of it, drawn as the reference draws them. */
+const MATS_FOOT=GY-2;
+/** The sandy two-track lane (the reference's, run on flat past both ends of its 390 for a wider screen). */
+function cwLane(x0,x1){
+ return `<path d="M${r2(x0)} 138 H0 Q120 134 210 139 T390 137 H${r2(x1)} V166 H390 Q300 168 200 165 T0 167 H${r2(x0)} z" fill="#d4c28c"/><path d="M${r2(x0)} 144 H0 Q120 140 210 145 T390 143 H${r2(x1)} M${r2(x0)} 159 H0 Q120 156 210 160 T390 158 H${r2(x1)}" fill="none" stroke="#c1ad77" stroke-width="2.4"/>`;}
+/** The lichen's soft lighter and darker bands (the reference's first two; over the game's own ground). */
+function cwBands(x0,x1){return [[60,'#b6bb8e'],[96,'#aab182']].map(([y,c])=>`<path d="M${r2(x0)} ${y} Q195 ${y-6} ${r2(x1)} ${y} V${y+34} Q195 ${y+28} ${r2(x0)} ${y+34} z" fill="${c}" opacity=".55"/>`).join('');}
+export const CW = { ASP, MATX, PUD, MATS_FOOT, MAT_BOX:{x:MATX,y:MATS_FOOT-22.8,w:69.9,h:22.8}, mats:()=>matStack(MATX,MATS_FOOT), puddle, fireweed, bush, lane:cwLane, bands:cwBands };
+
+/* 9. Three Swings (Slow Moe) */
+const GOLF_IN=160, GOLF_OUT=206.25; // his speed at the screen's edge: eased out of the walk in (2 x 160 / 2.0), eased into the walk off (2 x 165 / 1.6)
+WAVE3.golf = { name:'Three Swings', dur:12.0, still:6.7,
+ beats:[[0,'walks-in','Moe walks in, shovel on his shoulder.'],[2.0,'tees-up','Sets a golf ball on the sand.'],[2.7,'waggle','Waggle. Squints at the rig mats.'],[3.3,'swing-one','Swing one. Whoosh. Clean miss.'],[4.05,'looks-down','Looks down. The ball is still there.'],[4.6,'swing-two','Swing two. Harder. Miss. His hat jumps.'],[5.4,'glares','Glares at the ball.'],[5.9,'swing-three','Swing three. The shovel bites the dirt. BOING.'],[7.3,'stares','He stares at the ball.'],[7.6,'rolls-off','It wobbles, and rolls off its little sand pile on its own.'],[8.0,'looks-at-you','Moe looks at you.'],[8.3,'picks-up','Bends right down and picks up the ball.'],[9.1,'scowls','Holds it up. Scowls at it.'],[9.6,'pockets','Stuffs it in his chest pocket.'],[9.9,'stomps-off','Hop-turn. Stomps off.']],
+ lead:E=>E/GOLF_IN, tail:E=>E/GOLF_OUT,
+ wx(t){if(t<0)return -40+GOLF_IN*t;if(t<2.0)return kf(t,[[0,-40],[2.0,GX,'out']]);if(t<10.2)return GX;return t>11.8?-45-GOLF_OUT*(t-11.8):kf(t,[[10.2,GX],[11.8,-45,'in']]);},
+ ball(t){const rest=[handW(PICK,'B')[0],GY-2.6];if(t<2.0)return null;if(t<7.6)return TEE;if(t<7.8)return[TEE[0]+.7*Math.sin(t*60),TEE[1]];if(t<8.15){const k=seg(t,7.8,8.15);return[lerp(TEE[0],rest[0],io(k)),TEE[1]];}if(t<8.7)return rest;return 'hand';},
+ render(t,E=0){
+  let s='';
+  const x=this.wx(t);
+  let p={x,face:1,...MOE,eye:'half',mouth:'flat',hand:SHOVEL,armF:150,armB:0};
+  if(t<2.0){Object.assign(p,walk(x/8,26));p.armF=150;p.eye='n';p.mouth='o';}
+  else if(t<2.7)teeUp(p,t,2.0);
+  else if(t<3.3){p.armF=-12+6*Math.sin((t-2.7)*14);p.armB=p.armF;p.px=2;p.brow=3;p.lean=6;}
+  else if(t<4.05){Object.assign(p,swing(t,3.3,'whiff'));p.mouth='frown';}
+  else if(t<4.6){p.armF=kf(t,[[4.05,-175],[4.35,-12]]);p.armB=p.armF;p.px=1;p.py=2.5;p.eye=inr(t,4.3,4.42)?'closed':'n';}
+  else if(t<5.4){Object.assign(p,swing(t,4.6,'whiff'));p.mouth='frown';p.brow=4;if(t>5.05){p.hatLift=8*Math.sin(Math.PI*seg(t,5.05,5.35));p.lean=6+12*Math.sin(Math.PI*seg(t,5.05,5.4));p.eye='wide';p.mouth='O';}}
+  else if(t<5.9){p.armF=kf(t,[[5.4,-175],[5.65,-12]]);p.armB=p.armF;p.px=1;p.py=2.5;p.brow=5;p.mouth='frown';p.eye='n';}
+  else if(t<6.9){Object.assign(p,swing(t,5.9,'dig'));p.brow=5;p.mouth='frown';if(t>6.45){p.eye='wide';p.x=x+(p.x||0);}else p.x=x;}
+  else if(t<7.3){p.armF=kf(t,[[6.9,3],[7.05,-20],[7.3,-12]]);p.armB=p.armF;p.lean=kf(t,[[6.9,0],[7.05,-8],[7.3,0]]);p.mouth='frown';}
+  else if(t<8.3){p.armF=-12;p.armB=-12;if(t<8.0){p.px=1;p.py=2.5;p.eye='n';}else{p.px=2;p.eye='half';}}
+  else if(t<9.1){const b=kf(t,[[8.3,0],[8.6,1],[8.8,1],[9.1,0]]);p.lean=PICK.lean*b;p.bob=PICK.bob*b;p.armF=-12;p.armB=PICK.armB*b;p.px=1;p.py=2.5;p.eye='n';}
+  else if(t<9.6){p.armF=-12;p.armB=kf(t,[[9.1,-58],[9.3,-118]]);p.px=2;p.py=-1;p.eye='half';p.brow=5;p.mouth='frown';}
+  else if(t<9.9){p.armF=-12;p.armB=kf(t,[[9.6,-118],[9.8,-48],[9.9,0]]);p.mouth='frown';}
+  else if(t<10.2){p.bob=hop(t,9.9,10.2,9);p.face=t<10.05?1:-1;p.armF=kf(t,[[9.9,-12],[10.2,150]]);}
+  else{Object.assign(p,walk(x/8,20));p.face=-1;p.armF=150;p.headRot=10;p.mouth='frown';}
+  if(typeof p.x!=='number')p.x=x;
+  if(off(p.x,E))s+=worker(p);
+  let b=this.ball(t);
+  if(t>=2.0&&t<2.55)b=handW(p,'B');
+  if(b==='hand'){const h=handW(p,'B');if(t<8.8){const rest=this.ball(8.6),k=seg(t,8.7,8.8);b=[lerp(rest[0],h[0],k),lerp(rest[1],h[1],k)];}else b=t<9.8?h:null;}
+  s+=ballSvg(b);
+  if(t>3.75&&t<4.05)s+=sfx(x+24,GY-46,'whoosh',10,-8,'#fff');
+  if(t>5.05&&t<5.35)s+=sfx(x+26,GY-50,'WHOOSH',11,-8,'#fff');
+  if(t>6.45&&t<6.95){s+=sfx(x+20,GY-60,'BOING',13,-6,'#f4c430',1+.1*Math.sin(t*50));const k=seg(t,6.45,6.9);for(let i=0;i<4;i++)s+=puff(x+12+i*4-6*k*(i-1.5),GY-4-16*k*(1+i*.2)+20*k*k,2.4+i*.4,1-k,'#b49a68');}
+  return s;}};
+
+/* 10. Out Cold (Slow Moe + the bearded worker). The second of the pair: the same trigger, once Three Swings has been seen. */
+const COLD_BG=HF[0]-handW(Object.assign({x:0},DRAG),'F')[0];
+// The bearded worker's speed at the screen's edge: eased out of his walk in (2 x 270 / 1.6), eased into the drag off (2 x (470 - bg) / 2.15).
+const COLD_IN=337.5, COLD_OUT=2*(470-COLD_BG)/2.15;
+WAVE3.cold = { name:'Out Cold', dur:13.2, still:8.4, line:{from:9.05,to:9.8},
+ beats:[[0,'moe-is-back','Moe is back. Determined.'],[2.0,'tees-up','Tees up.'],[3.4,'crack','One mighty swing. CRACK!'],[4.45,'tok','TOK off the rig mats.'],[5.05,'ping','PING off the aspen.'],[5.35,'coming-back','It is coming back. Eyes go huge.'],[5.8,'bonk','BONK! Right on his hard hat.'],[6.0,'seeing-stars','Wobbles. Seeing stars.'],[6.6,'timber','Timber. Out cold, flat on his back.'],[7.4,'strolls-in','The bearded worker strolls in, whistling.'],[9.0,'fore','Looks down at Moe. "Fore."'],[9.5,'pockets-ball','Picks up the ball, flips it, pockets it.'],[10.3,'grabs-ankles','Hop-turn. Bends and grabs Moe by the ankles.'],[10.85,'drags-off','Drags him off, ankles in hand. Moe gives a dazed thumbs up.']],
+ // He drags Moe off the right side: the gag runs on until Moe's head and the dust behind it are out too.
+ lead:E=>E/GOLF_IN, tail:E=>Math.max(0,(E+45)/COLD_OUT-.2),
+ mx(t){if(t<0)return -40+GOLF_IN*t;if(t<2.0)return kf(t,[[0,-40],[2.0,GX,'out']]);return t<10.85?GX:this.bx(t)-12;},
+ bx(t){const bg=COLD_BG;if(t<7.4)return 430+COLD_IN*(7.4-t);if(t<9.0)return kf(t,[[7.4,430],[9.0,GX+40,'out']]);if(t<10.3)return GX+40;if(t<10.55)return kf(t,[[10.3,GX+40],[10.55,bg]]);return t>13.0?470+COLD_OUT*(t-13.0):kf(t,[[10.85,bg],[13.0,470,'in']]);},
+ // The lane aspen shivers when the ball pings off it (the scenery's own aspen: scene-stage.ts turns it).
+ aspen(t){return (t>5.05&&t<5.9)?2.4*Math.sin((t-5.05)*38)*(1-seg(t,5.05,5.9)):0;},
+ // Where "Fore." points: just in front of the bearded worker's face.
+ mouth(t){return{x:this.bx(t)-8,y:GY-70};},
+ render(t,E=0){
+  let s='';
+  const x=this.mx(t),bx=this.bx(t);
+  // Moe
+  let p={x,face:1,...MOE,eye:'n',mouth:'flat',hand:SHOVEL,armF:150,armB:0,brow:3};
+  let rot=0;
+  if(t<2.0){Object.assign(p,walk(x/8,26));p.armF=150;p.mouth='frown';}
+  else if(t<2.7)teeUp(p,t,2.0);
+  else if(t<3.4){p.armF=-12+6*Math.sin((t-2.7)*14);p.armB=p.armF;p.px=2;p.eye='half';p.lean=6;}
+  else if(t<4.4){Object.assign(p,swing(t,3.4,'hit'));p.mouth='frown';p.brow=5;}
+  else if(t<5.8){p.armF=-175;p.armB=-140;p.lean=4;const b=outBall(t);p.px=clamp((b[0]-x)/30,-2.5,2.5);p.py=clamp((b[1]-(GY-50))/30,-2.5,2.5);
+   if(t>5.35){p.eye='wide';p.mouth='O';}else{p.mouth='grin';p.eye='happy';}}
+  else if(t<6.6){const k=seg(t,5.8,6.0);p.sq=.16*Math.sin(Math.PI*k);p.hatLift=-4*Math.sin(Math.PI*k);p.armF=kf(t,[[5.8,-175],[6.1,-8]]);p.armB=kf(t,[[5.8,-140],[6.1,8]]);
+   p.eye='dizzy';p.spinEye=t*400;p.mouth='O';p.lean=7*Math.sin((t-5.8)*6);}
+  else{rot=t<7.0?kf(t,[[6.6,0],[7.0,-90,'in']]):(t<7.15?-90+4*Math.sin(Math.PI*seg(t,7.0,7.15)):-90);
+   p.eye='dizzy';p.spinEye=t*300;p.mouth='O';p.armF=-8;p.armB=8;
+   if(t>=11.4&&t<12.5){p.armB=kf(t,[[11.4,8],[11.6,-90],[12.3,-90],[12.5,8]]);p.handB=t>11.55&&t<12.35?THUMB(C.glove):'';p.eye='half';p.mouth='grin';}}
+  // the bearded worker's pose first, so Moe's ankles can sit exactly in his hands
+  let q=null;
+  if(t>=7.4-E/COLD_IN){q={x:bx,face:-1,...BEARD,eye:'happy',mouth:'o'};
+   if(t<9.0)Object.assign(q,walk(bx/8,22));
+   else if(t<9.5){q.px=1;q.py=2.5;q.eye='n';q.mouth='flat';q.headRot=8*Math.sin((t-9.0)*24)*(t>9.2?1:0);}
+   else if(t<10.3){const k=seg(t,9.5,9.85),b=t<9.85?Math.sin(Math.PI*k):0;q.lean=34*b;q.armB=t<9.85?-40*b:kf(t,[[9.85,0],[9.95,-70],[10.15,-70],[10.3,0]]);q.eye='happy';q.mouth='grin';}
+   else if(t<10.55){q.bob=hop(t,10.3,10.55,8);q.face=t<10.42?-1:1;q.mouth='smile';q.eye='n';}
+   else{Object.assign(q,DRAG);q.mouth='flat';q.eye='half';
+    if(t<10.85){q.lean=kf(t,[[10.55,22],[10.65,40],[10.75,40],[10.85,22]]);}
+    else Object.assign(q,walk(bx/7,16),DRAG,{mouth:'flat',eye:'half'});}}
+  let H=HF;
+  if(q&&t>=10.65){const h=handW(q,'F');H=t<10.75?[lerp(HF[0],h[0],seg(t,10.65,10.75)),lerp(HF[1],h[1],seg(t,10.65,10.75))]:h;}
+  const moe=worker(p);let headW=[x+2,GY-72];
+  if(rot&&t<7.15){s+=`<g transform="rotate(${r2(rot)} ${r2(x)} ${GY-7})">${moe}</g>`;headW=[x-44,GY-14];}
+  else if(rot){const L=lyingT(x,H);s+=`<g transform="${L.tf}">${moe}</g>`;headW=L.head;}
+  else if(off(x,E))s+=moe;
+  if(t>=10.9){for(let k=1;k<4;k++)s+=puff(headW[0]-6-k*10,GY-3-k*1.5,3+k,(1-k/4)*.8);}
+  if(t>5.9){for(let i=0;i<3;i++){const a=t*5+i*2.094;s+=star4(headW[0]+Math.cos(a)*13,headW[1]-4+Math.sin(a)*4,3.4);}}
+  // the bearded worker
+  if(q){
+   s+=worker(q);
+   let b=outBall(t);
+   if(b==='hand'){const h=handW(q,'B');if(t<9.95)b=h;else if(t<10.15){const k=seg(t,9.95,10.15);b=[h[0],h[1]-26*Math.sin(Math.PI*k)];}else if(t<10.3)b=h;else b=null;}
+   s+=ballSvg(b);}
+  else{let b=outBall(t);if(t>=2.0&&t<2.55)b=handW(p,'B');if(b!=='hand')s+=ballSvg(b);}
+  if(t>3.95&&t<4.3)s+=sfx(x+30,GY-30,'CRACK',13,-10,'#f4c430');
+  if(t>4.45&&t<4.85)s+=sfx(MATX-4,GY-34,'TOK',12,-8,'#fff');
+  if(t>5.05&&t<5.45)s+=sfx(ASP.x+6,82,'PING',12,8,'#fff');
+  if(t>5.8&&t<6.3)s+=sfx(x+8,GY-82,'BONK!',15,-8,'#f4c430',1+.2*Math.sin(Math.PI*seg(t,5.8,6.3)));
+  if(t>7.4-E/COLD_IN&&t<9.0){for(let k=0;k<2;k++){const ph=((((t*1.4+k*.5)%1)+1)%1);s+=note(bx-14-ph*10,GY-62-ph*18,1-ph);}}
   return s;}};
