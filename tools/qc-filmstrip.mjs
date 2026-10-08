@@ -10,6 +10,7 @@ import { join } from 'node:path';
 
 const PHONES = {
   iphone: { engine: webkit, name: 'iPhone (WebKit, 390 x 844, DPR 3)', viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 },
+  iphone375: { engine: webkit, name: 'iPhone (WebKit, 375 x 812, DPR 3)', viewport: { width: 375, height: 812 }, deviceScaleFactor: 3 },
   s23: { engine: chromium, name: 'Galaxy S23 (Chromium, 360 x 780, DPR 3)', viewport: { width: 360, height: 780 }, deviceScaleFactor: 3 },
   pixel: { engine: chromium, name: 'Pixel (Chromium, 412 x 915, DPR 2.625)', viewport: { width: 412, height: 915 }, deviceScaleFactor: 2.625 },
 };
