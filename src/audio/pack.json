@@ -229,20 +229,20 @@
    "loop": false
   },
   "whoosh": {
-   "seconds": 0.4,
-   "mean": -19.4,
-   "peak": -4.6,
+   "seconds": 0.52,
+   "mean": -19.5,
+   "peak": -5.2,
    "loop": false
   },
   "boing": {
-   "seconds": 0.7,
-   "mean": -19.4,
-   "peak": -8.0,
+   "seconds": 0.8,
+   "mean": -19.5,
+   "peak": -2.3,
    "loop": false
   },
   "crack": {
-   "seconds": 0.18,
-   "mean": -24.5,
+   "seconds": 0.25,
+   "mean": -22.3,
    "peak": -2.6,
    "loop": false
   },

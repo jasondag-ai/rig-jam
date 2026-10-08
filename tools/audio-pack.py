@@ -83,8 +83,9 @@ SFX = {
     # ---- The sound pass (Job S, Jay's picks of Oct 6). 'art/<key>.wav' is a synthesized pick, made
     # by tools/sound-picks.py --export into tools/sfx-art/; the rest are alternates from the pack.
     # All of these are LEVELLED (see LEVELLED below), so none jumps out.
-    # CLEARWATER (the Big Pad's sightings, Oct 7): Jay's five new sounds, the A take of each
-    # (`~/Desktop/RHR Art Inbox/Sound files/clearwater/<name>_A.wav`, copied to tools/sfx-art/; the B takes are there too).
+    # CLEARWATER (the Big Pad's sightings): Jay's five new sounds, his picks of Oct 7 21:11 (BIG_PAD_BRIEF.md): the B take
+    # of whoosh, boing and crack, the A take of triangle and splash
+    # (`~/Desktop/RHR Art Inbox/Sound files/clearwater/<name>_<A|B>.wav`, copied to tools/sfx-art/<name>.wav).
     'whoosh': ('art/whoosh.wav', None, False),      # Three Swings: the shovel's two clean misses
     'boing': ('art/boing.wav', None, False),        # Three Swings: the shovel bites the dirt
     'crack': ('art/crack.wav', None, False),        # Out Cold: the one mighty swing connects

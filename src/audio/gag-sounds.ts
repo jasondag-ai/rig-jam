@@ -93,14 +93,14 @@ export const GAG_SOUNDS: Record<GagId, Record<string, string[]>> = {
     'strolls-in': ['+steps'], rains: ['-steps', '+rain'], sidestep: ['-rain@0.1', '+rain@0.7'], 'steps-back': ['-rain', '+rain@0.35'], umbrella: ['umbrella@0.2', '-rain@0.4'],
     downpour: ['+downpour'], 'opens-again': ['-downpour@0.1', 'umbrella@0.15', '+rain@0.3'], 'walks-off': ['+steps'],
   },
-  // CLEARWATER (the Big Pad's five sightings). Jay's five new sounds (whoosh, boing, crack, splash, triangle: the A
-  // takes) and the rest from the pack, each on the moment the reference draws its sound word.
+  // CLEARWATER (the Big Pad's five sightings). Jay's five new sounds (his picks: whoosh, boing and crack the B takes,
+  // triangle and splash the A) and the rest from the pack as his brief lists them (knock for TOK and PING), each on the moment the reference draws its sound word.
   // Three Swings: footsteps; a whoosh as each miss comes down (0.45 s into the swing; the second harder, so higher); the
   // BOING as the shovel bites (0.55 s into the third).
   golf: { 'walks-in': ['+steps'], 'tees-up': ['-steps'], 'swing-one': ['whoosh@0.45'], 'swing-two': ['whoosh@0.45^2'], 'swing-three': ['boing@0.55'], 'stomps-off': ['+steps@0.3'] },
-  // Out Cold: CRACK as he connects (0.55 s in), TOK off the rig mats (the wooden knock), PING off the aspen (a small
-  // high pop), BONK on his hard hat, his stars; the bearded worker's steps in, and off with Moe.
-  cold: { 'moe-is-back': ['+steps'], 'tees-up': ['-steps'], crack: ['crack@0.55'], tok: ['knock'], ping: ['tap^7'], bonk: ['bonk'], 'seeing-stars': ['twinkle'], 'strolls-in': ['+steps'], fore: ['-steps'], 'drags-off': ['+steps'] },
+  // Out Cold: CRACK as he connects (0.55 s in), TOK off the rig mats (the wooden knock), PING off the aspen (the same
+  // knock, higher), BONK on his hard hat, his stars; the bearded worker's steps in, and off with Moe.
+  cold: { 'moe-is-back': ['+steps'], 'tees-up': ['-steps'], crack: ['crack@0.55'], tok: ['knock'], ping: ['knock^7'], bonk: ['bonk'], 'seeing-stars': ['twinkle'], 'strolls-in': ['+steps'], fore: ['-steps'], 'drags-off': ['+steps'] },
   // Fresh Wash: the door's clunk (out of sight), his steps round the front, two squeaks of the rag, the ting of a
   // spotless hood, the hauler's rumble, SPLASH at the puddle, the plop off his hat, the trudge back, the clunk.
   wash: {

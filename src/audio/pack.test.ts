@@ -203,7 +203,7 @@ describe("the sound pass: Jay's picks, each on its beat, levelled alike", () => 
 
   it('the sign rattle replaces the dingle in all six gags (eleven times), and nothing names the old sounds', () => {
     const uses = Object.entries(GAG_SOUNDS).flatMap(([id, beats]) => Object.values(beats).flat().filter((c) => parseCue(c).name === 'knock').map(() => id));
-    // (Eleven in the six older gags; Clearwater's Out Cold uses the same knock once, for the ball's TOK off the rig mats.)
+    // (Eleven in the six older gags; Clearwater's Out Cold uses the same knock twice, for the ball's TOK off the rig mats and its PING off the aspen.)
     expect(uses.filter((u) => u !== 'cold').length).toBe(11);
     expect([...new Set(uses)].sort()).toEqual(['biffyA', 'biffyB', 'cold', 'deer', 'sam', 'surveyor', 'worker']);
     const names = Object.values(GAG_SOUNDS).flatMap((b) => Object.values(b).flat()).map((c) => parseCue(c).name);
