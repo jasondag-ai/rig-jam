@@ -1,6 +1,6 @@
 import { getMoveRange, tryMove } from './game.ts';
 import { gateFor } from './level.ts';
-import { sizeOf, type GameState, type Level, type Move, type Truck } from './types.ts';
+import { SIZE, sizeOf, type GameState, type Level, type Move, type Truck } from './types.ts';
 
 /**
  * A position's key. Truck order never changes during play (moves map, exits filter), so no sort is
@@ -206,8 +206,9 @@ export function solve(level: Level, maxStates = 500_000, trucks: Truck[] = level
   const n = trucks.length;
   if (n === 0) return [];
   const loaders = trucks.filter((t) => t.load).length;
-  // Past what fits a number exactly (18 trucks or more: only a Big Pad gets there), A* does it; it gives the same par.
-  if (3 * n + loaders + 1 > 52) return solveAStar(level, maxStates, trucks, moves);
+  // A BIG PAD (8 x 8) GOES TO A*: breadth-first would look at millions of positions there (seconds on a laptop, far too long
+  // for a hint on a phone), A* at thousands, and it gives the same par. So does anything past what fits one number (18 trucks).
+  if (sizeOf(level) > SIZE || 3 * n + loaders + 1 > 52) return solveAStar(level, Math.max(maxStates, 4_000_000), trucks, moves);
   const m = compile(level, trucks);
   const { shifts, bits } = m;
 

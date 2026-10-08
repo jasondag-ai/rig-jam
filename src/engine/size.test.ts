@@ -14,11 +14,14 @@ const big = (extra: Record<string, unknown> = {}) => ({
 });
 
 describe('pad size', () => {
-  it('is 6 for every level in the game, and no level file names a size', () => {
+  it('is 6 for every level of the first five regions (no level file of theirs names a size), and 8 for Clearwater', () => {
     expect(SIZE).toBe(6);
-    for (const level of REGIONS.flatMap((r) => r.levels)) {
-      expect(level.size, level.id).toBeUndefined();
-      expect(sizeOf(level), level.id).toBe(6);
+    for (const region of REGIONS) for (const level of region.levels) {
+      if (region.id === 'clearwater') expect(sizeOf(level), level.id).toBe(8);
+      else {
+        expect(level.size, level.id).toBeUndefined();
+        expect(sizeOf(level), level.id).toBe(6);
+      }
     }
   });
 

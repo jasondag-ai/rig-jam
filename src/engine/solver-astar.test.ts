@@ -15,7 +15,12 @@ const replays = (level: Level, moves: Move[]) => {
   }
   return isWon(s);
 };
-const ALL = [...REGIONS.flatMap((r) => r.levels), ...DAILY_LEVELS];
+// Breadth-first can be asked about every pad of 6 (the first five regions and the Daily Pads). A Big Pad (Clearwater, 8 x 8)
+// is past it inside a test's time: there the two heuristics are held to each other and to the level's par, and
+// `tools/check-bigpad.ts` asks breadth-first with 12 million positions to spare.
+const SIX = REGIONS.filter((r) => r.id !== 'clearwater');
+const ALL = [...SIX.flatMap((r) => r.levels), ...DAILY_LEVELS];
+const BIG = REGIONS.find((r) => r.id === 'clearwater')!.levels;
 
 describe('A*', () => {
   it('h = trucks left: the same par as breadth-first on EVERY current level, and its moves win', () => {
@@ -36,8 +41,26 @@ describe('A*', () => {
     }
   });
 
+  it('Clearwater (8 x 8): both heuristics give the level\'s par, the moves win, and `solve` (what Hint asks) gives it too, mid-game as well', () => {
+    for (const level of BIG) {
+      const rings = solveAStar(level, 4_000_000, level.trucks, 0, 'rings')!;
+      expect(rings.length, level.id).toBe(level.par);
+      expect(replays(level, rings), level.id).toBe(true);
+      expect(solveAStar(level, 6_000_000, level.trucks, 0, 'left')!.length, level.id).toBe(level.par);
+      expect(solve(level)!.length, level.id).toBe(level.par);
+    }
+    // From every position along the first level's solution, the moves left count down one at a time.
+    const level = BIG[0];
+    let s = newGame(level);
+    const path = solve(level)!;
+    path.forEach((m, k) => {
+      expect(solve(level, 500_000, s.trucks, s.moves)!.length, `${level.id} after ${k}`).toBe(path.length - k);
+      s = tryMove(s, m.id, m.delta)!.state;
+    });
+  }, 60_000);
+
   it('and mid-game, with the moves already made counted (clock gates), on the hardest level of every region', () => {
-    for (const region of REGIONS) {
+    for (const region of SIX) {
       const level = region.levels[region.levels.length - 1];
       let s = newGame(level);
       for (const m of solve(level, 2_000_000)!) {
@@ -51,7 +74,7 @@ describe('A*', () => {
 
   it('the stronger heuristic never looks at more positions than the plain one finds, over the whole game', () => {
     let left = 0, rings = 0;
-    for (const level of REGIONS.flatMap((r) => r.levels)) {
+    for (const level of SIX.flatMap((r) => r.levels)) {
       left += searchAStar(level, 2_000_000, level.trucks, 0, 'left').expanded;
       rings += searchAStar(level, 2_000_000, level.trucks, 0, 'rings').expanded;
     }

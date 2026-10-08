@@ -4,13 +4,14 @@ import { convoyRaisesPar, everyPumpjackInTheWay, slidesIn, withoutConvoys, witho
 import { DAILY_LEVELS, REGIONS } from './regions.ts';
 
 describe('shipped levels', () => {
-  it('has five regions of 10 levels with unique ids', () => {
+  it('has six regions of 10 levels with unique ids', () => {
     expect(REGIONS.map((r) => [r.id, r.levels.length])).toEqual([
       ['cardium', 10],
       ['montney', 10],
       ['duvernay', 10],
       ['mannville', 10],
       ['bakken', 10],
+      ['clearwater', 10],
     ]);
     const ids = REGIONS.flatMap((r) => r.levels.map((l) => l.id));
     expect(new Set(ids).size).toBe(ids.length);
@@ -29,6 +30,27 @@ describe('shipped levels', () => {
         expect(region.levels[i].trucks.length).toBeGreaterThanOrEqual(region.levels[i - 1].trucks.length);
       }
       expect(region.levels.at(-1)!.par).toBeGreaterThan(region.levels[0].par);
+    });
+  });
+
+  it('Clearwater is the Big Pad: 8 x 8, trucks and gates only, 16 trucks at most, Jay\'s names, and a smooth ramp of extra moves', () => {
+    const cw = REGIONS.find((r) => r.id === 'clearwater')!;
+    expect(REGIONS.indexOf(cw)).toBe(5); // after Bakken
+    expect(cw.levels.map((l) => l.name)).toEqual(['Rig Mats', 'Rig Move', 'Set Surface', 'Walking Rig', 'Batch Drilling', 'Sim Ops', 'Plug and Perf', 'Drill Out', 'Sand Haul', 'Road Ban']);
+    const extra = cw.levels.map((l) => l.par - l.trucks.length);
+    cw.levels.forEach((l, i) => {
+      expect(l.size, l.id).toBe(8);
+      expect(l.trucks.length, l.id).toBeLessThanOrEqual(16);
+      expect(l.obstacles.length + l.muskeg.length + l.racks.length, l.id).toBe(0);
+      expect(l.trucks.some((t) => t.convoy || t.load) || l.gates.some((g) => g.shift), l.id).toBe(false);
+      // Levels 1 to 3: 6 to 8 extra moves; 4 to 6: 9 to 11; 7 to 10: 12 to 15.
+      const [lo, hi] = i < 3 ? [6, 8] : i < 6 ? [9, 11] : [12, 15];
+      expect(extra[i], l.id).toBeGreaterThanOrEqual(lo);
+      expect(extra[i], l.id).toBeLessThanOrEqual(hi);
+      if (i) {
+        expect(extra[i], l.id).toBeGreaterThanOrEqual(extra[i - 1]);
+        expect(l.par - cw.levels[i - 1].par, l.id).toBeLessThanOrEqual(2);
+      }
     });
   });
 

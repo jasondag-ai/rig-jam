@@ -5,6 +5,7 @@ import montney from './montney.json' with { type: 'json' };
 import duvernay from './duvernay.json' with { type: 'json' };
 import mannville from './mannville.json' with { type: 'json' };
 import bakken from './bakken.json' with { type: 'json' };
+import clearwater from './clearwater.json' with { type: 'json' };
 import daily from './daily.json' with { type: 'json' };
 
 export interface Region {
@@ -23,6 +24,8 @@ export const REGIONS: Region[] = [
   { id: 'duvernay', name: 'Duvernay', blurb: 'Convoys leave in order. Number 1 first.', theme: 'winter', levels: parseLevels(duvernay) },
   { id: 'mannville', name: 'Mannville', blurb: 'Muskeg. A truck that drives onto it slides until it hits something.', theme: 'fall', levels: parseLevels(mannville) },
   { id: 'bakken', name: 'Bakken', blurb: 'Tankers load at a rack first. Clock gates open on even moves.', theme: 'prairie', levels: parseLevels(bakken) },
+  // THE BIG PAD: 8 x 8, trucks and gates only (tools/pick-clearwater.ts). It wears Cardium's summer until its own strip art comes.
+  { id: 'clearwater', name: 'Clearwater', blurb: 'The big pad: 8 by 8. Trucks and gates only, and a lot of them.', theme: 'summer', levels: parseLevels(clearwater) },
 ];
 
 /** 60 pre-generated Daily Pads (medium, mixed obstacles and vehicles). Pad N uses level (N-1) % 60. */
