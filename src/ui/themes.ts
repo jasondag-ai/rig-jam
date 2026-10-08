@@ -3,7 +3,7 @@ import type { Season } from './trees.ts';
 // Seasonal looks. A theme is a set of CSS variables plus a ground style for the pad.
 // To give a new region a season, add (or reuse) a theme here and set `theme` on the region.
 
-export type ThemeId = 'summer' | 'spring' | 'winter' | 'fall' | 'prairie';
+export type ThemeId = 'summer' | 'spring' | 'winter' | 'fall' | 'prairie' | 'boreal';
 
 /** The pad's surface: picks the base image, the ground detail (lease-detail.ts), the berm and the tracks. */
 export type Ground = 'gravel' | 'mud' | 'snow';
@@ -172,6 +172,34 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--tree-bark': '#f4f1e6',
       '--tree-frost': NONE,
       '--ob-ground': 'rgba(110, 86, 40, 0.22)',
+    },
+  },
+  // Clearwater (the Big Pad), boreal fall: pale reindeer lichen and moss over sand (the ground's
+  // sage is the reference strip's own, #aeb486), gold aspen among dark spruce, a clear cool sky,
+  // and a pad of pale sand (the sandy two-track's colour, a step greyer so the trucks stand out).
+  boreal: {
+    id: 'boreal',
+    name: 'Boreal fall',
+    ground: 'gravel',
+    spruceShare: 0.55,
+    season: 'fall',
+    trees: 1,
+    vars: {
+      '--sky-top': '#6fb0e0',
+      '--sky-bottom': '#dcecf2',
+      '--ground': '#adb58a',
+      '--ground-dark': '#858c58',
+      '--pad': '#c4b28c',
+      '--pad-light': '#dccba6',
+      '--pad-dark': '#8a7854',
+      '--accent': '#ffc21a',
+      '--tree-spruce': '#2f7a4c',
+      '--tree-spruce-dark': '#1f5b38',
+      '--tree-aspen': '#f3cb5f',
+      '--tree-aspen-dark': '#e1a838',
+      '--tree-bark': '#ece6da',
+      '--tree-frost': NONE,
+      '--ob-ground': 'rgba(100, 80, 40, 0.22)',
     },
   },
 };

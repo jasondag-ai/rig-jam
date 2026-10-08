@@ -41,8 +41,7 @@ describe('themes', () => {
       ['duvernay', 'winter'],
       ['mannville', 'fall'],
       ['bakken', 'prairie'],
-      // (Cardium's summer for now: Clearwater's own strip art comes in a later job.)
-      ['clearwater', 'summer'],
+      ['clearwater', 'boreal'],
     ]);
     for (const r of REGIONS) expect(THEMES[r.theme]).toBeDefined();
   });
