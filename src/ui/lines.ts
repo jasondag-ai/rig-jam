@@ -177,6 +177,8 @@ export const FOURTH_WALL_ODDS = 3;
 export const MAGPIE_LINES = ['Seriously?', 'Not the windshield!', 'Every. Single. Day.', 'Somebody get the pressure washer.'];
 /** The Runaway Bale: what the landowner shouts as he runs after it (the reference's line). */
 export const BALE_LINE = 'Hey!';
+/** Out Cold (Clearwater): what the bearded worker says, looking down at Moe. The reference's own line. */
+export const FORE_LINE = 'Fore.';
 export const LANDOWNER_LINES = ["Who's paying for these ruts?", "That's my hay field!", "I'm calling the land man.", 'Fix these ruts by Friday.'];
 const lastFrom = new Map<readonly string[], string>();
 /** A line from a pool, never the one it gave last time. */
@@ -262,4 +264,7 @@ export const WITNESS_LINES = {
   pdogs: 'Tough crowd.',
   bale: 'That bale had places to be.',
   cloud: 'Forecast says sunny. Not for him.',
+  // (Clearwater. These two are Claude's stand-ins: Jay to write his own.)
+  golf: 'That is not a nine iron.',
+  cold: 'He never yells fore.',
 };

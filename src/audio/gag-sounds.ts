@@ -93,6 +93,10 @@ export const GAG_SOUNDS: Record<GagId, Record<string, string[]>> = {
     'strolls-in': ['+steps'], rains: ['-steps', '+rain'], sidestep: ['-rain@0.1', '+rain@0.7'], 'steps-back': ['-rain', '+rain@0.35'], umbrella: ['umbrella@0.2', '-rain@0.4'],
     downpour: ['+downpour'], 'opens-again': ['-downpour@0.1', 'umbrella@0.15', '+rain@0.3'], 'walks-off': ['+steps'],
   },
+  // CLEARWATER, the golf pair: footsteps and Moe's stars only, from sounds already in the game. The swings, the
+  // BOING, TOK, PING and BONK have no sound yet: those are for Jay to pick by ear, like the rest.
+  golf: { 'walks-in': ['+steps'], 'tees-up': ['-steps'], 'stomps-off': ['+steps@0.3'] },
+  cold: { 'moe-is-back': ['+steps'], 'tees-up': ['-steps'], 'seeing-stars': ['twinkle'], 'strolls-in': ['+steps'], fore: ['-steps'], 'drags-off': ['+steps'] },
 };
 
 /** The loops a gag may run, and the sound each repeats. `every`: a one-shot repeated that often (s); none: the file itself loops. */

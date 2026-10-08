@@ -75,6 +75,13 @@ export const GAG_TRIGGERS = {
   /** Personal Cloud: this many taps on the sky (between the HUD and the lease). */
   cloud: { region: 'bakken', skyTaps: 3 },
   /**
+   * CLEARWATER (the Big Pad; wave3.ts, on the standard Clearwater scene). A STACKED PAIR: Three
+   * Swings and Out Cold share one trigger, this many taps on the rig mat stack. Out Cold plays only
+   * once Three Swings has been SEEN (it is in the Wildlife Log); until then the taps bring Three Swings.
+   */
+  golf: { region: 'clearwater', matTaps: 3 },
+  cold: { region: 'clearwater', sameAs: 'golf', onceSeen: 'swings' },
+  /**
    * Not a gag. NIGHT: no level starts at night. After `idleMs` with no moves the lease fades to
    * night over `fadeInMs`; the next move brings the day back over `fadeOutMs`. Only where the
    * season is one of `themes`: Montney (spring), Duvernay (winter), Mannville (late fall) and Bakken
@@ -92,7 +99,7 @@ export const GAG_TRIGGERS = {
  * the level is won. NO GAG COMES FROM WAITING (Jay, Oct 5): every one is set off by something the
  * player does. Sitting idle only brings the night (and its nudge).
  */
-export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'muskeg' | 'catTrain' | 'beaver' | 'aurora' | 'tumbleweed' | 'pdogs' | 'bale' | 'cloud';
+export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'muskeg' | 'catTrain' | 'beaver' | 'aurora' | 'tumbleweed' | 'pdogs' | 'bale' | 'cloud' | 'golf' | 'cold';
 
 /** Is a bump a push at a wrong-colour gate? (A truck in line with a gate that is not its own; `hit` is what it ran into.) */
 export const wrongGateBump = (
@@ -135,6 +142,8 @@ export const PREVIEWS: Record<string, { gag: GagId; region: string; level: numbe
   pdogs: { gag: 'pdogs', region: 'bakken', level: 3 },
   bale: { gag: 'bale', region: 'bakken', level: 3 },
   cloud: { gag: 'cloud', region: 'bakken', level: 3 },
+  golf: { gag: 'golf', region: 'clearwater', level: 1 },
+  cold: { gag: 'cold', region: 'clearwater', level: 1 },
 };
 
 /**
@@ -172,6 +181,9 @@ export const SHARES: Record<GagId, string[]> = {
   pdogs: [],
   bale: ['bale', 'landowner'],
   cloud: ['worker'],
+  // (Slow Moe, his shovel and the rig mats are in both; the bearded worker in red is the worker himself.)
+  golf: ['moe', 'mats'],
+  cold: ['moe', 'mats', 'worker'],
 };
 /** Must this gag wait for one of those playing? */
 export const mustWait = (id: GagId, playing: Iterable<GagId>): boolean => [...playing].some((p) => p === id || SHARES[p].some((x) => SHARES[id].includes(x)));
