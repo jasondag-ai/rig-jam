@@ -256,6 +256,8 @@ export const CW_ASPEN = { species: 'aspen' as Species, x: CW.ASP.x, base: CW.ASP
 /** Fireweed [x, base, size] and red fall blueberry bushes [x, base, size] (the reference's own drawings). */
 export const CW_FIREWEED: [number, number, number][] = [[122, 126, 1], [262, 124, 0.9]];
 export const CW_BUSHES: [number, number, number][] = [[154, 126, 0.72], [340, 122, 0.66]];
+/** The mud puddle's box in the world (the Fresh Wash gag's). */
+export const CW_PUDDLE_BOX = { x: CW.PUD.x - 36, y: CW.PUD.y - 7, w: 72, h: 14 };
 /** Where the lease sign stands on a Clearwater level, in the world: up by the berm between the right-hand spruce and the blueberry bush, over the rig mats and clear of where Moe and the bearded worker stand. */
 export const CW_SIGN_AT = 314;
 
@@ -347,6 +349,12 @@ export class ClearProp {
     const b = tapBox(this.geom(), CW.MAT_BOX);
     return x - screen.left >= b.left && x - screen.left <= b.right && y - screen.top >= b.top && y - screen.top <= b.bottom;
   }
+  /** Is a tap at (x, y) on the mud puddle? (A tap target of at least 44 px; the mat stack comes first.) */
+  hitPuddle(x: number, y: number): boolean {
+    const screen = this.host.screen.getBoundingClientRect();
+    const b = tapBox(this.geom(), CW_PUDDLE_BOX);
+    return !this.hitMats(x, y) && x - screen.left >= b.left && x - screen.left <= b.right && y - screen.top >= b.top && y - screen.top <= b.bottom;
+  }
   /** The mat stack's box on the screen (px from the screen's left and top). */
   matsBox(): { x: number; y: number; width: number; height: number } {
     const g = this.geom(), a = toScreen(g, CW.MAT_BOX.x, CW.MAT_BOX.y);
@@ -377,7 +385,14 @@ function place(svg: SVGSVGElement, g: SceneGeom): void {
 
 // ---------- Playing a ported gag ----------
 
-type Wave3 = { name: string; dur: number; still: number; beats: [number, string, string][]; lead: (E: number) => number; tail: (E: number) => number; render: (t: number, E: number) => string; over?: (t: number, E: number) => string };
+type Wave3 = {
+  name: string; dur: number; still: number; beats: [number, string, string][]; lead: (E: number) => number; tail: (E: number) => number;
+  render: (t: number, E: number) => string; over?: (t: number, E: number) => string;
+  /** Clearwater: what is drawn on a lane BEHIND the walking lane (behind the rig mat stack) and on one IN FRONT of it, and those lanes' ground lines (world y). */
+  back?: (t: number, E: number) => string; front?: (t: number, E: number) => string; backY?: number; frontY?: number;
+  /** Lines said in the game's own bubble: when, and where the speaker's mouth is. */
+  lines?: { key: string; from: number; to: number; mouth: (t: number) => { x: number; y: number } }[];
+};
 const gagOf = (key: string) => (WAVE3 as Record<string, Wave3>)[key];
 
 /**
@@ -386,7 +401,7 @@ const gagOf = (key: string) => (WAVE3 as Record<string, Wave3>)[key];
  * touches. The clock runs from `lead` seconds before the reference's t = 0 (its walk-in from the
  * screen's real edge) to `tail` seconds after its end; every beat keeps the reference's time.
  */
-export function sceneDef(name: string, key: string, geom: () => SceneGeom | null, opts: { prop?: { show: (on: boolean) => void }; line?: string; overLease?: boolean; frame?: (t: number) => void; reset?: () => void } = {}): TimelineDef {
+export function sceneDef(name: string, key: string, geom: () => SceneGeom | null, opts: { prop?: { show: (on: boolean) => void }; line?: string; lines?: Record<string, string>; overLease?: boolean; frame?: (t: number) => void; reset?: () => void } = {}): TimelineDef {
   const gag = gagOf(key);
   const lead = () => gag.lead(geom()?.E ?? 0);
   return {
@@ -410,12 +425,18 @@ export function sceneDef(name: string, key: string, geom: () => SceneGeom | null
         place(el.firstElementChild as SVGSVGElement, g);
         return el.querySelector('g')!;
       };
+      // A lane BEHIND the walking lane (Clearwater: runners passing behind the rig mat stack), on its own ground line.
+      const back = gag.back ? svgIn(layer('scene-gag scene-back')) : null;
+      if (back) setGround(back, toScreen(g, 0, gag.backY ?? SCENE.ground - 7).y, 'set');
       // `overLease`: drawn over the board and its berm (the personal cloud floats up at the berm; it must never go behind it).
       const main = svgIn(layer(opts.overLease ? 'scene-gag over-lease' : 'scene-gag'));
       // DEPTH: its characters walk the lane's ground line (in front of the back trees, behind the lane aspen).
       setGround(main, toScreen(g, 0, SCENE.ground).y, 'set');
+      // A lane IN FRONT of it (Clearwater: the water hauler, the front runners), on its own ground line.
+      const front = gag.front ? svgIn(layer('scene-gag scene-near')) : null;
+      if (front) setGround(front, toScreen(g, 0, gag.frontY ?? SCENE.ground + 18).y, 'set');
       const over = gag.over ? svgIn(layer('scene-gag scene-over')) : null;
-      let last = '', lastOver = '';
+      let last = '', lastOver = '', lastBack = '', lastFront = '';
       // A prop the gag takes over (the bale): the gag draws it while it plays, in the very same place.
       opts.prop?.show(false);
       // A line said in the game's own bubble: its tail follows the speaker (an anchor moved every frame).
@@ -427,10 +448,19 @@ export function sceneDef(name: string, key: string, geom: () => SceneGeom | null
         Object.assign(anchor.style, { position: 'absolute', width: '0', height: '0' });
         main.ownerSVGElement!.parentElement!.append(anchor);
       }
+      // Several lines, each with its own speaker (Clearwater): an anchor each, moved every frame.
+      const spoken = (opts.lines ? gag.lines ?? [] : []).filter((x) => opts.lines![x.key]).map((line) => {
+        const a = document.createElement('i');
+        Object.assign(a.style, { position: 'absolute', width: '0', height: '0' });
+        (front ?? main).ownerSVGElement!.parentElement!.append(a);
+        return { line, anchor: a };
+      });
       return {
         apply(t) {
           const now = gag.render(t - l, E);
           if (now !== last) main.innerHTML = last = now;
+          if (back) { const b = gag.back!(t - l, E); if (b !== lastBack) back.innerHTML = lastBack = b; }
+          if (front) { const f = gag.front!(t - l, E); if (f !== lastFront) front.innerHTML = lastFront = f; }
           // (Scenery the gag moves without drawing it: Clearwater's aspen shivers when the ball pings off it.)
           opts.frame?.(t - l);
           if (over) {
@@ -442,7 +472,13 @@ export function sceneDef(name: string, key: string, geom: () => SceneGeom | null
             anchor.style.left = `${at.x}px`;
             anchor.style.top = `${at.y}px`;
           }
+          for (const s of spoken) {
+            const at = toScreen(g, s.line.mouth(t - l).x, s.line.mouth(t - l).y);
+            s.anchor.style.left = `${at.x}px`;
+            s.anchor.style.top = `${at.y}px`;
+          }
         },
+        ...(spoken.length ? { lines: spoken.map((s) => ({ from: l + s.line.from, to: l + s.line.to, text: opts.lines![s.line.key], at: () => toScreen(g, s.line.mouth(s.line.from).x, s.line.mouth(s.line.from).y), who: () => s.anchor })) } : {}),
         ...(anchor && said ? { bubble: { from: l + said.from, to: l + said.to, text: opts.line!, at: () => toScreen(g, mouth!(said.from, E).x, mouth!(said.from, E).y), who: () => anchor } } : {}),
         done: () => { opts.prop?.show(true); opts.reset?.(); },
       };
@@ -529,5 +565,5 @@ export function auroraDef(host: EggHost, night: () => boolean, mountSky: (el: HT
 /** A flat still of a wave 3 gag for its log card: the puppets at one moment, cut close. */
 export function wave3Still(key: string, t: number, view: [number, number, number, number], back = ''): string {
   const gag = gagOf(key);
-  return `<svg class="egg-still wave3-still" viewBox="${view.join(' ')}" aria-hidden="true">${back}${gag.render(t, 0)}${gag.over ? gag.over(t, 0) : ''}</svg>`;
+  return `<svg class="egg-still wave3-still" viewBox="${view.join(' ')}" aria-hidden="true">${back}${gag.back ? gag.back(t, 0) : ''}${gag.render(t, 0)}${gag.front ? gag.front(t, 0) : ''}${gag.over ? gag.over(t, 0) : ''}</svg>`;
 }

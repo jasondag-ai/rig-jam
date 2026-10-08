@@ -651,3 +651,224 @@ WAVE3.cold = { name:'Out Cold', dur:13.2, still:8.4, line:{from:9.05,to:9.8},
   if(t>5.8&&t<6.3)s+=sfx(x+8,GY-82,'BONK!',15,-8,'#f4c430',1+.2*Math.sin(Math.PI*seg(t,5.8,6.3)));
   if(t>7.4-E/COLD_IN&&t<9.0){for(let k=0;k<2;k++){const ph=((((t*1.4+k*.5)%1)+1)%1);s+=note(bx-14-ph*10,GY-62-ph*18,1-ph);}}
   return s;}};
+
+
+/* ================= CLEARWATER, the other three (the same reference) ================= */
+/* Copied as written: the side-view pickup and water hauler (both face right: the driver's door is on the FAR side, so
+   nobody is ever seen getting in or out), the mud wave, the cook's triangle and striker, the crew, the heaped plate.
+   A gag here may draw on THREE lanes: `back(t, E)` (behind the rig mat stack), `render(t, E)` (the walking lane) and
+   `front(t, E)` (the front lane, between us and the walking lane); `backY` / `frontY` are those lanes' ground lines. */
+const WHL=(cx,cy,r,spin)=>`<g transform="translate(${cx} ${cy})"><circle r="${r}" fill="#2a2a2f" ${sw(2.6)}/><circle r="${r2(r*.5)}" fill="#9aa1aa" stroke="${OL}" stroke-width="1.8"/><g transform="rotate(${r2(spin)})"><path d="M0 ${-r*.45} V${r*.45} M${-r*.45} 0 H${r*.45}" stroke="${OL}" stroke-width="1.6"/></g></g>`;
+const RAG=`<path d="M-6 -39 q7 -5 12 1 q-1 8 -9 8 q-5 -2 -3 -9 z" fill="#f2d24a" ${sw(1.7)}/>`;
+const PK_BODY="M-64 -20 L-64 -40 Q-64 -42 -62 -42 L-12 -42 L-12 -58 Q-12 -62 -8 -62 L26 -62 Q31 -62 34 -58 L44 -44 L58 -42 Q65 -41 65 -34 L65 -22 Q65 -20 63 -20 Z";
+const PK_WINF="M13 -58 H26 Q29 -58 31 -55 L39 -45 H13 Z", PK_WINR="M-8 -58 H9 V-45 H-8 Z";
+const MUDB=(()=>{const R=rng(77),a=[];for(let i=0;i<22;i++)a.push([r2(-62+R()*126),r2(-60+R()*40),r2(5+R()*9),r2(3+R()*5)]);return a;})();
+function pickup(o){
+ o=Object.assign({x:0,y:GY,pitch:0,spin:0,door:0,driver:null,mud:0,winMud:0,peep:0,id:'p'},o);
+ const body=mix('#f4f3ee',C.mud,o.mud*.82), shade=mix('#cfd1d4',C.mudD,o.mud*.82);
+ let s=`<g transform="translate(${r2(o.x)} ${r2(o.y)})"><g transform="rotate(${r2(o.pitch)} 0 -12)">`;
+ s+=`<path d="M-58 -42 V-80" stroke="${OL}" stroke-width="1.6"/><path d="M-58 -80 L-45 -77 L-58 -73 z" fill="#f28a1c" ${sw(1.4)}/>`;
+ s+=`<path d="${PK_BODY}" fill="${body}" ${sw(2.8)}/><path d="M-63 -27 H64 V-22 Q64 -21 62 -21 H-63 z" fill="${shade}"/>`;
+ if(o.dirt>0){const k=.35+.65*o.dirt;s+=`<g opacity="${r2(Math.min(1,o.dirt*2))}"><ellipse cx="52" cy="-37" rx="${r2(7*k)}" ry="${r2(3*k)}" fill="#8a6b45"/><ellipse cx="58" cy="-33" rx="${r2(3.2*k)}" ry="${r2(1.8*k)}" fill="#8a6b45"/><circle cx="46" cy="-34" r="${r2(1.4*k)}" fill="#8a6b45"/></g>`;}
+ s+=`<rect x="-61" y="-47" width="44" height="5" rx="1.5" fill="#9aa1aa" ${sw(1.8)}/>`;
+ s+=`<path d="M-12 -42 V-22 M11 -60 V-24 M41 -45 V-24" stroke="${OL}" stroke-width="1.6"/><rect x="14" y="-41" width="6" height="2.4" rx="1.2" fill="${OL}"/>`;
+ s+=`<rect x="-4" y="-66" width="28" height="4.4" rx="2" fill="#f28a1c" ${sw(1.8)}/><rect x="59" y="-38" width="6" height="5" rx="1.6" fill="#fff3b0" ${sw(1.4)}/><rect x="-66" y="-40" width="4" height="6" rx="1" fill="#e04a3a" ${sw(1.4)}/>`;
+ s+=`<rect x="62" y="-28" width="6" height="7" rx="2" fill="#9aa1aa" ${sw(1.8)}/><rect x="-69" y="-28" width="6" height="7" rx="2" fill="#9aa1aa" ${sw(1.8)}/>`;
+ s+=`<path d="M-53 -20 a14 14 0 0 1 28 0 z M23 -20 a14 14 0 0 1 28 0 z" fill="#3a3d44"/>`;
+ // windows, driver, glare
+ s+=`<path d="${PK_WINR}" fill="#a9d3ee" ${sw(2)}/><path d="${PK_WINF}" fill="#a9d3ee" ${sw(2)}/>`;
+ if(o.door>0)s+=`<path d="M11 -59 H40 V-24 H11 z" fill="#3a3d44"/>`;
+ if(o.driver){s+=`<clipPath id="w${o.id}"><path d="${PK_WINF}"/></clipPath><g clip-path="url(#w${o.id})">${worker(Object.assign({x:23,y:1},o.driver))}</g>`;}
+ s+=`<path d="M16 -56 L21 -56 L14 -47" stroke="#e3f3fb" stroke-width="2" fill="none"/>`;
+ if(o.winMud>0){s+=`<path d="${PK_WINR}" fill="#6b5233" opacity="${r2(o.winMud)}"/><path d="${PK_WINF}" fill="#6b5233" opacity="${r2(o.winMud)}"/>`;
+  if(o.peep>0&&o.driver){const rx=r2(7.4*o.peep),ry=r2(5.2*o.peep);s+=`<clipPath id="pp${o.id}"><ellipse cx="25" cy="-51" rx="${rx}" ry="${ry}"/></clipPath><ellipse cx="25" cy="-51" rx="${rx}" ry="${ry}" fill="#a9d3ee"/><g clip-path="url(#pp${o.id})">${worker(Object.assign({x:23,y:1},o.driver))}</g><ellipse cx="25" cy="-51" rx="${rx}" ry="${ry}" fill="none" stroke="#4a3920" stroke-width="1.6"/>`;}}
+ if(o.mud>0){s+=`<clipPath id="m${o.id}"><path d="${PK_BODY}"/></clipPath><g clip-path="url(#m${o.id})" opacity="${r2(o.mud)}">`+MUDB.map(([x,y,rx,ry])=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${C.mudD}"/>`).join('')+`</g>`;
+  s+=`<g opacity="${r2(o.mud)}"><path d="M-40 -20 q2 6 0 9 q-2 -3 0 -9 M8 -22 q2 7 0 10 q-2 -3 0 -10 M50 -20 q2 5 0 8 q-2 -3 0 -8" fill="${C.mud}" ${sw(1.2)}/><path d="M-20 -63 q8 -6 16 0 q4 -4 9 0" fill="${C.mud}" ${sw(1.4)}/></g>`;}
+ s+=`</g>`+WHL(-39,-11,11,o.spin)+WHL(37,-11,11,o.spin)+`</g>`;
+ return s;}
+function hauler(o){
+ o=Object.assign({x:0,y:GY,spin:0},o);
+ let s=`<g transform="translate(${r2(o.x)} ${r2(o.y)})">`;
+ s+=`<rect x="31" y="-96" width="5" height="26" rx="1.6" fill="#b9c0c8" ${sw(1.8)}/>`;
+ s+=`<rect x="-98" y="-32" width="170" height="9" fill="#3a3d44" ${sw(2.2)}/>`;
+ s+=`<rect x="-100" y="-80" width="132" height="50" rx="24" fill="#dfe3e8" ${sw(2.8)}/><path d="M-84 -73 Q-60 -78 -10 -77" fill="none" stroke="#f6f8fa" stroke-width="3.4" stroke-linecap="round"/><path d="M-96 -44 Q-40 -36 26 -44 L26 -38 Q-40 -30 -96 -38 z" fill="#c4cad1"/>`;
+ s+=`<path d="M-62 -79 V-31 M-24 -80 V-30 M12 -79 V-31" stroke="${OL}" stroke-width="1.5" opacity=".55"/>`;
+ s+=`<path d="M-90 -88 H24 M-86 -88 V-80 M-52 -88 V-80 M-18 -88 V-80 M16 -88 V-80" stroke="${OL}" stroke-width="1.8"/><path d="M-70 -80 a6 3.6 0 0 1 12 0 z M-8 -80 a6 3.6 0 0 1 12 0 z" fill="#9aa1aa" ${sw(1.6)}/>`;
+ s+=`<path d="M-104 -76 V-34 M-98 -76 V-34 M-104 -68 H-98 M-104 -58 H-98 M-104 -48 H-98" stroke="${OL}" stroke-width="1.6"/><rect x="-108" y="-38" width="8" height="6" rx="1.5" fill="#f2c230" ${sw(1.4)}/>`;
+ s+=`<path d="M36 -23 V-70 Q36 -74 40 -74 H66 Q72 -74 75 -68 L86 -48 L96 -46 Q101 -45 101 -40 V-25 Q101 -23 99 -23 Z" fill="#2f5d9b" ${sw(2.8)}/><path d="M40 -70 Q42 -72 52 -72" stroke="#5f8acb" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+ s+=`<path d="M44 -68 H63 Q67 -68 69 -64 L77 -50 H44 Z" fill="#a9d3ee" ${sw(2)}/>`;
+ s+=`<clipPath id="hw"><path d="M44 -68 H63 Q67 -68 69 -64 L77 -50 H44 Z"/></clipPath><g clip-path="url(#hw)">${worker({x:57,y:-6,eye:'happy',mouth:'o',hatC:'#f08a24',suit:'navy'})}</g>`;
+ s+=`<path d="M48 -66 L53 -66 L46 -57" stroke="#e3f3fb" stroke-width="2" fill="none"/><rect x="40" y="-78" width="26" height="4.4" rx="2" fill="#f28a1c" ${sw(1.8)}/><rect x="95" y="-42" width="6" height="5" rx="1.6" fill="#fff3b0" ${sw(1.4)}/>`;
+ s+=`<path d="M-84 -23 a15 15 0 0 1 56 0 z M66 -23 a15 15 0 0 1 30 0 z" fill="#3a3d44"/>`;
+ s+=WHL(-70,-13,13,o.spin)+WHL(-42,-13,13,o.spin)+WHL(81,-13,13,o.spin)+`</g>`;
+ return s;}
+function mudWave(x,y,k){if(k<=0||k>=1)return'';let s='';const R=rng(5);
+ for(let i=0;i<12;i++){const vx=-30-R()*90,vy=60+R()*95,r=3+R()*5;const px=x+vx*k*1.1,py=y-vy*k+150*k*k;
+  s+=`<ellipse cx="${r2(px)}" cy="${r2(py)}" rx="${r2(r*(1-k*.4))}" ry="${r2(r*.8*(1-k*.4))}" fill="${C.mud}" ${sw(1.6)} opacity="${r2(clamp(1.6-1.6*k))}"/>`;}
+ const h=70*Math.sin(Math.PI*Math.min(1,k*1.4));
+ if(k<.7)s+=`<path d="M${r2(x+8)} ${y} Q${r2(x-10)} ${r2(y-h)} ${r2(x-50)} ${r2(y-h*.6)} Q${r2(x-26)} ${r2(y-h*.45)} ${r2(x-12)} ${y} z" fill="${C.mud}" ${sw(2)} opacity="${r2(1-k)}"/>`;
+ return s;}
+const WPX=165;
+const CKX=286;
+const RUN=[{d:0,lane:GY+12,suit:'red',hat:C.hat},{d:.17,lane:GY-7,suit:'navy',hat:'#f4f1ea'},{d:.32,lane:GY+18,suit:'navy',hat:'#f08a24'},{d:.46,lane:GY-12,suit:'red',hat:'#4f8fd8'}];
+function cookTri(h){const [x,y]=h;return`<path d="M${r2(x)} ${r2(y)} V${r2(y+4)}" stroke="${OL}" stroke-width="1.4"/><path d="M${r2(x)} ${r2(y+4)} L${r2(x-7)} ${r2(y+17)} H${r2(x+7)} L${r2(x+1.4)} ${r2(y+6.6)}" fill="none" stroke="${OL}" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M${r2(x)} ${r2(y+4)} L${r2(x-7)} ${r2(y+17)} H${r2(x+7)} L${r2(x+1.4)} ${r2(y+6.6)}" fill="none" stroke="#c9ced4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`;}
+function pot(x,y,rot,rimPea=false){return`<g transform="translate(${r2(x)} ${r2(y)}) rotate(${r2(rot)}) scale(.78)"><path d="M-20 -3 q-6 0 -6 4.5 q0 4.5 6 4.5 M20 -3 q6 0 6 4.5 q0 4.5 -6 4.5" fill="none" stroke="${OL}" stroke-width="2.6" stroke-linecap="round"/><path d="M-17 -8 H17 V5 Q17 12 10 12 H-10 Q-17 12 -17 5 Z" fill="#a3adb7" ${sw(2.4)}/><rect x="-19.5" y="-11" width="39" height="4.6" rx="2.3" fill="#c3cad1" ${sw(2.2)}/><path d="M-12 -4 V6" stroke="#d3d9df" stroke-width="2.2" stroke-linecap="round"/>${rimPea?`<circle cx="15" cy="-13.4" r="2.7" fill="#7cbf3c" ${sw(1.4)}/>`:''}</g>`;}
+const COOK={suit:['#f3efe6','#d8d1c2'],apron:true,hat:'toque',tache:true,glove:C.skin,noGlasses:true};
+const STRIKER=`<path d="M0 -42 L0 -14" stroke="${OL}" stroke-width="3.2" stroke-linecap="round"/><path d="M0 -42 L0 -14" stroke="#c9ced4" stroke-width="1.4" stroke-linecap="round"/>`;
+const PEA_V=72;
+const CREW=[{d:0,suit:'navy',hatC:'#f4f1ea'},{d:.75,suit:'navy',hatC:'#4f8fd8'},{d:1.5,...BEARD,lead:true}];
+function heap(x,y){return`<ellipse cx="${r2(x)}" cy="${r2(y)}" rx="10" ry="2.6" fill="#f6f2e8" ${sw(1.8)}/><path d="M${r2(x-8)} ${r2(y-1.6)} Q${r2(x-6)} ${r2(y-11)} ${r2(x+1)} ${r2(y-10)} Q${r2(x+8)} ${r2(y-9)} ${r2(x+8)} ${r2(y-1.6)} z" fill="#f2e2b0" ${sw(1.6)}/><path d="M${r2(x-1)} ${r2(y-6)} q4 -5 9 -1 v4 h-9 z" fill="#9a5a2c" ${sw(1.2)}/><circle cx="${r2(x-5)}" cy="${r2(y-4)}" r="1.4" fill="#7cbf3c"/><circle cx="${r2(x-2)}" cy="${r2(y-7)}" r="1.4" fill="#7cbf3c"/><circle cx="${r2(x+4)}" cy="${r2(y-3)}" r="1.4" fill="#f4c430"/>`;}
+
+/* 11. Fresh Wash (Slow Moe). The hauler passes in the FRONT lane, between us and the pickup: it hides the splash. */
+const WASH_IN=2*(WPX+90)/1.9, WASH_OUT=2*(470-WPX)/1.1, HAUL_V=640/2.55;
+WAVE3.wash = { name:'Fresh Wash', dur:14.4, still:9.7, frontY:GY+28,
+ beats:[[0,'drives-in','Slow Moe drives his pickup in and parks.'],[2.2,'clunk-out','Clunk. He gets out on the far side (driver side). The truck rocks.'],[2.3,'round-the-front','Walks along the far side, head showing over the hood, and steps round the front.'],[3.85,'hop-turn','Hop-turn to face the hood.'],[4.2,'wipes','One last smudge of dirt on the hood. He wipes it away. Squeak squeak.'],[5.6,'spotless','Spotless. Sparkle.'],[6.2,'admires','Steps back to admire it. Ting!'],[7.2,'hauler','A water hauler rumbles in from the left.'],[7.6,'no-no-no','He sees it. Arms up. No no no.'],[8.45,'sploosh','SPLOOSH through the puddle.'],[9.4,'mud','Hauler gone. He and the truck are mud.'],[9.6,'blinks','Blink. Blink.'],[10.4,'looks-at-you','Slow look at you.'],[10.9,'plop','A blob slides off his hat. Plop.'],[11.3,'trudges-back','Trudges back round the front and along the far side.'],[12.55,'clunk-in','Clunk. Back in the driver seat.'],[12.7,'peephole','Wipes a peephole in the window.'],[13.2,'drives-off','Drives off.']],
+ lead:E=>E/WASH_IN, tail:E=>E/WASH_OUT,
+ truckX(t){if(t<0)return -90+WASH_IN*t;if(t<13.2)return kf(t,[[0,-90],[1.9,WPX,'out']]);return t>14.3?470+WASH_OUT*(t-14.3):kf(t,[[13.2,WPX],[14.3,470,'in']]);},
+ // (The hauler never slows: on a wider screen it is simply seen coming from further off.)
+ haulX(t){return -120+HAUL_V*(t-7.2);},
+ wx(t){return kf(t,[[2.3,WPX+8],[3.85,250,'out'],[6.2,250],[6.45,262],[11.3,262],[12.5,WPX+12,'in']]);},
+ laneY(x){return x<WPX+70?GY-8:x>WPX+86?GY:lerp(GY-8,GY,(x-WPX-70)/16);},
+ render(t,E=0){
+  let s='';
+  const tx=this.truckX(t),wx=this.wx(t);
+  const mudK=es(t,8.48,8.85), mudWK=es(t,8.6,8.95), mudT=mudK>.5, mudW=mudWK>0;
+  const door=0;
+  const inside=t<2.2||t>=12.55;
+  const rock=(inr(t,2.2,2.55)?Math.sin(Math.PI*seg(t,2.2,2.55))*1.6:0)+(inr(t,12.55,12.9)?Math.sin(Math.PI*seg(t,12.55,12.9))*-1.6:0);
+  let pitch=0;if(t>=1.9&&t<2.25)pitch=2.4*Math.sin(Math.PI*seg(t,1.9,2.25));if(t>=13.2&&t<13.45)pitch=-1.6*Math.sin(Math.PI*seg(t,13.2,13.45));
+  const muddy=(o,k=1)=>Object.assign(o,{suit:[mix(MOE.suit[0],C.mud,k),mix(MOE.suit[1],C.mudD,k)],stubbleC:mix('#9c7656',C.mudD,k),mud:k,flushC:mix(C.skin,'#8a6b45',k),hatC:mix(C.hat,'#7a5f3c',k),glove:mix(C.glove,'#6b5233',k)});
+  let drv=null;
+  if(inside){drv={...MOE,eye:t<2.3?'happy':'half',mouth:t<2.3?'o':'smile',px:2};if(t>=12.55){muddy(drv);drv.eye=t>12.9?'wide':'half';drv.px=2;drv.mouth='flat';}}
+  const winMud=mudK, peep=t<12.7?0:es(t,12.7,13.1);
+  let moeS='',behind=false;
+  const peepRag=()=>{if(t>=12.7&&t<13.15){const a=(t-12.7)*30;s+=`<g transform="translate(${r2(tx+25+Math.cos(a)*3)} ${r2(GY-51+Math.sin(a)*2)})"><circle r="3.2" fill="#6b5233" ${sw(1.6)}/></g>`;}};
+  // the worker outside
+  if(!inside){
+   let p={x:wx,y:this.laneY(wx),face:1,...MOE,eye:'half'};
+   behind=wx<WPX+80;
+   if(t<3.85){Object.assign(p,walk(wx/8,24));p.mouth='o';p.eye='happy';}
+   else if(t<4.15){p.bob=hop(t,3.85,4.15,9);p.face=t<4.0?1:-1;}
+   else if(t<6.2){p.face=-1;const w=(t-4.15)*12;p.lean=14+4*Math.cos(w);p.armF=-72+12*Math.sin(w);p.armB=-20;p.hand=RAG;p.eye='happy';p.mouth='smile';}
+   else if(t<6.45){p.face=-1;p.bob=hop(t,6.2,6.45,6);p.hand=RAG;p.armF=-20;}
+   else if(t<7.6){p.face=-1;p.armF=-14;p.armB=14;p.hand=RAG;p.sy=1;p.eye='happy';p.mouth='grin';p.lean=-4;}
+   else if(t<9.4){p.face=-1;p.eye='wide';p.mouth='O';p.hand=RAG;const w=t*16;p.armF=-150+18*Math.sin(w);p.armB=-140-18*Math.sin(w);p.lean=-6;p.px=2;}
+   if(t>=9.4&&t<11.3){p.face=-1;p.hand=RAG;p.armF=kf(t,[[10.4,-150],[10.9,-6]]);p.armB=kf(t,[[10.4,-140],[10.9,6]]);p.eye=(inr(t,9.6,9.72)||inr(t,10.0,10.12))?'closed':(t>10.4?'half':'wide');p.mouth='flat';p.px=t>10.4?2:0;}
+   if(t>=11.3){p.face=-1;Object.assign(p,walk(wx/7,16));p.eye='half';p.mouth='flat';p.hand=RAG;}
+   if(mudW)muddy(p,mudWK);
+   moeS+=worker(p);
+   if(mudWK>=1&&t>=9.4&&t<11.6){moeS+=`<path d="M${r2(wx-6)} ${r2(GY-30)} q1.6 5 0 8 q-1.6 -3 0 -8 M${r2(wx+5)} ${r2(GY-18)} q1.6 4 0 7 q-1.6 -3 0 -7" fill="${C.mud}" ${sw(1.1)}/>`;
+    if(t<10.9)moeS+=`<ellipse cx="${r2(wx-9)}" cy="${r2(GY-60)}" rx="4" ry="3" fill="${C.mud}" ${sw(1.4)}/>`;
+    else if(t<11.25){const k=seg(t,10.9,11.25);moeS+=`<ellipse cx="${r2(wx-9-k*3)}" cy="${r2(GY-60+k*k*58)}" rx="4" ry="${r2(3+k*1.2)}" fill="${C.mud}" ${sw(1.4)}/>`;}
+    else if(t<11.6)moeS+=sfx(wx-12,GY-10,'plop',9,-6,'#fff');}
+  }
+  const truckSeen=tx>-95-E&&tx<465+E;
+  if(behind)s+=moeS;
+  if(truckSeen)s+=pickup({x:tx,y:GY-rock,pitch,spin:tx*5.2,door,driver:drv,mud:mudK,winMud,peep,dirt:t<4.3?1:1-es(t,4.3,5.6),id:'w'});
+  peepRag();
+  if(!behind)s+=moeS;
+  if(t>2.2&&t<2.6)s+=sfx(tx+4,GY-74,'clunk',9,-6,'#fff');
+  if(t>12.55&&t<12.95)s+=sfx(tx+4,GY-74,'clunk',9,-6,'#fff');
+  // sparkles while polishing and admiring
+  if(t>4.4&&t<6.2){if(t>5.6)for(let i=0;i<3;i++){const ph=((t-5.6)*1.3+i/3)%1;s+=star4(tx+48+i*6,GY-38-i*3-ph*4,2+2.4*Math.sin(Math.PI*ph),'#fff');}
+   if(((t-4.4)*1.6)%1<.5)s+=sfx(tx+62,GY-66,'squeak',9,-6,'#fff');}
+  if(t>6.6&&t<7.3){const k=seg(t,6.6,7.3);s+=star4(tx+52,GY-40,7*Math.sin(Math.PI*k),'#fff');if(k>.2&&k<.8)s+=sfx(tx+66,GY-56,'ting',10,-8,'#fff');}
+  return s;},
+ // hauler in the front lane, with its splash
+ front(t,E=0){
+  let s='';
+  const hx=this.haulX(t);
+  if(hx>-125-E&&hx<520+E){s+=hauler({x:hx,y:GY+28,spin:hx*4.4});}
+  const k1=seg(t,8.47,9.25),k2=seg(t,9.0,9.7);
+  if(t>8.47&&t<9.25)s+=mudWave(PUD.x,PUD.y-2,k1);
+  if(t>9.0&&t<9.7)s+=mudWave(PUD.x,PUD.y-2,k2*.8);
+  if(t>8.5&&t<9.1)s+=sfx(PUD.x-10,GY-84,'SPLOOSH',16,-8,'#c49a5a',1+.15*Math.sin(t*30));
+  return s;}};
+
+/* 12. Dinner Bell. Back-lane runners pass BEHIND the rig mat stack, front-lane runners (and Moe, late) in front of it. */
+const BELL_IN=2*(430-CKX)/1.3, BELL_OUT=2*(440-CKX)/1.1, MOE_RUN_IN=2*240/1.1, MOE_RUN_OUT=2*240/1.5;
+WAVE3.bell = { name:'Dinner Bell', dur:11.4, still:9.3, backY:GY-7, frontY:GY+18,
+ beats:[[0,'cook-walks-in','The camp cook walks in with his triangle.'],[1.5,'ding','DING DING DING. "Supper!"'],[2.7,'rumble','Silence. The ground starts to rumble.'],[3.1,'stampede','Stampede! Four workers thunder past.'],[3.5,'spins','The cook spins like a top in the dust.'],[4.8,'dizzy','Dust settles. Dizzy, toque askew.'],[5.6,'straightens','He straightens his toque.'],[6.0,'follows','Hop-turn. He follows the crew to the kitchen.'],[7.3,'empty-lane','Empty lane. Everyone has gone.'],[7.9,'moe-late','Here comes Slow Moe, way behind, holding his hat on.'],[9.0,'puffing','Stops, hands on knees, puffing.'],[9.6,'save-me-some','"Save me some!" Off he goes.']],
+ lines:[{key:'supper',from:1.55,to:2.65,mouth(t){return{x:WAVE3.bell.cx(t)-10,y:GY-70};}},{key:'save',from:9.6,to:10.5,mouth(t){return{x:WAVE3.bell.mx(t)+14,y:GY-66};}}],
+ lead:E=>E/BELL_IN, tail:E=>Math.max(0,(E+45)/MOE_RUN_OUT-.3),
+ cx(t){if(t<0)return 430-BELL_IN*t;if(t<6.2)return kf(t,[[0,430],[1.3,CKX,'out']]);return t>7.3?440+BELL_OUT*(t-7.3):kf(t,[[6.2,CKX],[7.3,440,'in']]);},
+ mx(t){if(t<7.9)return -40-MOE_RUN_IN*(7.9-t);if(t>11.1)return 440+MOE_RUN_OUT*(t-11.1);return t<9.6?kf(t,[[7.9,-40],[9.0,200,'out']]):kf(t,[[9.6,200],[11.1,440,'in']]);},
+ rx(i,t){return -60+360*(t-3.1-RUN[i].d);},
+ runners(t,E){return RUN.map((r,i)=>({...r,i,x:this.rx(i,t)})).filter(r=>r.x>-60-E&&r.x<450+E);},
+ drawRunner(r){return worker(Object.assign(walk(r.x/7,56),{x:r.x,y:r.lane,suit:r.suit,hatC:r.hat,lean:20,eye:'wide',mouth:r.i%2?'O':'grin',px:2,hatLift:3*Math.abs(Math.sin(r.x/7))}));},
+ dustOf(r){let o='';for(let k=1;k<5;k++){const a=1-k/5;o+=puff(r.x-14-k*11,r.lane-4-k*2.5,4+k*1.4,a*.85);}return o;},
+ cook(t){
+  const x=this.cx(t);
+  let c={x,face:-1,...COOK,mouth:'smile',eye:'n'};
+  if(t<1.3){Object.assign(c,walk(x/8,22));c.armF=-20;}
+  else if(t<3.5){c.armF=kf(t,[[1.3,-20],[1.5,-140]]);
+   let hit=false;[1.5,1.8,2.1,2.4].forEach(a=>{if(t>=a&&t<a+.12)hit=true;});
+   c.armB=t<1.5?0:-95+(hit?-22:8);c.handB=t<1.5?'':STRIKER;
+   c.mouth=t<2.7?'O':'flat';if(t>=2.7){c.px=2;c.eye=t>3.0?'wide':'n';c.armB=0;c.handB='';}}
+  else if(t<4.8){const k=seg(t,3.5,4.6);c.face=(Math.floor(k*8)%2)?1:-1;if(t>=4.6)c.face=-1;c.bob=-7*Math.abs(Math.sin(k*8*Math.PI));c.hatLift=kf(t,[[3.5,0],[3.8,18],[4.5,0]]);c.hatRot=kf(t,[[3.5,0],[4.5,18]]);c.armF=-60+40*Math.sin(t*30);c.armB=60;c.eye='wide';c.mouth='O';}
+  else if(t<5.6){c.eye='dizzy';c.spinEye=t*380;c.lean=7*Math.sin((t-4.8)*5);c.hatRot=18;c.armF=-10;c.mouth='flat';}
+  else if(t<6.0){c.armF=-10;c.hatRot=kf(t,[[5.65,18],[5.9,0]]);c.armB=kf(t,[[5.6,0],[5.7,-165],[5.9,-165],[6.0,0]]);c.eye='half';c.mouth='flat';}
+  else if(t<6.2){c.bob=hop(t,6.0,6.2,8);c.face=t<6.1?-1:1;c.armF=-10;}
+  else{Object.assign(c,walk(x/8,20));c.face=1;c.eye='happy';c.mouth='smile';c.armF=-10;}
+  return c;},
+ back(t,E=0){let s='';this.runners(t,E).filter(r=>r.lane<GY).forEach(r=>{s+=this.dustOf(r)+this.drawRunner(r);});return s;},
+ render(t,E=0){
+  let s='';
+  const c=this.cook(t),x=c.x;
+  if(x<445+E)s+=worker(c)+cookTri(handW(c,'F'));
+  [1.5,1.8,2.1,2.4].forEach((a,i)=>{if(t>=a&&t<a+.3){const h=handW(c,'F');s+=sfx(h[0]+(i%2?-18:-26),h[1]-6-i*3,'DING',10,-8,'#f4c430');}});
+  return s;},
+ front(t,E=0){
+  let s='';
+  this.runners(t,E).filter(r=>r.lane>=GY).forEach(r=>{s+=this.dustOf(r)+this.drawRunner(r);});
+  // Slow Moe, late, front lane
+  const mx=this.mx(t);
+  if(mx>-45-E&&mx<445+E+45){const stopped=t>=9.0&&t<9.6;const m=stopped?{x:mx,y:GY+8,face:1,...MOE,lean:30,armF:-14,armB:-10,eye:'closed',mouth:'pant',hatRot:-9,bob:1.5*Math.sin(t*14)}:Object.assign(walk(mx/9,34),{x:mx,y:GY+8,face:1,...MOE,lean:12,armB:-165,eye:'half',mouth:'pant',px:2,hatRot:-9});
+   if(!stopped)for(let k=1;k<4;k++)s+=puff(mx-12-k*9,GY+4-k*2,3+k,(1-k/4)*.6);
+   s+=worker(m);const dp=((t*2.4)%1);s+=`<path d="M${r2(mx-10)} ${r2(GY-56+dp*10)} q-1.6 3 0 4 q1.6 -1 0 -4 z" fill="#8fc6ef" ${sw(1.1)} opacity="${r2(1-dp)}"/>`;}
+  // (The stampede's dust cloud, as one group marked as an effect: the depth test looks at characters, not at dust.)
+  if(t>3.4&&t<5.4){const k=seg(t,3.4,5.4);s+='<g data-fx="dust">';for(let i=0;i<9;i++){const a=i*.7;s+=puff(CKX-30+Math.cos(a)*30+i*4,GY-20-Math.sin(a*1.3)*16,9+5*Math.sin(Math.PI*k),Math.sin(Math.PI*k)*.95);}s+='</g>';}
+  if(t>2.75&&t<3.15){for(let i=0;i<3;i++)s+=puff(12+i*10,GY-4-((t*6+i)%1)*8,3,.7);s+=sfx(34,GY-30,'rumble',10,-4,'#fff',1+.06*Math.sin(t*60));}
+  return s;}};
+
+/* 13. One Pea (Slow Moe + the crew). The second of the pair: the same trigger, once Dinner Bell has been seen. */
+const PEA_MOE_IN=2*164/2.5, PEA_MOE_OUT=2*321/2.2, PEA_CREW_OUT=2*190/1.4, PEA_LEAD_OUT=2*260/2.0;
+WAVE3.pea = { name:'One Pea', dur:12.0, still:5.8,
+ beats:[[0,'crew-strolls','The crew strolls back from the kitchen with heaped plates.'],[2.6,'moe-trails','Moe trails behind. His plate holds one pea.'],[4.6,'turns-round','The bearded worker turns round.'],[5.0,'carbs','"Watching your carbs, Moe?"'],[6.5,'cracks-up','The crew cracks up.'],[6.6,'looks-at-you','Moe looks at you.'],[7.3,'wander-off','They wander off, still laughing.'],[7.4,'sighs','Moe sighs. His plate tips.'],[7.55,'rolls-off','The pea rolls off...'],[7.7,'across-the-sand','...across the sand...'],[8.6,'plip','...and into the puddle. Plip.'],[9.0,'looks-again','Moe looks at you again.'],[9.6,'trudges-off','Trudges off after them.']],
+ lines:[{key:'carbs',from:5.0,to:6.5,mouth(t){return{x:WAVE3.pea.cxp(2,t)+10,y:GY-72};}}],
+ lead:E=>E/PEA_V, tail:E=>E/PEA_MOE_OUT,
+ cxp(i,t){const c=CREW[i];const x=430-PEA_V*(t-c.d);if(c.lead){if(t<4.6)return x;if(t<7.4)return 430-PEA_V*(4.6-c.d);const at=430-PEA_V*(4.6-c.d);return t>9.4?at-260-PEA_LEAD_OUT*(t-9.4):at-kf(t,[[7.4,0],[9.4,260,'in']]);}
+  const stop=430-PEA_V*(5.0-c.d);if(t<5.0)return x;if(t<7.4)return stop;return t>8.8?stop-190-PEA_CREW_OUT*(t-8.8):stop-kf(t,[[7.4,0],[8.8,190,'in']]);},
+ mx(t){if(t<2.6)return 440+PEA_MOE_IN*(2.6-t);if(t<5.1)return kf(t,[[2.6,440],[5.1,276,'out']]);if(t<9.6)return 276;return t>11.8?-45-PEA_MOE_OUT*(t-11.8):kf(t,[[9.6,276],[11.8,-45,'in']]);},
+ pea(t,plate){if(t<7.55)return[plate[0]+4,plate[1]-5.6];
+  if(t<7.7){const k=seg(t,7.55,7.7);return[plate[0]+4-k*6,lerp(plate[1]-5.6,GY-2,k*k)];}
+  if(t<8.6){const k=seg(t,7.7,8.6);const x0=plate[0]-2;return[lerp(x0,PUD.x+4,io(k)),lerp(GY-2,PUD.y-1.5,io(k))-3*Math.abs(Math.sin(k*Math.PI*3))*(1-k)];}
+  return null;},
+ render(t,E=0){
+  let s='';
+  // the crew
+  CREW.forEach((c,i)=>{const x=this.cxp(i,t);if(x>440+E||x<-50-E)return;
+   let q={x,face:-1,...c,eye:'happy',mouth:'o',armF:-70};
+   const stopT=c.lead?4.6:5.0;
+   if(t<stopT){Object.assign(q,walk(x/8,20));q.armF=-70;q.mouth=(Math.floor(t*3+i+60)%2)?'o':'smile';}
+   else if(t<7.4){
+    if(c.lead){q.bob=hop(t,4.6,4.85,8);q.face=t<4.72?-1:1;q.eye='n';q.mouth=t>5.0&&t<6.4?'grin':'smile';if(t>=6.5){q.eye='happy';q.mouth='grin';q.bob=-2*Math.abs(Math.sin(t*18));q.lean=-6;}}
+    else{q.bob=hop(t,5.0,5.25,8);q.face=t<5.12?-1:1;q.eye='n';q.mouth='smile';if(t>=6.5){q.eye='happy';q.mouth='grin';q.bob=-2*Math.abs(Math.sin(t*18+i));}}}
+   else{const turned=t<7.6;q.bob=turned?hop(t,7.4,7.6,8):0;q.face=t<7.5?1:-1;if(t>=7.6)Object.assign(q,walk(x/8,20));q.armF=-70;q.eye='happy';q.mouth='grin';}
+   s+=worker(q);const h=handW(q,'F');s+=heap(h[0]+3*q.face,h[1]-2.6);
+   if(t>6.5&&t<7.6&&i===2)s+=sfx(x-6,GY-76,'ha ha',9,-6,'#fff');
+   if(t>6.6&&t<7.5&&i===1)s+=sfx(x+4,GY-74,'ha',8,6,'#fff');});
+  // Moe
+  const mx=this.mx(t);
+  if(mx<450+E&&mx>-50-E){let p={x:mx,face:-1,...MOE,eye:'half',mouth:'flat',armF:-70};
+   if(t<5.1){Object.assign(p,walk(mx/9,16));p.armF=-70;p.headRot=6;}
+   else if(t<6.6){p.px=1;p.py=1;}
+   else if(t<7.4){p.px=2;}
+   else if(t<9.0){p.armF=t<7.75?kf(t,[[7.4,-70],[7.55,-58],[7.75,-70]]):-70;p.bob=t<7.6?kf(t,[[7.4,0],[7.5,2.5],[7.6,0]]):0;const pe=this.pea(t,[mx,GY]);if(pe){p.px=clamp((pe[0]-mx)/20,-2.5,2.5)*-1;p.py=2.5;}p.eye='n';if(t>8.6){p.eye='half';}}
+   else if(t<9.6){p.px=2;p.mouth='frown';}
+   else{Object.assign(p,walk(mx/9,14));p.armF=-70;p.headRot=10;p.mouth='frown';}
+   s+=worker(p);const h=handW(p,'F');const tilt=t>=7.4&&t<7.75?kf(t,[[7.4,0],[7.55,-14],[7.75,0]]):0;
+   s+=`<g transform="rotate(${r2(tilt)} ${r2(h[0])} ${r2(h[1])})"><ellipse cx="${r2(h[0]-3)}" cy="${r2(h[1]-2.6)}" rx="10" ry="2.6" fill="#f6f2e8" ${sw(1.8)}/></g>`;
+   const pe=this.pea(t,[h[0]-7,h[1]]);if(pe)s+=`<circle cx="${r2(pe[0])}" cy="${r2(pe[1])}" r="2.1" fill="#7cbf3c" ${sw(1.2)}/>`;}
+  if(t>=8.6&&t<9.3){const k=seg(t,8.6,9.3);s+=`<ellipse cx="${PUD.x+4}" cy="${PUD.y-1}" rx="${r2(2+10*k)}" ry="${r2(.8+2.4*k)}" fill="none" stroke="#a8996f" stroke-width="1.4" opacity="${r2(1-k)}"/>`;if(k<.6)s+=sfx(PUD.x+16,PUD.y-12,'plip',9,-6,'#fff');}
+  return s;}};
