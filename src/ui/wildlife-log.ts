@@ -6,7 +6,7 @@
 import { STORAGE_PREFIX } from './progress.ts';
 import { dressCamo } from './sprites.ts';
 
-export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'night' | 'bull' | 'bear' | 'muskeg' | 'cattrain' | 'beaver' | 'aurora' | 'tumbleweed' | 'pdogs' | 'bale' | 'cloud' | 'dug';
+export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'night' | 'bull' | 'bear' | 'muskeg' | 'cattrain' | 'beaver' | 'aurora' | 'tumbleweed' | 'pdogs' | 'bale' | 'cloud' | 'swings' | 'cold' | 'dug';
 
 export interface LogEntry {
   id: Sighting;
@@ -48,6 +48,9 @@ export const LOG_ENTRIES: LogEntry[] = [
   { id: 'pdogs', name: 'Prairie Dog Wave', caption: 'One always misses his cue.', hint: "In Bakken, tap the same spot on the prairie three times.", riddle: "The same patch of prairie, three times. The neighbours stand up." },
   { id: 'bale', name: 'Runaway Bale', caption: 'It rolled one more inch.', hint: "In Bakken, bump a truck into the bottom berm beside the round bale.", riddle: "Rattle the fence beside the big round bale." },
   { id: 'cloud', name: 'Personal Cloud', caption: 'Some days are like that.', hint: "In Bakken, tap the sky three times.", riddle: "Poke the Bakken sky three times. It pokes back." },
+  // Clearwater (the Big Pad): a stacked pair. Out Cold shares Three Swings' trigger and plays only once Three Swings is in this log.
+  { id: 'swings', name: 'Three Swings', caption: 'The ball never moved.', hint: "In Clearwater, tap the stack of rig mats three times.", riddle: "A stack of rig mats in Clearwater makes a fine target. Knock three times." },
+  { id: 'cold', name: 'Out Cold', caption: 'Fore.', hint: "In Clearwater, tap the rig mats three times again, after Three Swings.", riddle: "Moe wants another go at those rig mats. Ask him the same way." },
   { id: 'night', name: 'Night Shift', caption: 'Lights out on the lease.', hint: "Leave any lease alone until it goes dark.", riddle: "Do nothing at all, somewhere the sun goes down." },
   { id: 'bull', name: 'Bull and Cow', caption: 'Spring in the Montney.', hint: "In Montney, tap the cow.", riddle: "She is only grazing in the Montney. Say hello." },
   // Not a gag: found by scrolling the log's own dig right through the Earth (log-deep.ts). Its card shows the player's best time.
