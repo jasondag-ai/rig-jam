@@ -12,7 +12,10 @@ true side profile for every strip character, 5 no size change between poses, 6 a
 way you travel, anticipation, squash and stretch, arcs, eases, follow-through, a payoff), 7
 "sightings", never "Easter eggs", 8 no new bathroom humour, accurate oilfield terms and geology,
 9 no time-based gag triggers (only the night is idle-based), 10 visual fixes are checked in WebKit
-at iPhone DPR 3 plus Galaxy and Pixel sizes, never only in Chromium.
+at iPhone DPR 3 plus Galaxy and Pixel sizes, never only in Chromium, 11 SLOW MOE: any worker who
+gets into trouble is Slow Moe (orange FR coveralls with stripes, stubble, droopy lids, hat tipped
+back, same size); the bearded worker in red is the lucky one, 12 trucks in the strip face right and
+no near door ever opens; check Safari's visible sizes (390 x 664, 375 x 635) too.
 
 Mobile-first web puzzle game (hackathon, due Nov 1). Owner is a beginner: when they need to do
 something, give exact clicks and one command at a time.
@@ -1213,6 +1216,42 @@ something, give exact clicks and one command at a time.
   default, `URL=` runs it against the live site): every sighting on its REAL trigger in its own
   region (33 cases), each seen on the screen and never over the pad, the tip line or the buttons;
   then every tappable prop in every region answers a tap, and no other prop stands there.
+
+## Slow Moe everywhere, and the polish pass (Oct 8; STANDING_RULES 11)
+- SLOW MOE IS A DRESSING OF THE SAME DRAWINGS, never a second build: `asMoe(drawing)` in worker.ts
+  (`MOE_WORKER`: the shared worker's suit colours swapped for `MOE_SUIT` / `MOE_SUIT2`, the beard
+  replaced by stubble, a `.droop` half lid under the blinking `.lid`, the hat's drawing turned
+  back inside its own `.hat` group so gags still move the group) and `asMoe(p)` in wave3.ts (a
+  pose dressed at the moment it is drawn: Moe's suit, stubble, hat, and 'half' eyes where they
+  were plain). Every pose, joint and size is the worker's own.
+- WHO IS MOE NOW: the sleepy worker, Occupied and The Runaway Roll (the man in the biffy), the
+  porcupine's worker (walking and scurrying), Gopher Lunch, the one stuck to the riser in Frozen
+  Tongue (his buddy in blue is not), Muskeg Boots, Personal Cloud, and the Clearwater five as
+  before. LEFT AS THEY WERE, and Jay was told: the Marshmallow worker (he shrugs and eats it:
+  not clearly trouble), Safety Sam, the surveyor, the win card's mascot (the worker himself).
+- THE SUITCASE CARRY (Three Swings, Out Cold; wave3.ts `held(k)`, `CARRY`, `carry`): walking in
+  and off, Moe's arm hangs with a small swing, his hand round the middle of the shaft, the shovel
+  level, blade forward. At tee-up it turns up into the upright `SHOVEL` grip (`teeUp`), and back
+  at the hop-turn. BUILT FROM JAY'S WORDS: the reference on the Desktop (saved Oct 7 19:26) has
+  no CARRY item in it. If a newer file arrives, port its drawing over `held`.
+- BIFFY B (biffy.ts): THE ROLL ROLLS IN FRONT OF THE DOOR. It waits behind the shut door (the
+  door's copy on the gag layer), and once the door has swung clear of the doorway (`ROLL_CLEAR`)
+  it is stacked over that door for good. THE SHUFFLER IS REDRAWN (`shuffler()`: Slow Moe in true
+  side profile, bent forward, near hand on the waistband of the pants bunched at his ankles as
+  one dark band, far arm out after the roll, whole face flushed, an O mouth, paper trailing from
+  his back boot) on the reference's own skeleton; the porcupine's worker is the same drawing with
+  quills and his near hand on his bum (`shuffler(quills, true)`). He dithers in the doorway for a
+  moment (`B_DITHER`), then goes in tiny fast steps with a small bob (`SHUFFLE`); slower than
+  before, so `B_OFF` 5.5, `B_SHUT` 5.8, `B_END` 6.9.
+- ROOT CAUSE FOUND ON THE WAY: on some screens (390 x 664, the live build too) the shuffler's
+  layer worked its ground line out a pixel short of the biffy's, so the roll and the shuffler
+  played BEHIND the biffy and seemed to come from behind it. The layer now takes the biffy's own
+  line (`setGround(over, biffy.layer.dataset.ground, 'set')` in `biffyBDef`).
+- LOG CARDS HAVE NO LOOSE SPECKS (`cardMode` in wave3.ts, set by `wave3Still`): a card's still
+  leaves out the sweat drop (Dinner Bell), the ball on the sand and the whistled notes (Out
+  Cold) and the dust puffs (Three Swings). Cards of the gags that now star Moe show him.
+- `tools/qc-filmstrip.mjs` takes `safari` (WebKit 390 x 664). Before and after sheets of this
+  pass: `~/Desktop/RHR Art Inbox/qc/polish/before/` and `after/`.
 
 ## An old save keeps everything (the Clearwater ship, Oct 8)
 - A NEW REGION, NEW LOG ENTRIES AND NEW SOUNDS ARE ADDED BESIDE WHAT A PHONE HAS SAVED. Never rename
