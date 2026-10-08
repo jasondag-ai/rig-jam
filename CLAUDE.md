@@ -83,7 +83,7 @@ something, give exact clicks and one command at a time.
 
 ## Regions
 - Cardium: 10 levels, trucks and gates only. Theme: summer.
-- (Branch `big-pad` only) Clearwater: 10 levels on a pad of 8 x 8, trucks and gates only. See "Clearwater, region 6".
+- Clearwater: 10 levels on a pad of 8 x 8 (the Big Pad), trucks and gates only. Theme: `boreal`. Opens after 5 of Bakken. See "Clearwater, region 6".
 - Montney: 10 levels, adds obstacles (pumpjacks, 400 bbl tanks, wellheads). Theme: spring mud.
 - Duvernay: 10 levels, adds convoys. Theme: winter. Preview any theme with `?theme=winter` etc.
 - Mannville: 10 levels, adds MUSKEG (with obstacles and convoys). EVERY level is par 14 to 20, the
@@ -1017,7 +1017,7 @@ something, give exact clicks and one command at a time.
   together and the instrument rises. Both his drawing and the standing tripod start hidden.
 - The Wildlife Log's one LEGENDARY card is the Bear (tested, found and unfound).
 
-## Big Pad spike (region 6; branch `big-pad` ONLY: never merged, never deployed)
+## Big Pad spike (region 6; built on branch `big-pad`, merged to main and shipped Oct 8)
 - THE QUESTION: can we generate 8 x 8 levels that play hard? Hardness = EXTRA MOVES, par minus the
   number of trucks (the moves that are not a truck's own drive out). Answer: yes. No UI, art or
   sightings for it; the game still only shows pads of 6.
@@ -1057,7 +1057,7 @@ something, give exact clicks and one command at a time.
   in the game itself, breadth-first where it gets through 12 million positions) and reprints the
   table. `tools/gen-bigpad.test.ts` holds the file to the targets.
 
-## Clearwater, region 6: the Big Pad you can play (branch `big-pad` ONLY: never merged, never deployed)
+## Clearwater, region 6: the Big Pad you can play (merged to main and shipped Oct 8)
 - `src/levels/clearwater.json`: TEN LEVELS OF 8 x 8 (`size: 8`), trucks and gates only, after Bakken
   in `REGIONS` (opens after 5 of Bakken like the others; demo mode opens it). Jay's names, in
   order: Rig Mats, Rig Move, Set Surface, Walking Rig, Batch Drilling, Sim Ops, Plug and Perf, Drill
@@ -1164,6 +1164,22 @@ something, give exact clicks and one command at a time.
 - THE WORKTREE NEEDS ITS OWN `npm ci` (`~/Rush-Hour-Rigs-bigpad`): with `node_modules` linked to
   the main checkout, Vite refuses the bundled fonts (403: outside its root) and the game shows in
   a fallback font.
+
+## An old save keeps everything (the Clearwater ship, Oct 8)
+- A NEW REGION, NEW LOG ENTRIES AND NEW SOUNDS ARE ADDED BESIDE WHAT A PHONE HAS SAVED. Never rename
+  or drop a level id, a sighting id or a storage key, and never change a level's par downward so
+  that earned hard hats would be lost. A player's phone holds `rush-hour-rigs:v2` (best scores,
+  hints, perfect clears, Daily Pads, stand-downs, announced regions, demo), `rush-hour-rigs:log`
+  (and `:demo-log`), `rush-hour-rigs-audio`, `rush-hour-rigs:region`, `rush-hour-rigs:last-level`.
+- `e2e/fixtures/live-save-de534ad.json` is A REAL SAVE, made by playing the live build before
+  Clearwater shipped (Cardium 1 to 6, two sightings, a Daily Pad, sound and music on, 80s Retro).
+  `src/ui/save-compat.test.ts` (in `npm test`, so the deploy checks it) reads it with the game's
+  own loaders: every score, hint, the streak, the open regions and levels, the log, the settings;
+  Clearwater simply locked, nothing announced; a full old log of 28 keeps its camo pickups.
+  `npm run test:e2e:save` puts it into the running game at four phone sizes (WebKit at iPhone DPR
+  3, 390 and 375; Galaxy and Pixel sizes) and checks the screens show it, storage is untouched,
+  and the update bar shows and reloads with the save whole. BEFORE SHIPPING ANYTHING THAT TOUCHES
+  SAVED DATA, make a new fixture from the live build the same way and add it beside this one.
 
 ## Stack
 - TypeScript + Vite, DOM + CSS transforms, Pointer Events. No game engine, no frameworks. GSAP (free
@@ -1322,7 +1338,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:clearwater-gags` – Clearwater's standard scene and its gag pair: Three Swings, then Out Cold on the same trigger (start the dev server first)
 - `node tools/qc-beatsheet.mjs <gag> <reference id> <reference.html> <folder> [iphone|iphone375]` – every beat of a wave-3-format gag, the reference's drawing beside the game's
 - `npm run test:e2e:clearwater` – Clearwater on a phone: the tab, the 8 x 8 board whole on the screen at 390 and 375, drag, Undo, Hint, all ten levels at par (start the dev server first)
-- `node tools/gen-bigpad.ts [minutes] [seed] [workers]` – Big Pad spike (branch `big-pad`): 20 candidates of 8 x 8 into `levels/bigpad-candidates.json` and a table, 10 minutes at most
+- `node tools/gen-bigpad.ts [minutes] [seed] [workers]` – Big Pad spike: 20 candidates of 8 x 8 into `levels/bigpad-candidates.json` and a table, 10 minutes at most
 - `node --max-old-space-size=8000 tools/check-bigpad.ts` – proves every Big Pad candidate again (breadth-first too, where it gets through) and reprints the table
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
 - `npm run test:e2e:gags` – every puppet gag suite in turn: magpie, eggs, strip, eggs2 (start the dev server first)
@@ -1353,6 +1369,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:gagsounds` – every gag (all 26) with sound on in WebKit: cues, timing, output level, lazy loading (`ONLY=beaver` runs one; start the dev server first)
 - `npm run test:e2e:offline` – the built site under the Pages base path: the service worker registers, fills its cache through 503s, and the game plays with the network gone (builds first; needs no dev server)
 - `npm run test:e2e:click` – the buttons' one click and the haptic tick: every kind of button, never on a drag, a tick per truck out, nothing with the switch off (start the dev server first)
+- `npm run test:e2e:save` – a real save from the live build before Clearwater, loaded into this build at four phone sizes: everything kept, the update bar (start the dev server first)
 - `npm run test:e2e:audio` – sound: lazy loading, every cue, gag sounds, the three music styles, gapless loops, Credits (start the dev server first)
 
 ## Out of scope (M2)
