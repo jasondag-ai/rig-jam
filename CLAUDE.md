@@ -83,6 +83,7 @@ something, give exact clicks and one command at a time.
 
 ## Regions
 - Cardium: 10 levels, trucks and gates only. Theme: summer.
+- (Branch `big-pad` only) Clearwater: 10 levels on a pad of 8 x 8, trucks and gates only. See "Clearwater, region 6".
 - Montney: 10 levels, adds obstacles (pumpjacks, 400 bbl tanks, wellheads). Theme: spring mud.
 - Duvernay: 10 levels, adds convoys. Theme: winter. Preview any theme with `?theme=winter` etc.
 - Mannville: 10 levels, adds MUSKEG (with obstacles and convoys). EVERY level is par 14 to 20, the
@@ -1056,6 +1057,43 @@ something, give exact clicks and one command at a time.
   in the game itself, breadth-first where it gets through 12 million positions) and reprints the
   table. `tools/gen-bigpad.test.ts` holds the file to the targets.
 
+## Clearwater, region 6: the Big Pad you can play (branch `big-pad` ONLY: never merged, never deployed)
+- `src/levels/clearwater.json`: TEN LEVELS OF 8 x 8 (`size: 8`), trucks and gates only, after Bakken
+  in `REGIONS` (opens after 5 of Bakken like the others; demo mode opens it). Jay's names, in
+  order: Rig Mats, Rig Move, Set Surface, Walking Rig, Batch Drilling, Sim Ops, Plug and Perf, Drill
+  Out, Sand Haul, Road Ban. Ids `w01` to `w10`. Trucks 14, 14, 15, 15, 15, 15, 15, 15, 15, 16 (16
+  at most: Jay); par 20, 21, 23, 24, 25, 26, 27, 28, 29, 30; EXTRA MOVES 6, 7, 8, 9, 10, 11, 12,
+  13, 14, 14 (levels 1 to 3: 6 to 8; 4 to 6: 9 to 11; 7 to 10: 12 to 15). NEVER HAND-EDIT: `node
+  tools/pick-clearwater.ts` writes it from `levels/bigpad-candidates.json` (`PICKS`: which
+  candidate is which level), proving each again and dealing the truck kinds from a fixed seed.
+- SIX COLOURS AND THEIR SYMBOLS, REPEATED (Jay): with 14 to 16 trucks a colour is on two or three
+  trucks, each with its own gate of that colour at an end of its own lane (the two ends of a lane
+  are never the same colour).
+- MORE CANDIDATES: `gen-bigpad.ts` takes a batch's own targets and adds it to the file
+  (`--trucks=12-15 --extra=6-10 --keep=10 --append`: spread evenly across its range). The file now
+  holds 36: the first 20, the easier 10, and 6 of 15 to 16 trucks at 11 to 14 extra moves (made so
+  the ramp can end on its hardest pads without the truck count dropping).
+- A PAD OF 8 IS SOLVED BY A* (`solve` hands it over: breadth-first would look at millions of
+  positions), so Hint works there. On a laptop the worst of the ten takes about half a second from
+  its start; ON A PHONE THE FIRST HINT OF A LATE LEVEL MAY TAKE A SECOND OR TWO (not measured on
+  one yet).
+- THE BOARD DRAWS ITS LEVEL'S OWN SIZE (`BoardView.size` from `sizeOf(level)`; the board wears
+  `.big-pad`): the pad, gates, berm (`BermGeometry.size`), ground (`Detail.size`), tire tracks
+  (`TrackLayer.setSize`, `setPadSize`), exits (`exitPlan(..., size)`) and bumps all work in cells
+  of it. On a Big Pad the berm band is thinner (`BIG_FENCE_RATIO` 0.34) and the stage runs to 3 px
+  from the screen's sides (`.screen.game.big-pad .stage`), so A CELL IS 44 PX AT 390 WIDE (42 at
+  375). Trucks, symbols and tags are sized in cells and follow. Still 6 only: equipment
+  (`obstacles.ts`), the magpie's truck pick, the moose's column: nothing of theirs is on a Big Pad.
+- SURROUNDINGS: Cardium's summer for now (`theme: 'summer'`; the biffy and the lease sign stand as
+  on every level). Its own strip art comes in a later job. NO GAG PLAYS ON A BIG PAD yet
+  (`GameView.bigPad`: `fire` returns at once), no night (summer), no pill in the dig.
+- `npm run test:e2e:clearwater` (WebKit at iPhone DPR 3, 390 and 375 wide): the tab and its
+  locks, the 8 x 8 board whole on the screen, drag, Undo, Hint, and ALL TEN LEVELS cleared at par
+  by dragging; screenshots in `~/Desktop/RHR Art Inbox/qc/clearwater/`.
+- THE WORKTREE NEEDS ITS OWN `npm ci` (`~/Rush-Hour-Rigs-bigpad`): with `node_modules` linked to
+  the main checkout, Vite refuses the bundled fonts (403: outside its root) and the game shows in
+  a fallback font.
+
 ## Stack
 - TypeScript + Vite, DOM + CSS transforms, Pointer Events. No game engine, no frameworks. GSAP (free
   standard license) for character animation only.
@@ -1209,6 +1247,8 @@ something, give exact clicks and one command at a time.
 - `npm run build` – type-check + production build into `dist/`
 - `npm run gen-levels [-- c05 m08]` – regenerate levels (named slots are forced to rerun)
 - `npm run check-levels` – print levels and solutions
+- `node tools/pick-clearwater.ts` – writes `src/levels/clearwater.json` (the ten Clearwater levels) from the Big Pad candidates
+- `npm run test:e2e:clearwater` – Clearwater on a phone: the tab, the 8 x 8 board whole on the screen at 390 and 375, drag, Undo, Hint, all ten levels at par (start the dev server first)
 - `node tools/gen-bigpad.ts [minutes] [seed] [workers]` – Big Pad spike (branch `big-pad`): 20 candidates of 8 x 8 into `levels/bigpad-candidates.json` and a table, 10 minutes at most
 - `node --max-old-space-size=8000 tools/check-bigpad.ts` – proves every Big Pad candidate again (breadth-first too, where it gets through) and reprints the table
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
