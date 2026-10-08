@@ -4045,6 +4045,17 @@ svg.dig-tunnel {
   animation: aspen-shake 380ms ease-in-out;
 }
 
+/* The rig mat stack (Clearwater), tapped: a small knock. */
+.clear-mats svg.scene-svg.shake {
+  animation: mats-knock 300ms ease-out;
+}
+
+@keyframes mats-knock {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-2px); }
+  60% { transform: translateY(1px); }
+}
+
 @keyframes aspen-shake {
   0%, 100% { transform: rotate(0); }
   25% { transform: rotate(-1.6deg); }
@@ -4060,7 +4071,7 @@ svg.dig-tunnel {
 .screen.game.night .strip-layer.aurora-layer { opacity: 1; }
 
 @media (prefers-reduced-motion: reduce) {
-  .scene-front svg.scene-svg.shake { animation: none; }
+  .scene-front svg.scene-svg.shake, .clear-mats svg.scene-svg.shake { animation: none; }
 }
 
 /* ---------- Log v3: the dig goes right through the Earth (log-deep.ts) ----------

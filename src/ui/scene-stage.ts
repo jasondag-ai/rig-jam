@@ -13,10 +13,13 @@ import { setGround } from './puppet-stage.ts';
 import type { Season } from './trees.ts';
 import { BOX, sizeFor, treeArt, type Species } from './trees.ts';
 import type { TimelineDef } from './strip-gags.ts';
-import { BALE_AT, MUSKEG, WAVE3, baleAtRest, rng, tuft } from './wave3.ts';
+import { BALE_AT, CW, MUSKEG, WAVE3, baleAtRest, rng, tuft } from './wave3.ts';
 
 /** The reference's strip, in its own units. */
 export const SCENE = { w: 390, top: 30, floor: 168, ground: 150 } as const;
+const WAVE3_SCENE = SCENE;
+/** Clearwater's strip runs lower: its mud puddle lies in the FRONT lane, below the walking lane (the reference draws to y 190). */
+export const CW_SCENE = { w: 390, top: 30, floor: 184, ground: 150 } as const;
 /** Below this scale the strip is too short for these gags: they do not play there. */
 export const SCENE_MIN = 0.45;
 
@@ -38,7 +41,7 @@ export interface SceneGeom {
 }
 
 /** How the reference's strip lies in the game's bottom strip (see the top of this file). */
-export function sceneGeom(screenW: number, strip: { top: number; bottom: number }): SceneGeom {
+export function sceneGeom(screenW: number, strip: { top: number; bottom: number }, SCENE: { w: number; top: number; floor: number } = WAVE3_SCENE): SceneGeom {
   // A screen that is not laid out yet (0 wide, or a strip nobody has measured): the reference's own
   // view at scale 1, which does not fit, so nothing plays and NO NaN is ever written to a viewBox.
   if (!(screenW > 0) || !Number.isFinite(strip.top) || !Number.isFinite(strip.bottom)) {
@@ -235,6 +238,136 @@ export class BakkenProp {
   }
 }
 
+// ---------- The standard Clearwater scene ----------
+
+/**
+ * Clearwater's trees, from its reference (`bgClear`), in the board's own drawings. The left group
+ * (two spruce, the fireweed, a blueberry bush) stands 44 further right than in the reference,
+ * clear of the biffy in the corner. The gold aspen at x 222 is the one the ball pings off.
+ */
+export const CW_TREES: { species: Species; x: number; base: number; h: number }[] = [
+  { species: 'spruce', x: 64, base: 124, h: 66 },
+  { species: 'spruce', x: 94, base: 120, h: 50 },
+  { species: 'spruce', x: 290, base: 118, h: 56 },
+  { species: 'spruce', x: 372, base: 114, h: 70 },
+];
+// (The reference's aspen is 118 tall and its crown runs up over the berm. The strip's scenery stops at the berm's foot, so it is 96 here: its trunk, where the ball pings, is where it was.)
+export const CW_ASPEN = { species: 'aspen' as Species, x: CW.ASP.x, base: CW.ASP.b, h: 96 };
+/** Fireweed [x, base, size] and red fall blueberry bushes [x, base, size] (the reference's own drawings). */
+export const CW_FIREWEED: [number, number, number][] = [[122, 126, 1], [262, 124, 0.9]];
+export const CW_BUSHES: [number, number, number][] = [[154, 126, 0.72], [340, 122, 0.66]];
+/** Where the lease sign stands on a Clearwater level, in the world: up by the berm between the right-hand spruce and the blueberry bush, over the rig mats and clear of where Moe and the bearded worker stand. */
+export const CW_SIGN_AT = 314;
+
+/** Clearwater's ground, flat under everything: lichen bands, the sandy two-track, the puddle, tufts. */
+export function clearGround(g: SceneGeom): string {
+  const x0 = Math.min(0, g.left) - 2, x1 = Math.max(SCENE.w, g.left + g.worldW) + 2;
+  // Tufts across the whole screen, however wide (seeded: always the same), none on the lane or the puddle.
+  const R = rng(21);
+  let tufts = '';
+  for (let x = -200; x < SCENE.w + 200; x += 13) {
+    const tx = Math.round(x + R() * 10), ty = Math.round(46 + R() * 136), light = R() < 0.45;
+    if (tx < g.left || tx > g.left + g.worldW || ty < g.top + 8 || ty > CW_SCENE.floor - 3) continue;
+    if ((ty > 132 && ty < 171) || (Math.abs(tx - CW.PUD.x) < 42 && ty > 164)) continue;
+    tufts += tuft(tx, ty, light ? '#cfd2a4' : '#858c58');
+  }
+  return CW.bands(x0, x1) + CW.lane(x0, x1) + CW.puddle() + tufts;
+}
+/** What stands behind the walking lane: the trees, the fireweed, the blueberry bushes. */
+export function clearScene(season: Season = 'fall'): string {
+  const back = [...CW_TREES.map((t) => ({ base: t.base, svg: tree(t, season) })), ...CW_FIREWEED.map(([x, b, s]) => ({ base: b, svg: CW.fireweed(x, b, s) })), ...CW_BUSHES.map(([x, b, s]) => ({ base: b, svg: CW.bush(x, b, s, '#9b4a3a', '#c0634c') }))];
+  // (Each stands in front of whatever has its foot higher up the screen.)
+  back.push({ base: CW_ASPEN.base, svg: `<g class="cw-aspen">${tree(CW_ASPEN, season)}</g>` });
+  back.sort((a, b) => a.base - b.base);
+  return back.map((t) => t.svg).join('');
+}
+
+/**
+ * THE STANDARD CLEARWATER SCENE: permanent scenery on every Clearwater level. Three layers that
+ * take no touches: the flat GROUND under everything (lichen bands, the sandy two-track, the mud
+ * puddle in the front lane), what STANDS behind the walking lane (trees, fireweed, bushes), and
+ * the RIG MAT STACK (end view) at the lane's right end, on its own ground line just behind the lane.
+ */
+export class ClearProp {
+  readonly ground: HTMLElement;
+  readonly layer: HTMLElement;
+  readonly mats: HTMLElement;
+  private host: EggHost;
+  private season: Season;
+  private drawn = '';
+  private g: SceneGeom | null = null;
+
+  constructor(host: EggHost, season: Season) {
+    this.host = host;
+    this.season = season;
+    const make = (cls: string) => {
+      const el = document.createElement('div');
+      el.className = `scene-layer puppet-layer scene-prop ${cls}`;
+      el.setAttribute('aria-hidden', 'true');
+      el.innerHTML = '<svg class="scene-svg" preserveAspectRatio="none"></svg>';
+      (host.mount ?? ((x: HTMLElement) => host.screen.append(x)))(el);
+      return el;
+    };
+    this.ground = make('clear-ground');
+    this.layer = make('clear-layer');
+    this.mats = make('clear-mats');
+    this.layout();
+  }
+
+  geom(): SceneGeom {
+    return (this.g ??= sceneGeom(this.host.screen.clientWidth, this.host.strip(), CW_SCENE));
+  }
+
+  /** Call when the screen changes size. */
+  layout(): void {
+    const g = (this.g = sceneGeom(this.host.screen.clientWidth, this.host.strip(), CW_SCENE));
+    for (const el of [this.ground, this.layer, this.mats]) place(el.firstElementChild as SVGSVGElement, g);
+    // DEPTH: the ground lies under everything in the strip (the biffy and the sign up by the berm too); the trees, bushes
+    // and fireweed stand behind the walking lane; the mat stack just behind it (in front of them).
+    setGround(this.ground, g.strip.top - 1, 'set');
+    setGround(this.layer, toScreen(g, 0, CW_ASPEN.base).y, 'set');
+    setGround(this.mats, toScreen(g, 0, CW.MATS_FOOT).y, 'set');
+    const key = viewBox(g);
+    if (key === this.drawn) return;
+    this.drawn = key;
+    this.ground.firstElementChild!.innerHTML = clearGround(g);
+    this.layer.firstElementChild!.innerHTML = clearScene(this.season);
+    this.mats.firstElementChild!.innerHTML = `<g class="cw-mats">${CW.mats()}</g>`;
+  }
+
+  /** Where the lease sign stands on this screen (a share of its width). */
+  signX(): number {
+    const g = this.geom();
+    return g.screenW > 0 ? toScreen(g, CW_SIGN_AT, 0).x / g.screenW : 0.74;
+  }
+
+  /** Is a tap at (x, y) on the rig mat stack? (A tap target of at least 44 px.) */
+  hitMats(x: number, y: number): boolean {
+    const screen = this.host.screen.getBoundingClientRect();
+    const b = tapBox(this.geom(), CW.MAT_BOX);
+    return x - screen.left >= b.left && x - screen.left <= b.right && y - screen.top >= b.top && y - screen.top <= b.bottom;
+  }
+  /** The mat stack's box on the screen (px from the screen's left and top). */
+  matsBox(): { x: number; y: number; width: number; height: number } {
+    const g = this.geom(), a = toScreen(g, CW.MAT_BOX.x, CW.MAT_BOX.y);
+    return { x: a.x, y: a.y, width: CW.MAT_BOX.w * g.s, height: CW.MAT_BOX.h * g.s };
+  }
+  /** A tap that does not bring the gag yet: the stack gives a small knock (none with reduced motion: style.css). */
+  shake(): void {
+    const svg = this.mats.firstElementChild!;
+    svg.classList.remove('shake');
+    void (svg as unknown as HTMLElement).getBoundingClientRect();
+    svg.classList.add('shake');
+  }
+  /** The gold aspen turned about its foot by `deg` (the ball pings off it in Out Cold); 0 puts it back. */
+  aspen(deg: number): void {
+    const el = this.layer.querySelector<SVGGElement>('.cw-aspen');
+    if (!el) return;
+    if (deg) el.setAttribute('transform', `rotate(${deg.toFixed(2)} ${CW_ASPEN.x} ${CW_ASPEN.base})`);
+    else el.removeAttribute('transform');
+  }
+}
+
 /** Puts a scene's SVG over the strip, showing the world at the strip's scale. */
 function place(svg: SVGSVGElement, g: SceneGeom): void {
   Object.assign(svg.style, { position: 'absolute', left: '0px', top: `${g.strip.top}px`, width: `${g.screenW}px`, height: `${g.strip.bottom - g.strip.top}px` });
@@ -253,7 +386,7 @@ const gagOf = (key: string) => (WAVE3 as Record<string, Wave3>)[key];
  * touches. The clock runs from `lead` seconds before the reference's t = 0 (its walk-in from the
  * screen's real edge) to `tail` seconds after its end; every beat keeps the reference's time.
  */
-export function sceneDef(name: string, key: string, geom: () => SceneGeom | null, opts: { prop?: { show: (on: boolean) => void }; line?: string; overLease?: boolean } = {}): TimelineDef {
+export function sceneDef(name: string, key: string, geom: () => SceneGeom | null, opts: { prop?: { show: (on: boolean) => void }; line?: string; overLease?: boolean; frame?: (t: number) => void; reset?: () => void } = {}): TimelineDef {
   const gag = gagOf(key);
   const lead = () => gag.lead(geom()?.E ?? 0);
   return {
@@ -298,6 +431,8 @@ export function sceneDef(name: string, key: string, geom: () => SceneGeom | null
         apply(t) {
           const now = gag.render(t - l, E);
           if (now !== last) main.innerHTML = last = now;
+          // (Scenery the gag moves without drawing it: Clearwater's aspen shivers when the ball pings off it.)
+          opts.frame?.(t - l);
           if (over) {
             const o = gag.over!(t - l, E);
             if (o !== lastOver) over.innerHTML = lastOver = o;
@@ -309,7 +444,7 @@ export function sceneDef(name: string, key: string, geom: () => SceneGeom | null
           }
         },
         ...(anchor && said ? { bubble: { from: l + said.from, to: l + said.to, text: opts.line!, at: () => toScreen(g, mouth!(said.from, E).x, mouth!(said.from, E).y), who: () => anchor } } : {}),
-        done: () => opts.prop?.show(true),
+        done: () => { opts.prop?.show(true); opts.reset?.(); },
       };
     },
   };

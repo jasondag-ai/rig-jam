@@ -291,3 +291,172 @@ describe('the four Bakken gags (ported: wave3.ts) and the standard Bakken scene'
     for (const [k, t] of [['tumbleweed', 7.4], ['pdogs', 7.4], ['bale', 5.4], ['cloud', 9.0]] as const) expect(wave3Still(k, t, [0, 0, 100, 80]).length).toBeGreaterThan(1500);
   });
 });
+
+// ---------- Clearwater (the Big Pad): the standard scene and the golf pair ----------
+import { CW_ASPEN, CW_BUSHES, CW_FIREWEED, CW_SCENE, CW_SIGN_AT, CW_TREES, clearGround, clearScene } from './scene-stage.ts';
+import { CW } from './wave3.ts';
+import { SHARES } from './gag-triggers.ts';
+
+describe('Clearwater: the standard scene', () => {
+  // The Big Pad's bottom strip at 390 x 844 and at 375 x 812.
+  const strips: [number, { top: number; bottom: number }][] = [[390, { top: 582, bottom: 705 }], [375, { top: 558, bottom: 673 }]];
+
+  it('its strip runs lower than the others (the puddle lies in the front lane), on the same walking lane', () => {
+    expect(CW_SCENE.floor).toBeGreaterThan(SCENE.floor);
+    expect(CW_SCENE.ground).toBe(SCENE.ground);
+    for (const [w, strip] of strips) {
+      const g = sceneGeom(w, strip, CW_SCENE);
+      expect(g.fits).toBe(true);
+      expect(g.s).toBeGreaterThan(0.7);
+      // The world stands on the strip's floor and its top is the berm's foot.
+      expect(toScreen(g, 0, CW_SCENE.floor).y).toBeCloseTo(strip.bottom, 5);
+      expect(g.top).toBeCloseTo(CW_SCENE.top, 5);
+      // The puddle is whole inside the strip; so is the mat stack; so is the gold aspen (its crown is not cut at the berm).
+      expect(toScreen(g, 0, CW.PUD.y + 8).y).toBeLessThanOrEqual(strip.bottom);
+      expect(toScreen(g, CW.MAT_BOX.x + CW.MAT_BOX.w, 0).x).toBeLessThanOrEqual(w);
+      expect(toScreen(g, 0, CW_ASPEN.base - CW_ASPEN.h).y).toBeGreaterThanOrEqual(strip.top);
+    }
+    // An iPhone SE's strip under the Big Pad is too short for the gags.
+    expect(sceneGeom(375, { top: 486, bottom: 540 }, CW_SCENE).fits).toBe(false);
+  });
+
+  it('the ground: lichen bands, the sandy two-track run on to both screen edges, the mud puddle, tufts kept off the lane', () => {
+    const g = sceneGeom(390, strips[0][1], CW_SCENE);
+    const ground = clearGround(g);
+    expect(g.E).toBeGreaterThan(20);
+    expect(ground).toContain('fill="#d4c28c"'); // the lane's sand
+    expect(ground).toContain(`M${(g.left - 2).toFixed(2).replace(/\.?0+$/, '')}`); // from past the left edge
+    expect(ground).toContain('fill="#6b5a3a"'); // the puddle
+    const tufts = [...ground.matchAll(/<path d="M(-?[\d.]+) (-?[\d.]+) l2 -6/g)].map((m) => +m[2]);
+    expect(tufts.length).toBeGreaterThan(12);
+    for (const y of tufts) expect(y <= 132 || y >= 171).toBe(true);
+    // Always the same ground for the same screen.
+    expect(clearGround(g)).toBe(ground);
+  });
+
+  it('what stands behind the lane: four spruce and the gold aspen in the board\'s own drawings, fireweed, red blueberry bushes; all behind the walking lane', () => {
+    const scene = clearScene('fall');
+    expect(CW_TREES.every((t) => t.species === 'spruce')).toBe(true);
+    expect(CW_TREES).toHaveLength(4);
+    expect(scene.match(/<svg /g)).toHaveLength(5);
+    expect(scene).toContain('class="cw-aspen"');
+    expect(scene).toContain('#c8417e'); // fireweed
+    expect(scene).toContain('#9b4a3a'); // blueberry leaves in fall
+    for (const base of [...CW_TREES.map((t) => t.base), CW_ASPEN.base, ...CW_FIREWEED.map((f) => f[1]), ...CW_BUSHES.map((b) => b[1])]) expect(base).toBeLessThan(CW.MATS_FOOT);
+    // The aspen is where the reference has it (the ball pings off its trunk at x 227, y 96).
+    expect(CW_ASPEN.x).toBe(222);
+    expect(CW_ASPEN.base).toBe(132);
+    expect(CW_ASPEN.base - CW_ASPEN.h).toBeLessThan(96 - 10);
+    // Nothing stands where the biffy does (the screen's left corner), nor where Moe swings (x 120).
+    for (const t of CW_TREES) expect(t.x).toBeGreaterThan(55);
+  });
+
+  it('the rig mat stack: three by three in end view at the lane\'s right end, just behind the lane (so everybody passes in front of it)', () => {
+    const mats = CW.mats();
+    expect(mats.match(/<rect /g)).toHaveLength(9);
+    expect(CW.MAT_BOX.x).toBe(318);
+    expect(CW.MAT_BOX.x + CW.MAT_BOX.w).toBeLessThanOrEqual(390);
+    expect(CW.MATS_FOOT).toBeLessThan(SCENE.ground);
+    expect(SCENE.ground - CW.MATS_FOOT).toBeLessThanOrEqual(4);
+    // A tap target of 44 px or more on a phone.
+    const g = sceneGeom(390, strips[0][1], CW_SCENE), b = tapBox(g, CW.MAT_BOX);
+    expect(b.right - b.left).toBeGreaterThan(43.99);
+    expect(b.bottom - b.top).toBeGreaterThan(43.99);
+    // The lease sign stands up by the berm over the stack, clear of Moe (x 120) and the bearded worker (x 160).
+    expect(CW_SIGN_AT).toBeGreaterThan(290);
+  });
+});
+
+describe('Clearwater: Three Swings and Out Cold, as the reference has them', () => {
+  const golf = gags.golf as Gag & { wx: (t: number) => number; ball: (t: number) => unknown };
+  const cold = gags.cold as Gag & { mx: (t: number) => number; bx: (t: number) => number; aspen: (t: number) => number; mouth: (t: number) => { x: number; y: number }; line: { from: number; to: number } };
+
+  it('the reference\'s beats, at the reference\'s times', () => {
+    expect(golf.dur).toBe(12.0);
+    expect(golf.still).toBe(6.7);
+    expect(golf.beats.map((b) => b[0])).toEqual([0, 2.0, 2.7, 3.3, 4.05, 4.6, 5.4, 5.9, 7.3, 7.6, 8.0, 8.3, 9.1, 9.6, 9.9]);
+    expect(golf.beats[7][2]).toBe('Swing three. The shovel bites the dirt. BOING.');
+    expect(cold.dur).toBe(13.2);
+    expect(cold.still).toBe(8.4);
+    expect(cold.beats.map((b) => b[0])).toEqual([0, 2.0, 3.4, 4.45, 5.05, 5.35, 5.8, 6.0, 6.6, 7.4, 9.0, 9.5, 10.3, 10.85]);
+    expect(cold.beats[13][2]).toBe('Drags him off, ankles in hand. Moe gives a dazed thumbs up.');
+    for (const g of [golf, cold]) expect(new Set(g.beats.map((b) => b[1])).size).toBe(g.beats.length);
+  });
+
+  it('everybody is where the reference puts them', () => {
+    // Moe: in from the left to x 120, and (Three Swings) off the way he came.
+    for (const x of [golf.wx, cold.mx]) {
+      expect(x.call(x === golf.wx ? golf : cold, 0)).toBe(-40);
+      expect(x.call(x === golf.wx ? golf : cold, 2.0)).toBe(120);
+      expect(x.call(x === golf.wx ? golf : cold, 5)).toBe(120);
+    }
+    expect(golf.wx(11.8)).toBeCloseTo(-45, 6);
+    // The bearded worker: in from the right to x 160, off the right dragging Moe.
+    expect(cold.bx(7.4)).toBe(430);
+    expect(cold.bx(9.0)).toBe(160);
+    expect(cold.bx(10)).toBe(160);
+    expect(cold.bx(13.0)).toBeCloseTo(470, 6);
+    // The ball: teed at x 134, off the rig mats, off the aspen, and back onto his hard hat.
+    expect(golf.ball(1.9)).toBeNull();
+    expect(golf.ball(5)).toEqual([134, 147.4]);
+    expect(cold.aspen(5.0)).toBe(0);
+    expect(Math.abs(cold.aspen(5.1))).toBeGreaterThan(0.5);
+    expect(cold.aspen(5.95)).toBe(0);
+    // "Fore." while he looks down at Moe, said beside his face.
+    expect(cold.line).toEqual({ from: 9.05, to: 9.8 });
+    expect(cold.mouth(9.2)).toEqual({ x: 152, y: 80 });
+  });
+
+  it('nobody pops in or out on a wider screen: they come from past its edge at the speed the reference has there, and are gone before the end', () => {
+    for (const E of [0, 49, 120]) {
+      // At the very start Moe is past the left edge, and walks on at the reference's speed (160 units a second there).
+      expect(golf.wx(-golf.lead(E))).toBeCloseTo(-40 - E, 6);
+      expect(golf.wx(-0.5) - golf.wx(-1)).toBeCloseTo(80, 6);
+      expect(cold.mx(-cold.lead(E))).toBeCloseTo(-40 - E, 6);
+      // At the very end of Three Swings he is past the left edge again.
+      expect(golf.wx(golf.dur + golf.tail(E))).toBeLessThanOrEqual(-45 - E + 1e-6);
+      // The bearded worker comes from past the right edge, and by the end has dragged Moe's head and its dust past it.
+      expect(cold.bx(7.4 - E / 337.5)).toBeCloseTo(430 + E, 6);
+      expect(cold.bx(cold.dur + cold.tail(E)) - 12 - 51 - 36).toBeGreaterThanOrEqual(390 + E - 30);
+      // The first frame and the last draw nobody on the screen (0 to 390, and E beyond each side): the worker's own place
+      // (the first thing drawn) is past the edge, or nothing is drawn at all.
+      for (const [g, t] of [[golf, -golf.lead(E)], [golf, golf.dur + golf.tail(E)], [cold, -cold.lead(E)]] as [Gag, number][]) {
+        const at = g.render(t, E).match(/translate\((-?[\d.]+) /);
+        if (at) expect(+at[1] < -20 - E || +at[1] > 410 + E, `${g.name} at ${t.toFixed(2)} draws at x ${at[1]}`).toBe(true);
+      }
+    }
+  });
+
+  it('as timelines on the Big Pad\'s strip: the clock starts `lead` early and every beat keeps the reference\'s time', () => {
+    const g = sceneGeom(390, { top: 582, bottom: 705 }, CW_SCENE);
+    for (const [id, gag] of [['golf', golf], ['cold', cold]] as [string, Gag][]) {
+      const def = sceneDef(id, id, () => g);
+      const lead = gag.lead(g.E);
+      expect(lead).toBeGreaterThan(0.1);
+      expect(def.beats[0][0]).toBe(0);
+      gag.beats.forEach((b, i) => { if (i) expect(def.beats[i][0]).toBeCloseTo(b[0] + lead, 6); });
+      expect(def.end).toBeCloseTo(lead + gag.dur + gag.tail(g.E), 6);
+    }
+  });
+
+  it('a stacked pair: one trigger, Out Cold only once Three Swings has been seen; previews, log cards with stills and plain hints', () => {
+    expect(GAG_TRIGGERS.golf).toEqual({ region: 'clearwater', matTaps: 3 });
+    expect(GAG_TRIGGERS.cold).toEqual({ region: 'clearwater', sameAs: 'golf', onceSeen: 'swings' });
+    expect(PREVIEWS.golf).toEqual({ gag: 'golf', region: 'clearwater', level: 1 });
+    expect(PREVIEWS.cold.gag).toBe('cold');
+    // They never play together: both need Moe and the rig mats.
+    expect(SHARES.golf.some((x) => SHARES.cold.includes(x))).toBe(true);
+    const swings = LOG_ENTRIES.find((e) => e.id === 'swings')!, out = LOG_ENTRIES.find((e) => e.id === 'cold')!;
+    expect(swings.name).toBe('Three Swings');
+    expect(out.name).toBe('Out Cold');
+    expect(LOG_ENTRIES.indexOf(out)).toBe(LOG_ENTRIES.indexOf(swings) + 1);
+    expect(swings.hint).toBe('In Clearwater, tap the stack of rig mats three times.');
+    expect(out.hint).toBe('In Clearwater, tap the rig mats three times again, after Three Swings.');
+    for (const [key, t] of [['golf', 6.7], ['cold', 8.4]] as [string, number][]) {
+      const still = wave3Still(key, t, [60, 70, 170, 84]);
+      expect(still).toContain('egg-still');
+      expect(still).toContain('#e8862e'); // Moe's orange coveralls
+    }
+    expect(wave3Still('cold', 8.4, [60, 70, 170, 84])).toContain('#7a4f2e'); // the bearded worker's beard
+  });
+});
