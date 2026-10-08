@@ -9,7 +9,7 @@ import { biffyBox } from './strip-gags.ts';
 import type { BubbleSide } from './bubble.ts';
 import { SIZE, type GameState } from '../engine/index.ts';
 import { MOOSE, MOOSE_FRAC, MOOSE_LINE, M_END, T_STARE, mBeatAt, mPose, mooseColumn, mooseFrame, snowChunks } from './moose.ts';
-import { CANCEL, T_ASLEEP, T_DOZE, WORKER, W_END, cancelPose, wBeatAt, wPose, workerFrame, workerOff, workerSpot, type WorkerPose } from './worker.ts';
+import { CANCEL, T_ASLEEP, T_DOZE, MOE_WORKER, W_END, cancelPose, wBeatAt, wPose, workerFrame, workerOff, workerSpot, type WorkerPose } from './worker.ts';
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -77,7 +77,7 @@ export class WorkerGag {
     const layer = document.createElement('div');
     layer.className = 'scene-layer puppet-layer worker-layer';
     layer.setAttribute('aria-hidden', 'true');
-    layer.innerHTML = `<svg class="pup worker" viewBox="0 0 120 120">${WORKER}</svg><div class="pup-z">z Z z</div>`;
+    layer.innerHTML = `<svg class="pup worker" viewBox="0 0 120 120">${MOE_WORKER}</svg><div class="pup-z">z Z z</div>`;
     (this.host.mount ?? ((el: HTMLElement) => this.host.screen.append(el)))(layer);
     const svg = layer.querySelector<SVGSVGElement>('svg.pup')!;
     Object.assign(svg.style, { width: `${spot.w}px`, height: `${spot.w}px`, left: `${spot.x - 0.5 * spot.w}px`, top: `${spot.y - 0.9 * spot.w}px` });

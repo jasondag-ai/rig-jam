@@ -10,7 +10,7 @@
 // the empty riser, exactly as it began. strip-gags.ts puts it on screen.
 /* eslint-disable */
 import { addEl, makePup, place, type Pup } from './puppet-stage.ts';
-import { WORKER, WORKER_FRAC } from './worker.ts';
+import { WORKER, WORKER_FRAC, asMoe } from './worker.ts';
 const O = '#2b1e16';
 const ease = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
 const clamp = (x: number, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -20,6 +20,8 @@ const RED='#c8352b', RED2='#a3281f', HAT='#f2c230', HAT2='#fde27a';
 // The worker's build alone (worker.ts carries his pail and his long reach in front of it).
 const BUILD = WORKER.slice(WORKER.indexOf('<g class="flip">'));
 
+/* the one who licks the pipe is Slow Moe (STANDING_RULES 11); his buddy keeps the plain build */
+const STUCK = asMoe(BUILD);
 /* buddy: same build, blue coveralls, orange hat, clean shaven */
 export const BUDDY = BUILD.replaceAll(RED2, '#3d6797').replaceAll(RED, '#4f7fb0').replaceAll(HAT2, '#ffc08a').replaceAll(HAT, '#f08a2a')
   .replace(/<path d="M48 39 Q50 54 64 54[^>]*>/, '<path d="M50 44 Q54 52 64 53 Q74 53 77 45" stroke="#d9a07a" stroke-width="2" fill="none" stroke-linecap="round"/>');
@@ -157,7 +159,7 @@ export const riserPup = (host: HTMLElement, spot: { x: number; y: number }, scal
 export function tongueScene(layer: HTMLElement, riser: Pup, scale: number, flashBox: { top: number; height: number }): any {
   const z = (p: Pup, n: number) => ((p.svg.style.zIndex = String(n)), p);
   const sc: any = { riser };
-  sc.worker = z(makePup(layer, BUILD, { vw: 120, vh: 120, ax: 60, ay: 108, frac: WORKER_FRAC * scale, spot: { ...riser.spot } }), 5);
+  sc.worker = z(makePup(layer, STUCK, { vw: 120, vh: 120, ax: 60, ay: 108, frac: WORKER_FRAC * scale, spot: { ...riser.spot } }), 5);
   sc.buddy = z(makePup(layer, BUDDY, { vw: 120, vh: 120, ax: 60, ay: 108, frac: WORKER_FRAC * scale, spot: { ...riser.spot } }), 6);
   sc.buddy.q('.armF .fore').insertAdjacentHTML('afterbegin', PHONE + THERMOS);
   sc.ov = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -209,7 +211,7 @@ export function tongueApply(sc: any, P: any, t: number): void {
 /** Wildlife Log card art: stuck to the pipe, eyes huge. Drawn into one picture (the riser shares his units). */
 export function tongueStill(): string {
   const host = document.createElement('div');
-  const w = makePup(host, BUILD, { vw: 120, vh: 120, ax: 60, ay: 108, frac: 1, spot: { x: 0, y: 0 } });
+  const w = makePup(host, STUCK, { vw: 120, vh: 120, ax: 60, ay: 108, frac: 1, spot: { x: 0, y: 0 } });
   const p = tonguePose(4.6).w;
   pupApply(w, { ...p, rot: 7, arF: -120, arB: -150 });
   // The riser stands STAND + 5 units to his right; the tongue runs from his mouth (leaning 7 degrees about 60,80) to the pipe.

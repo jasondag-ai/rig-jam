@@ -12,7 +12,7 @@
 /* eslint-disable */
 import { GOPHER, GOPHER_FRAC } from './near-miss.ts';
 import { addEl, makePup, place, type Pup } from './puppet-stage.ts';
-import { WORKER, WORKER_FRAC } from './worker.ts';
+import { MOE_WORKER, WORKER_FRAC } from './worker.ts';
 const O = '#2b1e16';
 const ease = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
 const clamp = (x: number, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -196,7 +196,7 @@ export function lunchScene(layer: HTMLElement, mound: { left: number; top: numbe
   sc.arm = zi(document.createElementNS('http://www.w3.org/2000/svg', 'svg'), 4); sc.arm.setAttribute('class', 'pup-overlay'); layer.appendChild(sc.arm);
   sc.lip = makePup(layer, LIP, { vw: MOUND_BOX.vw, vh: MOUND_BOX.vh, ax: 0, ay: 0, frac: mound.width / W, spot: { x: mound.left / W, y: mound.top / H } });
   zi(sc.lip.svg, 5);
-  sc.worker = makePup(layer, WORKER, { vw: 120, vh: 120, ax: 60, ay: 108, frac: WORKER_FRAC * scale, spot: { x: (sc.moundX - LUNCH_GAP * scale * W) / W, y: sc.groundY / H } });
+  sc.worker = makePup(layer, MOE_WORKER, { vw: 120, vh: 120, ax: 60, ay: 108, frac: WORKER_FRAC * scale, spot: { x: (sc.moundX - LUNCH_GAP * scale * W) / W, y: sc.groundY / H } });
   zi(sc.worker.svg, 6);
   for (const part of ['.pail', '.reach']) (sc.worker.q(part) as SVGElement).style.display = 'none';
   sc.worker.q('.armF .fore').insertAdjacentHTML('afterbegin', PHONE);

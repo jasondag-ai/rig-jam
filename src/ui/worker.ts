@@ -65,6 +65,22 @@ export const WORKER = `
 </g></g>`;
 
 
+/**
+ * SLOW MOE (STANDING_RULES 11; Jay, Oct 8): any worker who gets into trouble is Moe, the anti-hero. The SAME drawing
+ * and build as the worker (so every pose, joint and size holds), dressed as Moe: orange FR coveralls with the same
+ * reflective stripes, stubble where the beard was, droopy lids (a half lid over the eye, under the blinking one), his
+ * hard hat tipped back. The bearded worker in red stays the lucky one.
+ */
+export const MOE_SUIT = '#e8862e', MOE_SUIT2 = '#bf6418', MOE_STUBBLE = '#9c7656';
+export function asMoe(drawing: string): string {
+  return drawing.replaceAll(RED2, MOE_SUIT2).replaceAll(RED, MOE_SUIT).replaceAll('#e05a4e', '#f5a85c')
+    .replace(/<path d="M48 39 Q50 54 64 54[^>]*>/, `<path d="M49 41 Q52 53 64 53.5 Q76 53 78.5 42 Q72 47.5 64 47.5 Q56 47.5 49 41 Z" fill="${MOE_STUBBLE}" opacity=".55"/><path d="M54 47.5 h.1 M58.5 50 h.1 M63.5 51 h.1 M68.5 50.6 h.1 M73 48.6 h.1 M61 48.4 h.1 M66.5 48.6 h.1" stroke="${O}" stroke-width="1.4" stroke-linecap="round" opacity=".6"/>`)
+    .replace('<path class="lid"', `<path class="droop" d="M62.4 31.4 A7.6 7.6 0 0 1 77.6 31.4 Z" fill="${SKIN}" stroke="${O}" stroke-width="1.8" stroke-linejoin="round"/><path class="lid"`)
+    .replace(/<g class="hat">([\s\S]*?<rect x="42" y="24"[^>]*>)<\/g>/, '<g class="hat"><g transform="rotate(-10 63 27)">$1</g></g>');
+}
+/** The shared worker drawing as Slow Moe (pail and long reach included). */
+export const MOE_WORKER = asMoe(WORKER);
+
 /** When each beat starts (seconds), its name (`data-beat`), and what happens. */
 export const W_BEATS: [number, string, string][] = [
   [0, 'walk-in', 'Walks in from off screen, carrying his pail'],
@@ -302,10 +318,10 @@ export function workerSpot(screenW: number, strip: { top: number; bottom: number
   return { x, y, w, clearing: { x: 0, y: y - w * 0.95, width: x + w * 0.55, height: w * 0.95 + 4 } };
 }
 
-/** The worker as a still drawing in a pose (the Wildlife Log card: dozing on his pail). */
+/** The sleepy worker (Slow Moe) as a still drawing in a pose (the Wildlife Log card: dozing on his pail). */
 export function workerStill(t: number = T_DOZE): string {
   const f = workerFrame(wPose(t), -200);
-  let art = WORKER.replace('<g class="flip">', `<g class="flip" transform="${f.flip}">`).replace('<g class="pail">', `<g class="pail" transform="${f.pail}">`).replace('<g class="reach">', '<g class="reach" style="display:none">');
+  let art = MOE_WORKER.replace('<g class="flip">', `<g class="flip" transform="${f.flip}">`).replace('<g class="pail">', `<g class="pail" transform="${f.pail}">`).replace('<g class="reach">', '<g class="reach" style="display:none">');
   for (const [k, v] of Object.entries(f.parts)) art = art.replace(new RegExp(`<g class="${k}"[^>]*>`), `<g class="${k}" transform="${v}">`);
   art = art.replace('<g class="hat">', `<g class="hat" transform="${f.hat}">`)
     .replace(/(<path class="lid" d=")[^"]*"/, `$1${f.lid}"`).replace(/(<path class="mouth" d=")[^"]*"/, `$1${f.mouth}"`);
