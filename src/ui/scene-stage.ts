@@ -19,6 +19,11 @@ import { BALE_AT, CW, MUSKEG, WAVE3, baleAtRest, rng, tuft } from './wave3.ts';
 export const SCENE = { w: 390, top: 30, floor: 168, ground: 150 } as const;
 const WAVE3_SCENE = SCENE;
 /**
+ * Mannville's strip is a little tighter than the reference's (Jay, Oct 8: characters stay readable in Safari): it
+ * starts at y 44, just over the lane aspen's crown (the tallest thing in it), not at the reference's berm foot (y 30).
+ */
+export const MANN_SCENE = { w: 390, top: 44, floor: 168, ground: 150 } as const;
+/**
  * Clearwater's strip: from y 47 (just over its tallest tree) to y 170 (just under the sandy two-track, whose near rut
  * holds the mud puddle and is the front lane). 123 units tall where the reference's own strip is 154: Jay asked for
  * everything a quarter bigger on a phone (Oct 8), taking the empty band under the lane first.
@@ -147,12 +152,12 @@ export class MannProp {
 
   /** How the scene lies on the screen now. */
   geom(): SceneGeom {
-    return (this.g ??= sceneGeom(this.host.screen.clientWidth, this.host.strip()));
+    return (this.g ??= sceneGeom(this.host.screen.clientWidth, this.host.strip(), MANN_SCENE));
   }
 
   /** Call when the screen changes size. */
   layout(): void {
-    const g = (this.g = sceneGeom(this.host.screen.clientWidth, this.host.strip()));
+    const g = (this.g = sceneGeom(this.host.screen.clientWidth, this.host.strip(), MANN_SCENE));
     for (const el of [this.layer, this.front]) place(el.firstElementChild as SVGSVGElement, g);
     // DEPTH: the back trees stand behind the walking lane (their bases are higher up the screen),
     // the lane aspen in front of it (its base is the strip's floor).
@@ -265,14 +270,12 @@ export const CW_ASPEN = { species: 'aspen' as Species, x: CW.ASP.x, base: CW.ASP
 // 352 here, between the blueberry bush and the last spruce, over the rig mats, where nobody stops.)
 export const CW_FIREWEED: [number, number, number][] = [[122, 126, 1], [352, 124, 0.9]];
 export const CW_BUSHES: [number, number, number][] = [[154, 126, 0.72], [340, 122, 0.66]];
+/** How much strip a wave 3 scene wants on a screen `screenW` wide to stand at its full size (px). */
+export const sceneStripWanted = (screenW: number, scene: { top: number; floor: number } = SCENE): number => Math.ceil((scene.floor - scene.top) * Math.min(1, screenW / SCENE.w));
 /** How much strip the scene wants on a screen `screenW` wide to stand at its full size (px): the Big Pad gives its strip that first (GameView.fit). */
 export const clearStripWanted = (screenW: number): number => Math.ceil((CW_SCENE.floor - CW_SCENE.top) * Math.min(1, screenW / CW_SCENE.w));
 /** The mud puddle's box in the world (the Fresh Wash gag's). */
 export const CW_PUDDLE_BOX = { x: CW.PUD.x - 36, y: CW.PUD.y - 7, w: 72, h: 14 };
-/** Where the lease sign stands on a Clearwater level, in the world: up by the berm over the blueberry bush and the rig mats and clear of where Moe and the bearded worker stand. */
-export const CW_SIGN_AT = 330;
-/** And the lowest its foot may be, in the world: ten units behind the back lane (y 138). */
-export const CW_SIGN_FOOT = 128;
 
 /** Clearwater's ground, flat under everything: lichen bands, the sandy two-track, the puddle, tufts. */
 export function clearGround(g: SceneGeom): string {
@@ -348,16 +351,6 @@ export class ClearProp {
     this.ground.firstElementChild!.innerHTML = clearGround(g);
     this.layer.firstElementChild!.innerHTML = clearScene(this.season);
     this.mats.firstElementChild!.innerHTML = `<g class="cw-mats">${CW.mats()}</g>`;
-  }
-
-  /** The lowest the lease sign may stand (screen px from the screen's top): clearly behind the back lane, where Dinner Bell's runners pass in front of it. */
-  signLowest(): number {
-    return toScreen(this.geom(), 0, CW_SIGN_FOOT).y;
-  }
-  /** Where the lease sign stands on this screen (a share of its width). */
-  signX(): number {
-    const g = this.geom();
-    return g.screenW > 0 ? toScreen(g, CW_SIGN_AT, 0).x / g.screenW : 0.74;
   }
 
   /** Is a tap at (x, y) on the rig mat stack? (A tap target of at least 44 px.) */
@@ -528,7 +521,10 @@ export function skyGeom(screenW: number, sky: { top: number; height: number }): 
  */
 export function auroraDef(host: EggHost, night: () => boolean, mountSky: (el: HTMLElement) => void): TimelineDef {
   const gag = gagOf('aurora') as Wave3 & { lights: (t: number, x0: number, x1: number) => string };
-  const geom = () => skyGeom(host.screen.clientWidth, host.sky!());
+  // THE LIGHTS RUN ON BEHIND THE HUD: the aurora's sky is measured from the screen's top, not from under the HUD's row
+  // (the HUD is lettering over open sky). So on a short screen, where the lease has moved up for its strip, there is
+  // still sky enough for the lights, and the coyote sits on the ridge in the band that is left under the HUD.
+  const geom = () => { const sky = host.sky!(); return skyGeom(host.screen.clientWidth, { top: 0, height: sky.top + sky.height }); };
   return {
     name: 'aurora',
     get beats() {

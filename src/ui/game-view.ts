@@ -3,7 +3,7 @@ import { SolverLimitError, canUndo, getMoveRange, isWon, newGame, nextMove, tryM
 import { seedFrom } from '../engine/rng.ts';
 import { BoardView } from './board-view.ts';
 import { sceneryHtml } from './scenery.ts';
-import { applyTheme, type Theme } from './themes.ts';
+import { applyTheme, type Theme, type ThemeId } from './themes.ts';
 import { WITNESS_REACH, nearestWitness } from './bubble.ts';
 import { ghostFinger } from './tutorial.ts';
 import { NUDGE_LINE, nightComes, nightForced, nightRgba, nightSky } from './night.ts';
@@ -23,10 +23,10 @@ import { applyCamo, loadLog, record, saveLog, sightingToast, type Sighting } fro
 import { bearAlways, bearNever, eggOff, gagTest, lunchAlways, lunchNever, rollPinned, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
 import { BackAndForth, GAG_TRIGGERS, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump, type GagId } from './gag-triggers.ts';
-import { BakkenProp, ClearProp, clearStripWanted, MANN_SIGN_X, MannProp, auroraDef, sceneDef } from './scene-stage.ts';
+import { BakkenProp, ClearProp, MANN_SCENE, SCENE, SCENE_MIN, clearStripWanted, sceneStripWanted, MANN_SIGN_X, MannProp, auroraDef, sceneDef } from './scene-stage.ts';
 import { BALE_LINE, BELL_LINES, FORE_LINE, PEA_LINES } from './lines.ts';
 import { WAVE3 } from './wave3.ts';
-import { setSignLowest, setSignX, stageBox, WINTER_SIGN_X, BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, SignProp, deerDef, signLane, surveyorDef, touristsDef, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
+import { setSignX, stageBox, stripWanted, WINTER_SIGN_X, BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, SignProp, deerDef, signLane, surveyorDef, touristsDef, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
 import { companyLine, tierFor } from './company.ts';
@@ -57,7 +57,7 @@ const BANNER_TEXT =
 const TREE_RISE = 70;
 const MOON_ROOM = 40;
 /** The least sky band (px, HUD's foot to the board) in which Mannville's moon is always shown: about what Aurora Howl needs. */
-const AURORA_SKY = 62;
+const AURORA_SKY = 40;
 /** The hint button's count: up to 9, then "9+" (it has room for one figure). */
 export const hintCountText = (hints: number): string => (hints > 9 ? '9+' : String(Math.max(0, hints)));
 
@@ -305,7 +305,6 @@ export class GameView {
       // Clearwater: its own standard scene (the sandy two-track, the gold aspen, the rig mat stack, the puddle) and the golf pair.
       const inClear = this.regionId === GAG_TRIGGERS.golf.region || BIG_PAD_GAGS.includes(this.eggForced as GagId);
       setSignX(inMann ? MANN_SIGN_X : theme.season === 'winter' ? WINTER_SIGN_X : undefined);
-      setSignLowest();
       if (inClear) this.clear = new ClearProp(egg, theme.season);
       if (inMann) this.mann = new MannProp(egg, theme.season);
       // Bakken: the round bale, in the same spot of every level's bottom strip, and its four gags.
@@ -334,11 +333,15 @@ export class GameView {
       }
       // The lease sign: permanent scenery on every level, and three gags at it (the deer and the
       // tourists keep away from winter levels).
-      this.sign = new SignProp(egg);
+      // CLEARWATER HAS NO LEASE SIGN (Jay, Oct 8: no dead props): its visitors would have to work among the scene's own
+      // spruce, fireweed and rig mats, with no clean lane to it, so the sign is not stood there at all.
       const signOn = (name: 'surveyor' | 'deer' | 'tourists') => !eggOff(name) && (this.eggForced === name || !(GAG_TRIGGERS[name] as { notThemes?: readonly string[] }).notThemes?.includes(theme.id));
-      if (signOn('surveyor')) this.strips.surveyor = new TimelineGag(egg, surveyorDef(this.sign));
-      if (signOn('deer')) this.strips.deer = new TimelineGag(egg, deerDef(this.sign));
-      if (signOn('tourists')) this.strips.tourists = new TimelineGag(egg, touristsDef(this.sign));
+      if (!inClear) {
+        const sign = (this.sign = new SignProp(egg));
+        if (signOn('surveyor')) this.strips.surveyor = new TimelineGag(egg, surveyorDef(sign));
+        if (signOn('deer')) this.strips.deer = new TimelineGag(egg, deerDef(sign));
+        if (signOn('tourists')) this.strips.tourists = new TimelineGag(egg, touristsDef(sign));
+      }
       // Montney has the cow grazing in the strip; tap her and the bull comes.
       if (this.regionId === GAG_TRIGGERS.bull.region || this.eggForced === 'bull') {
         this.cow = new CowProp(egg);
@@ -453,7 +456,22 @@ export class GameView {
             }
           }
           // The lease sign, tapped: the back scratcher.
-          if (this.sign?.hit(e.clientX, e.clientY) && ++this.signTaps >= GAG_TRIGGERS.deer.signTaps) this.fire('deer');
+          if (this.sign?.hit(e.clientX, e.clientY)) {
+            // (Where no deer comes for a tap, in winter or once he has been, the sign gives a small knock: no dead props.)
+            if (this.strips.deer && !this.eggDone.has('deer') && !this.eggsOn.has('deer')) { if (++this.signTaps >= GAG_TRIGGERS.deer.signTaps) this.fire('deer'); }
+            else if (!this.eggsOn.has('surveyor') && !this.eggsOn.has('tourists') && !this.eggsOn.has('deer')) this.knock(this.sign.layer.querySelector('svg'));
+          }
+          // NO DEAD PROPS (Jay, Oct 8): the biffy, the gopher's mound and the round bale have no tap of their own (their
+          // sightings come from bumps, Hint and near misses), so a tap gives each a small knock to show it is alive.
+          {
+            const within = (el: Element | null | undefined) => { const r = el?.getBoundingClientRect(); return !!r && r.width > 0 && e.clientX >= r.left - 4 && e.clientX <= r.right + 4 && e.clientY >= r.top - 4 && e.clientY <= r.bottom + 4; };
+            const biffy = this.biffy?.layer.querySelector('svg');
+            if (within(biffy) && !this.eggsOn.has('biffyA') && !this.eggsOn.has('biffyB')) this.knock(biffy!);
+            const mound = this.el.querySelector('[data-anchor="mound"]');
+            if (within(mound) && !this.eggsOn.has('nearMiss') && !this.eggsOn.has('gopherLunch')) this.knock(mound!);
+            const bale = this.bakken?.layer.querySelector('svg > *') ?? null;
+            if (within(bale) && !this.eggsOn.has('bale')) this.knock(this.bakken!.layer.querySelector('svg')!);
+          }
           if (!this.strips.marshmallow) return;
           const onFlare = [...board.el.querySelectorAll('.obstacle.flare')].some((ob) => {
             const r = (ob.querySelector('svg') ?? ob).getBoundingClientRect();
@@ -572,19 +590,35 @@ export class GameView {
   }
 
   /**
-   * THE BIG PAD GIVES ITS BOTTOM STRIP THE SPARE HEIGHT FIRST (Jay, Oct 8: in Safari with its toolbars showing the lease
-   * sat centred between a sky band and a strip of 55 px each, and Clearwater's characters were tiny). The lease is moved
-   * UP until the strip is as tall as its scene wants at full size, or until `SKY_LEAST` px of sky are left under the
-   * HUD; never down. It stays inside the stage, so it never covers the HUD, the tip line or the buttons.
+   * THE BOTTOM STRIP GETS THE SPARE HEIGHT FIRST, IN EVERY REGION (Jay, Oct 8; first on the Big Pad). In Safari with
+   * its toolbars showing the lease sat centred between a sky band and a strip of about 55 px each: too short for
+   * Mannville's and Bakken's scenes to play at all, and the rest played small. The lease is moved UP until the strip is
+   * as tall as the region's scene wants at full size (`stripWanted`), leaving the sky this region's own sky sightings
+   * need (`SKY_WANT`: the moose behind the top berm, the aurora, the cloud's sky to tap); never down, and never while a
+   * level is played (only when the screen is laid out). It stays inside the stage, so it never covers the HUD, the tip
+   * line or the buttons. On a tall screen (a home-screen app) there is room for both and nothing moves.
    */
-  private liftBigPad(stage: DOMRect): void {
+  private liftPad(stage: DOMRect): void {
     const el = this.board.el;
-    if (!this.bigPad || !this.clear) return void (el.style.marginBottom = '');
     const pad = parseFloat(getComputedStyle(this.stage).paddingTop) || 0;
     const spare = stage.height - 2 * pad - el.offsetHeight;
-    const below = Math.max(spare / 2, Math.min(spare - SKY_LEAST, clearStripWanted(stage.width) - pad));
+    const k = Math.min(1, stage.width / 390);
+    const want = (this.clear ? clearStripWanted(stage.width) : this.mann || this.bakken ? sceneStripWanted(stage.width, this.mann ? MANN_SCENE : SCENE) : stripWanted(stage.width)) - pad;
+    // The sky keeps what its sightings need, unless that would leave the strip too short for its own to play at all.
+    const least = (this.clear ? clearStripWanted(stage.width) * SCENE_MIN : this.mann || this.bakken ? sceneStripWanted(stage.width, this.mann ? MANN_SCENE : SCENE) * (SCENE_MIN + 0.1) : 0) - pad;
+    const sky = Math.max(SKY_LEAST, Math.min(SKY_WANT[this.theme.id] * k - pad, spare - least));
+    const below = Math.max(spare / 2, Math.min(spare - sky, want));
     // (Centred in the stage, a bottom margin of m moves it up by m / 2.)
     el.style.marginBottom = `${Math.max(0, Math.round(2 * below - spare))}px`;
+  }
+
+  /** A prop tapped that has no sighting to give for it: a small knock (none with reduced motion). */
+  private knock(el: Element | null | undefined): void {
+    if (!el) return;
+    el.classList.remove('prop-knock');
+    void el.getBoundingClientRect();
+    el.classList.add('prop-knock');
+    (el as HTMLElement | SVGElement).dataset.knocked = String(Number((el as HTMLElement).dataset.knocked ?? 0) + 1);
   }
 
   /** Call after the element is in the document and on every resize. */
@@ -594,7 +628,7 @@ export class GameView {
     if (!this.noteEl.style.minHeight && this.noteEl.textContent) requestAnimationFrame(() => { if (!this.noteEl.style.minHeight && this.noteEl.textContent && this.noteEl.offsetHeight > 0) this.noteEl.style.minHeight = `${this.noteEl.offsetHeight}px`; });
     const r = this.stage.getBoundingClientRect();
     this.board.resize(r.width, r.height);
-    this.liftBigPad(r);
+    this.liftPad(r);
     // Sky meets the ground just above the board; trees stand around it.
     const screen = this.el.getBoundingClientRect();
     const b = this.board.el.getBoundingClientRect();
@@ -610,7 +644,8 @@ export class GameView {
       // Mannville's moon can be tapped (Aurora Howl), so it is always there where the sky band has
       // room for the gag, even low over the treetops under a tall HUD.
       if (this.strips.aurora && box.y - hudBottom >= AURORA_SKY) gap = Math.max(gap, MOON_ROOM);
-      this.nightShade.innerHTML = nightSky(screen.width, Math.round(hudBottom + Math.max(0, gap) * 0.5 + 22), gap >= MOON_ROOM);
+      // (The moon never sinks behind the lease: where the sky band is short it hangs just over the berm.)
+      this.nightShade.innerHTML = nightSky(screen.width, Math.round(Math.min(box.y - 18, hudBottom + Math.max(0, gap) * 0.5 + 22)), gap >= MOON_ROOM);
     }
     // Kept clear of trees: the sleepy worker's spot by the left edge, and the biffy's.
     const strip = { top: box.y + box.height, bottom: controlsTop };
@@ -620,7 +655,9 @@ export class GameView {
     this.mann?.layout();
     this.clear?.layout();
     // (Clearwater's sign has its place in the scene's own world, wherever that lies on this screen.)
-    if (this.clear) { setSignX(this.clear.signX()); setSignLowest(this.clear.signLowest()); }
+    // MONTNEY ON A SHORT STRIP: the sign stands LEFT of the stage (where Duvernay's does), not beside the cow. On a tall
+    // strip its visitors stand well behind and above her; on a short one the rows close up and she would hide them.
+    if (this.cow) setSignX(controlsTop - (box.y + box.height) < SHORT_STRIP * Math.min(1, screen.width / 390) ? WINTER_SIGN_X : undefined);
     this.bakken?.layout();
     this.biffy?.layout();
     if (!this.eggsOn.has('surveyor') && !this.eggsOn.has('deer') && !this.eggsOn.has('tourists')) this.sign?.layout();
@@ -1004,8 +1041,13 @@ export class GameView {
 
   private onHint(): void {
     if (isWon(this.state)) return;
-    // Gopher lunch (Cardium): any press of Hint may bring the worker in with his sandwich.
+    this.hintPressed();
+    // Gopher lunch (Cardium): any press of Hint may bring the worker in with his sandwich. AFTER the hint's own
+    // message is up: a message of two lines takes its room first (`note`), so he is placed for the lease as it stands.
     if (this.strips.gopherLunch && !this.eggDone.has('gopherLunch') && !lunchNever() && lunchComes(loadProgress().demo || lunchAlways())) this.fire('gopherLunch');
+  }
+
+  private hintPressed(): void {
     if (this.hintStep === 1 && this.hint) {
       const range = getMoveRange(this.state, this.hint.id);
       this.board.showHintTarget(this.hint, this.state, range?.exitDelta === this.hint.delta);
@@ -1049,8 +1091,16 @@ export class GameView {
   /** A short message above the buttons. Non-sticky ones fade back to the level tip. */
   private note(text: string, sticky = false): void {
     clearTimeout(this.noteTimer);
+    const was = this.noteEl.offsetHeight;
     this.noteEl.textContent = text;
     if (!sticky) this.noteTimer = window.setTimeout(() => this.showLevelHint(), NOTE_MS);
+    // A message taller than the tip line's room takes that room ONCE, at once, and keeps it for the level (the
+    // lease is refitted here and now, never a frame later under a gag that has just been placed, and never back).
+    const h = this.noteEl.offsetHeight;
+    if (h > was + 0.5) {
+      this.noteEl.style.minHeight = `${h}px`;
+      if (this.el.isConnected) this.fit();
+    }
   }
 
   private showLevelHint(): void {
@@ -1062,8 +1112,9 @@ export class GameView {
     // later: a gag set off by that same drag (a bump, the tumbleweed, the tourists) was placed for
     // the old layout and played its whole run a line too high. Now nothing moves when the tip goes.
     if (tip) {
+      const had = parseFloat(this.noteEl.style.minHeight) || 0; // (room a taller message took is kept: `note`)
       this.noteEl.style.minHeight = '';
-      const h = this.noteEl.offsetHeight;
+      const h = Math.max(had, this.noteEl.offsetHeight);
       if (h > 0) this.noteEl.style.minHeight = `${h}px`;
     }
   }
@@ -1241,8 +1292,17 @@ function fitRibbon(span: HTMLElement | null): void {
 }
 
 /** Which Wildlife Log entry each egg fills in. */
-/** The least sky left between the HUD and a Big Pad's lease when the lease is moved up for its strip (px). */
+/** A strip shorter than this (px at 390 wide) is SHORT: its rows (the back row by the berm, the prop rows, the walking lane) stand almost on one line. */
+const SHORT_STRIP = 130;
+/** The least sky left between the HUD and the lease when the lease is moved up for its strip (px, besides the stage's own padding). */
 const SKY_LEAST = 6;
+/**
+ * The sky each region keeps under the HUD when its lease moves up (px at 390 wide, the stage's padding included): room
+ * for the trees on the horizon and the geese everywhere; in Duvernay for the moose rising behind the top berm; in
+ * Mannville for the coyote on the ridge (the aurora's lights run on behind the HUD); in Bakken a sky band to tap for
+ * the cloud. Clearwater has no sky sighting.
+ */
+const SKY_WANT: Record<ThemeId, number> = { summer: 30, spring: 30, winter: 40, fall: 56, prairie: 54, boreal: 16 };
 /** The gags a Big Pad (Clearwater) plays. */
-const BIG_PAD_GAGS: GagId[] = ['golf', 'cold', 'wash', 'bell', 'pea'];
+const BIG_PAD_GAGS: GagId[] = ['golf', 'cold', 'wash', 'bell', 'pea', 'biffyA', 'biffyB'];
 const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull', porcupine: 'porcupine', gopherLunch: 'lunch', sam: 'sam', tongue: 'tongue', surveyor: 'surveyor', deer: 'deer', tourists: 'tourists', muskeg: 'muskeg', catTrain: 'cattrain', beaver: 'beaver', aurora: 'aurora', tumbleweed: 'tumbleweed', pdogs: 'pdogs', bale: 'bale', cloud: 'cloud', golf: 'swings', cold: 'cold', wash: 'wash', bell: 'bell', pea: 'pea' };

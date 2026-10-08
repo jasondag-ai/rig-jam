@@ -4045,6 +4045,20 @@ svg.dig-tunnel {
   animation: aspen-shake 380ms ease-in-out;
 }
 
+/* A prop with no sighting of its own to give for a tap (the biffy, the gopher's mound, the round bale, the sign in
+   winter): a small knock about its foot. `rotate` and `translate` are their own properties, so the prop keeps its place. */
+.prop-knock {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: prop-knock 320ms ease-out;
+}
+
+@keyframes prop-knock {
+  0%, 100% { rotate: 0deg; translate: 0 0; }
+  25% { rotate: -2.5deg; translate: 0 -1px; }
+  60% { rotate: 1.8deg; }
+}
+
 /* The rig mat stack (Clearwater), tapped: a small knock. */
 .clear-mats svg.scene-svg.shake {
   animation: mats-knock 300ms ease-out;
@@ -4071,7 +4085,7 @@ svg.dig-tunnel {
 .screen.game.night .strip-layer.aurora-layer { opacity: 1; }
 
 @media (prefers-reduced-motion: reduce) {
-  .scene-front svg.scene-svg.shake, .clear-mats svg.scene-svg.shake { animation: none; }
+  .scene-front svg.scene-svg.shake, .clear-mats svg.scene-svg.shake, .prop-knock { animation: none; }
 }
 
 /* ---------- Log v3: the dig goes right through the Earth (log-deep.ts) ----------

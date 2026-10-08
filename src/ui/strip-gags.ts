@@ -36,6 +36,8 @@ export function stripGeom(screenW: number, strip: { top: number; bottom: number 
   const full = BIFFY_FRAC * screenW * 1.34;
   return { ground: strip.bottom - LANE_UP, scale: Math.max(0.36, Math.min(1, (strip.bottom - strip.top - 12) / full)) };
 }
+/** How much strip the older strip gags want on a screen `screenW` wide to stand at their full size (px): see `stripGeom`. */
+export const stripWanted = (screenW: number): number => Math.ceil(BIFFY_FRAC * screenW * 1.34 + 12);
 /**
  * THE STRIP'S DEPTH LINES (STANDING_RULES 1: lower on the screen is nearer, and draws in front).
  * From the back: the BACK ROW up by the berm (the biffy, the lease sign and its visitors);
@@ -277,7 +279,8 @@ export class RiserProp {
     // No room under the berm for it (a very short strip): it is left out rather than drawn over the lease.
     const berm = this.host.board.querySelector('canvas.berm')?.getBoundingClientRect();
     const clear = Math.max(strip.top, berm ? berm.bottom - screen.top : 0);
-    this.layer.style.visibility = this.pup.svg.getBoundingClientRect().top - screen.top < clear ? 'hidden' : '';
+    // (Measured on the riser's own drawing, not on its picture's box, which has empty room over the pipe's cap.)
+    this.layer.style.visibility = (this.pup.svg.querySelector('g') ?? this.pup.svg).getBoundingClientRect().top - screen.top < clear ? 'hidden' : '';
   }
 
   get fits(): boolean {
@@ -759,13 +762,10 @@ export const SIGN_X = 0.62;
 /** Where the sign stands on THIS level (Mannville stands it left of its lane aspen: scene-stage.ts). Set before the level's SignProp is made. */
 let signX: number = SIGN_X;
 export const setSignX = (x: number = SIGN_X): void => void (signX = x);
-/** The lowest the sign may stand on THIS level (screen px; Clearwater keeps it clear behind its back lane, where runners pass). */
-let signLowest = Infinity;
-export const setSignLowest = (y: number = Infinity): void => void (signLowest = y);
 /** The line the sign and its visitors stand on (screen px), and the strip's scale. */
 export function signStand(screenW: number, strip: { top: number; bottom: number }): { ground: number; scale: number } {
   const { ground, scale } = stripGeom(screenW, strip);
-  return { ground: Math.min(ground, biffyStand(screenW, strip).ground + 0.035 * screenW * scale, signLowest), scale };
+  return { ground: Math.min(ground, biffyStand(screenW, strip).ground + 0.035 * screenW * scale), scale };
 }
 /** The lane kept clear of trees: from where the surveyor works (left of the sign) to the near screen edge. */
 export function signLane(screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {

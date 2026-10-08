@@ -293,7 +293,7 @@ describe('the four Bakken gags (ported: wave3.ts) and the standard Bakken scene'
 });
 
 // ---------- Clearwater (the Big Pad): the standard scene and the golf pair ----------
-import { CW_ASPEN, CW_BUSHES, CW_FIREWEED, CW_SCENE, CW_SIGN_AT, CW_TREES, clearGround, clearScene, clearStripWanted } from './scene-stage.ts';
+import { CW_ASPEN, CW_BUSHES, CW_FIREWEED, CW_SCENE, CW_TREES, clearGround, clearScene, clearStripWanted } from './scene-stage.ts';
 import { CW } from './wave3.ts';
 import { SHARES } from './gag-triggers.ts';
 
@@ -373,8 +373,6 @@ describe('Clearwater: the standard scene', () => {
     const g = sceneGeom(390, strips[0][1], CW_SCENE), b = tapBox(g, CW.MAT_BOX);
     expect(b.right - b.left).toBeGreaterThan(43.99);
     expect(b.bottom - b.top).toBeGreaterThan(43.99);
-    // The lease sign stands up by the berm over the stack, clear of Moe (x 120) and the bearded worker (x 160).
-    expect(CW_SIGN_AT).toBeGreaterThan(290);
   });
 });
 
