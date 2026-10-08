@@ -223,6 +223,9 @@ export function bApply(sc: any, t: number): void {
   const front = sc.front; front.frac = pp.frac; front.spot = pp.spot; place(front);
   doorAndBody(front, door, sh * B_SHAKE.px, sh * B_SHAKE.deg, red);
   pp.q('.door').style.visibility = 'hidden';
+  // (Nobody is seen through the open doorway. Behind the SHUT door he stays as he always stands: a hair of his
+  // boots shows under the door's foot, and the first and last frames must be the biffy exactly as it stood.)
+  const occ = pp.q('.occ') as SVGElement | null; if (occ) occ.style.display = door < 0.999 ? 'none' : '';
   // It just rolls out: it waits on the floor in the doorway from the start (no fade: the shut door hides it), the
   // door bangs open on it, and it rolls along the ground at ONE constant speed, no easing, no drop, past the open
   // door, in front of it, and off the near edge. It turns as far as it travels.
