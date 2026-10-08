@@ -93,10 +93,25 @@ export const GAG_SOUNDS: Record<GagId, Record<string, string[]>> = {
     'strolls-in': ['+steps'], rains: ['-steps', '+rain'], sidestep: ['-rain@0.1', '+rain@0.7'], 'steps-back': ['-rain', '+rain@0.35'], umbrella: ['umbrella@0.2', '-rain@0.4'],
     downpour: ['+downpour'], 'opens-again': ['-downpour@0.1', 'umbrella@0.15', '+rain@0.3'], 'walks-off': ['+steps'],
   },
-  // CLEARWATER, the golf pair: footsteps and Moe's stars only, from sounds already in the game. The swings, the
-  // BOING, TOK, PING and BONK have no sound yet: those are for Jay to pick by ear, like the rest.
-  golf: { 'walks-in': ['+steps'], 'tees-up': ['-steps'], 'stomps-off': ['+steps@0.3'] },
-  cold: { 'moe-is-back': ['+steps'], 'tees-up': ['-steps'], 'seeing-stars': ['twinkle'], 'strolls-in': ['+steps'], fore: ['-steps'], 'drags-off': ['+steps'] },
+  // CLEARWATER (the Big Pad's five sightings). Jay's five new sounds (whoosh, boing, crack, splash, triangle: the A
+  // takes) and the rest from the pack, each on the moment the reference draws its sound word.
+  // Three Swings: footsteps; a whoosh as each miss comes down (0.45 s into the swing; the second harder, so higher); the
+  // BOING as the shovel bites (0.55 s into the third).
+  golf: { 'walks-in': ['+steps'], 'tees-up': ['-steps'], 'swing-one': ['whoosh@0.45'], 'swing-two': ['whoosh@0.45^2'], 'swing-three': ['boing@0.55'], 'stomps-off': ['+steps@0.3'] },
+  // Out Cold: CRACK as he connects (0.55 s in), TOK off the rig mats (the wooden knock), PING off the aspen (a small
+  // high pop), BONK on his hard hat, his stars; the bearded worker's steps in, and off with Moe.
+  cold: { 'moe-is-back': ['+steps'], 'tees-up': ['-steps'], crack: ['crack@0.55'], tok: ['knock'], ping: ['tap^7'], bonk: ['bonk'], 'seeing-stars': ['twinkle'], 'strolls-in': ['+steps'], fore: ['-steps'], 'drags-off': ['+steps'] },
+  // Fresh Wash: the door's clunk (out of sight), his steps round the front, two squeaks of the rag, the ting of a
+  // spotless hood, the hauler's rumble, SPLASH at the puddle, the plop off his hat, the trudge back, the clunk.
+  wash: {
+    'clunk-out': ['clack'], 'round-the-front': ['+steps'], 'hop-turn': ['-steps'], wipes: ['squeak@0.2', 'squeak@0.85'], admires: ['twinkle@0.4'], hauler: ['+rumble'],
+    sploosh: ['splash', '-rumble@0.9'], plop: ['blup@0.35'], 'trudges-back': ['+steps'], 'clunk-in': ['-steps', 'clack'],
+  },
+  // Dinner Bell: the cook's steps, the triangle (its three dings fall on the first three strikes), the rumble of the
+  // stampede until the dust settles, his steps off; then Moe's, late.
+  bell: { 'cook-walks-in': ['+steps'], ding: ['-steps', 'triangle'], rumble: ['+rumble'], dizzy: ['-rumble'], follows: ['+steps@0.2'], 'empty-lane': ['-steps'], 'moe-late': ['+steps'], puffing: ['-steps'], 'save-me-some': ['+steps@0.3'] },
+  // One Pea: the crew's steps, and the pea's plip into the puddle.
+  pea: { 'crew-strolls': ['+steps'], carbs: ['-steps'], plip: ['blup'], 'trudges-off': ['+steps'] },
 };
 
 /** The loops a gag may run, and the sound each repeats. `every`: a one-shot repeated that often (s); none: the file itself loops. */
