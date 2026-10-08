@@ -602,7 +602,11 @@ export const biffyBDef = (biffy: BiffyProp): TimelineDef => ({
     const occ = biffy.pup.q('.occ') as SVGElement;
     // Nobody is seen through the doorway: he is in the dark until he shuffles out.
     occ.style.display = 'none';
-    const scene = runawayScene(biffy.pup, layer('shuffler-layer'), scale);
+    const over = layer('shuffler-layer');
+    // The roll and the shuffler stand on the biffy's OWN ground line, to the pixel, so their layer (put on after it)
+    // is drawn over it: a line worked out again came a pixel short on some screens, and both played BEHIND the biffy.
+    setGround(over, Number(biffy.layer.dataset.ground), 'set');
+    const scene = runawayScene(biffy.pup, over, scale);
     return {
       apply: (t) => bApply(scene, t),
       done: () => {

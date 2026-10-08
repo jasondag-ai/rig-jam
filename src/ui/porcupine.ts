@@ -12,43 +12,15 @@
 import { BUSH_BOX, BUSH_FRAC, behindBush, bushMarkup } from './gag-bush.ts';
 import { addEl, makePup, place, type Pup } from './puppet-stage.ts';
 import type { Season } from './trees.ts';
-import { WORKER, WORKER_FRAC } from './worker.ts';
+import { MOE_WORKER, WORKER_FRAC } from './worker.ts';
+import { shuffler } from './biffy.ts';
 const O = '#2b1e16';
 const ease = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
 const clamp = (x: number, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const seg = (t: number, a: number, b: number) => clamp((t - a) / (b - a));
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
-const RED='#c8352b', STRIPE='#d5dbe2', SKIN='#f0c09a', BOOT='#5a3a24', HAT='#f2c230';
-const BUM = '#f3b39b';
-export const QUILL_SHUFFLER = `
-<g class="root">
-  <g class="tpTail"><path class="tpStrip" d="M44 106 Q30 110 14 107" stroke="${O}" stroke-width="7" fill="none" stroke-linecap="round"/><path class="tpStrip2" d="M44 106 Q30 110 14 107" stroke="#fbfbf6" stroke-width="4.5" fill="none" stroke-linecap="round"/></g>
-  <g class="legB" transform="translate(54 84)"><path d="M0 0 L0 16" stroke="${O}" stroke-width="9" stroke-linecap="round"/><path d="M0 0 L0 16" stroke="${SKIN}" stroke-width="6" stroke-linecap="round"/>
-    <path d="M-5 17 L8 17 Q11 17 11 21 L-5 21 Z" fill="${BOOT}" stroke="${O}" stroke-width="2"/></g>
-  <g class="legF" transform="translate(62 84)"><path d="M0 0 L0 16" stroke="${O}" stroke-width="9" stroke-linecap="round"/><path d="M0 0 L0 16" stroke="${SKIN}" stroke-width="6" stroke-linecap="round"/>
-    <path d="M-5 17 L8 17 Q11 17 11 21 L-5 21 Z" fill="${BOOT}" stroke="${O}" stroke-width="2"/></g>
-  <rect class="bunch" x="46" y="95" width="24" height="7" rx="3.5" fill="${RED}" stroke="${O}" stroke-width="2.2"/>
-  <g class="upper">
-    <path d="M44 84 Q42 72 52 70 Q58 72 58 82 Q52 90 44 84 Z" fill="${BUM}" stroke="${O}" stroke-width="2.4"/>
-    <g class="quills" stroke-linecap="round"><path d="M46 76 L36 70 M48 80 L37 80 M50 72 L44 62 M47 84 L39 89 M53 75 L49 65" stroke="${O}" stroke-width="2.6"/><path d="M46 76 L38 71 M48 80 L39 80 M50 72 L45 64 M47 84 L41 88 M53 75 L50 67" stroke="#efe4c8" stroke-width="1.3"/></g>
-    <g transform="rotate(48 58 82)">
-      <rect x="46" y="52" width="24" height="32" rx="9" fill="${RED}" stroke="${O}" stroke-width="2.6"/>
-      <rect x="46.5" y="68" width="23" height="4" fill="${STRIPE}" stroke="${O}" stroke-width="1.2"/>
-    </g>
-    <g class="arm"><path d="M70 66 L84 76 L90 74" stroke="${O}" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M70 66 L84 76 L90 74" stroke="${RED}" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      <circle cx="91" cy="74" r="4.2" fill="#e0a43a" stroke="${O}" stroke-width="2"/></g>
-    <g class="head">
-      <circle cx="82" cy="54" r="12.5" fill="${SKIN}" stroke="${O}" stroke-width="2.6"/>
-      <path d="M75 60 Q80 70 90 62 Q85 64 80 62 Z" fill="#7a4f2e" stroke="${O}" stroke-width="1.6"/>
-      <circle cx="90" cy="56" r="3" fill="#dfa47c" stroke="${O}" stroke-width="1.6"/>
-      <circle cx="86" cy="50" r="4.4" fill="#fff" stroke="${O}" stroke-width="1.8"/><circle class="pupil" cx="87.5" cy="50.5" r="1.9" fill="${O}"/>
-      <path d="M82 45 Q86 42.5 90 44.5" stroke="#7a4f2e" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-      <circle cx="80" cy="57" r="3" fill="#f08c80"/>
-      <ellipse class="mouth" cx="86.5" cy="63.5" rx="2.4" ry="3.1" fill="#7a2a22" stroke="${O}" stroke-width="1.6"/>
-      <path d="M71 47 Q71 35 82 35 Q93 35 93 47 Z" fill="${HAT}" stroke="${O}" stroke-width="2.4"/><rect x="69" y="45" width="28" height="4" rx="2" fill="${HAT}" stroke="${O}" stroke-width="2"/>
-    </g>
-  </g>
-</g>`;
+// (The same drawing as the biffy's shuffler, Slow Moe, with the quills in his bum.)
+export const QUILL_SHUFFLER = shuffler(`<g class="quills" stroke-linecap="round"><path d="M46 76 L36 70 M48 80 L37 80 M50 72 L44 62 M47 84 L39 89 M53 75 L49 65" stroke="${O}" stroke-width="2.6"/><path d="M46 76 L38 71 M48 80 L39 80 M50 72 L45 64 M47 84 L41 88 M53 75 L50 67" stroke="#efe4c8" stroke-width="1.3"/></g>`, true);
 
 /* ---------------- porcupine (side view, default facing right) ---------------- */
 let QUILLS = '';
@@ -140,7 +112,7 @@ export function porcupineScene(layer: HTMLElement, bush: { x: number; y: number 
   const sc: any = { f: scale };
   const z = (p: Pup, n: number) => ((p.svg.style.zIndex = String(n)), p);
   sc.porc = z(makePup(layer, PORC, { vw: 100, vh: 70, ax: 50, ay: 66, frac: PORC_FRAC * scale, spot: { ...bush } }), 2);
-  sc.worker = z(makePup(layer, WORKER, { vw: 120, vh: 120, ax: 60, ay: 108, frac: WORKER_FRAC * scale, spot: { ...bush } }), 2);
+  sc.worker = z(makePup(layer, MOE_WORKER, { vw: 120, vh: 120, ax: 60, ay: 108, frac: WORKER_FRAC * scale, spot: { ...bush } }), 2);
   for (const part of ['.pail', '.reach']) (sc.worker.q(part) as SVGElement).style.display = 'none';
   sc.bush = z(makePup(layer, bushMarkup(season), { ...BUSH_BOX, frac: BUSH_FRAC * scale, spot: { ...bush } }), 3);
   sc.shuf = z(makePup(layer, QUILL_SHUFFLER, { vw: 120, vh: 120, ax: 60, ay: 108, frac: QUILL_SHUFFLER_FRAC * scale, spot: { ...bush } }), 5);   // matches the worker: head 12.5 units vs 16

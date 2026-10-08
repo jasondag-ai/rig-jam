@@ -96,7 +96,9 @@ describe('Near Miss, landowner and biffy: the references, as approved', () => {
     // B: two bumps, so it shakes from the start; the shuffler leaves by the near edge at the
     // reference's pace (about 57 px a second at 390), so he is off sooner and the door shuts sooner.
     expect(B_BEATS.map((b) => b[0])).toEqual([0, 0.05, 0.5, 0.8, 1.1, 1.4, 2.9, B_OFF, B_SHUT]);
-    expect((BIFFY_X * 390 + 70) / (B_OFF - 2.9)).toBeCloseTo((0.7 * 390 + 70) / 6, -1);
+    // (Quality pass, Oct 8: tiny steps cover little ground. He is slower than the reference's pace, and on screen for a good 2 s.)
+    expect((BIFFY_X * 390 + 70) / (B_OFF - 2.9)).toBeLessThan((0.7 * 390 + 70) / 6);
+    expect(B_OFF - 2.9).toBeGreaterThan(2);
     expect(B_ROLL_OFF).toBeLessThan(B_OFF);
     expect(A_END).toBeGreaterThan(5.0);
     expect(B_END).toBeGreaterThan(B_SHUT + 0.9);
