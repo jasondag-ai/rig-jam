@@ -23,7 +23,8 @@ export const GAG_SOUNDS: Record<GagId, Record<string, string[]>> = {
     'ride-in': ['quad_start', '+quad_idle'], skid: ['scurry'], rev: ['-quad_idle', '+quad_rev'], wheelie: ['hop'], 'hat-off': ['wind'], 'hat-catch': ['poke'], gone: ['-quad_rev'],
   },
   biffyA: { jolt: ['knock'], 'door-open': ['outhouse'], 'eye-pop': ['poke'], 'pull-shut': ['outhouse@0.25'], occupied: ['camera'], unlocked: ['camera'] },
-  biffyB: { jolt: ['knock', 'knock@0.24'], 'door-open': ['outhouse'], 'roll-out': ['scurry'], shuffle: ['+steps'], 'off-screen': ['-steps'], 'door-shut': ['outhouse@0.6'] },
+  // (His glove pats the floor at 1.80, 2.94 and 3.08 s: a `tap` on each. The steps start as he comes out, the beat that used to be `shuffle`.)
+  biffyB: { jolt: ['knock', 'knock@0.24'], 'door-open': ['outhouse'], 'roll-out': ['scurry'], reach: ['tap@0.4'], panic: ['tap@0.09', 'tap@0.23'], out: ['+steps'], 'off-screen': ['-steps'], 'door-shut': ['outhouse@0.6'] },
   marshmallow: {
     'walk-in': ['+steps'], 'eyes-flare': ['-steps'], telescope: ['cord', 'cord@0.36', 'cord@0.72'], fwoomp: ['wind'], 'eyes-pop': ['poke'], yank: ['thwip'], blow: ['puff'],
     crispy: ['chomp'], 'ear-smoke': ['puff', '+steps@0.8'], gone: ['-steps'],
@@ -37,7 +38,7 @@ export const GAG_SOUNDS: Record<GagId, Record<string, string[]>> = {
     'bull-in': ['+steps'], freeze: ['-steps', 'poke'], 'lick-hoof': ['slurp'], slick: ['thwip'], 'chest-puff': ['twinkle'], 'cow-looks': ['cow'], 'eyes-huge': ['poke'], 'hop-turn': ['hop'],
     bolts: ['scurry'], paws: ['bull', 'bull@0.15'], charge: ['scurry'], 'last-heart': ['tap'], 'cow-back': ['+steps'], 'catches-breath': ['-steps', 'puff'], 'grazes-again': ['cow'],
   },
-  porcupine: { 'stroll-in': ['+steps'], 'look-around': ['-steps'], squat: ['puff'], poke: ['poke'], 'roll-pops': ['hop'], 'springs-out': ['scurry'], 'porcupine-bolts': ['scurry@0.1'] },
+  porcupine: { 'stroll-in': ['+steps'], 'look-around': ['-steps'], squat: ['puff'], poke: ['poke'], 'roll-pops': ['hop'], 'springs-out': ['scurry'], 'porcupine-bolts': ['scurry'] }, // (it bolts at 7.8 s, once Moe has gone)
   gopherLunch: {
     'stroll-in': ['+steps'], 'plops-down': ['-steps', 'puff'], 'paw-peeks': ['gopher'], yank: ['thwip'], chomp: ['chomp', 'chomp@0.45', 'chomp@0.9'], 'crust-back': ['tap'], bite: ['chomp@0.4'],
     'eyes-huge': ['poke'], cheeks: ['gopher'], 'boils-over': ['wind'], 'hurls-crust': ['scurry'], 'stomps-off': ['+steps'], burp: ['-steps', 'burp@0.45'],
