@@ -127,7 +127,7 @@ for (const size of SIZES) {
     }
     return out;
   });
-  check(cover.length === 5 && cover.every((c) => c.played), `all five play at this size (the strip is ${cover[0]?.strip} px tall)`);
+  check(cover.length === 7 && cover.every((c) => c.played), `all seven play at this size: the five, and the biffy's two (the strip is ${cover[0]?.strip} px tall)`);
   check(cover.every((c) => c.overBoard <= 0 && c.overNote <= 2), `none of them ever reaches over the lease's pad or down over the tip line and buttons (${cover.map((c) => `${c.id} ${c.overBoard}/${c.overNote}`).join(', ')})`);
   check(errors.length === 0, `no script errors (${errors[0] ?? 'none'})`);
   await context.close();

@@ -432,17 +432,21 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       await context.close();
     }
     const { context, page } = await open(browser, { query: QUIET.replace('&off=lunch,sam,tongue', '&off=sam,tongue') + '&lunch=1', level: [region('cardium'), 5] });
-    const geo = await page.evaluate(() => {
+    const moundAt = () => page.evaluate(() => {
       const m = document.querySelector('[data-anchor="mound"]').getBoundingClientRect(), note = document.querySelector('.note').getBoundingClientRect(), board = document.querySelector('.board').getBoundingClientRect();
       return { base: m.top + (29.5 / 34) * m.height, heap: (m.width * 59) / 64, ground: note.top - 4, holeY: m.top + (17 / 34) * m.height, left: m.left, right: m.right, top: m.top, clear: m.top > board.bottom };
     });
     // (The depth rule: the mound is on prop row 2, two rows of 8 px behind the walking lane, so walkers pass in front of it.)
-    check(Math.abs(geo.ground - geo.base - 16 * (W / 390)) < 2.5 && Math.abs(geo.heap - 0.13 * W * 0.92) < 2.5 && geo.clear, `the board's mound stands on prop row 2, ${(geo.ground - geo.base).toFixed(0)} px behind the walking lane, at the reference's size (heap ${geo.heap.toFixed(1)}px)`);
+    const geo0 = await moundAt();
+    check(Math.abs(geo0.ground - geo0.base - 16 * (W / 390)) < 2.5 && Math.abs(geo0.heap - 0.13 * W * 0.92) < 2.5 && geo0.clear, `the board's mound stands on prop row 2, ${(geo0.ground - geo0.base).toFixed(0)} px behind the walking lane, at the reference's size (heap ${geo0.heap.toFixed(1)}px)`);
     await wait(600);
     check(!(await page.$('.strip-layer')), 'not before Hint is pressed');
     const watching = watch(page, 'gopherLunch', { parts: { worker: '.lunch-layer > svg.pup:not(:first-of-type) .torso', head: '.lunch-layer svg.pup .hat', crust: '.lunch-layer .pup-food:last-of-type', steam: '.lunch-layer .pup-overlay .steam', gopher: '.lunch-layer .pup-clip svg.pup .head', clip: '.lunch-layer .pup-clip', lip: '.lunch-layer > svg.pup', sand: '.lunch-layer .pup-food', paw: '.lunch-layer .pup-overlay .paw' } }, 32000);
     await page.locator('[data-act="hint"]').click();
     const log = await watching;
+    // (Hint's own message runs to two lines: the tip line takes that room at once, the lease is refitted, and THEN he is
+    // placed. So the mound is measured where it stands for the gag, and it must not have moved again by the end.)
+    const geo = await moundAt();
     check(log.length > 100 && (await page.locator('.truck.hinted').count()) === 1, 'a press of Hint that wins the roll brings him, and the hint still shows');
     check(sameBeats(log, 'gopherLunch'), `the reference beats, in order, to the quiet mound again (${beatsOf(log).length} of ${GAGS.gopherLunch.beats.length})`);
     const first = log.find((f) => f.worker?.vis), last = log.filter((f) => f.worker?.vis).at(-1);
@@ -551,7 +555,8 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
         const b = await page.evaluate(() => {
           const layer = document.querySelector('.riser-layer');
           if (!layer) return null;
-          const r = layer.querySelector('svg.pup').getBoundingClientRect(), R = (q) => document.querySelector(q).getBoundingClientRect();
+          // (The riser's DRAWING is measured: its svg box has about 29 px of empty room over the pipe.)
+          const r = (layer.querySelector('svg.pup g') ?? layer.querySelector('svg.pup')).getBoundingClientRect(), R = (q) => document.querySelector(q).getBoundingClientRect();
           const board = R('.board'), berm = R('canvas.berm');
           const vis = getComputedStyle(layer).visibility !== 'hidden';
           const bush = document.querySelector('.bush-layer svg.pup')?.getBoundingClientRect();
