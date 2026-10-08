@@ -72,6 +72,17 @@ export function biffy(withOccupant: boolean): string { return `
   ${DOOR}
 </g>`; }
 
+/* A WORK GLOVE, not a ball (Jay, Oct 8): a palm, four fingers and a thumb, at the end of the far arm. Two finger poses:
+   spread (groping, feeling around) and flat (pressed on the floor in a tap). bApply shows one at a time. */
+const G = '#e0a43a';
+const fing = (pts: [number, number, number, number][]) => pts.map(([a,b,c,d]) => `<path d="M${a} ${b} L${c} ${d}" stroke="${O}" stroke-width="3.8" stroke-linecap="round"/>`).join('') + pts.map(([a,b,c,d]) => `<path d="M${a} ${b} L${c} ${d}" stroke="${G}" stroke-width="2.1" stroke-linecap="round"/>`).join('');
+const GLOVE = `<g class="glove" transform="translate(90 74) rotate(-18) scale(1.3)">
+  <g class="fSpread">${fing([[3,-3,8.5,-6],[3.5,-1,10,-2.2],[3.5,1,10,1.6],[3,3,8.5,5.4],[-0.5,-3.5,1.8,-8]])}</g>
+  <g class="fFlat" style="display:none">${fing([[3,-2.4,9.6,-2.6],[3.5,-0.8,10.6,-0.9],[3.5,0.8,10.6,0.8],[3,2.4,9.6,2.6],[-0.5,-3.4,3.5,-5.2]])}</g>
+  <rect x="-3.5" y="-4.2" width="8" height="8.4" rx="3.2" fill="${G}" stroke="${O}" stroke-width="2"/>
+  <path d="M-3 -1 H-5.5 M-3 1.5 H-5.5" stroke="${O}" stroke-width="1" opacity=".5"/>
+</g>`;
+
 /* ---------------- the shuffler (true side profile, facing right; Slow Moe) ----------------
    QUALITY PASS (Jay, Oct 8), to read at phone size: bent forward, his near hand holding the waistband of the pants
    bunched at his ankles (ONE CLEAR DARK BAND), his far arm out after the roll, his whole face flushed, an O for a
@@ -79,7 +90,7 @@ export function biffy(withOccupant: boolean): string { return `
    far arm about 70,66, the head about 80,62), so both gags that use him move him as before. The porcupine's worker
    is this same drawing with quills, his near hand clutching his bum instead (`shuffler(quills, true)`). */
 export const shuffler = (extra = '', clutch = false): string => { const ARM = (c: string) => `<g class="arm"><path d="M70 66 L84 76 L90 74" stroke="${O}" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M70 66 L84 76 L90 74" stroke="${c}" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      <circle cx="91" cy="74" r="4.2" fill="#e0a43a" stroke="${O}" stroke-width="2"/></g>`; return `
+      ${GLOVE}</g>`; return `
 <g class="root">
   <g class="tpTail"><path class="tpStrip" d="M46 106 Q32 111 14 107" stroke="${O}" stroke-width="7" fill="none" stroke-linecap="round"/><path class="tpStrip2" d="M46 106 Q32 111 14 107" stroke="#fbfbf6" stroke-width="4.5" fill="none" stroke-linecap="round"/></g>
   <g class="legB" transform="translate(54 84)"><path d="M0 0 L0 17" stroke="${O}" stroke-width="9" stroke-linecap="round"/><path d="M0 0 L0 17" stroke="${SKIN}" stroke-width="6" stroke-linecap="round"/>
@@ -115,8 +126,14 @@ export const shuffler = (extra = '', clutch = false): string => { const ARM = (c
   </g>
 </g>`; };
 export const SHUFFLER = shuffler();
+/** Biffy B's Moe matches the porcupine gag's (Jay, Oct 8): his near hand clutching the side of his bum, body steady. */
+export const BIFFY_SHUFFLER = shuffler('', true);
 
-export const ROLL = `<svg viewBox="0 0 20 20" width="100%" height="100%"><circle cx="10" cy="10" r="8.5" fill="#fbfbf6" stroke="${O}" stroke-width="2"/><circle cx="10" cy="10" r="3.2" fill="#b9a98a" stroke="${O}" stroke-width="1.4"/><path d="M10 1.5 L10 6.8" stroke="#d9d6cc" stroke-width="1.4"/></svg>`;
+// The loose end of the paper sticks out past the rim, so the roll's turning shows even at phone size (a plain ring
+// turning looks like it is sliding or hovering).
+export const ROLL = `<svg viewBox="0 0 20 20" width="100%" height="100%" overflow="visible" style="display:block;position:relative"><path class="tab" d="M8.6 1.7 L15.8 -1.4 L17 2.2 L12.6 3.6" fill="#fbfbf6" stroke="${O}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="10" cy="10" r="8.5" fill="#fbfbf6" stroke="${O}" stroke-width="2"/><circle cx="10" cy="10" r="3.2" fill="#b9a98a" stroke="${O}" stroke-width="1.4"/></svg>`;
+/** The roll's contact shadow: it does not turn, and it pins the roll to the ground. */
+export const ROLL_SHADOW = '<i class="rollSh" style="position:absolute;left:8%;width:84%;top:84%;height:26%;border-radius:50%;background:rgba(43,30,22,.38)"></i>';
 
 
 export const A_BEATS: [number, string, string][] = [
@@ -132,25 +149,30 @@ export const A_END = 5.4;
  * door shuts sooner (`B_SHUT`). QUALITY PASS (Jay, Oct 8): the biffy stands a few steps from that edge, and at the
  * old pace he was gone in half a second; tiny steps cover little ground, so he takes 2.6 s over it and can be read.
  */
-export const B_ROLL_OFF = 2.6, B_OFF = 5.5, B_SHUT = 5.8;
+export const B_ROLL_OFF = 2.0, B_OUT = 3.5, B_OFF = 5.6, B_SHUT = 5.9;
 /** The door's width (1 shut, -0.42 wide open) under which it no longer covers the roll in the doorway: from then the roll is drawn in front. */
 export const ROLL_CLEAR = 0.25;
 /** The shuffle: steps a second (tiny and fast), the swing of a leg in degrees, the bob in drawing units. */
 /** The share of the shuffle he spends dithering in the doorway before he makes off. */
 export const B_DITHER = 0.3;
-export const SHUFFLE = { hz: 5.2, deg: 7, bob: 1.6 };
+export const SHUFFLE = { hz: 5, deg: 9, bob: 1.2 };   // the porcupine gag's shuffle
 export const B_BEATS: [number, string, string][] = [
   [0, 'sits', 'Biffy sits there'], [0.05, 'jolt', 'Two truck bumps: two big shakes'], [0.5, 'door-open', 'Door bangs open'], [0.8, 'roll-out', 'The toilet paper roll rolls out from behind the door'],
-  [1.1, 'roll-away', 'It rolls flat along the ground at one steady speed, off the near edge of the screen'], [1.4, 'grope', 'His arm gropes around out of the dark, a few sweeps, nothing'],
-  [2.9, 'shuffle', 'He shuffles out after it: bent over, pants at his ankles, mortified'], [B_OFF, 'off-screen', 'Off screen, by the near edge'], [B_SHUT, 'door-shut', 'The door creaks shut. Indicator flips to green'],
+  [1.1, 'roll-away', 'It rolls flat along the ground at one steady speed, off the near edge'], [1.4, 'reach', 'His gloved hand comes out of the dark and pats the floor once'],
+  [1.95, 'pause', 'Pause. Nothing there.'],
+  [2.85, 'panic', 'Two quick, panicky pats further along the floor: where is it?'],
+  [3.3, 'withdraw', 'The hand whips back in'],
+  [B_OUT, 'out', 'He emerges out of the dark doorway, bent over, pants at his ankles'], [B_OUT + .4, 'chase', 'And shuffles off after the roll as fast as tiny steps allow'], [B_OFF, 'off-screen', 'Off the near edge'], [B_SHUT, 'door-shut', 'The door creaks shut. Indicator flips to green'],
 ];
-export const B_END = 6.9;
+export const B_END = 7.0;
 /** Reference sizes, as shares of the screen's width: the biffy (about 80 px tall at 390) and the shuffler. */
 export const BIFFY_FRAC = 0.15;
 /** The biffy is drawn this much of the reference's size (about 60 px tall at 390). The shuffler is not shrunk. */
 export const BIFFY_SIZE = 0.8;
 /** The shuffler is the worker's size (his head matches the worker's, as in the porcupine gag: about 62 px tall stood up, at 390). */
 export const SHUFFLER_FRAC = 0.243;
+/** In Biffy B he is drawn to the biffy's scale (Jay, Oct 8): standing, he would fit the doorway. The porcupine's worker keeps SHUFFLER_FRAC. */
+export const BIFFY_SHUFFLER_FRAC = 0.158;
 
 /* door and jolt helpers shared by both gags */
 function doorAndBody(pp: Pup, door: number, jolt: number, rock: number, indRed: boolean): void {
@@ -210,6 +232,7 @@ export function aApply(sc: any, t: number): void {
 export function bApply(sc: any, t: number): void {
   const pp = sc.p; const {r, u} = place(pp);
   // They leave by the screen edge nearest the biffy.
+  // They leave by the NEAREST edge (Jay, Oct 8), but Moe holds on screen for 2 to 3 s first (see the shuffle below).
   const dir = pp.spot.x < 0.5 ? -1 : 1;
   // The indicator starts as it stood (green) and goes red at the first bump: somebody is in there after all.
   let door = 1, red = t >= 0.05;
@@ -230,7 +253,7 @@ export function bApply(sc: any, t: number): void {
   // door bangs open on it, and it rolls along the ground at ONE constant speed, no easing, no drop, past the open
   // door, in front of it, and off the near edge. It turns as far as it travels.
   const groundY = pp.spot.y*r.height, startX = pp.spot.x*r.width;
-  const rs = Math.max(10, 14*u/BIFFY_SIZE);
+  const rs = Math.max(7, 14*u/BIFFY_SIZE);   // to the biffy's scale (a 10 px floor made it look oversized and floaty at phone size)
   const far = (dir < 0 ? startX : r.width - startX) + rs + 30;
   const k = seg(t,.8,B_ROLL_OFF);
   const rx = startX + dir*far*k, ry = groundY - 2*u - rs/2;
@@ -239,31 +262,53 @@ export function bApply(sc: any, t: number): void {
   sc.roll.dataset.front = out ? '1' : '0';
   sc.roll.style.opacity = t < B_ROLL_OFF ? '1' : '0'; sc.roll.style.width = sc.roll.style.height = rs+'px';
   sc.roll.style.left = '0px'; sc.roll.style.top = '0px'; sc.roll.style.willChange = 'transform';
-  sc.roll.style.transform = `translate3d(${rx - rs/2}px, ${ry - rs/2}px, 0) rotate(${dir*far*k/(Math.PI*rs)*360}deg)`;
+  // the div only moves (its shadow stays flat on the ground); the drawing inside it turns as far as it travels
+  sc.roll.style.transform = `translate3d(${rx - rs/2}px, ${ry - rs/2}px, 0)`;
+  (sc.roll.querySelector('svg') as SVGElement).style.transform = `rotate(${dir*far*k/(Math.PI*rs)*360}deg)`;
   // the shuffler (drawn facing right; mirrored about his own middle when he leaves to the left)
   const s = sc.s, sq = s.q;
   s.svg.style.transform = dir < 0 ? 'scaleX(-1)' : '';
-  if (t > 1.4 && t < 2.9){                 // just his arm, groping around out of the dark doorway
-    const k = seg(t,1.4,2.9);
-    s.svg.style.visibility = 'visible'; place(s, dir*12);
+  if (t > 1.4 && t < B_OUT){                 // just his gloved hand, out of the dark doorway, patting the floor
+    // The glove always reaches out on the open side of the doorway (where there is room), whichever way he leaves.
+    s.svg.style.transform = pp.spot.x < 0.5 ? '' : 'scaleX(-1)'; s.svg.style.visibility = 'visible'; place(s, (pp.spot.x < 0.5 ? 1 : -1)*12);
     sq('.root').setAttribute('transform', 'translate(0 0)');
     sq('.upper').setAttribute('transform', '');
     ['.legB','.legF','.bunch','.tpTail','.head'].forEach(c => sq(c).style.opacity = String(0));
     sq('.upper').style.opacity = String(1); sq('.upper').querySelectorAll(':scope > path, :scope > g:not(.arm)').forEach((n: SVGElement) => (n.style.opacity = "0"));
-    const out = Math.sin(clamp(k*1.15)*Math.PI);           // slides out, gropes, slides back
-    const grope = Math.sin(k*Math.PI*6);                    // three sweeps
-    sq('.arm').setAttribute('transform', `translate(${-34 + out*16} ${10 + grope*5}) rotate(${grope*28 + 10} 70 66)`);
-  } else if (t >= 2.9 && t < B_OFF){      // shuffles out and off the near edge
-    const k = seg(t,2.9,B_OFF);
-    s.svg.style.visibility = 'visible';
+    // Keyframes in his own drawing units: [time, shoulder dx, shoulder dy, arm angle]. The hand rests on the floor (y about 104)
+    // when dy and the angle pair up; the doorway's edge is about x 65 in his units, so the shoulder stays in the dark.
+    const K: [number, number, number, number][] = [
+      [1.40, -22, 10, 40],  // deep in the dark
+      [1.72, -12, 15.5, 35], // reaching out, low
+      [1.80, -12, 18.6, 35], // PAT 1: on the floor
+      [1.90, -12, 15.8, 35], // up a touch
+      [2.00, -12, 18.2, 35], // resting on the floor: the pause
+      [2.80, -12, 18.2, 35],
+      [2.88, -9, 18.0, 22],  // panic: snatch further out
+      [2.94, -9, 23.2, 22],  // PAT 2
+      [3.02, -6, 21.0, 14],
+      [3.08, -6, 25.6, 14],  // PAT 3, furthest
+      [3.20, -6, 24.0, 14],
+      [3.42, -24, 12, 40],   // whips back into the dark
+    ];
+    let i = 1; while (i < K.length - 1 && t > K[i][0]) i++;
+    const [t0,x0,y0,a0] = K[i-1], [t1,x1,y1,a1] = K[i]; const k = ease(seg(t, t0, t1));
+    sq('.arm').setAttribute('transform', `translate(${lerp(x0,x1,k)} ${lerp(y0,y1,k)}) rotate(${lerp(a0,a1,k)} 70 66)`);
+    const flat = (t > 1.76 && t < 1.88) || (t > 1.98 && t < 2.82) || (t > 2.92 && t < 2.98) || (t > 3.06 && t < 3.14);
+    sq('.fSpread').style.display = flat ? 'none' : ''; sq('.fFlat').style.display = flat ? '' : 'none';
+  } else if (t >= B_OUT && t < B_OFF){      // shuffles out and off the near edge
+    s.svg.style.transform = dir < 0 ? 'scaleX(-1)' : '';
+    s.svg.style.visibility = 'visible'; sq('.fSpread').style.display = ''; sq('.fFlat').style.display = 'none';
     ['.legB','.legF','.bunch','.tpTail','.head'].forEach(c => sq(c).style.opacity = String(1));
     sq('.upper').querySelectorAll(':scope > path, :scope > g').forEach((n: SVGElement) => (n.style.opacity = "1"));
     const edge = dir < 0 ? pp.spot.x*r.width : r.width - pp.spot.x*r.width;
     // ANTICIPATION: he comes out of the doorway and dithers on the spot for a moment (the whole of him on screen,
     // a look back at the biffy), then makes off after the roll, picking up his pace.
-    const go = k < B_DITHER ? .05*(k/B_DITHER) : .05 + .95*Math.pow((k - B_DITHER)/(1 - B_DITHER), 1.25);
+    // He EMERGES from the dark (Jay, Oct 8): out of the doorway's shadow, then straight off after the roll. No posing.
+    const go = Math.pow(seg(t,B_OUT,B_OFF), 1.15);
+    s.svg.style.filter = t < B_OUT + .45 ? `brightness(${lerp(.22, 1, ease(seg(t,B_OUT,B_OUT + .45)))})` : '';
     const walkPx = lerp(0, (edge + 70)/(s.frac*r.width/120), go);
-    place(s, dir*(6 + walkPx));
+    place(s, dir*walkPx);
     // TINY FAST STEPS with a small bob: his ankles are tied by the bunch, so the legs barely part; the whole of him
     // dips a little on each step and his top half follows a beat behind.
     const ph = t*2*Math.PI*SHUFFLE.hz, c = Math.sin(ph), dip = Math.abs(Math.cos(ph));
@@ -271,13 +316,12 @@ export function bApply(sc: any, t: number): void {
     sq('.legF').setAttribute('transform', `translate(62 84) rotate(${-c*SHUFFLE.deg})`);
     sq('.bunch').setAttribute('transform', `translate(${c*.9} ${-dip*.5})`);
     sq('.root').setAttribute('transform', `translate(0 ${-dip*SHUFFLE.bob})`);
-    sq('.upper').setAttribute('transform', `rotate(${Math.sin(ph - .9)*2.2} 58 84)`);
-    sq('.arm').setAttribute('transform', `rotate(${Math.sin(t*11)*9 - 4} 70 66)`);
-    const glance = t > 3.15 && t < 3.6;
-    sq('.head').setAttribute('transform', glance ? 'rotate(-10 80 62)' : `rotate(${Math.sin(t*4)*2} 80 62)`);
-    sq('.pupil').setAttribute('cx', glance ? 85 : 87.5);
+    sq('.upper').setAttribute('transform', '');
+    sq('.arm').setAttribute('transform', `rotate(${110 + Math.sin(ph)*4} 70 66)`);   // hand clutching the side of his bum, as in the porcupine gag
+    sq('.head').setAttribute('transform', `rotate(${Math.sin(t*4)*2} 80 62)`);
+    sq('.pupil').setAttribute('cx', 87.5);
     sq('.tpTail').setAttribute('transform', `rotate(${c*5} 46 106)`);
-  } else s.svg.style.visibility = 'hidden';
+  } else { s.svg.style.visibility = 'hidden'; s.svg.style.filter = ''; }
 }
 
 
@@ -296,8 +340,8 @@ export const biffyPup = (host: HTMLElement, spot: { x: number; y: number }, scal
 /** Biffy B's extras: the shuffler and the roll, on a layer over everything (they leave past the screen's edge). */
 export function runawayScene(biffyP: Pup, over: HTMLElement, scale: number): any {
   // Stacked: the roll, then the door drawn again over it, then the shuffler in front of both.
-  const roll = addEl(over, 'pup-roll', ROLL);
+  const roll = addEl(over, 'pup-roll', ROLL_SHADOW + ROLL);
   const front = makePup(over, `<g class="root">${DOOR}</g>`, { vw: 100, vh: 140, ax: 50, ay: 134, frac: biffyP.frac, spot: biffyP.spot });
-  const s = makePup(over, SHUFFLER, { vw: 120, vh: 120, ax: 60, ay: 108, frac: SHUFFLER_FRAC * scale, spot: biffyP.spot });
+  const s = makePup(over, BIFFY_SHUFFLER, { vw: 120, vh: 120, ax: 60, ay: 108, frac: BIFFY_SHUFFLER_FRAC * scale, spot: biffyP.spot });
   return { p: biffyP, s, roll, front };
 }

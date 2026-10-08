@@ -3,8 +3,8 @@
 // bush. The worker strolls in from off screen with a roll of toilet paper, looks left and right,
 // slips behind the bush and squats; POKE: eyes huge, hard hat pops, the roll pops straight up over
 // the bush and drops back behind it; he springs out with quills in his bum and scurries off the way
-// he came, clutching it; the porcupine, hidden behind the bush from the start, bolts out the other
-// way with its quills up. The bush is the board's own (gag-bush.ts). strip-gags.ts puts it on screen.
+// he came, clutching it; once he is gone the porcupine, hidden behind the bush from the start, bolts
+// out the other way with its quills up and his toilet paper stuck on its top quills. The bush is the board's own (gag-bush.ts). strip-gags.ts puts it on screen.
 //
 // Times: the reference cut the porcupine's entrance by starting its clock at SHIFT, so the gag's
 // own time t runs from 0 and `pcPose` is asked for t + SHIFT, exactly as the reference does.
@@ -13,7 +13,7 @@ import { BUSH_BOX, BUSH_FRAC, behindBush, bushMarkup } from './gag-bush.ts';
 import { addEl, makePup, place, type Pup } from './puppet-stage.ts';
 import type { Season } from './trees.ts';
 import { MOE_WORKER, WORKER_FRAC } from './worker.ts';
-import { shuffler } from './biffy.ts';
+import { ROLL, shuffler } from './biffy.ts';
 const O = '#2b1e16';
 const ease = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
 const clamp = (x: number, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -39,18 +39,23 @@ export const PORC = `
   <g class="feetF"><ellipse cx="42" cy="65" rx="6" ry="3.5" fill="#3a2c20" stroke="${O}" stroke-width="1.8"/><ellipse cx="68" cy="65" rx="6" ry="3.5" fill="#3a2c20" stroke="${O}" stroke-width="1.8"/></g>
 </g></g>`;
 
-const ROLL = `<svg viewBox="0 0 20 20" width="100%" height="100%"><circle cx="10" cy="10" r="8.5" fill="#fbfbf6" stroke="${O}" stroke-width="2"/><circle cx="10" cy="10" r="3.2" fill="#b9a98a" stroke="${O}" stroke-width="1.4"/></svg>`;
+// (The roll is the biffy's: its loose end shows it turning.)
 
 export const SHIFT = 2.4;
 export const PC_BEATS: [number, string, string][] = [
   [0, 'quiet-bush', 'A quiet bush'], [1.0, 'stroll-in', 'A worker strolls in, toilet paper in hand'], [3.0, 'look-around', 'Looks left, looks right'],
   [3.7, 'squat', 'Slips behind the bush and squats. Content'], [5.1, 'poke', 'POKE. Eyes go huge, hard hat pops'],
   [5.2, 'roll-pops', 'His toilet paper pops straight up over the bush and drops back behind it'], [5.5, 'springs-out', 'Springs out, quills in his bum'],
-  [5.6, 'porcupine-bolts', 'SURPRISE: a porcupine bolts out the other way, quills up'], [5.8, 'scurry', 'He scurries off fast, hands clutching the side of his bum, quills sticking out, glancing back'],
+  [5.8, 'scurry', 'He scurries off fast, hands clutching the side of his bum, quills sticking out, glancing back'],
+  [7.5, 'rustle', 'He is gone. The bush rustles'], [7.8, 'porcupine-bolts', 'A porcupine bolts out the other way, quills up, his toilet paper stuck on its top quills'],
 ];
-/** Both are off screen by 7.9 (the reference loops at 10.6 after a pause). */
-export const PC_END = 8.0;
+/** Moe is off screen by 7.9, the porcupine (with the roll) by 9.6. */
+export const PC_END = 9.7;
+/** Reference times: the porcupine waits behind the bush until Moe is gone (Jay, Oct 8). */
+export const PC_BOLT = 10.2, PC_BOLT_END = 12.0;
 export const PORC_FRAC = 0.085, QUILL_SHUFFLER_FRAC = 0.243;
+/** His front hand as he springs up at the poke (arms flung up), in his drawing's units from the bush's middle and up from the ground. */
+export const HAND_UP = { x: 14.5, y: 76 };
 
 /**
  * The pose at a reference time (the gag's time + SHIFT). `from`: where the worker walks in from,
@@ -66,10 +71,10 @@ export function pcPose(t: number, from = -320, out = -300, bolt = 330): any {
     o.thB = c*amp; o.thF = -c*amp; o.shB = Math.max(0,-c)*amp*.9; o.shF = Math.max(0,c)*amp*.9; o.arB = -c*amp*.8; o.foB = -12;
     o.y = -Math.abs(Math.cos(t*2*Math.PI*speed))*2.2; o.hatY = -Math.abs(Math.cos(t*2*Math.PI*speed - .6))*1.2; };
   // porcupine
-  if (t < 8.0){ pc.x = 0; }   // already hidden behind the bush, never seen arriving
-  else if (t < 10.0){ const k = seg(t,8.0,10.0); pc.face = 1; pc.x = lerp(0, bolt, k*k*.3 + k*.7); pc.legs = Math.sin(t*26); pc.y = -Math.abs(Math.sin(t*13))*2.5; pc.puff = 1; pc.eye = 4; }
+  if (t < PC_BOLT){ pc.x = 0; }   // already hidden behind the bush, never seen arriving; waits there until Moe is gone
+  else if (t < PC_BOLT_END){ const k = seg(t,PC_BOLT,PC_BOLT_END); pc.face = 1; pc.x = lerp(0, bolt, k*k*.3 + k*.7); pc.legs = Math.sin(t*26); pc.y = -Math.abs(Math.sin(t*13))*2.5; pc.puff = 1; pc.eye = 4; }
   else pc.show = false;
-  if (t > 7.5 && t < 8.0){ pc.puff = 1; pc.eye = 4; }
+  if (t > 7.5){ pc.puff = 1; pc.eye = 4; }
   // worker
   if (t < 3.4) w.show = false;
   else if (t < 5.4){ const k = seg(t,3.4,5.4); w.x = lerp(from, -98, 1 - Math.pow(1-k,1.5)); walk(w, 1.6, 26); w.arF = -40; w.foF = -60; }
@@ -133,7 +138,10 @@ export function pcApply(sc: any, P: any, t: number): void {
   const bu = 0.2*sc.f*r.width/100, leaf = sc.bush.frac*r.width/BUSH_BOX.vw;
   const at = { x: sc.bush.spot.x*r.width, y: sc.bush.spot.y*r.height };
   // porcupine: always behind the bush until it bolts
-  const PC: Pup = sc.porc, pq = PC.q; place(PC, pc.show ? pc.x : 99999);
+  // The porcupine hides right under where he squats: its top quill sits under his hands as he springs up (HAND_UP),
+  // so the roll he flings straight up comes straight down onto it.
+  const pu = sc.porc.frac*r.width/100, wu = sc.worker.frac*r.width/120, pcOff = HAND_UP.x*wu/pu - 2;
+  const PC: Pup = sc.porc, pq = PC.q; place(PC, pc.show ? pc.x + pcOff : 99999);
   PC.svg.style.visibility = pc.show ? 'visible' : 'hidden';
   behindBush(PC.svg, at, leaf);
   pq('.flip').setAttribute('transform', `translate(50 0) scale(${pc.face} 1) translate(-50 0)`);
@@ -141,7 +149,7 @@ export function pcApply(sc: any, P: any, t: number): void {
   pq('.feetF').setAttribute('transform', `translate(${pc.legs*2.5} 0)`); pq('.feetB').setAttribute('transform', `translate(${-pc.legs*2.5} 0)`);
   pq('.quillset').setAttribute('transform', `translate(48 46) scale(${1 + pc.puff*.28}) translate(-48 -46)`);
   pq('.eye').setAttribute('r', pc.eye);
-  sc.bush.svg.style.transform = (t > 7.5 && t < 8.1 ? `rotate(${Math.sin(t*70)*2.5}deg)` : '');
+  sc.bush.svg.style.transform = (t > 7.5 && t < 8.1 ? `rotate(${Math.sin(t*70)*2.5}deg)` : t > PC_BOLT - .35 && t < PC_BOLT + .1 ? `rotate(${Math.sin(t*60)*1.5}deg)` : '');   // the poke, then a rustle as the porcupine breaks cover
   // worker (walk, squat behind the bush)
   const W: Pup = sc.worker; place(W); W.svg.style.zIndex = w.behind ? '2' : '4'; workerApply(W, w);
   behindBush(W.svg, w.behind ? at : null, leaf);
@@ -153,14 +161,31 @@ export function pcApply(sc: any, P: any, t: number): void {
     shq('.arm').setAttribute('transform', `rotate(${110 + Math.sin(t*2*Math.PI*5)*4} 70 66)`);   // hand clutching the side of his bum
     const glance = t > 8.7 && t < 9.2; shq('.head').setAttribute('transform', glance ? 'rotate(-10 80 62)' : `rotate(${Math.sin(t*4)*2} 80 62)`);
     shq('.mouth').setAttribute('rx', 2.4); shq('.mouth').setAttribute('ry', 2.2 + Math.abs(Math.sin(t*6))); }
-  // the roll: in his hand, then it pops straight up over the bush and drops back behind it
-  const groundY = at.y, wu = W.frac*r.width/120;
+  // the roll: in his hand, then it pops straight up over the bush and drops back behind it, then rides out on the porcupine
+  const groundY = at.y;
   let rx: number | null = null, ry = 0, spin = 0; const rs = Math.max(9, 12*wu);
-  if (w.roll === 'hand' && w.show && !w.behind){ rx = W.spot.x*r.width + (w.x + 76 - 60)*wu; ry = W.spot.y*r.height + (w.y + 80 - 108)*wu; }
+  if (w.roll === 'hand' && w.show && !w.behind){   // gripped in his front glove, wherever the arm puts it
+    const h = (W.q('.armF .fore circle') as SVGElement).getBoundingClientRect(); rx = h.left + h.width/2 - r.left; ry = h.top + h.height/2 - r.top; }
   const roll: HTMLElement = sc.roll;
   roll.style.zIndex = '4';
-  if (t >= 7.55 && t < 8.4){ const k = seg(t,7.55,8.4);
-    rx = at.x - 6*bu; ry = groundY - 30*bu - Math.sin(k*Math.PI)*42*bu; spin = k*540; roll.style.zIndex = '2'; }   // up and back down behind the bush
+  // Where it ends up: speared on the porcupine's top quill tips (the quill at the top of the puffed fan, its
+  // drawing's (48, 46 - 39 x 1.28)), sunk a little way into the roll's underside. The porcupine faces left until it bolts.
+  const rr = rs/2;
+  const tipX = at.x + (pc.x + pcOff + (pc.face > 0 ? 48 : 52) - 50)*pu;
+  const tipY = groundY + (pc.y + 46 - 39*(1 + pc.puff*.28) - 66)*pu;
+  const stuck = { x: tipX, y: tipY - rr*.7 };
+  // POKE: it flies out of his hand straight up over the bush and falls straight back down under plain gravity
+  // (constant pull, fast up, slowing to the top, speeding back down, no hang), landing on the porcupine hiding
+  // behind the bush. It never moves sideways.
+  const T0 = 7.55, UP = .24, H = 30*wu, y0 = groundY - HAND_UP.y*wu, g = 2*H/(UP*UP);
+  const land = UP + Math.sqrt(Math.max(0, 2*(stuck.y - (y0 - H))/g));
+  if (t >= T0){ const tau = t - T0;
+    rx = stuck.x;
+    if (tau < land){ ry = y0 - g*UP*tau + g*tau*tau/2; spin = 160*tau/land; }
+    else { ry = stuck.y; spin = 160 + (t >= PC_BOLT ? Math.sin(t*26)*6 : 0); }   // riding out on the quills, jiggling with its run
+    roll.style.zIndex = '2';   // behind the bush's leaves (drawn after the porcupine, so over its quills)
+    if (!pc.show) rx = null;   // gone with the porcupine
+  }
   if (rx !== null){ roll.style.opacity = '1'; roll.style.width = roll.style.height = rs+'px'; roll.style.transform = `translate3d(${rx - rs/2}px, ${ry - rs/2}px, 0) rotate(${spin}deg)`; }
   else roll.style.opacity = '0';
   // poke starburst
