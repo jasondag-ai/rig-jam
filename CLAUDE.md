@@ -1117,16 +1117,42 @@ something, give exact clicks and one command at a time.
   Wildlife Log (`swings`) the same taps play Out Cold. Each once a level. `?gag=golf|cold`.
   ON A VERY SHORT STRIP (an iPhone SE, 375 x 667: 54 px under the Big Pad) the scene is drawn and
   the pair does not play (`SCENE_MIN`).
-- A BIG PAD BUILDS ONLY ITS OWN GAGS (`BIG_PAD_GAGS`): the older ones are drawn for a pad of 6 and
-  are not made there. The biffy and the lease sign stand as on every level.
-- Log: `swings` "Three Swings" and `cold` "Out Cold" after Personal Cloud (30 entries; the sighting
-  is `swings`, since the dig already has a buried `golf` ball). Sounds: footsteps and Moe's stars
-  only; the swings, BOING, TOK, PING and BONK wait for Jay's ear. Witness lines: two stand-ins of
-  Claude's (lines.ts), for Jay to replace.
+- THE OTHER THREE (same reference, same port). A Clearwater gag may draw on THREE LANES, each a
+  layer on its own ground line (`sceneDef`: `back`/`backY` behind the rig mat stack, `render` on
+  the walking lane, `front`/`frontY` between us and the lane), and may say SEVERAL LINES in the
+  game's own bubble (`lines`, each with its speaker's `mouth`; texts in lines.ts).
+  FRESH WASH (`WAVE3.wash`; one tap on the mud puddle, `ClearProp.hitPuddle`): Moe parks his
+  pickup, gets out ON THE FAR SIDE (VEHICLE RULE: trucks face right, the driver's door is out of
+  sight, no near door ever opens: a clunk and a small rock of the cab), walks round the front,
+  wipes the last smudge off the hood, admires it; a water hauler crosses in the FRONT lane and
+  hides the splash; he and the truck are mud; a blob slides off his hat; he trudges back, wipes a
+  peephole and drives off. DINNER BELL (`WAVE3.bell`): the camp cook rings his triangle,
+  "Supper!", four workers stampede past (two behind the rig mats, two in front), he spins in the
+  dust, straightens his toque and follows; then Slow Moe, late, "Save me some!". ONE PEA
+  (`WAVE3.pea`): the crew strolls back with heaped plates, Moe behind with one pea; the bearded
+  worker: "Watching your carbs, Moe?"; the pea rolls off his plate, across the sand and into the
+  puddle. THE SECOND STACKED PAIR (`GAG_TRIGGERS.bell` / `.pea`): FIVE TRUCKS DRIVEN OUT IN A ROW
+  (move after move, each one a truck leaving; any other move or an Undo starts the count again:
+  `GameView.exitRun`) play Dinner Bell; once that is in the log, One Pea. (Every Clearwater level's
+  solution ends with a run of at least nine.) `?gag=wash|bell|pea`.
+- A BIG PAD BUILDS ONLY ITS OWN GAGS (`BIG_PAD_GAGS`: the five): the older ones are drawn for a pad
+  of 6 and are not made there. The biffy and the lease sign stand as on every level.
+- CLEARWATER'S SOUNDS: Jay's five new files (`~/Desktop/RHR Art Inbox/Sound files/clearwater/`,
+  the A TAKE of each; copied to `tools/sfx-art/`): `whoosh` (the two misses), `boing` (the shovel
+  bites), `crack` (the one hit), `splash` (the hauler through the puddle), `triangle` (three dings
+  0.3 s apart, on the cook's first three strikes). Levelled by `audio-pack.py` like the sound
+  pass's (`LEVELLED`), given their places in `VOLUME`, and LAZY (fetched only by a Clearwater
+  level). The rest come from the pack: steps, the wooden `knock` (TOK), `bonk`, `twinkle` (stars,
+  the ting), `tap` pitched up (PING), `squeak` (the rag), `rumble` (the hauler, the stampede),
+  `blup` (plop, plip), `clack` (the door's clunk). 65 effects. NOBODY HAS LISTENED YET.
+- Log: `swings` "Three Swings", `cold` "Out Cold", `wash` "Fresh Wash", `bell` "Dinner Bell", `pea`
+  "One Pea" after Personal Cloud (33 entries; the first is `swings`, since the dig already has a
+  buried `golf` ball). RIDDLES AND PLAIN HINTS ARE JAY'S OWN, word for word (the brief's table,
+  Oct 7 20:22). Witness lines: five stand-ins of Claude's (lines.ts), for Jay to replace.
 - `npm run test:e2e:clearwater-gags` (WebKit at DPR 3, 390 x 844 and 375 x 812): the scene on all
-  ten levels, the pair on its one trigger (every beat in order, "Fore.", the aspen, the log, the
-  strip's pixels the same before and after), the short strip. `test:e2e:depth` and
-  `test:e2e:frames` cover both gags. FOR JAY'S EYE: `node tools/qc-beatsheet.mjs <gag> <reference
+  ten levels, all five on their real triggers (beats in order, the lines said, the aspen, the log,
+  the strip's pixels the same before and after, an Undo breaking the run of five), the short strip. `test:e2e:depth` and
+  `test:e2e:frames` cover all five. FOR JAY'S EYE: `node tools/qc-beatsheet.mjs <gag> <reference
   id> <reference.html> <folder> [iphone|iphone375]` puts the reference's own drawing of every beat
   beside the game's; `tools/qc-filmstrip.mjs` takes `iphone375` too. Sheets:
   `~/Desktop/RHR Art Inbox/qc/clearwater/`.
