@@ -101,10 +101,10 @@ for (const size of SIZES) {
     const s = await scene(page);
     if (!first) first = s;
     same &&= s.html === first.html;
-    all &&= s.layers.every((l) => l && l.touch === 'none' && l.ground) && s.trees === 5 && s.flowers > 0 && s.bushes > 0 && s.lane && s.puddle && s.others === 0 && s.biffy && s.sign;
+    all &&= s.layers.every((l) => l && l.touch === 'none' && l.ground) && s.trees === 5 && s.flowers > 0 && s.bushes > 0 && s.lane && s.puddle && s.others === 0 && s.biffy && !s.sign;
   }
   const s = first;
-  check(all, `on all 10 levels: ground, lane and puddle; 4 spruce and the gold aspen, fireweed, red blueberry bushes; the mat stack; the biffy and the sign; no other tree below the lease; nothing takes a touch`);
+  check(all, `on all 10 levels: ground, lane and puddle; 4 spruce and the gold aspen, fireweed, red blueberry bushes; the mat stack; the biffy, and NO lease sign (its three sightings have no room here: Jay, Oct 8); no other tree below the lease; nothing takes a touch`);
   check(same, 'the scene is the same on every level: the same trees, fireweed, bushes and mat stack in the same places');
   check(s.mats && s.mats.l >= 0 && s.mats.r <= s.w + 0.5 && s.mats.t >= s.strip.top && s.mats.b <= s.strip.bottom && s.mats.l > s.w * 0.6, `the rig mat stack stands at the lane's right end, whole on the screen (${Math.round(s.mats.l)} to ${Math.round(s.mats.r)} of ${s.w})`);
   check(s.aspen && s.aspen.t >= s.strip.top - 1 && s.aspen.b <= s.strip.bottom, 'the gold aspen stands whole inside the strip (its crown is not cut at the berm)');

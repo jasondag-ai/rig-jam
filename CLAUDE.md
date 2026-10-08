@@ -1143,7 +1143,7 @@ something, give exact clicks and one command at a time.
   162, not 175) and the water hauler drives at `FRONT_Y` GY+16 (not GY+28). Then the top: the
   aspen is 84 tall and the last spruce 66, just inside the strip. The mud wave is cut off at the
   strip's floor (`cwFloor`), as the reference's is at the foot of its own picture.
-  (2) THE LEASE MOVES UP FOR THE STRIP (`GameView.liftBigPad`, `clearStripWanted`): on a Big Pad
+  (2) THE LEASE MOVES UP FOR THE STRIP (`GameView.liftPad`, `clearStripWanted`; every region since, see "Every sighting plays in Safari"): on a Big Pad
   the spare height goes to the bottom strip until its scene stands at full size, leaving at
   least `SKY_LEAST` (6 px) of sky under the HUD; never down. In Safari with its toolbars showing
   (390 x 664) the strip was 55 px, too short for the gags at all; it is 72 to 85 px now and they
@@ -1151,8 +1151,10 @@ something, give exact clicks and one command at a time.
   (`test:e2e:clearwater-gags` holds every gag through its run at 390 x 844, 375 x 812, 390 x 664
   and 375 x 635 and measures it). `test:e2e:depth` has Safari's two sizes too; `VIEW=390x664 npm
   run test:e2e:frames` checks first and last frames there.
-- A BIG PAD BUILDS ONLY ITS OWN GAGS (`BIG_PAD_GAGS`: the five): the older ones are drawn for a pad
-  of 6 and are not made there. The biffy and the lease sign stand as on every level.
+- A BIG PAD BUILDS ONLY ITS OWN GAGS AND THE BIFFY'S TWO (`BIG_PAD_GAGS`: the five, Occupied and The
+  Runaway Roll on their usual bumps into the bottom berm): the other older ones are drawn for a pad
+  of 6 and are not made there. NO LEASE SIGN ON CLEARWATER (Jay, Oct 8: a prop with no sighting is
+  a dead prop, and the sign's three visitors have no clear ground among Clearwater's lanes).
 - CLEARWATER'S SOUNDS: Jay's five new files (`~/Desktop/RHR Art Inbox/Sound files/clearwater/`,
   his picks in the brief: the B take of whoosh, boing and crack, the A take of triangle and splash; copied to `tools/sfx-art/`): `whoosh` (the two misses), `boing` (the shovel
   bites), `crack` (the one hit), `splash` (the hauler through the puddle), `triangle` (three dings
@@ -1178,6 +1180,39 @@ something, give exact clicks and one command at a time.
 - THE WORKTREE NEEDS ITS OWN `npm ci` (`~/Rush-Hour-Rigs-bigpad`): with `node_modules` linked to
   the main checkout, Vite refuses the bundled fonts (403: outside its root) and the game shows in
   a fallback font.
+
+## Every sighting plays in Safari, and no dead props (Oct 8)
+- THE PROBLEM: in Safari with its toolbars showing (about 390 x 664, 375 x 635) the older regions'
+  bottom strip was about 20 to 55 px: under `SCENE_MIN` the Mannville and Bakken gags never
+  played, the riser was left out, and the others were tiny.
+- THE LEASE MOVES UP FOR THE STRIP ON EVERY LEVEL (`GameView.liftPad`, was `liftBigPad`): the spare
+  height of the stage goes to the bottom strip first, until it has what its region wants
+  (`stripWanted` for the old strip gags, `sceneStripWanted` for Mannville and Bakken,
+  `clearStripWanted` for Clearwater), leaving the sky its `SKY_WANT` for the theme where there is
+  room and never less than `SKY_LEAST`. Never down: a tall screen looks as it did. At 390 x 664
+  the strip is now about 84 px in the older regions.
+- MANNVILLE'S SCENE IS CROPPED TIGHTER (`MANN_SCENE`, top 44): the same strip shows it bigger.
+- THE AURORA with little sky: its geometry is measured from the screen's top (the lights run up
+  behind the HUD), `AURORA_SKY` is 40, and the moon is kept at least 18 px above the lease.
+- THE RISER'S FIT is measured on its DRAWING, not its svg box (the box has about 29 px of empty
+  room over the pipe, which left it out of every short strip, and the Frozen Tongue with it).
+- MONTNEY ON A SHORT STRIP (`SHORT_STRIP` 130 px): the lease sign stands at `WINTER_SIGN_X`, left
+  of the stage, so its visitors are never lost behind the cow.
+- A TALL MESSAGE TAKES ITS ROOM AT ONCE (`GameView.note`): the Hint's two-line message used to
+  grow the tip line a frame AFTER Gopher Lunch had been placed, and he played 12 px into the
+  words. Now the tip line grows there and then, the lease is refitted in the same call, the room
+  is kept for the level (never given back), and the lunch is fired after the message is up.
+- NO DEAD PROPS: a prop with no tap of its own answers a tap with a small knock (`GameView.knock`,
+  `.prop-knock`, `data-knocked`): the biffy, the gopher's mound, the round bale, and the lease
+  sign where the deer does not come (winter, or once he has been).
+- THE SHORT STRIP AND THE DEPTH RULE: on an 84 px strip the rows collapse, and a 62 px character
+  on the walking lane cannot help standing in front of a back-row prop. `test:e2e:depth` holds
+  ORDER, ONE LANE, NO TIES and NOT LOST at Safari's sizes in every region; "not parked on a prop"
+  is held there for Clearwater only and listed for the rest (`ALLSIZES=1`).
+- `npm run test:e2e:sightings` (`e2e/every-sighting.e2e.mjs`; WebKit, DPR 3, `VIEW=390x664` by
+  default, `URL=` runs it against the live site): every sighting on its REAL trigger in its own
+  region (33 cases), each seen on the screen and never over the pad, the tip line or the buttons;
+  then every tappable prop in every region answers a tap, and no other prop stands there.
 
 ## An old save keeps everything (the Clearwater ship, Oct 8)
 - A NEW REGION, NEW LOG ENTRIES AND NEW SOUNDS ARE ADDED BESIDE WHAT A PHONE HAS SAVED. Never rename
@@ -1383,6 +1418,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:gagsounds` – every gag (all 26) with sound on in WebKit: cues, timing, output level, lazy loading (`ONLY=beaver` runs one; start the dev server first)
 - `npm run test:e2e:offline` – the built site under the Pages base path: the service worker registers, fills its cache through 503s, and the game plays with the network gone (builds first; needs no dev server)
 - `npm run test:e2e:click` – the buttons' one click and the haptic tick: every kind of button, never on a drag, a tick per truck out, nothing with the switch off (start the dev server first)
+- `npm run test:e2e:sightings` – every sighting on its real trigger at Safari's visible size, and every tappable prop answers a tap (`VIEW=375x635`, `ONLY=beaver`, `URL=` the live site; start the dev server first)
 - `npm run test:e2e:save` – a real save from the live build before Clearwater, loaded into this build at four phone sizes: everything kept, the update bar (start the dev server first)
 - `npm run test:e2e:audio` – sound: lazy loading, every cue, gag sounds, the three music styles, gapless loops, Credits (start the dev server first)
 

@@ -39,10 +39,12 @@ for (const [device, width, height, dpr] of SIZES) {
   await page.reload({ waitUntil: 'networkidle' });
   for (let r = 0; r < REGIONS.length; r++) {
     if (process.env.REGION && +process.env.REGION !== r) continue;
-    // Safari's two short sizes are held to the rule on the Big Pad (Clearwater), which moves its lease up for the strip.
-    // The five older regions have only about 20 px of strip there and their gags crowd their props: known, as on the
-    // live game before Clearwater, and not yet reworked (`ALLSIZES=1` checks them too).
-    if (device.startsWith('Safari') && REGIONS[r].id !== 'clearwater' && !process.env.ALLSIZES) continue;
+    // Safari's two short sizes (its toolbars showing) are held to ORDER, ONE LANE, NO TIES and NOT LOST in every region
+    // (the lease moves up for the strip on every level: GameView.liftPad). NOT PARKED ON A PROP is held there on the
+    // Big Pad only: in the five older regions the strip is about 84 px, the rows close up, and a 62 px character on
+    // the walking lane cannot help standing in front of a small back-row prop. Those are LISTED, not failed
+    // (`ALLSIZES=1` fails them too).
+    const lenient = device.startsWith('Safari') && REGIONS[r].id !== 'clearwater' && !process.env.ALLSIZES;
     await page.locator('.region-tab').nth(r).click();
     await page.locator('.level-btn').nth(2).click();
     await page.waitForSelector('.board .truck.sprite-on');
@@ -121,8 +123,9 @@ for (const [device, width, height, dpr] of SIZES) {
     check(out.lanes.length === 0, `ONE LANE: every gag layer keeps one ground line, and nothing in it stands lower${out.lanes.length ? '\n        ' + out.lanes.join('\n        ') : ''}`);
     check(ties.length === 0, `NO TIES: no character overlaps a prop standing on his own ground line${ties.length ? '\n        ' + ties.map((x) => x.text).join('\n        ') : ''}`);
     check(lost.length === 0, `NOT LOST: no character stands still mostly hidden behind a prop${lost.length ? '\n        ' + lost.map((x) => x.text).join('\n        ') : ''}`);
-    check(parked.length === 0, `NOT PARKED ON A PROP: no character stands still covering a prop behind him${parked.length ? '\n        ' + parked.map((x) => x.text).join('\n        ') : ''}`);
-    found.push(...parked.map((x) => x.text), ...ties.map((x) => x.text), ...lost.map((x) => x.text), ...out.order, ...out.lanes);
+    if (lenient) console.log(`   note NOT PARKED ON A PROP is not held on this short strip${parked.length ? ': ' + parked.length + ' listed\n        ' + parked.map((x) => x.text).join('\n        ') : ' (none anyway)'}`);
+    else check(parked.length === 0, `NOT PARKED ON A PROP: no character stands still covering a prop behind him${parked.length ? '\n        ' + parked.map((x) => x.text).join('\n        ') : ''}`);
+    found.push(...(lenient ? [] : parked.map((x) => x.text)), ...ties.map((x) => x.text), ...lost.map((x) => x.text), ...out.order, ...out.lanes);
     await page.locator('.hud [data-act="levels"]').click();
     await page.waitForSelector('.screen.levels');
   }
