@@ -498,7 +498,14 @@ WAVE3.cloud = { name:'Personal Cloud', dur:12.4, still:9.0,
 function bush(x,b,s=1,ca='#6f8a3e',cb='#8ea956'){const cs=[[-9,-8,9],[0,-13,10],[9,-8,9]].map(([dx,dy,r])=>[x+dx*s,b+dy*s,r*s]);return cs.map(([cx,cy,r])=>`<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r)}" fill="${OL}" stroke="${OL}" stroke-width="5"/>`).join('')+cs.map(([cx,cy,r])=>`<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r)}" fill="${ca}"/>`).join('')+cs.map(([cx,cy,r])=>`<circle cx="${r2(cx-r*.3)}" cy="${r2(cy-r*.3)}" r="${r2(r*.45)}" fill="${cb}"/>`).join('');}
 const MOE={suit:['#e8862e','#bf6418'],stubble:true,hatRot:-9};
 const ASP={x:222,b:132,h:118};
-const MATX=318, PUD={x:236,y:175};
+/* THE FRONT LANE IS TIGHTER THAN THE REFERENCE'S (Jay, Oct 8: the characters were too small on a phone, and the band of
+   grass under the lane was empty). The reference puts the puddle at y 175 and drives the hauler at GY+28, 34 units of
+   strip under the walking lane. Here the puddle lies at y 162, on the two-track's own near rut, and the hauler drives at
+   GY+16 (`FRONT_Y`): the strip ends at y 170, so the same screen height shows everything a quarter bigger. */
+const MATX=318, PUD={x:236,y:162};
+const FRONT_Y=GY+16;
+/** The strip's floor (scene-stage.ts `CW_SCENE.floor`). */
+const CW_FLOOR=170;
 function fireweed(x,b,s=1){let o='';[[-4,-26],[0,-34],[5,-24]].forEach(([dx,h])=>{const X=x+dx*s,T=b+h*s;o+=`<path d="M${r2(X)} ${b} V${r2(T)}" stroke="#5f7a3a" stroke-width="2" stroke-linecap="round"/>`;for(let k=0;k<4;k++)o+=`<circle cx="${r2(X+(k%2?1.6:-1.6))}" cy="${r2(T+k*3.2)}" r="${r2(2.3-k*.25)}" fill="#c8417e" stroke="${OL}" stroke-width="1"/>`;});return o;}
 function matStack(x0,b){let s='';const tw=23.3,th=7.6;
  for(let L=0;L<3;L++)for(let i=0;i<3;i++){const x=x0+i*tw,y=b-(L+1)*th;
@@ -550,7 +557,7 @@ function cwLane(x0,x1){
  return `<path d="M${r2(x0)} 138 H0 Q120 134 210 139 T390 137 H${r2(x1)} V166 H390 Q300 168 200 165 T0 167 H${r2(x0)} z" fill="#d4c28c"/><path d="M${r2(x0)} 144 H0 Q120 140 210 145 T390 143 H${r2(x1)} M${r2(x0)} 159 H0 Q120 156 210 160 T390 158 H${r2(x1)}" fill="none" stroke="#c1ad77" stroke-width="2.4"/>`;}
 /** The lichen's soft lighter and darker bands (the reference's first two; over the game's own ground). */
 function cwBands(x0,x1){return [[60,'#b6bb8e'],[96,'#aab182']].map(([y,c])=>`<path d="M${r2(x0)} ${y} Q195 ${y-6} ${r2(x1)} ${y} V${y+34} Q195 ${y+28} ${r2(x0)} ${y+34} z" fill="${c}" opacity=".55"/>`).join('');}
-export const CW = { ASP, MATX, PUD, MATS_FOOT, MAT_BOX:{x:MATX,y:MATS_FOOT-22.8,w:69.9,h:22.8}, mats:()=>matStack(MATX,MATS_FOOT), puddle, fireweed, bush, lane:cwLane, bands:cwBands };
+export const CW = { ASP, MATX, PUD, MATS_FOOT, FLOOR:CW_FLOOR, MAT_BOX:{x:MATX,y:MATS_FOOT-22.8,w:69.9,h:22.8}, mats:()=>matStack(MATX,MATS_FOOT), puddle, fireweed, bush, lane:cwLane, bands:cwBands };
 
 /* 9. Three Swings (Slow Moe) */
 const GOLF_IN=160, GOLF_OUT=206.25; // his speed at the screen's edge: eased out of the walk in (2 x 160 / 2.0), eased into the walk off (2 x 165 / 1.6)
@@ -721,7 +728,7 @@ function heap(x,y){return`<ellipse cx="${r2(x)}" cy="${r2(y)}" rx="10" ry="2.6" 
 
 /* 11. Fresh Wash (Slow Moe). The hauler passes in the FRONT lane, between us and the pickup: it hides the splash. */
 const WASH_IN=2*(WPX+90)/1.9, WASH_OUT=2*(470-WPX)/1.1, HAUL_V=640/2.55;
-WAVE3.wash = { name:'Fresh Wash', dur:14.4, still:9.7, frontY:GY+28,
+WAVE3.wash = { name:'Fresh Wash', dur:14.4, still:9.7, frontY:FRONT_Y,
  beats:[[0,'drives-in','Slow Moe drives his pickup in and parks.'],[2.2,'clunk-out','Clunk. He gets out on the far side (driver side). The truck rocks.'],[2.3,'round-the-front','Walks along the far side, head showing over the hood, and steps round the front.'],[3.85,'hop-turn','Hop-turn to face the hood.'],[4.2,'wipes','One last smudge of dirt on the hood. He wipes it away. Squeak squeak.'],[5.6,'spotless','Spotless. Sparkle.'],[6.2,'admires','Steps back to admire it. Ting!'],[7.2,'hauler','A water hauler rumbles in from the left.'],[7.6,'no-no-no','He sees it. Arms up. No no no.'],[8.45,'sploosh','SPLOOSH through the puddle.'],[9.4,'mud','Hauler gone. He and the truck are mud.'],[9.6,'blinks','Blink. Blink.'],[10.4,'looks-at-you','Slow look at you.'],[10.9,'plop','A blob slides off his hat. Plop.'],[11.3,'trudges-back','Trudges back round the front and along the far side.'],[12.55,'clunk-in','Clunk. Back in the driver seat.'],[12.7,'peephole','Wipes a peephole in the window.'],[13.2,'drives-off','Drives off.']],
  lead:E=>E/WASH_IN, tail:E=>E/WASH_OUT,
  truckX(t){if(t<0)return -90+WASH_IN*t;if(t<13.2)return kf(t,[[0,-90],[1.9,WPX,'out']]);return t>14.3?470+WASH_OUT*(t-14.3):kf(t,[[13.2,WPX],[14.3,470,'in']]);},
@@ -778,10 +785,14 @@ WAVE3.wash = { name:'Fresh Wash', dur:14.4, still:9.7, frontY:GY+28,
  front(t,E=0){
   let s='';
   const hx=this.haulX(t);
-  if(hx>-125-E&&hx<520+E){s+=hauler({x:hx,y:GY+28,spin:hx*4.4});}
+  if(hx>-125-E&&hx<520+E){s+=hauler({x:hx,y:FRONT_Y,spin:hx*4.4});}
   const k1=seg(t,8.47,9.25),k2=seg(t,9.0,9.7);
-  if(t>8.47&&t<9.25)s+=mudWave(PUD.x,PUD.y-2,k1);
-  if(t>9.0&&t<9.7)s+=mudWave(PUD.x,PUD.y-2,k2*.8);
+  // (The mud that falls back is cut off at the strip's floor, as the reference's is at the foot of its own picture: it never
+  // drops onto the tip line or the buttons.)
+  if(t>8.47&&t<9.7){s+=`<clipPath id="cwFloor"><rect x="-700" y="-300" width="1800" height="${300+CW_FLOOR}"/></clipPath><g clip-path="url(#cwFloor)">`;
+   if(t>8.47&&t<9.25)s+=mudWave(PUD.x,PUD.y-2,k1);
+   if(t>9.0&&t<9.7)s+=mudWave(PUD.x,PUD.y-2,k2*.8);
+   s+='</g>';}
   if(t>8.5&&t<9.1)s+=sfx(PUD.x-10,GY-84,'SPLOOSH',16,-8,'#c49a5a',1+.15*Math.sin(t*30));
   return s;}};
 

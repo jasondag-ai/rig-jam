@@ -759,10 +759,13 @@ export const SIGN_X = 0.62;
 /** Where the sign stands on THIS level (Mannville stands it left of its lane aspen: scene-stage.ts). Set before the level's SignProp is made. */
 let signX: number = SIGN_X;
 export const setSignX = (x: number = SIGN_X): void => void (signX = x);
+/** The lowest the sign may stand on THIS level (screen px; Clearwater keeps it clear behind its back lane, where runners pass). */
+let signLowest = Infinity;
+export const setSignLowest = (y: number = Infinity): void => void (signLowest = y);
 /** The line the sign and its visitors stand on (screen px), and the strip's scale. */
 export function signStand(screenW: number, strip: { top: number; bottom: number }): { ground: number; scale: number } {
   const { ground, scale } = stripGeom(screenW, strip);
-  return { ground: Math.min(ground, biffyStand(screenW, strip).ground + 0.035 * screenW * scale), scale };
+  return { ground: Math.min(ground, biffyStand(screenW, strip).ground + 0.035 * screenW * scale, signLowest), scale };
 }
 /** The lane kept clear of trees: from where the surveyor works (left of the sign) to the near screen edge. */
 export function signLane(screenW: number, strip: { top: number; bottom: number }): { x: number; y: number; width: number; height: number } {

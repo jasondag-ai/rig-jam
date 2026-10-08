@@ -293,7 +293,7 @@ describe('the four Bakken gags (ported: wave3.ts) and the standard Bakken scene'
 });
 
 // ---------- Clearwater (the Big Pad): the standard scene and the golf pair ----------
-import { CW_ASPEN, CW_BUSHES, CW_FIREWEED, CW_SCENE, CW_SIGN_AT, CW_TREES, clearGround, clearScene } from './scene-stage.ts';
+import { CW_ASPEN, CW_BUSHES, CW_FIREWEED, CW_SCENE, CW_SIGN_AT, CW_TREES, clearGround, clearScene, clearStripWanted } from './scene-stage.ts';
 import { CW } from './wave3.ts';
 import { SHARES } from './gag-triggers.ts';
 
@@ -301,13 +301,19 @@ describe('Clearwater: the standard scene', () => {
   // The Big Pad's bottom strip at 390 x 844 and at 375 x 812.
   const strips: [number, { top: number; bottom: number }][] = [[390, { top: 582, bottom: 705 }], [375, { top: 558, bottom: 673 }]];
 
-  it('its strip runs lower than the others (the puddle lies in the front lane), on the same walking lane', () => {
+  it('its strip is tighter than the reference\'s (everything a quarter bigger): 123 units from just over the tallest tree to just under the two-track, on the same walking lane', () => {
+    expect(CW_SCENE.floor - CW_SCENE.top).toBe(123);
+    expect(CW.FLOOR).toBe(CW_SCENE.floor);
+    expect(Math.round((154 / 123) * 100)).toBe(125);
+    expect(clearStripWanted(390)).toBe(123);
+    expect(clearStripWanted(375)).toBe(119);
+    expect(clearStripWanted(430)).toBe(123);
     expect(CW_SCENE.floor).toBeGreaterThan(SCENE.floor);
     expect(CW_SCENE.ground).toBe(SCENE.ground);
     for (const [w, strip] of strips) {
       const g = sceneGeom(w, strip, CW_SCENE);
       expect(g.fits).toBe(true);
-      expect(g.s).toBeGreaterThan(0.7);
+      expect(g.s).toBeGreaterThan(0.9);
       // The world stands on the strip's floor and its top is the berm's foot.
       expect(toScreen(g, 0, CW_SCENE.floor).y).toBeCloseTo(strip.bottom, 5);
       expect(g.top).toBeCloseTo(CW_SCENE.top, 5);
@@ -316,20 +322,25 @@ describe('Clearwater: the standard scene', () => {
       expect(toScreen(g, CW.MAT_BOX.x + CW.MAT_BOX.w, 0).x).toBeLessThanOrEqual(w);
       expect(toScreen(g, 0, CW_ASPEN.base - CW_ASPEN.h).y).toBeGreaterThanOrEqual(strip.top);
     }
-    // An iPhone SE's strip under the Big Pad is too short for the gags.
-    expect(sceneGeom(375, { top: 486, bottom: 540 }, CW_SCENE).fits).toBe(false);
+    // Safari with its toolbars showing (the lease moved up for the strip: 72 px at 390 x 664): the scene fits and the gags play.
+    expect(sceneGeom(390, { top: 480, bottom: 552 }, CW_SCENE).fits).toBe(true);
+    expect(sceneGeom(390, { top: 480, bottom: 552 }, CW_SCENE).s).toBeGreaterThan(0.55);
+    // A strip of 50 px is too short for them.
+    expect(sceneGeom(375, { top: 486, bottom: 536 }, CW_SCENE).fits).toBe(false);
   });
 
   it('the ground: lichen bands, the sandy two-track run on to both screen edges, the mud puddle, tufts kept off the lane', () => {
-    const g = sceneGeom(390, strips[0][1], CW_SCENE);
+    // (Safari with its toolbars showing: a strip of 72 px under the Big Pad, so the screen is wider than the scene's 390.)
+    const g = sceneGeom(390, { top: 480, bottom: 552 }, CW_SCENE);
     const ground = clearGround(g);
     expect(g.E).toBeGreaterThan(20);
     expect(ground).toContain('fill="#d4c28c"'); // the lane's sand
-    expect(ground).toContain(`M${(g.left - 2).toFixed(2).replace(/\.?0+$/, '')}`); // from past the left edge
+    // (It starts past the left edge of this wider screen.)
+    expect(+ground.match(/<path d="M(-?[\d.]+) 138/)![1]).toBeLessThan(g.left);
     expect(ground).toContain('fill="#6b5a3a"'); // the puddle
     const tufts = [...ground.matchAll(/<path d="M(-?[\d.]+) (-?[\d.]+) l2 -6/g)].map((m) => +m[2]);
     expect(tufts.length).toBeGreaterThan(12);
-    for (const y of tufts) expect(y <= 132 || y >= 171).toBe(true);
+    for (const y of tufts) expect(y).toBeLessThanOrEqual(132);
     // Always the same ground for the same screen.
     expect(clearGround(g)).toBe(ground);
   });
@@ -428,7 +439,7 @@ describe('Clearwater: Three Swings and Out Cold, as the reference has them', () 
   });
 
   it('as timelines on the Big Pad\'s strip: the clock starts `lead` early and every beat keeps the reference\'s time', () => {
-    const g = sceneGeom(390, { top: 582, bottom: 705 }, CW_SCENE);
+    const g = sceneGeom(390, { top: 480, bottom: 552 }, CW_SCENE);
     for (const [id, gag] of [['golf', golf], ['cold', cold]] as [string, Gag][]) {
       const def = sceneDef(id, id, () => g);
       const lead = gag.lead(g.E);

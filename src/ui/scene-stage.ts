@@ -18,8 +18,12 @@ import { BALE_AT, CW, MUSKEG, WAVE3, baleAtRest, rng, tuft } from './wave3.ts';
 /** The reference's strip, in its own units. */
 export const SCENE = { w: 390, top: 30, floor: 168, ground: 150 } as const;
 const WAVE3_SCENE = SCENE;
-/** Clearwater's strip runs lower: its mud puddle lies in the FRONT lane, below the walking lane (the reference draws to y 190). */
-export const CW_SCENE = { w: 390, top: 30, floor: 184, ground: 150 } as const;
+/**
+ * Clearwater's strip: from y 47 (just over its tallest tree) to y 170 (just under the sandy two-track, whose near rut
+ * holds the mud puddle and is the front lane). 123 units tall where the reference's own strip is 154: Jay asked for
+ * everything a quarter bigger on a phone (Oct 8), taking the empty band under the lane first.
+ */
+export const CW_SCENE = { w: 390, top: 47, floor: 170, ground: 150 } as const;
 /** Below this scale the strip is too short for these gags: they do not play there. */
 export const SCENE_MIN = 0.45;
 
@@ -251,19 +255,24 @@ export const CW_TREES: { species: Species; x: number; base: number; h: number }[
   // (The reference stands this spruce at x 290, right behind where the cook rings his triangle (x 286): by the depth rule
   // nobody parks on a prop, so it stands at 306.)
   { species: 'spruce', x: 306, base: 118, h: 56 },
-  { species: 'spruce', x: 372, base: 114, h: 70 },
+  // (66 tall, not the reference's 70: its tip stays inside the tighter strip.)
+  { species: 'spruce', x: 372, base: 114, h: 66 },
 ];
-// (The reference's aspen is 118 tall and its crown runs up over the berm. The strip's scenery stops at the berm's foot, so it is 96 here: its trunk, where the ball pings, is where it was.)
-export const CW_ASPEN = { species: 'aspen' as Species, x: CW.ASP.x, base: CW.ASP.b, h: 96 };
+// (The reference's aspen is 118 tall and its crown runs up over the berm. The strip's scenery stops at the berm's foot, so it is 84 here (the tallest thing in the scene, just inside the strip's top): its trunk, where the ball pings, is where it was.)
+export const CW_ASPEN = { species: 'aspen' as Species, x: CW.ASP.x, base: CW.ASP.b, h: 84 };
 /** Fireweed [x, base, size] and red fall blueberry bushes [x, base, size] (the reference's own drawings). */
 // (The reference's second fireweed stands at x 262, where Moe admires his truck and stands with his one pea: it stands at
 // 352 here, between the blueberry bush and the last spruce, over the rig mats, where nobody stops.)
 export const CW_FIREWEED: [number, number, number][] = [[122, 126, 1], [352, 124, 0.9]];
 export const CW_BUSHES: [number, number, number][] = [[154, 126, 0.72], [340, 122, 0.66]];
+/** How much strip the scene wants on a screen `screenW` wide to stand at its full size (px): the Big Pad gives its strip that first (GameView.fit). */
+export const clearStripWanted = (screenW: number): number => Math.ceil((CW_SCENE.floor - CW_SCENE.top) * Math.min(1, screenW / CW_SCENE.w));
 /** The mud puddle's box in the world (the Fresh Wash gag's). */
 export const CW_PUDDLE_BOX = { x: CW.PUD.x - 36, y: CW.PUD.y - 7, w: 72, h: 14 };
 /** Where the lease sign stands on a Clearwater level, in the world: up by the berm over the blueberry bush and the rig mats and clear of where Moe and the bearded worker stand. */
 export const CW_SIGN_AT = 330;
+/** And the lowest its foot may be, in the world: ten units behind the back lane (y 138). */
+export const CW_SIGN_FOOT = 128;
 
 /** Clearwater's ground, flat under everything: lichen bands, the sandy two-track, the puddle, tufts. */
 export function clearGround(g: SceneGeom): string {
@@ -274,7 +283,7 @@ export function clearGround(g: SceneGeom): string {
   for (let x = -200; x < SCENE.w + 200; x += 13) {
     const tx = Math.round(x + R() * 10), ty = Math.round(46 + R() * 136), light = R() < 0.45;
     if (tx < g.left || tx > g.left + g.worldW || ty < g.top + 8 || ty > CW_SCENE.floor - 3) continue;
-    if ((ty > 132 && ty < 171) || (Math.abs(tx - CW.PUD.x) < 42 && ty > 164)) continue;
+    if (ty > 132) continue;
     tufts += tuft(tx, ty, light ? '#cfd2a4' : '#858c58');
   }
   return CW.bands(x0, x1) + CW.lane(x0, x1) + CW.puddle() + tufts;
@@ -341,6 +350,10 @@ export class ClearProp {
     this.mats.firstElementChild!.innerHTML = `<g class="cw-mats">${CW.mats()}</g>`;
   }
 
+  /** The lowest the lease sign may stand (screen px from the screen's top): clearly behind the back lane, where Dinner Bell's runners pass in front of it. */
+  signLowest(): number {
+    return toScreen(this.geom(), 0, CW_SIGN_FOOT).y;
+  }
   /** Where the lease sign stands on this screen (a share of its width). */
   signX(): number {
     const g = this.geom();

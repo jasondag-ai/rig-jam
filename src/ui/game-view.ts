@@ -23,10 +23,10 @@ import { applyCamo, loadLog, record, saveLog, sightingToast, type Sighting } fro
 import { bearAlways, bearNever, eggOff, gagTest, lunchAlways, lunchNever, rollPinned, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
 import { BackAndForth, GAG_TRIGGERS, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump, type GagId } from './gag-triggers.ts';
-import { BakkenProp, ClearProp, MANN_SIGN_X, MannProp, auroraDef, sceneDef } from './scene-stage.ts';
+import { BakkenProp, ClearProp, clearStripWanted, MANN_SIGN_X, MannProp, auroraDef, sceneDef } from './scene-stage.ts';
 import { BALE_LINE, BELL_LINES, FORE_LINE, PEA_LINES } from './lines.ts';
 import { WAVE3 } from './wave3.ts';
-import { setSignX, stageBox, WINTER_SIGN_X, BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, SignProp, deerDef, signLane, surveyorDef, touristsDef, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
+import { setSignLowest, setSignX, stageBox, WINTER_SIGN_X, BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, SignProp, deerDef, signLane, surveyorDef, touristsDef, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
 import { companyLine, tierFor } from './company.ts';
@@ -305,6 +305,7 @@ export class GameView {
       // Clearwater: its own standard scene (the sandy two-track, the gold aspen, the rig mat stack, the puddle) and the golf pair.
       const inClear = this.regionId === GAG_TRIGGERS.golf.region || BIG_PAD_GAGS.includes(this.eggForced as GagId);
       setSignX(inMann ? MANN_SIGN_X : theme.season === 'winter' ? WINTER_SIGN_X : undefined);
+      setSignLowest();
       if (inClear) this.clear = new ClearProp(egg, theme.season);
       if (inMann) this.mann = new MannProp(egg, theme.season);
       // Bakken: the round bale, in the same spot of every level's bottom strip, and its four gags.
@@ -570,6 +571,22 @@ export class GameView {
     if (act === 'share') void this.share(el);
   }
 
+  /**
+   * THE BIG PAD GIVES ITS BOTTOM STRIP THE SPARE HEIGHT FIRST (Jay, Oct 8: in Safari with its toolbars showing the lease
+   * sat centred between a sky band and a strip of 55 px each, and Clearwater's characters were tiny). The lease is moved
+   * UP until the strip is as tall as its scene wants at full size, or until `SKY_LEAST` px of sky are left under the
+   * HUD; never down. It stays inside the stage, so it never covers the HUD, the tip line or the buttons.
+   */
+  private liftBigPad(stage: DOMRect): void {
+    const el = this.board.el;
+    if (!this.bigPad || !this.clear) return void (el.style.marginBottom = '');
+    const pad = parseFloat(getComputedStyle(this.stage).paddingTop) || 0;
+    const spare = stage.height - 2 * pad - el.offsetHeight;
+    const below = Math.max(spare / 2, Math.min(spare - SKY_LEAST, clearStripWanted(stage.width) - pad));
+    // (Centred in the stage, a bottom margin of m moves it up by m / 2.)
+    el.style.marginBottom = `${Math.max(0, Math.round(2 * below - spare))}px`;
+  }
+
   /** Call after the element is in the document and on every resize. */
   fit(): void {
     // (The tip line's room is pinned once it is on the page and has a height: see `showLevelHint`.)
@@ -577,6 +594,7 @@ export class GameView {
     if (!this.noteEl.style.minHeight && this.noteEl.textContent) requestAnimationFrame(() => { if (!this.noteEl.style.minHeight && this.noteEl.textContent && this.noteEl.offsetHeight > 0) this.noteEl.style.minHeight = `${this.noteEl.offsetHeight}px`; });
     const r = this.stage.getBoundingClientRect();
     this.board.resize(r.width, r.height);
+    this.liftBigPad(r);
     // Sky meets the ground just above the board; trees stand around it.
     const screen = this.el.getBoundingClientRect();
     const b = this.board.el.getBoundingClientRect();
@@ -602,7 +620,7 @@ export class GameView {
     this.mann?.layout();
     this.clear?.layout();
     // (Clearwater's sign has its place in the scene's own world, wherever that lies on this screen.)
-    if (this.clear) setSignX(this.clear.signX());
+    if (this.clear) { setSignX(this.clear.signX()); setSignLowest(this.clear.signLowest()); }
     this.bakken?.layout();
     this.biffy?.layout();
     if (!this.eggsOn.has('surveyor') && !this.eggsOn.has('deer') && !this.eggsOn.has('tourists')) this.sign?.layout();
@@ -1223,6 +1241,8 @@ function fitRibbon(span: HTMLElement | null): void {
 }
 
 /** Which Wildlife Log entry each egg fills in. */
+/** The least sky left between the HUD and a Big Pad's lease when the lease is moved up for its strip (px). */
+const SKY_LEAST = 6;
 /** The gags a Big Pad (Clearwater) plays. */
 const BIG_PAD_GAGS: GagId[] = ['golf', 'cold', 'wash', 'bell', 'pea'];
 const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull', porcupine: 'porcupine', gopherLunch: 'lunch', sam: 'sam', tongue: 'tongue', surveyor: 'surveyor', deer: 'deer', tourists: 'tourists', muskeg: 'muskeg', catTrain: 'cattrain', beaver: 'beaver', aurora: 'aurora', tumbleweed: 'tumbleweed', pdogs: 'pdogs', bale: 'bale', cloud: 'cloud', golf: 'swings', cold: 'cold', wash: 'wash', bell: 'bell', pea: 'pea' };
