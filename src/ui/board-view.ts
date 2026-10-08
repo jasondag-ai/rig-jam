@@ -59,6 +59,8 @@ export class BoardView {
   private level: Level | null = null;
   private trucks = new Map<string, HTMLElement>();
   private size: number = SIZE;
+  /** A berm of sand (Clearwater's theme) in place of the ground's own dirt. */
+  private sandBerm = false;
   private cell = 48;
   private fence = 20;
   /** Trucks on their way out right now (the yard's clip is lifted while there are any). */
@@ -273,12 +275,12 @@ export class BoardView {
     const { cell, fence, ground } = this;
     const over = Math.round(fence * BERM_OVER);
     const scale = Math.min(3, window.devicePixelRatio || 1);
-    const key = [cell, fence, ground, scale, this.level.id, this.level.gates.map((g) => g.side + g.index).join()].join('|');
+    const key = [cell, fence, ground, this.sandBerm, scale, this.level.id, this.level.gates.map((g) => g.side + g.index).join()].join('|');
     if (key === this.bermKey) return;
     this.bermKey = key;
     const size = cell * this.size + (fence + over) * 2;
     Object.assign(this.berm.style, { left: `${-over}px`, top: `${-over}px`, width: `${size}px`, height: `${size}px` });
-    paintBerm(this.berm, { cell, band: fence, over, gates: this.level.gates, size: this.size }, ground, seedFrom(this.level.id), scale);
+    paintBerm(this.berm, { cell, band: fence, over, gates: this.level.gates, size: this.size }, ground, seedFrom(this.level.id), scale, this.sandBerm);
     if (this.night) this.paintNightBerm();
     paintDetail(this.detail, planDetail(this.level, ground, seedFrom(this.level.id)), cell, fence, scale);
   }
@@ -633,10 +635,11 @@ export class BoardView {
     ctx.globalCompositeOperation = 'source-over';
   }
 
-  setGround(ground: Ground): void {
+  setGround(ground: Ground, sandBerm = false): void {
     this.tracks.setGround(ground);
     this.spray.setGround(ground);
     this.ground = ground;
+    this.sandBerm = sandBerm;
     this.paintBerm();
   }
 

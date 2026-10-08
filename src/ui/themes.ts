@@ -39,6 +39,8 @@ export interface Theme {
   season: Season;
   /** How much of the usual tree cover stands (1 = boreal forest; the prairie keeps a shelterbelt's worth). */
   trees: number;
+  /** A berm of pale sand (Clearwater) in place of the ground's own dirt. */
+  berm?: 'sand';
   vars: Record<ThemeVar, string>;
 }
 
@@ -181,6 +183,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     id: 'boreal',
     name: 'Boreal fall',
     ground: 'gravel',
+    berm: 'sand',
     spruceShare: 0.55,
     season: 'fall',
     trees: 1,

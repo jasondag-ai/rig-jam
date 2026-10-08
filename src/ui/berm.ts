@@ -92,6 +92,12 @@ export const BERM_LOOKS: Record<Ground, Look> = {
   snow: { dark: [224, 233, 246], light: [255, 255, 255], shade: [168, 190, 226], gloss: 0.1, ambient: 0.8, sun: 0.33, turf: null, tufts: 0.7, blades: ['#b99a5c', '#9c7f48', '#c8ad6c', '#8a6f3e'], shadow: 'rgba(70, 105, 160, 0.3)' },
 };
 
+/**
+ * Clearwater's berm (the Big Pad): pushed-up SAND, pale and dry (the reference strip's berm is #a98a5c with a #c3a172
+ * crest), lichen and moss creeping up the outer slope, a few dry stalks. Asked for by a theme (`Theme.berm`).
+ */
+export const SAND_BERM: Look = { dark: [158, 128, 84], light: [214, 186, 136], shade: [150, 126, 110], gloss: 0, ambient: 0.4, sun: 0.94, turf: [150, 160, 112], tufts: 1.1, blades: ['#858c58', '#a3aa74', '#c8b574', '#6f7a44'], shadow: 'rgba(70, 48, 18, 0.38)' };
+
 /** Repeatable value noise in 0..1. */
 function noise2(seed: number): (x: number, y: number) => number {
   const hash = (ix: number, iy: number) => {
@@ -125,8 +131,8 @@ const LIGHT = (() => {
  * Paints the berm. The canvas covers the board plus `g.over` on every side; `scale` is device px per
  * CSS px. `seed` keeps a level's lumps and tufts the same every time.
  */
-export function paintBerm(canvas: HTMLCanvasElement, g: BermGeometry, ground: Ground, seed: number, scale: number): void {
-  const look = BERM_LOOKS[ground];
+export function paintBerm(canvas: HTMLCanvasElement, g: BermGeometry, ground: Ground, seed: number, scale: number, sand = false): void {
+  const look = sand ? SAND_BERM : BERM_LOOKS[ground];
   const edge = g.band + g.over; // pad origin sits this far into the canvas
   const css = g.cell * (g.size ?? SIZE) + edge * 2;
   const n = Math.max(1, Math.round(css * scale));

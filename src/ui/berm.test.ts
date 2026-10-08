@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { REGIONS } from '../levels/regions.ts';
-import { BERM_LOOKS, BERM_OVER, bermHeight, type BermGeometry } from './berm.ts';
+import { BERM_LOOKS, BERM_OVER, SAND_BERM, bermHeight, type BermGeometry } from './berm.ts';
 
 const cell = 55;
 const band = 23;
@@ -48,6 +48,9 @@ describe('berm', () => {
 
   it('has a look for every ground: dirt and mud with grass, snow without', () => {
     expect(Object.keys(BERM_LOOKS).sort()).toEqual(['gravel', 'mud', 'snow']);
+    // Clearwater's berm is sand: paler than Cardium's dirt, with lichen (not grass) on its outer slope.
+    expect(SAND_BERM.light.reduce((a, b) => a + b)).toBeGreaterThan(BERM_LOOKS.gravel.light.reduce((a, b) => a + b));
+    expect(SAND_BERM.turf![1] - SAND_BERM.turf![0]).toBeLessThan(BERM_LOOKS.gravel.turf![1] - BERM_LOOKS.gravel.turf![0]);
     expect(BERM_LOOKS.gravel.turf && BERM_LOOKS.mud.turf).toBeTruthy();
     expect(BERM_LOOKS.snow.turf).toBeNull();
     // Mud is the darkest and wettest; snow the lightest.

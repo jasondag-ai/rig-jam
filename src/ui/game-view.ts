@@ -268,7 +268,7 @@ export class GameView {
     this.el.style.setProperty('--night-out', `${GAG_TRIGGERS.night.fadeOutMs}ms`);
     this.stage.append(this.board.el);
     this.board.setLevel(level);
-    this.board.setGround(theme.ground);
+    this.board.setGround(theme.ground, theme.berm === 'sand');
     sound.setGround(theme.ground);
     // The depth strip: every prop, every bottom-strip tree and every strip gag is a child of it, drawn by its ground line. Under the night's shade.
     this.depth = document.createElement('div');

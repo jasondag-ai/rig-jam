@@ -1084,9 +1084,52 @@ something, give exact clicks and one command at a time.
   from the screen's sides (`.screen.game.big-pad .stage`), so A CELL IS 44 PX AT 390 WIDE (42 at
   375). Trucks, symbols and tags are sized in cells and follow. Still 6 only: equipment
   (`obstacles.ts`), the magpie's truck pick, the moose's column: nothing of theirs is on a Big Pad.
-- SURROUNDINGS: Cardium's summer for now (`theme: 'summer'`; the biffy and the lease sign stand as
-  on every level). Its own strip art comes in a later job. NO GAG PLAYS ON A BIG PAD yet
-  (`GameView.bigPad`: `fire` returns at once), no night (summer), no pill in the dig.
+- CLEARWATER'S LOOK (Job 3; brief: `~/Desktop/RHR Art Inbox/BIG_PAD_BRIEF.md`): theme `boreal`
+  (themes.ts: pale packed sand for the pad, lichen ground `grass-boreal.webp` from
+  `tools/ground-tiles.py` `boreal_lichen`, gold aspen among spruce, season `fall`) and a SANDY
+  BERM (`Theme.berm: 'sand'`, berm.ts `SAND_BERM`). No night there (not on the night's list), no
+  pill in the dig yet.
+- THE STANDARD CLEARWATER SCENE (`ClearProp`, scene-stage.ts; every Clearwater level; the generic
+  scenery puts no trees below the board there), from `clearwater_sightings_reference.html`
+  (`bgClear`; saved Oct 7 19:26). Its strip runs lower than Mannville's (`CW_SCENE` floor 184: the
+  puddle lies in the FRONT lane). Three layers, none takes a touch: `.clear-ground` (under
+  everything in the strip, the biffy and sign too: lichen bands, the SANDY TWO-TRACK run on to both
+  screen edges, the MUD PUDDLE, tufts), `.clear-layer` (behind the walking lane: four spruce and
+  the GOLD ASPEN in the board's own drawings, `CW_TREES`, `CW_ASPEN`; FIREWEED and RED FALL
+  BLUEBERRY BUSHES in the reference's drawings) and `.clear-mats` (the RIG MAT STACK, end view,
+  three by three, at the lane's right end). MOVED FROM THE REFERENCE, each for a rule: the mat
+  stack's foot is 4 units further back (`MATS_FOOT` GY-2: by the depth rule it is clearly behind
+  the lane, so everybody passes in front of it, drawn as the reference draws them); the left group
+  of trees stands 44 further right (clear of the biffy); the aspen is 96 tall, not 118 (its crown
+  would run up over the berm; its trunk, where the ball pings, is where it was); the lease sign
+  stands at world x 314 (`CW_SIGN_AT`, `ClearProp.signX`), over the mats, clear of the action.
+- THE GOLF PAIR (wave3.ts `WAVE3.golf`, `WAVE3.cold`: the reference's `render` as written, with the
+  game's `E`; the worker drawing is now that reference's, which adds a beard, stubble, dizzy eyes,
+  a toque and an apron and changes nothing an older gag uses). SLOW MOE (orange, stubble, droopy
+  lids, hat tipped back: `MOE`) and the BEARDED WORKER (red, beard: `BEARD`); the shovel; the ball.
+  THREE SWINGS: Moe tees up, misses twice, digs the third (BOING), the ball rolls off by itself,
+  he pockets it and stomps off the way he came. OUT COLD: one mighty swing, TOK off the rig mats,
+  PING off the aspen (the scenery's own aspen shivers: `ClearProp.aspen`, `sceneDef` `frame`),
+  BONK on his hard hat, timber; the bearded worker strolls in, "Fore." (the game's own bubble,
+  `FORE_LINE`), pockets the ball and drags Moe off by the ankles (his hands stay on them).
+  A STACKED PAIR ON ONE TRIGGER (`GAG_TRIGGERS.golf` / `.cold`): three taps on the mat stack
+  (`ClearProp.hitMats`; other taps give it a small knock) play Three Swings; once that is in the
+  Wildlife Log (`swings`) the same taps play Out Cold. Each once a level. `?gag=golf|cold`.
+  ON A VERY SHORT STRIP (an iPhone SE, 375 x 667: 54 px under the Big Pad) the scene is drawn and
+  the pair does not play (`SCENE_MIN`).
+- A BIG PAD BUILDS ONLY ITS OWN GAGS (`BIG_PAD_GAGS`): the older ones are drawn for a pad of 6 and
+  are not made there. The biffy and the lease sign stand as on every level.
+- Log: `swings` "Three Swings" and `cold` "Out Cold" after Personal Cloud (30 entries; the sighting
+  is `swings`, since the dig already has a buried `golf` ball). Sounds: footsteps and Moe's stars
+  only; the swings, BOING, TOK, PING and BONK wait for Jay's ear. Witness lines: two stand-ins of
+  Claude's (lines.ts), for Jay to replace.
+- `npm run test:e2e:clearwater-gags` (WebKit at DPR 3, 390 x 844 and 375 x 812): the scene on all
+  ten levels, the pair on its one trigger (every beat in order, "Fore.", the aspen, the log, the
+  strip's pixels the same before and after), the short strip. `test:e2e:depth` and
+  `test:e2e:frames` cover both gags. FOR JAY'S EYE: `node tools/qc-beatsheet.mjs <gag> <reference
+  id> <reference.html> <folder> [iphone|iphone375]` puts the reference's own drawing of every beat
+  beside the game's; `tools/qc-filmstrip.mjs` takes `iphone375` too. Sheets:
+  `~/Desktop/RHR Art Inbox/qc/clearwater/`.
 - `npm run test:e2e:clearwater` (WebKit at iPhone DPR 3, 390 and 375 wide): the tab and its
   locks, the 8 x 8 board whole on the screen, drag, Undo, Hint, and ALL TEN LEVELS cleared at par
   by dragging; screenshots in `~/Desktop/RHR Art Inbox/qc/clearwater/`.
@@ -1248,6 +1291,8 @@ something, give exact clicks and one command at a time.
 - `npm run gen-levels [-- c05 m08]` – regenerate levels (named slots are forced to rerun)
 - `npm run check-levels` – print levels and solutions
 - `node tools/pick-clearwater.ts` – writes `src/levels/clearwater.json` (the ten Clearwater levels) from the Big Pad candidates
+- `npm run test:e2e:clearwater-gags` – Clearwater's standard scene and its gag pair: Three Swings, then Out Cold on the same trigger (start the dev server first)
+- `node tools/qc-beatsheet.mjs <gag> <reference id> <reference.html> <folder> [iphone|iphone375]` – every beat of a wave-3-format gag, the reference's drawing beside the game's
 - `npm run test:e2e:clearwater` – Clearwater on a phone: the tab, the 8 x 8 board whole on the screen at 390 and 375, drag, Undo, Hint, all ten levels at par (start the dev server first)
 - `node tools/gen-bigpad.ts [minutes] [seed] [workers]` – Big Pad spike (branch `big-pad`): 20 candidates of 8 x 8 into `levels/bigpad-candidates.json` and a table, 10 minutes at most
 - `node --max-old-space-size=8000 tools/check-bigpad.ts` – proves every Big Pad candidate again (breadth-first too, where it gets through) and reprints the table
