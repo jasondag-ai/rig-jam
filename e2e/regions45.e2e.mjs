@@ -73,7 +73,7 @@ console.log('\nwebkit: the new regions on the level list');
 {
   const { context, page } = await open(null);
   const tabs = await page.$$eval('.region-tab', (ts) => ts.map((t) => ({ name: t.querySelector('.rtext').textContent, locked: t.classList.contains('locked'), lock: t.querySelector('.rlock')?.textContent ?? '', box: t.getBoundingClientRect().toJSON() })));
-  check(tabs.map((t) => t.name).join() === ['Cardium', 'Montney', 'Duvernay', 'Mannville', ...(BAKKEN ? ['Bakken'] : [])].join(), `the regions, in order: ${tabs.map((t) => t.name).join(', ')}`);
+  check(tabs.map((t) => t.name).join() === REGIONS.map((r) => r.name).join() && tabs.map((t) => t.name).slice(0, 5).join() === ['Cardium', 'Montney', 'Duvernay', 'Mannville', ...(BAKKEN ? ['Bakken'] : [])].join(), `the regions, in order: ${tabs.map((t) => t.name).join(', ')}`);
   check(tabs[3].locked && /Duvernay/.test(tabs[3].lock) && (!BAKKEN || (tabs[4].locked && /Mannville/.test(tabs[4].lock))), `a new player finds ${BAKKEN ? 'them' : 'Mannville'} locked: "${tabs[3].lock}"${BAKKEN ? ` / "${tabs[4].lock}"` : ''}`);
   check(tabs.every((t) => t.box.height >= 44 && t.box.width >= 120) && new Set(tabs.map((t) => Math.round(t.box.top))).size === 1 && !(await page.evaluate(() => document.querySelector('.screen.levels').scrollWidth > innerWidth + 1)), 'the tabs are full-size tap targets in one swipeable row (tabs.e2e), and the page itself has no sideways scroll');
   await context.close();

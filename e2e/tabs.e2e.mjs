@@ -24,6 +24,7 @@ const check = (ok, text) => {
   if (!ok) failures++;
   console.log(`   ${ok ? 'ok  ' : 'FAIL'} ${text}`);
 };
+const REGIONS_IN_GAME = REGIONS.length;
 const five = (ri) => Object.fromEntries(REGIONS[ri].levels.slice(0, 5).map((l) => [l.id, l.par]));
 const progress = (best, demo = false) => JSON.stringify({ best, hints: 3, perfect: [], dailyCleared: [], announced: REGIONS.map((r) => r.id), demo });
 
@@ -32,7 +33,7 @@ async function open({ width, tabs = 5, saved = null, region = null }) {
   const context = await browser.newContext({ viewport: { width, height: width === 375 ? 667 : 844 }, deviceScaleFactor: 3, hasTouch: true });
   const page = await context.newPage();
   page.on('pageerror', (e) => { failures++; console.log('ERR', e.message); });
-  await page.goto(`${ROOT}?cover=0${tabs > 5 ? `&tabs=${tabs}` : ''}`, { waitUntil: 'networkidle' });
+  await page.goto(`${ROOT}?cover=0${tabs > REGIONS.length ? `&tabs=${tabs}` : ''}`, { waitUntil: 'networkidle' });
   await page.evaluate(([p, r]) => { localStorage.clear(); if (p) localStorage.setItem('rush-hour-rigs:v2', p); if (r) localStorage.setItem('rush-hour-rigs:region', r); }, [saved, region]);
   await page.reload({ waitUntil: 'networkidle' });
   await page.waitForSelector('.region-tab');
@@ -58,7 +59,7 @@ const scrollTo = (page, x) => page.evaluate(async (x) => { const t = document.qu
 const ptr = (page, type, x, y, target = null) => page.evaluate(([type, x, y, target]) => { const el = (target ? document.querySelector(target) : document.elementFromPoint(x, y)); el.dispatchEvent(new PointerEvent(type, { pointerId: 9, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y, buttons: type === 'pointerup' || type === 'pointercancel' ? 0 : 1 })); }, [type, x, y, target]);
 
 for (const width of [375, 390]) {
-  for (const count of [5, 8]) {
+  for (const count of [REGIONS_IN_GAME, 8]) {
     console.log(`\nwebkit ${width} @3x: ${count} tabs`);
     // A player who has opened Montney and Duvernay (five cleared in Cardium and in Montney), with nothing remembered.
     const { context, page } = await open({ width, tabs: count, saved: progress({ ...five(0), ...five(1) }) });
@@ -81,7 +82,7 @@ for (const width of [375, 390]) {
       if (now.scroll >= now.max - 2) { peeks.push({ i, end: true, last: now.tabs.at(-1).shown, more: now.more, fade: now.fade }); break; }
       const whole = now.tabs.filter((t) => t.shown > 0.99).length, next = now.tabs.find((t) => t.shown > 0.01 && t.shown < 0.99 && t.left > now.view.left);
       peeks.push({ i, whole, peek: next?.shown ?? 0, snapped: Math.abs(now.tabs[i].left - now.view.left - 5) < 2, more: now.more, fade: now.fade, at });
-      if (i === 0 && count === 5) await page.screenshot({ path: join(OUT, `region_bar_${width}.png`), clip: { x: 0, y: Math.max(0, b.tabs[0].top - 16), width, height: b.tabs[0].h + 34 } });
+      if (i === 0 && count === REGIONS_IN_GAME) await page.screenshot({ path: join(OUT, `region_bar_${width}.png`), clip: { x: 0, y: Math.max(0, b.tabs[0].top - 16), width, height: b.tabs[0].h + 34 } });
     }
     const mid = peeks.filter((p) => !p.end);
     check(mid.length >= 2 && mid.every((p) => p.whole === 2 && p.peek > 0.25 && p.peek < 0.45 && p.snapped), `at each tab's snap point two tabs show whole and the next peeks ${mid.map((p) => Math.round(p.peek * 100)).join(', ')}% into view at the right edge`);
@@ -91,7 +92,8 @@ for (const width of [375, 390]) {
       'an edge fades only where there is more: the right at the start, both in the middle, the left at the end (where the last tab is whole)');
     // Locked tabs: swiped to, padlock and all; a tap only shakes them.
     await scrollTo(page, 99999);
-    const lockedName = count === 8 ? 'Nisku' : 'Bakken';
+    // (The last tab: a made-up one when the bar is padded to 8, else the game's own last region.)
+    const lockedName = count > REGIONS.length ? ['Viking', 'Leduc', 'Nisku'][count - REGIONS.length - 1] : REGIONS[REGIONS.length - 1].name;
     const tapTab = async (name) => { const r = await page.evaluate((n) => { const t = [...document.querySelectorAll('.region-tab')].find((x) => x.querySelector('.rtext').textContent === n).getBoundingClientRect(); return { x: t.left + t.width / 2, y: t.top + t.height / 2 }; }, name); await ptr(page, 'pointerdown', r.x, r.y); await ptr(page, 'pointerup', r.x, r.y); await wait(120); return r; };
     await wait(300);
     await tapTab(lockedName);
@@ -135,7 +137,7 @@ for (const width of [375, 390]) {
   {
     const { context, page } = await open({ width });
     const b = await bar(page), act = b.tabs.find((t) => t.active);
-    check(act.name === 'Cardium' && b.scroll === 0 && b.tabs[2].shown > 0.25 && b.tabs[2].shown < 0.45 && b.tabs.filter((t) => t.locked).length === 4, `${width}: a new player sees Cardium, Montney behind its padlock, and a third of Duvernay peeking in`);
+    check(act.name === 'Cardium' && b.scroll === 0 && b.tabs[2].shown > 0.25 && b.tabs[2].shown < 0.45 && b.tabs.filter((t) => t.locked).length === REGIONS.length - 1, `${width}: a new player sees Cardium, Montney behind its padlock, and a third of Duvernay peeking in`);
     await context.close();
   }
 }

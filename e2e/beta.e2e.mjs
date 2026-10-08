@@ -179,7 +179,10 @@ for (const phone of PHONES) {
     await go();
     await page.waitForSelector('.screen.levels .level-btn');
     // Some progress to keep: Cardium 1 and 2 cleared, a streak day, the last region, a sighting.
-    const saved = { 'rush-hour-rigs:v2': JSON.stringify({ best: { c01: 2, c02: 5 }, hints: 4, perfect: ['c01'], dailyCleared: ['2026-10-05'], announced: [], demo: false }), 'rush-hour-rigs:log': JSON.stringify({ v: 3, found: ['magpie'], camo: true, camoEarned: false }), 'rush-hour-rigs:region': 'cardium' };
+    // (Yesterday's pad: a day further back and a Safety Stand-Down would be written into the progress on load.)
+    const day = new Date(Date.now() - 86_400_000);
+    const YESTERDAY = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+    const saved = { 'rush-hour-rigs:v2': JSON.stringify({ best: { c01: 2, c02: 5 }, hints: 4, perfect: ['c01'], dailyCleared: [YESTERDAY], announced: [], demo: false }), 'rush-hour-rigs:log': JSON.stringify({ v: 3, found: ['magpie'], camo: true, camoEarned: false }), 'rush-hour-rigs:region': 'cardium' };
     await page.evaluate((s) => { for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v); }, saved);
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.update-bar');
