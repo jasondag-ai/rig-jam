@@ -1140,17 +1140,17 @@ something, give exact clicks and one command at a time.
 - A BIG PAD BUILDS ONLY ITS OWN GAGS (`BIG_PAD_GAGS`: the five): the older ones are drawn for a pad
   of 6 and are not made there. The biffy and the lease sign stand as on every level.
 - CLEARWATER'S SOUNDS: Jay's five new files (`~/Desktop/RHR Art Inbox/Sound files/clearwater/`,
-  the A TAKE of each; copied to `tools/sfx-art/`): `whoosh` (the two misses), `boing` (the shovel
+  his picks in the brief: the B take of whoosh, boing and crack, the A take of triangle and splash; copied to `tools/sfx-art/`): `whoosh` (the two misses), `boing` (the shovel
   bites), `crack` (the one hit), `splash` (the hauler through the puddle), `triangle` (three dings
   0.3 s apart, on the cook's first three strikes). Levelled by `audio-pack.py` like the sound
   pass's (`LEVELLED`), given their places in `VOLUME`, and LAZY (fetched only by a Clearwater
   level). The rest come from the pack: steps, the wooden `knock` (TOK), `bonk`, `twinkle` (stars,
-  the ting), `tap` pitched up (PING), `squeak` (the rag), `rumble` (the hauler, the stampede),
+  the ting), the same knock pitched up (PING), `squeak` (the rag), `rumble` (the hauler, the stampede),
   `blup` (plop, plip), `clack` (the door's clunk). 65 effects. NOBODY HAS LISTENED YET.
 - Log: `swings` "Three Swings", `cold` "Out Cold", `wash` "Fresh Wash", `bell` "Dinner Bell", `pea`
   "One Pea" after Personal Cloud (33 entries; the first is `swings`, since the dig already has a
   buried `golf` ball). RIDDLES AND PLAIN HINTS ARE JAY'S OWN, word for word (the brief's table,
-  Oct 7 20:22). Witness lines: five stand-ins of Claude's (lines.ts), for Jay to replace.
+  Oct 7 20:22). Witness lines: Jay's own (Oct 8).
 - `npm run test:e2e:clearwater-gags` (WebKit at DPR 3, 390 x 844 and 375 x 812): the scene on all
   ten levels, all five on their real triggers (beats in order, the lines said, the aspen, the log,
   the strip's pixels the same before and after, an Undo breaking the run of five), the short strip. `test:e2e:depth` and

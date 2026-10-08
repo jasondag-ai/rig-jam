@@ -267,10 +267,10 @@ export const WITNESS_LINES = {
   pdogs: 'Tough crowd.',
   bale: 'That bale had places to be.',
   cloud: 'Forecast says sunny. Not for him.',
-  // (Clearwater. These two are Claude's stand-ins: Jay to write his own.)
-  golf: 'That is not a nine iron.',
-  cold: 'He never yells fore.',
-  wash: 'I just washed mine too.',
-  bell: 'Is it supper already?',
-  pea: 'Somebody share with Moe.',
+  // (Clearwater: Jay's own, Oct 8.)
+  golf: 'Keep your head down, Moe.',
+  cold: 'Hole in none.',
+  wash: 'Missed a spot.',
+  bell: 'Did somebody say supper?',
+  pea: "Don't eat it all at once, Moe.",
 };
