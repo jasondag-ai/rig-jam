@@ -1,0 +1,27 @@
+{
+ "build": "de534ad",
+ "version": "0.9.0",
+ "savedAt": "2026-10-08T09:45:21.336Z",
+ "note": "A real save, made by playing the LIVE build de534ad in WebKit on Oct 8 2026, the day before Clearwater shipped: Cardium 1 to 6 cleared at par (Montney opened), two sightings (Near Miss, Lost Goose), that day's Daily Pad (a streak of 1), Sound effects and Music on, the 80s Retro style.",
+ "seen": {
+  "hats": [
+   3,
+   3,
+   3,
+   3,
+   3,
+   3,
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "localStorage": {
+  "rush-hour-rigs-audio": "{\"sfx\":true,\"music\":true,\"style\":\"retro\"}",
+  "rush-hour-rigs:last-level": "Daily Pad #9",
+  "rush-hour-rigs:log": "{\"v\":3,\"found\":[\"nearmiss\",\"geese\"],\"camo\":true,\"camoEarned\":false}",
+  "rush-hour-rigs:region": "cardium",
+  "rush-hour-rigs:v2": "{\"best\":{\"c01\":2,\"c02\":3,\"c03\":4,\"c04\":5,\"c05\":6,\"c06\":7,\"d09\":7},\"hints\":10,\"perfect\":[\"c01\",\"c02\",\"c03\",\"c04\",\"c05\",\"c06\",\"d09\"],\"dailyCleared\":[\"2026-10-08\"],\"demo\":false,\"announced\":[\"montney\"],\"standDowns\":[]}"
+ }
+}

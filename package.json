@@ -13,6 +13,7 @@
     "test:e2e": "node e2e/taps.e2e.mjs",
     "test:e2e:gags": "node e2e/magpie.e2e.mjs && node e2e/eggs.e2e.mjs && node e2e/strip.e2e.mjs && node e2e/eggs2.e2e.mjs",
     "test:e2e:audio": "node e2e/audio.e2e.mjs",
+    "test:e2e:save": "node e2e/save.e2e.mjs",
     "test:e2e:clearwater": "node e2e/clearwater.e2e.mjs",
     "test:e2e:clearwater-gags": "node e2e/clearwater-gags.e2e.mjs",
     "test:e2e:click": "node e2e/click.e2e.mjs",
