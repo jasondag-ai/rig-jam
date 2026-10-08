@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { LEVEL_OBSTACLE_KINDS, OBSTACLE_KINDS, TRUCK_KINDS, solve } from '../engine/index.ts';
+import { PICKS } from '../../tools/pick-clearwater.ts';
+import { LEVEL_OBSTACLE_KINDS, OBSTACLE_KINDS, TRUCK_KINDS, isWon, newGame, solve, tryMove } from '../engine/index.ts';
 import { convoyRaisesPar, everyPumpjackInTheWay, slidesIn, withoutConvoys, withoutShifts } from '../../tools/generator.ts';
 import { DAILY_LEVELS, REGIONS } from './regions.ts';
 
@@ -51,6 +53,24 @@ describe('shipped levels', () => {
         expect(extra[i], l.id).toBeGreaterThanOrEqual(extra[i - 1]);
         expect(l.par - cw.levels[i - 1].par, l.id).toBeLessThanOrEqual(2);
       }
+    });
+  });
+
+  it('every Clearwater level is cleared at par by its own HINT PATH (the one kept with its candidate), move for move through the game', () => {
+    const file = JSON.parse(readFileSync(new URL('../../levels/bigpad-candidates.json', import.meta.url), 'utf8')) as { candidates: { id: string; par: number; hintPath: { id: string; delta: number }[] }[] };
+    const cw = REGIONS.find((r) => r.id === 'clearwater')!;
+    expect(PICKS.map(([, name]) => name)).toEqual(cw.levels.map((l) => l.name));
+    cw.levels.forEach((level, i) => {
+      const from = file.candidates.find((c) => c.id === PICKS[i][0])!;
+      expect(from.hintPath.length, level.id).toBe(level.par);
+      let s = newGame(level);
+      for (const m of from.hintPath) {
+        const r = tryMove(s, m.id, m.delta);
+        expect(r, `${level.id} ${m.id} ${m.delta}`).not.toBeNull();
+        s = r!.state;
+      }
+      expect(isWon(s), level.id).toBe(true);
+      expect(s.moves, level.id).toBe(level.par);
     });
   });
 
