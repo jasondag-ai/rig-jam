@@ -228,6 +228,36 @@
    "peak": -7.3,
    "loop": false
   },
+  "whoosh": {
+   "seconds": 0.52,
+   "mean": -19.5,
+   "peak": -5.2,
+   "loop": false
+  },
+  "boing": {
+   "seconds": 0.8,
+   "mean": -19.5,
+   "peak": -2.3,
+   "loop": false
+  },
+  "crack": {
+   "seconds": 0.25,
+   "mean": -22.3,
+   "peak": -2.6,
+   "loop": false
+  },
+  "splash": {
+   "seconds": 0.9,
+   "mean": -19.4,
+   "peak": -2.7,
+   "loop": false
+  },
+  "triangle": {
+   "seconds": 2.2,
+   "mean": -19.5,
+   "peak": -5.1,
+   "loop": false
+  },
   "knock": {
    "seconds": 0.95,
    "mean": -20.7,

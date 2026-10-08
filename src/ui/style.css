@@ -522,6 +522,14 @@ input,
   padding: 10px 0;
 }
 
+/* THE BIG PAD (8 x 8, Clearwater): the lease takes the screen's width but for 3 px a side, so a
+   cell comes to about 44 px on a phone 390 wide (42 at 375). Everything on the board is sized in
+   cells, so the trucks, gates and symbols follow. */
+.screen.game.big-pad .stage {
+  margin-left: calc(3px - max(16px, var(--safe-left)));
+  margin-right: calc(3px - max(16px, var(--safe-right)));
+}
+
 .note {
   margin: 0 0 12px;
   min-height: 1.3em;
@@ -4037,6 +4045,17 @@ svg.dig-tunnel {
   animation: aspen-shake 380ms ease-in-out;
 }
 
+/* The rig mat stack (Clearwater), tapped: a small knock. */
+.clear-mats svg.scene-svg.shake {
+  animation: mats-knock 300ms ease-out;
+}
+
+@keyframes mats-knock {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-2px); }
+  60% { transform: translateY(1px); }
+}
+
 @keyframes aspen-shake {
   0%, 100% { transform: rotate(0); }
   25% { transform: rotate(-1.6deg); }
@@ -4052,7 +4071,7 @@ svg.dig-tunnel {
 .screen.game.night .strip-layer.aurora-layer { opacity: 1; }
 
 @media (prefers-reduced-motion: reduce) {
-  .scene-front svg.scene-svg.shake { animation: none; }
+  .scene-front svg.scene-svg.shake, .clear-mats svg.scene-svg.shake { animation: none; }
 }
 
 /* ---------- Log v3: the dig goes right through the Earth (log-deep.ts) ----------
@@ -4068,7 +4087,9 @@ svg.dig-tunnel {
   overflow: hidden;
 }
 
-.deep-layer[data-layer='kerguelen'] { box-sizing: content-box; padding-bottom: var(--safe-bottom); }
+/* (Its sky runs one px on under it: the cards above may end on half a px, and the page's own height is a whole number,
+   so without this a hairline of the page's grass could show at the very end.) */
+.deep-layer[data-layer='kerguelen'] { box-sizing: content-box; padding-bottom: var(--safe-bottom); box-shadow: 0 1px 0 #bfe3f2; }
 
 /* The dirt: tiles of one layer, only those near the screen (log-dig-view.ts showTiles). A tile has
    no background of its own (the layer's slow colour shows through), and never takes a touch. */

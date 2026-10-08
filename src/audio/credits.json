@@ -342,6 +342,51 @@
   "url": "https://mixkit.co/free-sound-effects/cartoon/"
  },
  {
+  "use": "whoosh",
+  "kind": "sfx",
+  "file": "art/whoosh.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "boing",
+  "kind": "sfx",
+  "file": "art/boing.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "crack",
+  "kind": "sfx",
+  "file": "art/crack.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "splash",
+  "kind": "sfx",
+  "file": "art/splash.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
+  "use": "triangle",
+  "kind": "sfx",
+  "file": "art/triangle.wav",
+  "title": "",
+  "author": "Synthesized for Rush Hour Rigs",
+  "licence": "Original",
+  "url": ""
+ },
+ {
   "use": "knock",
   "kind": "sfx",
   "file": "art/knock.wav",

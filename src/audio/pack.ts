@@ -33,13 +33,16 @@ export const VOLUME: Record<SfxKey, number> = {
   // that runs on (rain, rumble, rustle, the lights) lower still, so it lies under the action.
   squelch: 0.3, shluck: 0.4, blup: 0.45, mew: 0.42, yawn: 0.42, pats: 0.34, bonk: 0.6, tailslap: 0.55, shimmer: 0.28, howl: 0.5,
   rustle: 0.32, whistle: 0.3, squeak: 0.42, aww: 0.45, rumble: 0.36, sigh: 0.36, rain: 0.26, umbrella: 0.5, downpour: 0.42,
+  // Clearwater's sightings (Jay's five new files, levelled like the sound pass's): the hits a notch under the truck's bump,
+  // the misses lighter, the triangle clear but not over the win.
+  whoosh: 0.4, boing: 0.55, crack: 0.6, splash: 0.55, triangle: 0.5,
 };
 /**
  * LAZY: the sounds only gag wave 3 uses (Mannville and Bakken). They are NOT fetched with the
  * rest when Sound effects is switched on: a level fetches the ones its own gags can play as it
  * opens (`sound.warm`), and any other is fetched the first time it is asked for.
  */
-export const LAZY_KEYS: SfxKey[] = ['squelch', 'shluck', 'blup', 'mew', 'yawn', 'pats', 'bonk', 'tailslap', 'shimmer', 'howl', 'rustle', 'whistle', 'squeak', 'aww', 'rumble', 'sigh', 'rain', 'umbrella', 'downpour'];
+export const LAZY_KEYS: SfxKey[] = ['squelch', 'shluck', 'blup', 'mew', 'yawn', 'pats', 'bonk', 'tailslap', 'shimmer', 'howl', 'rustle', 'whistle', 'squeak', 'aww', 'rumble', 'sigh', 'rain', 'umbrella', 'downpour', 'whoosh', 'boing', 'crack', 'splash', 'triangle'];
 /** Fetched as soon as Sound effects is on: everything else. */
 export const CORE_KEYS: SfxKey[] = SFX_KEYS.filter((k) => !LAZY_KEYS.includes(k));
 /** Every file is first brought to about this average level (dB), then given its place from VOLUME. */

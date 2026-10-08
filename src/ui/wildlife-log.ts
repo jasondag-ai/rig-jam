@@ -6,7 +6,7 @@
 import { STORAGE_PREFIX } from './progress.ts';
 import { dressCamo } from './sprites.ts';
 
-export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'night' | 'bull' | 'bear' | 'muskeg' | 'cattrain' | 'beaver' | 'aurora' | 'tumbleweed' | 'pdogs' | 'bale' | 'cloud' | 'dug';
+export type Sighting = 'magpie' | 'spotter' | 'moose' | 'nearmiss' | 'landowner' | 'biffy' | 'biffyB' | 'marshmallow' | 'geese' | 'porcupine' | 'lunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'night' | 'bull' | 'bear' | 'muskeg' | 'cattrain' | 'beaver' | 'aurora' | 'tumbleweed' | 'pdogs' | 'bale' | 'cloud' | 'swings' | 'cold' | 'wash' | 'bell' | 'pea' | 'dug';
 
 export interface LogEntry {
   id: Sighting;
@@ -48,6 +48,13 @@ export const LOG_ENTRIES: LogEntry[] = [
   { id: 'pdogs', name: 'Prairie Dog Wave', caption: 'One always misses his cue.', hint: "In Bakken, tap the same spot on the prairie three times.", riddle: "The same patch of prairie, three times. The neighbours stand up." },
   { id: 'bale', name: 'Runaway Bale', caption: 'It rolled one more inch.', hint: "In Bakken, bump a truck into the bottom berm beside the round bale.", riddle: "Rattle the fence beside the big round bale." },
   { id: 'cloud', name: 'Personal Cloud', caption: 'Some days are like that.', hint: "In Bakken, tap the sky three times.", riddle: "Poke the Bakken sky three times. It pokes back." },
+  // Clearwater (the Big Pad). Riddles and plain hints are Jay's own (BIG_PAD_BRIEF.md, Oct 7 20:22). A stacked pair. Out Cold shares Three Swings' trigger and plays only once Three Swings is in this log.
+  { id: 'swings', name: 'Three Swings', caption: 'The ball never moved.', hint: "Tap the rig mat stack 3 times.", riddle: "Someone wants to tee off the rig mats." },
+  { id: 'cold', name: 'Out Cold', caption: 'Fore.', hint: "After Three Swings, tap the rig mats 3 times again.", riddle: "Moe never quits. Give him another shot." },
+  { id: 'wash', name: 'Fresh Wash', caption: 'Spotless. For a second.', hint: "Tap the mud puddle.", riddle: "Nothing stays clean near that puddle." },
+  // The other stacked pair: One Pea shares Dinner Bell's trigger and plays only once Dinner Bell is in this log.
+  { id: 'bell', name: 'Dinner Bell', caption: 'Moe was nearly on time.', hint: "Clear 5 trucks in a row without Undo.", riddle: "Work hard, eat first." },
+  { id: 'pea', name: 'One Pea', caption: 'Watching his carbs.', hint: "After Dinner Bell, clear 5 in a row again.", riddle: "Somebody always misses supper." },
   { id: 'night', name: 'Night Shift', caption: 'Lights out on the lease.', hint: "Leave any lease alone until it goes dark.", riddle: "Do nothing at all, somewhere the sun goes down." },
   { id: 'bull', name: 'Bull and Cow', caption: 'Spring in the Montney.', hint: "In Montney, tap the cow.", riddle: "She is only grazing in the Montney. Say hello." },
   // Not a gag: found by scrolling the log's own dig right through the Earth (log-deep.ts). Its card shows the player's best time.

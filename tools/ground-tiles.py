@@ -30,13 +30,15 @@ TILES = {
     # Regions 4 and 5 (no sources of their own: made from the summer grass).
     'grass-fall': 'grass_border_fall_v1',
     'grass-prairie': 'grass_border_prairie_v1',
+    # Region 6, Clearwater (the Big Pad): boreal lichen ground, made from the summer grass.
+    'grass-boreal': 'grass_border_boreal_v1',
 }
 SNOW_SRC = 'ground_winter_snow_v1'
 # Grass field: image size, and how many pixels of it one source square spans (must divide the size so
 # the field wraps). On screen the field is drawn at half its size (GRASS_CSS in themes.ts), so the
 # sources repeat every 96px (they were 180px: blades about half the size), the same in every season.
 GRASS = 768
-GRASS_TILE = {'grass-summer': 192, 'grass-spring': 192, 'grass-winter': 384, 'grass-fall': 192, 'grass-prairie': 192}
+GRASS_TILE = {'grass-summer': 192, 'grass-spring': 192, 'grass-winter': 384, 'grass-fall': 192, 'grass-prairie': 192, 'grass-boreal': 192}
 
 
 def smooth_snow(im: Image.Image) -> Image.Image:
@@ -85,6 +87,14 @@ def fall_grass(summer: Image.Image) -> Image.Image:
     dull = ImageEnhance.Color(summer).enhance(0.16)
     dry = ImageChops.multiply(dull, Image.new('RGB', summer.size, (255, 208, 138)))
     return ImageEnhance.Brightness(dry).enhance(1.28)
+
+
+def boreal_lichen(summer: Image.Image) -> Image.Image:
+    """Clearwater's boreal ground: pale reindeer lichen and moss over sand, a soft sage (the
+    reference strip's #aeb486). The grass's own blades, nearly drained of colour and lifted."""
+    grey = ImageEnhance.Color(summer).enhance(0.2)
+    sage = ImageChops.multiply(grey, Image.new('RGB', summer.size, (246, 248, 180)))
+    return ImageEnhance.Contrast(ImageEnhance.Brightness(sage).enhance(1.86)).enhance(0.62)
 
 
 def prairie_stubble(summer: Image.Image) -> Image.Image:
@@ -175,6 +185,8 @@ def main() -> None:
             im = fall_grass(Image.open(os.path.join(SRC, f'{TILES["grass-summer"]}.png')).convert('RGB'))
         elif name == 'grass-prairie':
             im = prairie_stubble(Image.open(os.path.join(SRC, f'{TILES["grass-summer"]}.png')).convert('RGB'))
+        elif name == 'grass-boreal':
+            im = boreal_lichen(Image.open(os.path.join(SRC, f'{TILES["grass-summer"]}.png')).convert('RGB'))
         else:
             raise SystemExit(f'missing {path}')
         big = field(im, GRASS, GRASS_TILE[name], len(manifest) + 34)

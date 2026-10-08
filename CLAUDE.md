@@ -83,6 +83,7 @@ something, give exact clicks and one command at a time.
 
 ## Regions
 - Cardium: 10 levels, trucks and gates only. Theme: summer.
+- (Branch `big-pad` only) Clearwater: 10 levels on a pad of 8 x 8, trucks and gates only. See "Clearwater, region 6".
 - Montney: 10 levels, adds obstacles (pumpjacks, 400 bbl tanks, wellheads). Theme: spring mud.
 - Duvernay: 10 levels, adds convoys. Theme: winter. Preview any theme with `?theme=winter` etc.
 - Mannville: 10 levels, adds MUSKEG (with obstacles and convoys). EVERY level is par 14 to 20, the
@@ -1016,6 +1017,154 @@ something, give exact clicks and one command at a time.
   together and the instrument rises. Both his drawing and the standing tripod start hidden.
 - The Wildlife Log's one LEGENDARY card is the Bear (tested, found and unfound).
 
+## Big Pad spike (region 6; branch `big-pad` ONLY: never merged, never deployed)
+- THE QUESTION: can we generate 8 x 8 levels that play hard? Hardness = EXTRA MOVES, par minus the
+  number of trucks (the moves that are not a truck's own drive out). Answer: yes. No UI, art or
+  sightings for it; the game still only shows pads of 6.
+- PAD SIZE (`src/engine/types.ts`): `SIZE` is still 6; a level may carry `size: 8` (`SIZES`,
+  `sizeOf(level)`; no level file of the game names a size). `parseLevel`, `getMoveRange`,
+  `slideEnd`, `touchesGate(t, side, size)` and both solvers work along the level's own side.
+  `size.test.ts`. The UI still imports `SIZE` and draws 6.
+- THE SOLVER HAS A* (`searchAStar`, `solveAStar` in solver.ts): the same rules as `solve` (both
+  search through one `compile(level, trucks).expand`), looking first where the end seems nearest.
+  A position reached again by a shorter way is looked at again, so the answer is the shortest for
+  any estimate that never overshoots. Estimates (`Heuristic`): `'left'` = trucks left;
+  `'rings'` (the default) = that plus one for every RING of trucks in each other's way out that
+  shares no truck with another ring (none of a ring can be first out, so one of them makes a move
+  that is not its drive out), or one for every tanker not yet loaded, whichever is more.
+  `solver-astar.test.ts` holds BOTH to breadth-first's par on every level in the game (50 + 60
+  Daily Pads), mid-game too, and on random pads of 6 and of 8. `solve` hands a pad of 18 trucks or
+  more to A* (its packed number holds 17). `node tools/bench-astar.ts` compares them.
+  TRIED AND DROPPED: per-group tables (each small group of trucks solved alone, added up). They
+  were sound and matched every par, but on a pad of 8 a few trucks alone always have room, so the
+  tables said nothing the rings did not, and A* looked at exactly as many positions.
+- `tools/gen-bigpad.ts` (`node tools/gen-bigpad.ts [minutes <= 10] [seed] [workers]`): REVERSE
+  GENERATION. A PINWHEEL is laid down on purpose (four trucks round a box, each in the next one's
+  way out: `pinwheel`; one horizontal and one vertical truck can never each be in the other's way
+  out, the cell where their lanes cross would have to hold both, so a ring of four is the smallest
+  knot), TAILS are hung on it (`tail`, 1 to 3: the chain 3 to 5 deep beyond the ring), every other
+  truck starts AT ITS GATE END, and the pad is scrambled with BACKWARD MOVES (one truck slid along
+  its lane), kept if the forward par (A*) did not fall. WHAT THE SPIKE FOUND: slides alone stall
+  (hundreds of thousands of slides of one layout never passed 4 extra moves: on a pad of 8
+  everybody has room to step aside), so now and then ONE TRUCK IS RE-DEALT (another lane, turned
+  to leave by the other end, a cell longer or shorter), kept by the same rule. Each pad climbs to
+  its own target inside 6 to 15 extra moves. The whole run keeps inside its minutes (78% scramble,
+  the rest proves the candidates). Six gate colours are dealt to the lane ends (the two ends of a
+  lane never the same), so with 14 to 18 trucks COLOURS REPEAT: a UI question for later.
+- `levels/bigpad-candidates.json`: the best 20 by extra moves (id, size, par, trucks, extraMoves,
+  chain, rings, wonBy, parAlsoBy, solveMs, lookedAt, hintPath, level). `node
+  --max-old-space-size=8000 tools/check-bigpad.ts` proves each again (A* both ways, the hint path
+  in the game itself, breadth-first where it gets through 12 million positions) and reprints the
+  table. `tools/gen-bigpad.test.ts` holds the file to the targets.
+
+## Clearwater, region 6: the Big Pad you can play (branch `big-pad` ONLY: never merged, never deployed)
+- `src/levels/clearwater.json`: TEN LEVELS OF 8 x 8 (`size: 8`), trucks and gates only, after Bakken
+  in `REGIONS` (opens after 5 of Bakken like the others; demo mode opens it). Jay's names, in
+  order: Rig Mats, Rig Move, Set Surface, Walking Rig, Batch Drilling, Sim Ops, Plug and Perf, Drill
+  Out, Sand Haul, Road Ban. Ids `w01` to `w10`. Trucks 14, 14, 15, 15, 15, 15, 15, 15, 15, 16 (16
+  at most: Jay); par 20, 21, 23, 24, 25, 26, 27, 28, 29, 30; EXTRA MOVES 6, 7, 8, 9, 10, 11, 12,
+  13, 14, 14 (levels 1 to 3: 6 to 8; 4 to 6: 9 to 11; 7 to 10: 12 to 15). NEVER HAND-EDIT: `node
+  tools/pick-clearwater.ts` writes it from `levels/bigpad-candidates.json` (`PICKS`: which
+  candidate is which level), proving each again and dealing the truck kinds from a fixed seed.
+- SIX COLOURS AND THEIR SYMBOLS, REPEATED (Jay): with 14 to 16 trucks a colour is on two or three
+  trucks, each with its own gate of that colour at an end of its own lane (the two ends of a lane
+  are never the same colour).
+- MORE CANDIDATES: `gen-bigpad.ts` takes a batch's own targets and adds it to the file
+  (`--trucks=12-15 --extra=6-10 --keep=10 --append`: spread evenly across its range). The file now
+  holds 36: the first 20, the easier 10, and 6 of 15 to 16 trucks at 11 to 14 extra moves (made so
+  the ramp can end on its hardest pads without the truck count dropping).
+- A PAD OF 8 IS SOLVED BY A* (`solve` hands it over: breadth-first would look at millions of
+  positions), so Hint works there. On a laptop the worst of the ten takes about half a second from
+  its start; ON A PHONE THE FIRST HINT OF A LATE LEVEL MAY TAKE A SECOND OR TWO (not measured on
+  one yet).
+- THE BOARD DRAWS ITS LEVEL'S OWN SIZE (`BoardView.size` from `sizeOf(level)`; the board wears
+  `.big-pad`): the pad, gates, berm (`BermGeometry.size`), ground (`Detail.size`), tire tracks
+  (`TrackLayer.setSize`, `setPadSize`), exits (`exitPlan(..., size)`) and bumps all work in cells
+  of it. On a Big Pad the berm band is thinner (`BIG_FENCE_RATIO` 0.34) and the stage runs to 3 px
+  from the screen's sides (`.screen.game.big-pad .stage`), so A CELL IS 44 PX AT 390 WIDE (42 at
+  375). Trucks, symbols and tags are sized in cells and follow. Still 6 only: equipment
+  (`obstacles.ts`), the magpie's truck pick, the moose's column: nothing of theirs is on a Big Pad.
+- CLEARWATER'S LOOK (Job 3; brief: `~/Desktop/RHR Art Inbox/BIG_PAD_BRIEF.md`): theme `boreal`
+  (themes.ts: pale packed sand for the pad, lichen ground `grass-boreal.webp` from
+  `tools/ground-tiles.py` `boreal_lichen`, gold aspen among spruce, season `fall`) and a SANDY
+  BERM (`Theme.berm: 'sand'`, berm.ts `SAND_BERM`). No night there (not on the night's list), no
+  pill in the dig yet.
+- THE STANDARD CLEARWATER SCENE (`ClearProp`, scene-stage.ts; every Clearwater level; the generic
+  scenery puts no trees below the board there), from `clearwater_sightings_reference.html`
+  (`bgClear`; saved Oct 7 19:26). Its strip runs lower than Mannville's (`CW_SCENE` floor 184: the
+  puddle lies in the FRONT lane). Three layers, none takes a touch: `.clear-ground` (under
+  everything in the strip, the biffy and sign too: lichen bands, the SANDY TWO-TRACK run on to both
+  screen edges, the MUD PUDDLE, tufts), `.clear-layer` (behind the walking lane: four spruce and
+  the GOLD ASPEN in the board's own drawings, `CW_TREES`, `CW_ASPEN`; FIREWEED and RED FALL
+  BLUEBERRY BUSHES in the reference's drawings) and `.clear-mats` (the RIG MAT STACK, end view,
+  three by three, at the lane's right end). MOVED FROM THE REFERENCE, each for a rule: the mat
+  stack's foot is 4 units further back (`MATS_FOOT` GY-2: by the depth rule it is clearly behind
+  the lane, so everybody passes in front of it, drawn as the reference draws them); the left group
+  of trees stands 44 further right (clear of the biffy); the aspen is 96 tall, not 118 (its crown
+  would run up over the berm; its trunk, where the ball pings, is where it was); the spruce
+  at x 290 stands at 306 and the second fireweed at 352 (nobody parks on a prop: the cook rings
+  at 286, Moe stands at 250 to 276); the lease sign stands at world x 330 (`CW_SIGN_AT`,
+  `ClearProp.signX`), over the mats, clear of the action.
+- THE GOLF PAIR (wave3.ts `WAVE3.golf`, `WAVE3.cold`: the reference's `render` as written, with the
+  game's `E`; the worker drawing is now that reference's, which adds a beard, stubble, dizzy eyes,
+  a toque and an apron and changes nothing an older gag uses). SLOW MOE (orange, stubble, droopy
+  lids, hat tipped back: `MOE`) and the BEARDED WORKER (red, beard: `BEARD`); the shovel; the ball.
+  THREE SWINGS: Moe tees up, misses twice, digs the third (BOING), the ball rolls off by itself,
+  he pockets it and stomps off the way he came. OUT COLD: one mighty swing, TOK off the rig mats,
+  PING off the aspen (the scenery's own aspen shivers: `ClearProp.aspen`, `sceneDef` `frame`),
+  BONK on his hard hat, timber; the bearded worker strolls in, "Fore." (the game's own bubble,
+  `FORE_LINE`), pockets the ball and drags Moe off by the ankles (his hands stay on them).
+  A STACKED PAIR ON ONE TRIGGER (`GAG_TRIGGERS.golf` / `.cold`): three taps on the mat stack
+  (`ClearProp.hitMats`; other taps give it a small knock) play Three Swings; once that is in the
+  Wildlife Log (`swings`) the same taps play Out Cold. Each once a level. `?gag=golf|cold`.
+  ON A VERY SHORT STRIP (an iPhone SE, 375 x 667: 54 px under the Big Pad) the scene is drawn and
+  the pair does not play (`SCENE_MIN`).
+- THE OTHER THREE (same reference, same port). A Clearwater gag may draw on THREE LANES, each a
+  layer on its own ground line (`sceneDef`: `back`/`backY` behind the rig mat stack, `render` on
+  the walking lane, `front`/`frontY` between us and the lane), and may say SEVERAL LINES in the
+  game's own bubble (`lines`, each with its speaker's `mouth`; texts in lines.ts).
+  FRESH WASH (`WAVE3.wash`; one tap on the mud puddle, `ClearProp.hitPuddle`): Moe parks his
+  pickup, gets out ON THE FAR SIDE (VEHICLE RULE: trucks face right, the driver's door is out of
+  sight, no near door ever opens: a clunk and a small rock of the cab), walks round the front,
+  wipes the last smudge off the hood, admires it; a water hauler crosses in the FRONT lane and
+  hides the splash; he and the truck are mud; a blob slides off his hat; he trudges back, wipes a
+  peephole and drives off. DINNER BELL (`WAVE3.bell`): the camp cook rings his triangle,
+  "Supper!", four workers stampede past (two behind the rig mats, two in front), he spins in the
+  dust, straightens his toque and follows; then Slow Moe, late, "Save me some!". ONE PEA
+  (`WAVE3.pea`): the crew strolls back with heaped plates, Moe behind with one pea; the bearded
+  worker: "Watching your carbs, Moe?"; the pea rolls off his plate, across the sand and into the
+  puddle. THE SECOND STACKED PAIR (`GAG_TRIGGERS.bell` / `.pea`): FIVE TRUCKS DRIVEN OUT IN A ROW
+  (move after move, each one a truck leaving; any other move or an Undo starts the count again:
+  `GameView.exitRun`) play Dinner Bell; once that is in the log, One Pea. (Every Clearwater level's
+  solution ends with a run of at least nine.) `?gag=wash|bell|pea`.
+- A BIG PAD BUILDS ONLY ITS OWN GAGS (`BIG_PAD_GAGS`: the five): the older ones are drawn for a pad
+  of 6 and are not made there. The biffy and the lease sign stand as on every level.
+- CLEARWATER'S SOUNDS: Jay's five new files (`~/Desktop/RHR Art Inbox/Sound files/clearwater/`,
+  his picks in the brief: the B take of whoosh, boing and crack, the A take of triangle and splash; copied to `tools/sfx-art/`): `whoosh` (the two misses), `boing` (the shovel
+  bites), `crack` (the one hit), `splash` (the hauler through the puddle), `triangle` (three dings
+  0.3 s apart, on the cook's first three strikes). Levelled by `audio-pack.py` like the sound
+  pass's (`LEVELLED`), given their places in `VOLUME`, and LAZY (fetched only by a Clearwater
+  level). The rest come from the pack: steps, the wooden `knock` (TOK), `bonk`, `twinkle` (stars,
+  the ting), the same knock pitched up (PING), `squeak` (the rag), `rumble` (the hauler, the stampede),
+  `blup` (plop, plip), `clack` (the door's clunk). 65 effects. NOBODY HAS LISTENED YET.
+- Log: `swings` "Three Swings", `cold` "Out Cold", `wash` "Fresh Wash", `bell` "Dinner Bell", `pea`
+  "One Pea" after Personal Cloud (33 entries; the first is `swings`, since the dig already has a
+  buried `golf` ball). RIDDLES AND PLAIN HINTS ARE JAY'S OWN, word for word (the brief's table,
+  Oct 7 20:22). Witness lines: Jay's own (Oct 8).
+- `npm run test:e2e:clearwater-gags` (WebKit at DPR 3, 390 x 844 and 375 x 812): the scene on all
+  ten levels, all five on their real triggers (beats in order, the lines said, the aspen, the log,
+  the strip's pixels the same before and after, an Undo breaking the run of five), the short strip. `test:e2e:depth` and
+  `test:e2e:frames` cover all five. FOR JAY'S EYE: `node tools/qc-beatsheet.mjs <gag> <reference
+  id> <reference.html> <folder> [iphone|iphone375]` puts the reference's own drawing of every beat
+  beside the game's; `tools/qc-filmstrip.mjs` takes `iphone375` too. Sheets:
+  `~/Desktop/RHR Art Inbox/qc/clearwater/`.
+- `npm run test:e2e:clearwater` (WebKit at iPhone DPR 3, 390 and 375 wide): the tab and its
+  locks, the 8 x 8 board whole on the screen, drag, Undo, Hint, and ALL TEN LEVELS cleared at par
+  by dragging; screenshots in `~/Desktop/RHR Art Inbox/qc/clearwater/`.
+- THE WORKTREE NEEDS ITS OWN `npm ci` (`~/Rush-Hour-Rigs-bigpad`): with `node_modules` linked to
+  the main checkout, Vite refuses the bundled fonts (403: outside its root) and the game shows in
+  a fallback font.
+
 ## Stack
 - TypeScript + Vite, DOM + CSS transforms, Pointer Events. No game engine, no frameworks. GSAP (free
   standard license) for character animation only.
@@ -1169,6 +1318,12 @@ something, give exact clicks and one command at a time.
 - `npm run build` – type-check + production build into `dist/`
 - `npm run gen-levels [-- c05 m08]` – regenerate levels (named slots are forced to rerun)
 - `npm run check-levels` – print levels and solutions
+- `node tools/pick-clearwater.ts` – writes `src/levels/clearwater.json` (the ten Clearwater levels) from the Big Pad candidates
+- `npm run test:e2e:clearwater-gags` – Clearwater's standard scene and its gag pair: Three Swings, then Out Cold on the same trigger (start the dev server first)
+- `node tools/qc-beatsheet.mjs <gag> <reference id> <reference.html> <folder> [iphone|iphone375]` – every beat of a wave-3-format gag, the reference's drawing beside the game's
+- `npm run test:e2e:clearwater` – Clearwater on a phone: the tab, the 8 x 8 board whole on the screen at 390 and 375, drag, Undo, Hint, all ten levels at par (start the dev server first)
+- `node tools/gen-bigpad.ts [minutes] [seed] [workers]` – Big Pad spike (branch `big-pad`): 20 candidates of 8 x 8 into `levels/bigpad-candidates.json` and a table, 10 minutes at most
+- `node --max-old-space-size=8000 tools/check-bigpad.ts` – proves every Big Pad candidate again (breadth-first too, where it gets through) and reprints the table
 - `npm run test:e2e` – iPhone tap test (Playwright; start the dev server first)
 - `npm run test:e2e:gags` – every puppet gag suite in turn: magpie, eggs, strip, eggs2 (start the dev server first)
 - `npm run test:e2e:bubbles` – every speech bubble's tail on its speaker, following it, clear of the HUD and buttons; witness lines (start the dev server first)

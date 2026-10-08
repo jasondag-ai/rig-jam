@@ -16,7 +16,8 @@ const replays = (level: Level, moves: Move[]) => {
 
 describe('the fast solver', () => {
   it('finds a shortest solution of the same length as the reference search, on every shipped level', () => {
-    for (const level of [...REGIONS.flatMap((r) => r.levels), ...DAILY_LEVELS.slice(0, 20)]) {
+    // (Pads of 6: the packed breadth-first search is theirs. A Big Pad goes to A*, see solver-astar.test.ts.)
+    for (const level of [...REGIONS.filter((r) => r.id !== 'clearwater').flatMap((r) => r.levels), ...DAILY_LEVELS.slice(0, 20)]) {
       const fast = solve(level)!;
       expect(fast.length, level.id).toBe(level.par);
       if (level.par <= 12) expect(fast.length, level.id).toBe(solveSlow(level)!.length);

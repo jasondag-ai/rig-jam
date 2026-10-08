@@ -10,7 +10,7 @@ const pub = (f: string) => new URL(`../../public/audio/${f}`, import.meta.url);
 
 describe("the sound pack: Jay's picks, as files", () => {
   it('has one file for every cue, and nothing in public/audio that is not used', () => {
-    expect(SFX_KEYS.length).toBe(60);
+    expect(SFX_KEYS.length).toBe(65);
     // The old dingle, the old win and the old gate (with its whoosh) are gone, files and all.
     for (const old of ['rattle', 'win', 'gate', 'exit']) { expect(SFX_KEYS).not.toContain(old); expect(existsSync(pub(`sfx/${old}.mp3`)), old).toBe(false); }
     for (const key of SFX_KEYS) expect(existsSync(pub(`sfx/${key}.mp3`)), key).toBe(true);
@@ -43,13 +43,17 @@ describe("the sound pack: Jay's picks, as files", () => {
   it('the effects stay small: what loads when Sound effects is turned on, and what each wave 3 level adds', () => {
     const size = (keys: readonly SfxKey[]) => keys.reduce((n, k) => n + statSync(pub(`sfx/${k}.mp3`)).size, 0);
     expect(size(CORE_KEYS)).toBeLessThan(1_000_000);
-    expect(size(LAZY_KEYS)).toBeLessThan(400_000);
+    // (Never all at once: a level fetches only what its own gags use. Wave 3's nineteen, and Clearwater's five.)
+    const clearwater: SfxKey[] = ['whoosh', 'boing', 'crack', 'splash', 'triangle'];
+    expect(size(LAZY_KEYS.filter((k) => !clearwater.includes(k)))).toBeLessThan(400_000);
+    expect(size(clearwater)).toBeLessThan(90_000);
   });
 
   it('LAZY: the sounds only gag wave 3 uses are not fetched with the rest; a level fetches its own gags\' sounds', () => {
     expect([...CORE_KEYS, ...LAZY_KEYS].sort()).toEqual([...SFX_KEYS].sort());
     expect(CORE_KEYS).toEqual(expect.arrayContaining(['knock', 'tada', 'clack', 'bump', 'tap', 'step', 'sigh'].filter((k) => k !== 'sigh')));
-    const wave3: GagId[] = ['muskeg', 'catTrain', 'beaver', 'aurora', 'tumbleweed', 'pdogs', 'bale', 'cloud'];
+    // (And Clearwater's five, which bring five sounds of their own.)
+    const wave3: GagId[] = ['muskeg', 'catTrain', 'beaver', 'aurora', 'tumbleweed', 'pdogs', 'bale', 'cloud', 'golf', 'cold', 'wash', 'bell', 'pea'];
     const older = (Object.keys(GAG_SOUNDS) as GagId[]).filter((g) => !wave3.includes(g));
     // No older gag and no game cue needs a lazy sound; every lazy sound is used by a wave 3 gag.
     for (const g of older) for (const k of gagKeys(g)) expect(LAZY_KEYS, `${g} ${k}`).not.toContain(k);
@@ -199,8 +203,9 @@ describe("the sound pass: Jay's picks, each on its beat, levelled alike", () => 
 
   it('the sign rattle replaces the dingle in all six gags (eleven times), and nothing names the old sounds', () => {
     const uses = Object.entries(GAG_SOUNDS).flatMap(([id, beats]) => Object.values(beats).flat().filter((c) => parseCue(c).name === 'knock').map(() => id));
-    expect(uses.length).toBe(11);
-    expect([...new Set(uses)].sort()).toEqual(['biffyA', 'biffyB', 'deer', 'sam', 'surveyor', 'worker']);
+    // (Eleven in the six older gags; Clearwater's Out Cold uses the same knock twice, for the ball's TOK off the rig mats and its PING off the aspen.)
+    expect(uses.filter((u) => u !== 'cold').length).toBe(11);
+    expect([...new Set(uses)].sort()).toEqual(['biffyA', 'biffyB', 'cold', 'deer', 'sam', 'surveyor', 'worker']);
     const names = Object.values(GAG_SOUNDS).flatMap((b) => Object.values(b).flat()).map((c) => parseCue(c).name);
     for (const old of ['rattle', 'win', 'gate', 'exit']) expect(names).not.toContain(old);
   });
@@ -213,6 +218,30 @@ describe("the sound pass: Jay's picks, each on its beat, levelled alike", () => 
       // Every loop a gag starts is one it could stop (or the gag's end stops it).
       for (const c of Object.values(GAG_SOUNDS[id]).flat().map(parseCue)) if (c.op !== 'play') expect(Object.keys(GAG_LOOPS), `${id} ${c.name}`).toContain(c.name);
     }
+  });
+
+  it('Clearwater: Jay\'s five new sounds, each on the moment the reference draws its sound word; every beat named is the gag\'s own', () => {
+    for (const id of ['golf', 'cold', 'wash', 'bell', 'pea'] as GagId[]) {
+      const beats = (WAVE3 as unknown as Record<string, { beats: [number, string, string][] }>)[id].beats.map((b) => b[1]);
+      for (const beat of Object.keys(GAG_SOUNDS[id])) expect(beats, `${id} ${beat}`).toContain(beat);
+      for (const c of Object.values(GAG_SOUNDS[id]).flat().map(parseCue)) if (c.op !== 'play') expect(Object.keys(GAG_LOOPS), `${id} ${c.name}`).toContain(c.name);
+    }
+    // Three Swings: a whoosh 0.45 s into each miss (the reference's "whoosh" at 3.75 and 5.05), the second higher; BOING 0.55 s into the third (6.45).
+    expect(cues('golf', 'swing-one')).toEqual([expect.objectContaining({ name: 'whoosh', delay: 0.45 })]);
+    expect(cues('golf', 'swing-two')[0]).toMatchObject({ name: 'whoosh', delay: 0.45 });
+    expect(cues('golf', 'swing-two')[0].semis).toBeGreaterThan(0);
+    expect(cues('golf', 'swing-three')[0]).toMatchObject({ name: 'boing', delay: 0.55 });
+    // Out Cold: CRACK at 3.95; Fresh Wash: the splash on the SPLOOSH; Dinner Bell: the triangle on the first strike.
+    expect(cues('cold', 'crack')[0]).toMatchObject({ name: 'crack', delay: 0.55 });
+    expect(cues('wash', 'sploosh')[0]).toMatchObject({ name: 'splash', delay: 0 });
+    expect(cues('bell', 'ding').some((c) => c.name === 'triangle' && c.delay === 0)).toBe(true);
+    // The five are fetched only by a Clearwater level, and levelled like the rest of the sound pass.
+    for (const k of ['whoosh', 'boing', 'crack', 'splash', 'triangle'] as const) {
+      expect(LAZY_KEYS).toContain(k);
+      expect(sfxInfo(k).peak).toBeLessThanOrEqual(-1.4);
+      expect(VOLUME[k]).toBeLessThan(VOLUME.bump);
+    }
+    expect(sfxInfo('triangle').seconds).toBeGreaterThan(1.5);
   });
 
   it('the BONK lands on each hit, the tail slaps where the tail comes down', () => {
@@ -270,16 +299,16 @@ describe("the sound pass: Jay's picks, each on its beat, levelled alike", () => 
 
 describe('credits', () => {
   it('every file in the game has a row, from the packs\' own CREDITS', () => {
-    expect(CREDITS.filter((c) => c.kind === 'sfx').length).toBe(60);
+    expect(CREDITS.filter((c) => c.kind === 'sfx').length).toBe(65);
     expect(musicCredits().map((c) => c.title)).toEqual(['Fun On The Farm', 'Tap Room Rag', '50 Over The Speed Limit', 'BITSTREAM DREAMS', 'Chill Beat', 'Chillhop mix']);
     for (const c of CREDITS) {
       expect(c.author, c.file).toBeTruthy();
       expect(c.licence, c.file).toBeTruthy();
     }
     const groups = sfxCredits();
-    expect(groups.reduce((n, g) => n + g.count, 0)).toBe(60);
+    expect(groups.reduce((n, g) => n + g.count, 0)).toBe(65);
     // (The outhouse door, the pumpjack, and the seventeen synthesized picks of the sound pass, and the buttons' click.)
-    expect(groups.find((g) => g.author === 'Synthesized for Rush Hour Rigs')?.count).toBe(20);
+    expect(groups.find((g) => g.author === 'Synthesized for Rush Hour Rigs')?.count).toBe(25);
     // Nothing picked needs an attribution licence (no CC BY track): Pixabay, Mixkit, CC0 and our own.
     for (const c of CREDITS) expect(c.licence, c.file).toMatch(/Pixabay|Mixkit|CC0|Original/);
   });

@@ -177,6 +177,11 @@ export const FOURTH_WALL_ODDS = 3;
 export const MAGPIE_LINES = ['Seriously?', 'Not the windshield!', 'Every. Single. Day.', 'Somebody get the pressure washer.'];
 /** The Runaway Bale: what the landowner shouts as he runs after it (the reference's line). */
 export const BALE_LINE = 'Hey!';
+/** Out Cold (Clearwater): what the bearded worker says, looking down at Moe. The reference's own line. */
+export const FORE_LINE = 'Fore.';
+/** Dinner Bell and One Pea (Clearwater): the reference's own lines, by the key the gag says them under. */
+export const BELL_LINES: Record<string, string> = { supper: 'Supper!', save: 'Save me some!' };
+export const PEA_LINES: Record<string, string> = { carbs: 'Watching your carbs, Moe?' };
 export const LANDOWNER_LINES = ["Who's paying for these ruts?", "That's my hay field!", "I'm calling the land man.", 'Fix these ruts by Friday.'];
 const lastFrom = new Map<readonly string[], string>();
 /** A line from a pool, never the one it gave last time. */
@@ -262,4 +267,10 @@ export const WITNESS_LINES = {
   pdogs: 'Tough crowd.',
   bale: 'That bale had places to be.',
   cloud: 'Forecast says sunny. Not for him.',
+  // (Clearwater: Jay's own, Oct 8.)
+  golf: 'Keep your head down, Moe.',
+  cold: 'Hole in none.',
+  wash: 'Missed a spot.',
+  bell: 'Did somebody say supper?',
+  pea: "Don't eat it all at once, Moe.",
 };

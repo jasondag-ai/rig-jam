@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { sizeOf } from '../engine/index.ts';
 import { seedFrom } from '../engine/rng.ts';
 import { REGIONS } from '../levels/regions.ts';
 import { GRAIN, LUMPS, PUDDLE_REACH, keepDry, planDetail, puddleCells } from './lease-detail.ts';
@@ -37,10 +38,10 @@ describe('lease ground detail', () => {
     const dry = keepDry(level);
     expect(d.puddles.length).toBeLessThanOrEqual(4);
     for (const p of d.puddles) {
-      for (const c of puddleCells(p.x, p.y)) expect(dry.has(c), `puddle at ${p.x.toFixed(1)},${p.y.toFixed(1)} on ${c}`).toBe(false);
+      for (const c of puddleCells(p.x, p.y, sizeOf(level))) expect(dry.has(c), `puddle at ${p.x.toFixed(1)},${p.y.toFixed(1)} on ${c}`).toBe(false);
       for (const l of p.lobes) expect(Math.hypot(l.dx, l.dy) + l.rx).toBeLessThanOrEqual(PUDDLE_REACH + 1e-9);
       expect(p.x - PUDDLE_REACH).toBeGreaterThanOrEqual(0);
-      expect(p.y + PUDDLE_REACH).toBeLessThanOrEqual(6);
+      expect(p.y + PUDDLE_REACH).toBeLessThanOrEqual(sizeOf(level));
     }
   });
 

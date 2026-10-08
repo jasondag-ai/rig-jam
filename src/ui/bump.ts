@@ -1,5 +1,5 @@
 // Who got bumped, and who complains about it. Pure: no DOM, so it can be unit-tested.
-import { SIZE, convoyWaitingFor, gateFor, gateOpen, shiftOpen, type GameState, type MoveRange } from '../engine/index.ts';
+import { sizeOf, convoyWaitingFor, gateFor, gateOpen, shiftOpen, type GameState, type MoveRange } from '../engine/index.ts';
 import type { BumpHit } from './lines.ts';
 
 export interface BumpTarget {
@@ -14,7 +14,7 @@ export function bumpTarget(state: GameState, id: string, range: MoveRange, direc
   if (!t) return { hit: 'wall', truckId: null };
   const pos = t.orient === 'h' ? t.col : t.row;
   const next = direction > 0 ? pos + t.length - 1 + range.max + 1 : pos + range.min - 1;
-  if (next < 0 || next >= SIZE) {
+  if (next < 0 || next >= sizeOf(state.level)) {
     // Driving at its own convoy gate out of order: the truck it's waiting for has words.
     const side = gateFor(state.level, t).side;
     const towardGate = direction > 0 ? side === 'right' || side === 'bottom' : side === 'left' || side === 'top';

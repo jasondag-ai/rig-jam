@@ -23,5 +23,10 @@
     "mean": "#a99e62",
     "dark": "#9c9058",
     "light": "#b6ac6b"
+  },
+  "grass-boreal": {
+    "mean": "#adb58a",
+    "dark": "#a2aa81",
+    "light": "#b7be92"
   }
 }

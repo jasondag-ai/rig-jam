@@ -83,6 +83,14 @@ SFX = {
     # ---- The sound pass (Job S, Jay's picks of Oct 6). 'art/<key>.wav' is a synthesized pick, made
     # by tools/sound-picks.py --export into tools/sfx-art/; the rest are alternates from the pack.
     # All of these are LEVELLED (see LEVELLED below), so none jumps out.
+    # CLEARWATER (the Big Pad's sightings): Jay's five new sounds, his picks of Oct 7 21:11 (BIG_PAD_BRIEF.md): the B take
+    # of whoosh, boing and crack, the A take of triangle and splash
+    # (`~/Desktop/RHR Art Inbox/Sound files/clearwater/<name>_<A|B>.wav`, copied to tools/sfx-art/<name>.wav).
+    'whoosh': ('art/whoosh.wav', None, False),      # Three Swings: the shovel's two clean misses
+    'boing': ('art/boing.wav', None, False),        # Three Swings: the shovel bites the dirt
+    'crack': ('art/crack.wav', None, False),        # Out Cold: the one mighty swing connects
+    'splash': ('art/splash.wav', None, False),      # Fresh Wash: the hauler through the puddle
+    'triangle': ('art/triangle.wav', None, False),  # Dinner Bell: DING DING DING (three strikes, 0.3 s apart, and their ring)
     'knock': ('art/knock.wav', None, False),        # sign rattle: replaces the old "dingle" everywhere
     'tada': ('art/tada.wav', None, False),          # level complete: replaces the toy whistle
     'clack': ('art/clack.wav', None, False),        # gate exit: replaces the ratchet-and-ding and its whoosh
@@ -110,7 +118,7 @@ ART_SRC = ROOT / 'tools' / 'sfx-art'
 # THE SOUND PASS'S FILES ARE LEVELLED as they are built: each is brought to the same average level
 # (LEVEL_MEAN, the mix's own target in src/audio/pack.ts), but never so far that its peak passes
 # LEVEL_PEAK. The mix table then only has to give each its place.
-LEVELLED = {'knock', 'tada', 'clack', 'click', 'squelch', 'shluck', 'blup', 'mew', 'yawn', 'pats', 'bonk', 'tailslap', 'shimmer', 'howl', 'rustle', 'whistle', 'squeak',
+LEVELLED = {'whoosh', 'boing', 'crack', 'splash', 'triangle', 'knock', 'tada', 'clack', 'click', 'squelch', 'shluck', 'blup', 'mew', 'yawn', 'pats', 'bonk', 'tailslap', 'shimmer', 'howl', 'rustle', 'whistle', 'squeak',
             'aww', 'rumble', 'sigh', 'rain', 'umbrella', 'downpour'}
 LEVEL_MEAN = -19.0
 LEVEL_PEAK = -1.5
@@ -190,7 +198,8 @@ def main() -> None:
             fade = 0.12 if keep else FADE_OUT
             run('-i', str(tmp), '-af', f'afade=t=out:st={max(0, was["seconds"] - fade):.3f}:d={fade}', str(lvl))
             was = measure(lvl)
-            gain = min(LEVEL_MEAN - was['mean'], LEVEL_PEAK - was['peak'])
+            # (A very short crack keeps another dB of room: MP3 coding lifts so sharp a peak a little.)
+            gain = min(LEVEL_MEAN - was['mean'], LEVEL_PEAK - (1.0 if was['seconds'] < 0.3 else 0.0) - was['peak'])
             run('-i', str(tmp), '-af', f'volume={gain:.2f}dB', '-ac', '1', '-ar', '44100', str(lvl))
             lvl.replace(tmp)
         seconds = measure(tmp)['seconds']

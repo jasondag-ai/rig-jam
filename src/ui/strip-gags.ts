@@ -459,6 +459,11 @@ export class TimelineGag {
     return this.def.end;
   }
 
+  /** Its beats on its own clock: [time, id, what happens]. */
+  get beats(): [number, string, string][] {
+    return this.def.beats;
+  }
+
   /**
    * Tests (`?gagtest=1`): sets the gag's scene and holds it at time `t`, with no clock running, so
    * a frame can be looked at. `release()` ends it the way a finished gag ends.

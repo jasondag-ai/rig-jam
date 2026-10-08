@@ -1,4 +1,4 @@
-import { shiftOpen, SIZE, cabSide, convoyWaitingFor, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
+import { shiftOpen, SIZE, sizeOf, cabSide, convoyWaitingFor, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
 import { bumpTarget, pickSpeaker } from './bump.ts';
 import { placeBubble, type BubbleSide } from './bubble.ts';
 import { CLOCK, DROP, muskegSvg, rackSvg } from './floor-art.ts';
@@ -18,6 +18,8 @@ import { sound } from '../audio/engine.ts';
 import { EXIT_MOST_MS, exitPlan } from './exit.ts';
 
 const FENCE_RATIO = 0.42;
+/** A Big Pad (8 x 8) has a thinner berm band, so its cells come to about 44 px on a phone 390 wide. */
+const BIG_FENCE_RATIO = 0.34;
 const GAP = 3; // px between a truck and its cell edge
 const WAVE_MS = 260; // gate arm lifts and the driver waves before pulling out
 /** When the gate's dust comes up (a share of the drive), and how long a puff lasts. */
@@ -56,6 +58,9 @@ export class BoardView {
   private equip: HTMLElement;
   private level: Level | null = null;
   private trucks = new Map<string, HTMLElement>();
+  private size: number = SIZE;
+  /** A berm of sand (Clearwater's theme) in place of the ground's own dirt. */
+  private sandBerm = false;
   private cell = 48;
   private fence = 20;
   /** Trucks on their way out right now (the yard's clip is lifted while there are any). */
@@ -123,6 +128,10 @@ export class BoardView {
 
   setLevel(level: Level): void {
     this.level = level;
+    // The pad's side: 6, or 8 on a Big Pad. Everything is laid out in cells of it.
+    this.size = sizeOf(level);
+    this.el.classList.toggle('big-pad', this.size > SIZE);
+    this.tracks.setSize(this.size);
     this.drag = null;
     this.el.querySelectorAll('.gate, .obstacle, .floor, .ghost, .bubble, .dust').forEach((n) => n.remove());
     this.hitCounts.clear();
@@ -217,25 +226,26 @@ export class BoardView {
   /** Fits the board into the given box and repositions everything. */
   resize(maxWidth: number, maxHeight: number): void {
     const size = Math.max(200, Math.min(maxWidth, maxHeight));
-    this.cell = Math.floor(size / (SIZE + 2 * FENCE_RATIO));
-    this.fence = Math.floor((size - this.cell * SIZE) / 2);
+    const cells = this.size;
+    this.cell = Math.floor(size / (cells + 2 * (cells > SIZE ? BIG_FENCE_RATIO : FENCE_RATIO)));
+    this.fence = Math.floor((size - this.cell * cells) / 2);
     this.layout();
   }
 
   private layout(): void {
     const { cell, fence } = this;
-    const total = cell * SIZE + fence * 2;
+    const total = cell * this.size + fence * 2;
     this.el.style.width = this.el.style.height = `${total}px`;
     this.el.style.setProperty('--cell', `${cell}px`);
     this.el.style.setProperty('--fence', `${fence}px`);
     this.pad.style.left = this.pad.style.top = `${fence}px`;
     this.equip.style.left = this.equip.style.top = `${fence}px`;
-    this.pad.style.width = this.pad.style.height = `${cell * SIZE}px`;
+    this.pad.style.width = this.pad.style.height = `${cell * this.size}px`;
     this.el.querySelectorAll<HTMLElement>('.gate').forEach((g) => {
       const side = g.dataset.side as Side;
       const i = Number(g.dataset.index);
       const along = fence + i * cell;
-      const across = side === 'left' || side === 'top' ? 0 : fence + cell * SIZE;
+      const across = side === 'left' || side === 'top' ? 0 : fence + cell * this.size;
       const vertical = side === 'left' || side === 'right';
       Object.assign(g.style, {
         left: `${vertical ? across : along}px`,
@@ -265,12 +275,12 @@ export class BoardView {
     const { cell, fence, ground } = this;
     const over = Math.round(fence * BERM_OVER);
     const scale = Math.min(3, window.devicePixelRatio || 1);
-    const key = [cell, fence, ground, scale, this.level.id, this.level.gates.map((g) => g.side + g.index).join()].join('|');
+    const key = [cell, fence, ground, this.sandBerm, scale, this.level.id, this.level.gates.map((g) => g.side + g.index).join()].join('|');
     if (key === this.bermKey) return;
     this.bermKey = key;
-    const size = cell * SIZE + (fence + over) * 2;
+    const size = cell * this.size + (fence + over) * 2;
     Object.assign(this.berm.style, { left: `${-over}px`, top: `${-over}px`, width: `${size}px`, height: `${size}px` });
-    paintBerm(this.berm, { cell, band: fence, over, gates: this.level.gates }, ground, seedFrom(this.level.id), scale);
+    paintBerm(this.berm, { cell, band: fence, over, gates: this.level.gates, size: this.size }, ground, seedFrom(this.level.id), scale, this.sandBerm);
     if (this.night) this.paintNightBerm();
     paintDetail(this.detail, planDetail(this.level, ground, seedFrom(this.level.id)), cell, fence, scale);
   }
@@ -380,7 +390,7 @@ export class BoardView {
     el.classList.add('waving');
     sound.exit();
     const from = this.currentXY(el);
-    const plan = exitPlan(side, from, el.offsetWidth, el.offsetHeight, this.cell, this.fence);
+    const plan = exitPlan(side, from, el.offsetWidth, el.offsetHeight, this.cell, this.fence, this.size);
     const out = side === 'left' || side === 'top' ? -1 : 1, horizontal = side === 'left' || side === 'right';
     const to = (d: number) => `translate3d(${from.x + (horizontal ? out * d : 0)}px, ${from.y + (horizontal ? 0 : out * d)}px, 0)`;
     this.leaving++;
@@ -422,7 +432,7 @@ export class BoardView {
   /** The dust the leaving truck kicks up at the gate as it goes through (it is not what hides it: it fades out beyond the gate). */
   private gateDust(side: Side, el: HTMLElement, from: { x: number; y: number }): void {
     const { cell, fence } = this;
-    const pad = cell * SIZE;
+    const pad = cell * this.size;
     const horizontal = side === 'left' || side === 'right';
     // The gate's middle, in the pad's own px; the puffs lie along the lane through the gate's gap, and a little to each side.
     const lane = horizontal ? from.y + el.offsetHeight / 2 : from.x + el.offsetWidth / 2;
@@ -625,10 +635,11 @@ export class BoardView {
     ctx.globalCompositeOperation = 'source-over';
   }
 
-  setGround(ground: Ground): void {
+  setGround(ground: Ground, sandBerm = false): void {
     this.tracks.setGround(ground);
     this.spray.setGround(ground);
     this.ground = ground;
+    this.sandBerm = sandBerm;
     this.paintBerm();
   }
 

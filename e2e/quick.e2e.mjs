@@ -116,7 +116,9 @@ console.log('\nwebkit: region tabs');
     const { context, page } = await open(wk, { width: 1280, height: 800, touch: false });
     await wait(300);
     const b = await bar(page);
-    check(b.fit && b.n === REGIONS.length && b.inside && !b.scrolls && !b.clipped && !b.fades && b.narrowest >= 96, `a desktop window shows all ${b.n} region tabs side by side with nothing to swipe (the narrowest ${b.narrowest} px, no name cut short, no edge fade)`);
+    // (Five tabs fit the 528 px bar at full size. With a sixth, Clearwater on the big-pad branch, they do not, and the bar stays the strip.)
+    if (REGIONS.length <= 5) check(b.fit && b.n === REGIONS.length && b.inside && !b.scrolls && !b.clipped && !b.fades && b.narrowest >= 96, `a desktop window shows all ${b.n} region tabs side by side with nothing to swipe (the narrowest ${b.narrowest} px, no name cut short, no edge fade)`);
+    else check(!b.fit && b.n === REGIONS.length && b.scrolls && !b.clipped && b.narrowest >= 96, `a desktop window with ${b.n} region tabs: they do not all fit at full size, so the bar is the strip there too (${b.narrowest} px each, no name cut short)`);
     await page.locator('.region-tab').nth(4).click(); await wait(300);
     check((await page.evaluate(() => document.querySelectorAll('.region-tab')[4].getAttribute('aria-selected'))) === 'true', 'a click on the last tab opens that field');
     await context.close();
@@ -275,7 +277,7 @@ console.log('\nchromium: a clean console on all 50 levels');
       await page.waitForSelector('.screen.levels');
     }
   }
-  check(seen === 50 && bad.length === 0, `${seen} levels opened: no SVG has a NaN (or empty) viewBox${bad.length ? ' BUT ' + bad.slice(0, 3).join(' | ') : ''}`);
+  check(seen === REGIONS.reduce((n, r) => n + r.levels.length, 0) && bad.length === 0, `${seen} levels opened: no SVG has a NaN (or empty) viewBox${bad.length ? ' BUT ' + bad.slice(0, 3).join(' | ') : ''}`);
   check(noise.length === 0, `the console stayed clean on all of them${noise.length ? ': ' + [...new Set(noise)].slice(0, 4).join(' | ') : ' (no errors, no warnings)'}`);
   await cr.close();
 }

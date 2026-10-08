@@ -1,5 +1,5 @@
 import { EXIT_MOST_MS } from './exit.ts';
-import { SolverLimitError, canUndo, getMoveRange, isWon, newGame, nextMove, tryMove, undo, type GameState, type Level, type Move, SIZE } from '../engine/index.ts';
+import { SolverLimitError, canUndo, getMoveRange, isWon, newGame, nextMove, tryMove, undo, type GameState, type Level, type Move, SIZE, sizeOf } from '../engine/index.ts';
 import { seedFrom } from '../engine/rng.ts';
 import { BoardView } from './board-view.ts';
 import { sceneryHtml } from './scenery.ts';
@@ -23,8 +23,9 @@ import { applyCamo, loadLog, record, saveLog, sightingToast, type Sighting } fro
 import { bearAlways, bearNever, eggOff, gagTest, lunchAlways, lunchNever, rollPinned, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
 import { BackAndForth, GAG_TRIGGERS, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump, type GagId } from './gag-triggers.ts';
-import { BakkenProp, MANN_SIGN_X, MannProp, auroraDef, sceneDef } from './scene-stage.ts';
-import { BALE_LINE } from './lines.ts';
+import { BakkenProp, ClearProp, MANN_SIGN_X, MannProp, auroraDef, sceneDef } from './scene-stage.ts';
+import { BALE_LINE, BELL_LINES, FORE_LINE, PEA_LINES } from './lines.ts';
+import { WAVE3 } from './wave3.ts';
 import { setSignX, stageBox, WINTER_SIGN_X, BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, SignProp, deerDef, signLane, surveyorDef, touristsDef, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
 import { MagpieGag } from './magpie-gag.ts';
@@ -109,6 +110,7 @@ export class GameView {
   private scenery: HTMLElement;
   /** Which region this level is in ('daily' for the Daily Pad): the gopher's mound is Cardium's. */
   private regionId: string;
+  private bigPad = false;
 
   /** Null while gags are switched off (flags.ts). */
   /**
@@ -167,6 +169,11 @@ export class GameView {
   private mann: MannProp | null = null;
   /** The standard Bakken scene (the round bale), and taps on the prairie and on the sky. */
   private bakken: BakkenProp | null = null;
+  /** Clearwater's standard scene (the Big Pad), and taps on its rig mat stack. */
+  private clear: ClearProp | null = null;
+  private matTaps = 0;
+  /** Trucks driven out one move after another (Dinner Bell, One Pea). */
+  private exitRun = 0;
   private prairieTaps: { x: number; y: number; n: number } | null = null;
   private skyTaps = 0;
   private puddleTaps = 0;
@@ -196,6 +203,8 @@ export class GameView {
   ) {
     this.level = level;
     this.regionId = where.regionId;
+    // A BIG PAD (8 x 8, Clearwater): the board takes nearly the whole width, and no gag plays yet (they are drawn for a pad of 6).
+    this.bigPad = sizeOf(level) > SIZE;
     this.theme = theme;
     this.daily = daily;
     this.handlers = handlers;
@@ -222,7 +231,7 @@ export class GameView {
       if (this.wiggle.reversal(performance.now())) this.fire('landowner');
     };
     this.el = document.createElement('div');
-    this.el.className = 'screen game';
+    this.el.className = `screen game${this.bigPad ? ' big-pad' : ''}`;
     this.el.innerHTML = `
       <div class="scenery" aria-hidden="true"></div>
       <div class="vignette" aria-hidden="true"></div>
@@ -261,7 +270,7 @@ export class GameView {
     this.el.style.setProperty('--night-out', `${GAG_TRIGGERS.night.fadeOutMs}ms`);
     this.stage.append(this.board.el);
     this.board.setLevel(level);
-    this.board.setGround(theme.ground);
+    this.board.setGround(theme.ground, theme.berm === 'sand');
     sound.setGround(theme.ground);
     // The depth strip: every prop, every bottom-strip tree and every strip gag is a child of it, drawn by its ground line. Under the night's shade.
     this.depth = document.createElement('div');
@@ -293,7 +302,10 @@ export class GameView {
       const mannGag = (['muskeg', 'catTrain', 'beaver', 'aurora'] as GagId[]).includes(this.eggForced as GagId);
       const inMann = this.regionId === GAG_TRIGGERS.muskeg.region || mannGag;
       // (Mannville's sign stands left of the lane aspen; Duvernay's left of the stage, clear of the sitting bear.)
+      // Clearwater: its own standard scene (the sandy two-track, the gold aspen, the rig mat stack, the puddle) and the golf pair.
+      const inClear = this.regionId === GAG_TRIGGERS.golf.region || BIG_PAD_GAGS.includes(this.eggForced as GagId);
       setSignX(inMann ? MANN_SIGN_X : theme.season === 'winter' ? WINTER_SIGN_X : undefined);
+      if (inClear) this.clear = new ClearProp(egg, theme.season);
       if (inMann) this.mann = new MannProp(egg, theme.season);
       // Bakken: the round bale, in the same spot of every level's bottom strip, and its four gags.
       const bakkenGag = (['tumbleweed', 'pdogs', 'bale', 'cloud'] as GagId[]).includes(this.eggForced as GagId);
@@ -346,6 +358,23 @@ export class GameView {
         for (const id of ['tumbleweed', 'pdogs', 'cloud'] as GagId[]) if (!eggOff(id)) this.strips[id] = new TimelineGag(egg, sceneDef(id, id, () => bakken.geom(), { overLease: id === 'cloud' }));
         if (!eggOff('bale')) this.strips.bale = new TimelineGag(egg, sceneDef('bale', 'bale', () => bakken.geom(), { prop: bakken, line: BALE_LINE }));
       }
+      if (this.clear) {
+        const clear = this.clear;
+        if (!eggOff('golf')) this.strips.golf = new TimelineGag(egg, sceneDef('golf', 'golf', () => clear.geom()));
+        // (Out Cold's ball pings off the scenery's own aspen, which shivers; "Fore." is said in the game's bubble.)
+        if (!eggOff('cold')) this.strips.cold = new TimelineGag(egg, sceneDef('cold', 'cold', () => clear.geom(), { line: FORE_LINE, frame: (t) => clear.aspen((WAVE3 as unknown as { cold: { aspen: (t: number) => number } }).cold.aspen(t)), reset: () => clear.aspen(0) }));
+        if (!eggOff('wash')) this.strips.wash = new TimelineGag(egg, sceneDef('wash', 'wash', () => clear.geom()));
+        if (!eggOff('bell')) this.strips.bell = new TimelineGag(egg, sceneDef('bell', 'bell', () => clear.geom(), { lines: BELL_LINES }));
+        if (!eggOff('pea')) this.strips.pea = new TimelineGag(egg, sceneDef('pea', 'pea', () => clear.geom(), { lines: PEA_LINES }));
+      }
+      // A BIG PAD HAS ONLY ITS OWN GAGS so far (the golf pair): the older ones are drawn for a pad of 6 and its scene, and are
+      // not built here at all. (The biffy and the lease sign still stand, as on every level.)
+      if (this.bigPad && !this.eggForced) {
+        for (const id of Object.keys(this.strips) as GagId[]) if (!BIG_PAD_GAGS.includes(id)) delete this.strips[id];
+        this.magpie = null;
+        this.worker = null;
+        this.moose = null;
+      }
       // The sounds only this level's gags use are fetched now (the rest came with the switch): audio/pack.ts `LAZY_KEYS`.
       sound.warm(Object.keys(this.strips) as GagId[]);
       // Taps on a flare stack (gag-triggers.ts): a touch that lifts where it landed, on a flare's picture.
@@ -383,6 +412,8 @@ export class GameView {
           if (this.mann) {
             if (this.mann.hitPuddle(e.clientX, e.clientY) && ++this.puddleTaps >= GAG_TRIGGERS.muskeg.puddleTaps) {
               this.puddleTaps = 0;
+    this.matTaps = 0;
+    this.exitRun = 0;
               this.fire('muskeg');
             } else if (this.mann.hitAspen(e.clientX, e.clientY) && !this.eggsOn.has('beaver')) {
               if (++this.aspenTaps >= GAG_TRIGGERS.beaver.aspenTaps) {
@@ -393,6 +424,17 @@ export class GameView {
             }
             if (this.night && this.onMoon(e.clientX, e.clientY)) this.fire('aurora');
           }
+          // Clearwater: the rig mat stack tapped three times. A STACKED PAIR: Three Swings, and once that is in the Wildlife Log, Out Cold.
+          if (this.clear?.hitMats(e.clientX, e.clientY) && !this.eggsOn.has('golf') && !this.eggsOn.has('cold')) {
+            if (++this.matTaps >= GAG_TRIGGERS.golf.matTaps) {
+              this.matTaps = 0;
+              const next: GagId = loadLog(loadProgress().demo).found.includes('swings') ? 'cold' : 'golf';
+              if (this.strips[next] && !this.eggDone.has(next)) this.fire(next);
+              else this.clear.shake();
+            } else this.clear.shake();
+          }
+          // Clearwater: a tap on the mud puddle (Fresh Wash).
+          if (this.clear?.hitPuddle(e.clientX, e.clientY) && !(e.target as Element | null)?.closest?.('button')) this.fire('wash');
           // Bakken: the same spot on the prairie tapped three times (the prairie dogs); the sky tapped three times (the cloud).
           if (this.bakken && !(e.target as Element | null)?.closest?.('button, .truck, .board')) {
             const screen = this.el.getBoundingClientRect(), strip = this.strip(), x = e.clientX - screen.left, y = e.clientY - screen.top;
@@ -426,6 +468,7 @@ export class GameView {
         (window as unknown as { __rhrGag: unknown }).__rhrGag = {
           names: () => Object.keys(strips),
           end: (id: GagId) => strips[id]?.end ?? 0,
+          beats: (id: GagId) => strips[id]?.beats ?? [],
           hold: (id: GagId, t: number) => strips[id]?.hold(t) ?? false,
           release: (id: GagId) => strips[id]?.release(),
         };
@@ -554,9 +597,12 @@ export class GameView {
     // Kept clear of trees: the sleepy worker's spot by the left edge, and the biffy's.
     const strip = { top: box.y + box.height, bottom: controlsTop };
     const clearings = [this.bakken ? this.bakken.box() : null, this.bakken ? this.bakken.lane() : null, this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.biffy ? biffyLane(screen.width, strip) : null, this.sign ? signLane(screen.width, strip) : null, this.bush ? (this.bush.x === BUSH_X ? bearBox(screen.width, strip) : bushBox(this.bush.x, screen.width, strip)) : null, this.cow ? cowBox(screen.width, strip) : null, this.riser ? riserBox(screen.width, strip) : null, stageBox(screen.width, strip)].filter((c) => c !== null);
-    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, below: !this.mann, anchors: { bush: !this.bush && !this.mann, mound: this.regionId === 'cardium' }, moundAt: this.strips.gopherLunch || this.strips.nearMiss ? moundSpot(screen.width, strip) : undefined, clearings });
+    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, below: !this.mann && !this.clear, anchors: { bush: !this.bush && !this.mann && !this.clear, mound: this.regionId === 'cardium' }, moundAt: this.strips.gopherLunch || this.strips.nearMiss ? moundSpot(screen.width, strip) : undefined, clearings });
     this.depthTrees(box.y + box.height);
     this.mann?.layout();
+    this.clear?.layout();
+    // (Clearwater's sign has its place in the scene's own world, wherever that lies on this screen.)
+    if (this.clear) setSignX(this.clear.signX());
     this.bakken?.layout();
     this.biffy?.layout();
     if (!this.eggsOn.has('surveyor') && !this.eggsOn.has('deer') && !this.eggsOn.has('tourists')) this.sign?.layout();
@@ -588,6 +634,12 @@ export class GameView {
     {
       if (result.exited && mover?.convoy === 2 && this.convoyOut === mover.color) this.fire('catTrain');
       this.convoyOut = result.exited && mover?.convoy === 1 ? mover.color : null;
+    }
+    // Clearwater: trucks driven out one move after another (Dinner Bell; once that is in the log, One Pea).
+    this.exitRun = result.exited ? this.exitRun + 1 : 0;
+    if (this.clear && this.exitRun >= GAG_TRIGGERS.bell.exitsInARow) {
+      const next: GagId = loadLog(loadProgress().demo).found.includes('bell') ? 'pea' : 'bell';
+      if (!this.eggDone.has(next) && !this.eggsOn.has(next)) { this.exitRun = 0; this.fire(next); }
     }
     // The tumbleweed: a truck dragged the full length of the board in one move.
     if (this.bakken && mover && (result.exited ? Math.abs(delta) >= SIZE - mover.length : Math.abs(result.delta ?? delta) === SIZE - mover.length)) this.fire('tumbleweed');
@@ -630,6 +682,7 @@ export class GameView {
     if (!canUndo(this.state) || isWon(this.state)) return;
     this.state = undo(this.state);
     this.played();
+    this.exitRun = 0;
     if (++this.undos >= GAG_TRIGGERS.geese.undosInARow) this.fire('geese');
     this.board.removeLastTrack();
     this.resetHint();
@@ -744,6 +797,8 @@ export class GameView {
    * only for a gag that shares its character or prop, and then follows it on. Once per level.
    */
   private fire(id: GagId): void {
+    // (A Big Pad has only its own gags so far: the others are drawn for a pad of 6.)
+    if (this.bigPad && !this.eggForced && !BIG_PAD_GAGS.includes(id)) return;
     if (this.eggForced || isWon(this.state) || this.eggDone.has(id) || this.eggsOn.has(id) || this.eggQueue.includes(id)) return;
     if (id === 'magpie' ? !this.magpie : id === 'worker' ? !this.worker : id === 'moose' ? !this.moose : !this.strips[id]) return;
     if (mustWait(id, this.eggsOn)) this.eggQueue.push(id);
@@ -1168,4 +1223,6 @@ function fitRibbon(span: HTMLElement | null): void {
 }
 
 /** Which Wildlife Log entry each egg fills in. */
-const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull', porcupine: 'porcupine', gopherLunch: 'lunch', sam: 'sam', tongue: 'tongue', surveyor: 'surveyor', deer: 'deer', tourists: 'tourists', muskeg: 'muskeg', catTrain: 'cattrain', beaver: 'beaver', aurora: 'aurora', tumbleweed: 'tumbleweed', pdogs: 'pdogs', bale: 'bale', cloud: 'cloud' };
+/** The gags a Big Pad (Clearwater) plays. */
+const BIG_PAD_GAGS: GagId[] = ['golf', 'cold', 'wash', 'bell', 'pea'];
+const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull', porcupine: 'porcupine', gopherLunch: 'lunch', sam: 'sam', tongue: 'tongue', surveyor: 'surveyor', deer: 'deer', tourists: 'tourists', muskeg: 'muskeg', catTrain: 'cattrain', beaver: 'beaver', aurora: 'aurora', tumbleweed: 'tumbleweed', pdogs: 'pdogs', bale: 'bale', cloud: 'cloud', golf: 'swings', cold: 'cold', wash: 'wash', bell: 'bell', pea: 'pea' };
