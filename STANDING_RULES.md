@@ -36,3 +36,9 @@ No time-based gag triggers. Only night dimming is idle-based.
 
 ## 10. Checks
 Visual fixes are checked in WebKit at iPhone DPR 3 plus Galaxy and Pixel sizes, not only Chromium.
+
+## 11. Slow Moe, the anti-hero (Jay, Oct 8)
+Any time a worker gets into trouble or a compromised situation, that worker is Slow Moe: orange FR coveralls with reflective stripes, stubble (no beard), droopy lids, hard hat tipped back, same build and size as every worker. He is the anti-hero who gets into trouble all the time. The bearded worker in red is the lucky, competent one. This applies to every region, old gags included.
+
+## 12. Vehicles in the strip (Jay, Oct 7)
+Trucks face right in the strip, so the driver door is on the far side. Drivers get in and out out of sight (clunk, small cab rock) and walk round the front. No near door ever opens. Also check Safari's visible viewport (about 390x664 and 375x635), not only full-screen.
