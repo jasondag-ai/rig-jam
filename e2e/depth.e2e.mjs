@@ -51,7 +51,7 @@ for (const [device, width, height, dpr] of SIZES) {
       const parts = (u) => {
         if (u.matches('svg')) return [{ box: rect(u), el: u }];
         const scene = u.querySelector(':scope > svg.scene-svg');
-        if (scene) return [...scene.querySelectorAll(u.dataset.gag ? ':scope > g.pup > *' : ':scope > svg')].map((el) => ({ box: rect(el), el })).filter((p) => seen(p.box));
+        if (scene) return [...scene.querySelectorAll(u.dataset.gag ? ':scope > g.pup > *:not([data-fx])' : ':scope > svg')].map((el) => ({ box: rect(el), el })).filter((p) => seen(p.box));
         return [...u.querySelectorAll('svg.pup')].filter((el) => getComputedStyle(el).visibility !== 'hidden' && getComputedStyle(el).opacity !== '0').map((el) => ({ box: rect(el), el })).filter((p) => seen(p.box));
       };
       const order = (a, b) => { const za = +getComputedStyle(a).zIndex || 0, zb = +getComputedStyle(b).zIndex || 0; return za !== zb ? Math.sign(za - zb) : (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1); };
