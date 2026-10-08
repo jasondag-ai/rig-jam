@@ -199,7 +199,7 @@ WAVE3.muskeg = { name:'Muskeg Boots', dur:9.6, still:3.1,
    else if(t<4.3){if(t<3.95){p.headRot=-6;p.px=-3;p.mouth='flat';}else{p.py=4;p.headRot=10;p.mouth='frown';}}
    else if(t<4.9){const k=Math.sin(Math.PI*seg(t,4.3,4.8));p.armF=-35*k;p.armB=35*k;p.bob=-3*k;p.eye='half';p.mouth='flat';p.headRot=-4*k;}
    else{p.mouth='smile';p.eye=(t>6.4&&t<6.55)?'closed':'n';}
-   s+=worker(p);}
+   s+=worker(asMoe(p));}
   if(t<2.0){for(let k=0;k<2;k++){const ph=((((t*1.4+k*.5)%1)+1)%1);s+=note(x+16+ph*10,GY-62-ph*18,1-ph);}}
   if(t>2.0&&t<2.8){const ph=((t-2)*2.4)%1;s+=`<circle cx="${r2(x-6+ph*4)}" cy="${r2(147-ph*6)}" r="1.6" fill="${C.mud}" opacity="${r2(1-ph)}"/>`;}
   if(t>3.2&&t<3.8)s+=sfx(170,GY-74,'SHLUCK!',15,-8,'#f4c430',.6+.4*seg(t,3.2,3.32));
@@ -447,7 +447,7 @@ export const baleAtRest = () => bale(BALE_X, GY-26, 0);
 /* 8. Personal Cloud */
 const WALK_IN=210/2.0, WALK_OFF=280/1.8, CLOUD_OFF=280/1.85;
 WAVE3.cloud = { name:'Personal Cloud', dur:12.4, still:9.0,
- beats:[[0,'strolls-in','A worker strolls in, whistling. A tiny cloud tags along.'],[2.3,'rains','It parks over his head and rains on him.'],[3.4,'sidestep','He sidesteps. It follows.'],[4.4,'steps-back','He steps back. It follows again.'],[5.2,'deadpan','Deadpan look at the player.'],[6.0,'umbrella','Pulls out an umbrella. Pop! Rain stops.'],[6.4,'smug','Smug grin. The cloud is not happy.'],[8.0,'closes-it','He closes the umbrella. Looks up, pleased.'],[8.6,'downpour','Downpour. Flattened.'],[9.8,'opens-again','Sighs, opens the umbrella again.'],[10.2,'walks-off','Walks off. The cloud follows, still raining.']],
+ beats:[[0,'strolls-in','Slow Moe strolls in, whistling. A tiny cloud tags along.'],[2.3,'rains','It parks over his head and rains on him.'],[3.4,'sidestep','He sidesteps. It follows.'],[4.4,'steps-back','He steps back. It follows again.'],[5.2,'deadpan','Deadpan look at the player.'],[6.0,'umbrella','Pulls out an umbrella. Pop! Rain stops.'],[6.4,'smug','Smug grin. The cloud is not happy.'],[8.0,'closes-it','He closes the umbrella. Looks up, pleased.'],[8.6,'downpour','Downpour. Flattened.'],[9.8,'opens-again','Sighs, opens the umbrella again.'],[10.2,'walks-off','Walks off. The cloud follows, still raining.']],
  lead:E=>E/WALK_IN, tail:E=>E/CLOUD_OFF+.1,
  wx(t){return t<0?-40+WALK_IN*t:t>12.0?440+WALK_OFF*(t-12.0):kf(t,[[0,-40],[2.0,170,'lin'],[3.4,170],[3.7,220],[4.4,220],[4.6,160],[10.2,160],[12.0,440,'lin']]);},
  // (The cloud drifts in slowing down: 2 x 260 / 2.3 at t = 0.)
@@ -475,7 +475,7 @@ WAVE3.cloud = { name:'Personal Cloud', dur:12.4, still:9.0,
   if(umbUp){p.armB=t<6.15&&t>=6.0?kf(t,[[6.0,30],[6.15,-160]]):(t>=9.8&&t<9.85?-160:-172);p.handB=umbrella(umb);}
   else if(t>=8.35&&t<9.8){p.armB=6;p.handB=umbrella(0);}
   const seen=x>-45-E&&x<445+E, cloudSeen=cx>-45-E&&cx<445+E;
-  if(seen)s+=worker(p);
+  if(seen)s+=worker(asMoe(p));
   // rain
   const headTop=GY-66+(p.sq?6:0), umbTop=GY-92;
   if(raining&&cloudSeen){const stop=umbUp&&umb>.6?umbTop:headTop;s+=rain(cx,cy+12,stop,t,pour?10:6,pour?260:160);
@@ -496,7 +496,14 @@ WAVE3.cloud = { name:'Personal Cloud', dur:12.4, still:9.0,
    below are copied; the two gags after them are its `render` with the game's one change (`E`,
    see the top of this file) and without the scene behind (permanent scenery: scene-stage.ts). */
 function bush(x,b,s=1,ca='#6f8a3e',cb='#8ea956'){const cs=[[-9,-8,9],[0,-13,10],[9,-8,9]].map(([dx,dy,r])=>[x+dx*s,b+dy*s,r*s]);return cs.map(([cx,cy,r])=>`<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r)}" fill="${OL}" stroke="${OL}" stroke-width="5"/>`).join('')+cs.map(([cx,cy,r])=>`<circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r)}" fill="${ca}"/>`).join('')+cs.map(([cx,cy,r])=>`<circle cx="${r2(cx-r*.3)}" cy="${r2(cy-r*.3)}" r="${r2(r*.45)}" fill="${cb}"/>`).join('');}
+// A LOG CARD IS DRAWN SMALL: loose little things round the figures (a drop of sweat, a ball lying on the sand, a
+// whistled note, a puff of dust) are only stray specks there, so a card's still leaves them out (`cardMode`).
+let CARD=false;
+export const cardMode=(on)=>{CARD=on;};
 const MOE={suit:['#e8862e','#bf6418'],stubble:true,hatRot:-9};
+// SLOW MOE EVERYWHERE (STANDING_RULES 11): a worker of an older gag who gets into trouble is dressed as Moe at the
+// moment he is drawn: the same pose, his suit, stubble and tipped-back hat, and droopy lids wherever his eyes were plain.
+const asMoe=(p)=>Object.assign(p,MOE,{hatRot:(p.hatRot||0)+MOE.hatRot,eye:(!p.eye||p.eye==='n')?'half':p.eye});
 const ASP={x:222,b:132,h:118};
 /* THE FRONT LANE IS TIGHTER THAN THE REFERENCE'S (Jay, Oct 8: the characters were too small on a phone, and the band of
    grass under the lane was empty). The reference puts the puddle at y 175 and drives the hauler at GY+28, 34 units of
@@ -520,6 +527,12 @@ function handW(o,which='F',ext=28){const d={x:0,y:GY,s:.54,face:1,bob:0,lean:0,s
 function star4(x,y,r,fill='#f4c430',a=1){return`<path opacity="${r2(a)}" d="M${r2(x)} ${r2(y-r)} Q${r2(x+r*.22)} ${r2(y-r*.22)} ${r2(x+r)} ${r2(y)} Q${r2(x+r*.22)} ${r2(y+r*.22)} ${r2(x)} ${r2(y+r)} Q${r2(x-r*.22)} ${r2(y+r*.22)} ${r2(x-r)} ${r2(y)} Q${r2(x-r*.22)} ${r2(y-r*.22)} ${r2(x)} ${r2(y-r)} z" fill="${fill}" stroke="${OL}" stroke-width="1.3"/>`;}
 function puff(x,y,r,a,c='#d9c79a'){return`<circle cx="${r2(x)}" cy="${r2(y)}" r="${r2(r)}" fill="${c}" stroke="#a8946a" stroke-width="1.4" opacity="${r2(clamp(a))}"/>`;}
 const SHOVEL=`<path d="M0 -52 V-7" stroke="${OL}" stroke-width="5.4" stroke-linecap="round"/><path d="M0 -52 V-7" stroke="#a8743f" stroke-width="2.8" stroke-linecap="round"/><path d="M-5 -58 h10 v4.4 h-10 z" fill="#3a3d44" ${sw(1.6)}/><path d="M-6 -9 h12 v8 q-6 9 -12 0 z" fill="#a3adb7" ${sw(2.1)}/><path d="M-3.4 -6.6 v5" stroke="#d3d9df" stroke-width="1.4"/>`;
+// THE SUITCASE CARRY (Jay, Oct 8): walking, Moe carries his shovel like a suitcase: his arm hangs, his hand round the
+// MIDDLE of the shaft, the shovel level, blade forward, a small swing. `held(k)` is the shovel in his hand from that
+// carry (k = 0) to the upright grip he swings with (k = 1, SHOVEL as it was): it turns up and his hand runs to the grip.
+const held=(k)=>k>=1?SHOVEL:`<g transform="translate(0 -42) rotate(${r2(-90*(1-k))}) translate(0 ${r2(lerp(29.5,42,k))})">${SHOVEL}</g>`;
+const CARRY=held(0);
+const carry=(p,ph)=>{p.hand=CARRY;p.armF=5*Math.sin(ph);return p;};
 const THUMB=g=>`<rect x="2" y="-46" width="10" height="5.4" rx="2.7" fill="${g}" ${sw(1.8)}/>`;
 const BEARD={suit:'red',beard:true};
 const GX=120, TEE=[GX+14,GY-2.6];
@@ -530,7 +543,7 @@ function swing(t,a,kind){const o={};const top=kind==='whiff'?150:165;
  else{o.armF=t<a+.57?kf(t,[[a+.45,top],[a+.57,-175,'lin']]):-175;o.lean=6;if(kind==='whiff')o.bob=t<a+.57?-14*seg(t,a+.45,a+.52):0;}
  o.armB=o.armF;return o;}
 const ballSvg=(b)=>b?`<circle cx="${r2(b[0])}" cy="${r2(b[1])}" r="2.7" fill="#fff" ${sw(1.5)}/>`:'';
-function teeUp(p,t,a){const k=seg(t,a,a+.7),b=Math.sin(Math.PI*k);p.lean=30*b;p.armB=kf(t,[[a,0],[a+.35,-28],[a+.6,-28],[a+.7,0]]);p.armF=kf(t,[[a,150],[a+.3,-14],[a+.7,-12]]);p.mouth='smile';}
+function teeUp(p,t,a){const k=seg(t,a,a+.7),b=Math.sin(Math.PI*k);p.lean=30*b;p.armB=kf(t,[[a,0],[a+.35,-28],[a+.6,-28],[a+.7,0]]);p.armF=kf(t,[[a,0],[a+.3,-14],[a+.7,-12]]);p.hand=held(io(seg(t,a,a+.28)));p.mouth='smile';}
 const PICK={x:GX,lean:44,bob:20,armB:-58,armF:-12};
 const DRAG={face:1,lean:22,armF:44,armB:44};
 function lyingT(x,H){const G=[x+1,GY-5.4];const d=(GY-9)-H[1];const a=-Math.acos(clamp(-d/50.8,-1,1))*180/Math.PI;
@@ -562,15 +575,15 @@ export const CW = { ASP, MATX, PUD, MATS_FOOT, FLOOR:CW_FLOOR, MAT_BOX:{x:MATX,y
 /* 9. Three Swings (Slow Moe) */
 const GOLF_IN=160, GOLF_OUT=206.25; // his speed at the screen's edge: eased out of the walk in (2 x 160 / 2.0), eased into the walk off (2 x 165 / 1.6)
 WAVE3.golf = { name:'Three Swings', dur:12.0, still:6.7,
- beats:[[0,'walks-in','Moe walks in, shovel on his shoulder.'],[2.0,'tees-up','Sets a golf ball on the sand.'],[2.7,'waggle','Waggle. Squints at the rig mats.'],[3.3,'swing-one','Swing one. Whoosh. Clean miss.'],[4.05,'looks-down','Looks down. The ball is still there.'],[4.6,'swing-two','Swing two. Harder. Miss. His hat jumps.'],[5.4,'glares','Glares at the ball.'],[5.9,'swing-three','Swing three. The shovel bites the dirt. BOING.'],[7.3,'stares','He stares at the ball.'],[7.6,'rolls-off','It wobbles, and rolls off its little sand pile on its own.'],[8.0,'looks-at-you','Moe looks at you.'],[8.3,'picks-up','Bends right down and picks up the ball.'],[9.1,'scowls','Holds it up. Scowls at it.'],[9.6,'pockets','Stuffs it in his chest pocket.'],[9.9,'stomps-off','Hop-turn. Stomps off.']],
+ beats:[[0,'walks-in','Moe walks in, his shovel carried like a suitcase.'],[2.0,'tees-up','Sets a golf ball on the sand.'],[2.7,'waggle','Waggle. Squints at the rig mats.'],[3.3,'swing-one','Swing one. Whoosh. Clean miss.'],[4.05,'looks-down','Looks down. The ball is still there.'],[4.6,'swing-two','Swing two. Harder. Miss. His hat jumps.'],[5.4,'glares','Glares at the ball.'],[5.9,'swing-three','Swing three. The shovel bites the dirt. BOING.'],[7.3,'stares','He stares at the ball.'],[7.6,'rolls-off','It wobbles, and rolls off its little sand pile on its own.'],[8.0,'looks-at-you','Moe looks at you.'],[8.3,'picks-up','Bends right down and picks up the ball.'],[9.1,'scowls','Holds it up. Scowls at it.'],[9.6,'pockets','Stuffs it in his chest pocket.'],[9.9,'stomps-off','Hop-turn. Stomps off.']],
  lead:E=>E/GOLF_IN, tail:E=>E/GOLF_OUT,
  wx(t){if(t<0)return -40+GOLF_IN*t;if(t<2.0)return kf(t,[[0,-40],[2.0,GX,'out']]);if(t<10.2)return GX;return t>11.8?-45-GOLF_OUT*(t-11.8):kf(t,[[10.2,GX],[11.8,-45,'in']]);},
  ball(t){const rest=[handW(PICK,'B')[0],GY-2.6];if(t<2.0)return null;if(t<7.6)return TEE;if(t<7.8)return[TEE[0]+.7*Math.sin(t*60),TEE[1]];if(t<8.15){const k=seg(t,7.8,8.15);return[lerp(TEE[0],rest[0],io(k)),TEE[1]];}if(t<8.7)return rest;return 'hand';},
  render(t,E=0){
   let s='';
   const x=this.wx(t);
-  let p={x,face:1,...MOE,eye:'half',mouth:'flat',hand:SHOVEL,armF:150,armB:0};
-  if(t<2.0){Object.assign(p,walk(x/8,26));p.armF=150;p.eye='n';p.mouth='o';}
+  let p={x,face:1,...MOE,eye:'half',mouth:'flat',hand:SHOVEL,armF:0,armB:0};
+  if(t<2.0){Object.assign(p,walk(x/8,26));carry(p,x/8);p.eye='n';p.mouth='o';}
   else if(t<2.7)teeUp(p,t,2.0);
   else if(t<3.3){p.armF=-12+6*Math.sin((t-2.7)*14);p.armB=p.armF;p.px=2;p.brow=3;p.lean=6;}
   else if(t<4.05){Object.assign(p,swing(t,3.3,'whiff'));p.mouth='frown';}
@@ -583,8 +596,8 @@ WAVE3.golf = { name:'Three Swings', dur:12.0, still:6.7,
   else if(t<9.1){const b=kf(t,[[8.3,0],[8.6,1],[8.8,1],[9.1,0]]);p.lean=PICK.lean*b;p.bob=PICK.bob*b;p.armF=-12;p.armB=PICK.armB*b;p.px=1;p.py=2.5;p.eye='n';}
   else if(t<9.6){p.armF=-12;p.armB=kf(t,[[9.1,-58],[9.3,-118]]);p.px=2;p.py=-1;p.eye='half';p.brow=5;p.mouth='frown';}
   else if(t<9.9){p.armF=-12;p.armB=kf(t,[[9.6,-118],[9.8,-48],[9.9,0]]);p.mouth='frown';}
-  else if(t<10.2){p.bob=hop(t,9.9,10.2,9);p.face=t<10.05?1:-1;p.armF=kf(t,[[9.9,-12],[10.2,150]]);}
-  else{Object.assign(p,walk(x/8,20));p.face=-1;p.armF=150;p.headRot=10;p.mouth='frown';}
+  else if(t<10.2){p.bob=hop(t,9.9,10.2,9);p.face=t<10.05?1:-1;p.armF=kf(t,[[9.9,-12],[10.2,0]]);p.hand=held(1-io(seg(t,9.9,10.2)));}
+  else{Object.assign(p,walk(x/8,20));carry(p,x/8);p.face=-1;p.headRot=10;p.mouth='frown';}
   if(typeof p.x!=='number')p.x=x;
   if(off(p.x,E))s+=worker(p);
   let b=this.ball(t);
@@ -593,7 +606,7 @@ WAVE3.golf = { name:'Three Swings', dur:12.0, still:6.7,
   s+=ballSvg(b);
   if(t>3.75&&t<4.05)s+=sfx(x+24,GY-46,'whoosh',10,-8,'#fff');
   if(t>5.05&&t<5.35)s+=sfx(x+26,GY-50,'WHOOSH',11,-8,'#fff');
-  if(t>6.45&&t<6.95){s+=sfx(x+20,GY-60,'BOING',13,-6,'#f4c430',1+.1*Math.sin(t*50));const k=seg(t,6.45,6.9);for(let i=0;i<4;i++)s+=puff(x+12+i*4-6*k*(i-1.5),GY-4-16*k*(1+i*.2)+20*k*k,2.4+i*.4,1-k,'#b49a68');}
+  if(t>6.45&&t<6.95){s+=sfx(x+20,GY-60,'BOING',13,-6,'#f4c430',1+.1*Math.sin(t*50));const k=seg(t,6.45,6.9);if(!CARD)for(let i=0;i<4;i++)s+=puff(x+12+i*4-6*k*(i-1.5),GY-4-16*k*(1+i*.2)+20*k*k,2.4+i*.4,1-k,'#b49a68');}
   return s;}};
 
 /* 10. Out Cold (Slow Moe + the bearded worker). The second of the pair: the same trigger, once Three Swings has been seen. */
@@ -614,9 +627,9 @@ WAVE3.cold = { name:'Out Cold', dur:13.2, still:8.4, line:{from:9.05,to:9.8},
   let s='';
   const x=this.mx(t),bx=this.bx(t);
   // Moe
-  let p={x,face:1,...MOE,eye:'n',mouth:'flat',hand:SHOVEL,armF:150,armB:0,brow:3};
+  let p={x,face:1,...MOE,eye:'n',mouth:'flat',hand:SHOVEL,armF:0,armB:0,brow:3};
   let rot=0;
-  if(t<2.0){Object.assign(p,walk(x/8,26));p.armF=150;p.mouth='frown';}
+  if(t<2.0){Object.assign(p,walk(x/8,26));carry(p,x/8);p.mouth='frown';}
   else if(t<2.7)teeUp(p,t,2.0);
   else if(t<3.4){p.armF=-12+6*Math.sin((t-2.7)*14);p.armB=p.armF;p.px=2;p.eye='half';p.lean=6;}
   else if(t<4.4){Object.assign(p,swing(t,3.4,'hit'));p.mouth='frown';p.brow=5;}
@@ -650,13 +663,13 @@ WAVE3.cold = { name:'Out Cold', dur:13.2, still:8.4, line:{from:9.05,to:9.8},
    s+=worker(q);
    let b=outBall(t);
    if(b==='hand'){const h=handW(q,'B');if(t<9.95)b=h;else if(t<10.15){const k=seg(t,9.95,10.15);b=[h[0],h[1]-26*Math.sin(Math.PI*k)];}else if(t<10.3)b=h;else b=null;}
-   s+=ballSvg(b);}
+   if(!CARD)s+=ballSvg(b);}
   else{let b=outBall(t);if(t>=2.0&&t<2.55)b=handW(p,'B');if(b!=='hand')s+=ballSvg(b);}
   if(t>3.95&&t<4.3)s+=sfx(x+30,GY-30,'CRACK',13,-10,'#f4c430');
   if(t>4.45&&t<4.85)s+=sfx(MATX-4,GY-34,'TOK',12,-8,'#fff');
   if(t>5.05&&t<5.45)s+=sfx(ASP.x+6,82,'PING',12,8,'#fff');
   if(t>5.8&&t<6.3)s+=sfx(x+8,GY-82,'BONK!',15,-8,'#f4c430',1+.2*Math.sin(Math.PI*seg(t,5.8,6.3)));
-  if(t>7.4-E/COLD_IN&&t<9.0){for(let k=0;k<2;k++){const ph=((((t*1.4+k*.5)%1)+1)%1);s+=note(bx-14-ph*10,GY-62-ph*18,1-ph);}}
+  if(!CARD&&t>7.4-E/COLD_IN&&t<9.0){for(let k=0;k<2;k++){const ph=((((t*1.4+k*.5)%1)+1)%1);s+=note(bx-14-ph*10,GY-62-ph*18,1-ph);}}
   return s;}};
 
 
@@ -836,7 +849,7 @@ WAVE3.bell = { name:'Dinner Bell', dur:11.4, still:9.3, backY:GY-7, frontY:GY+18
   const mx=this.mx(t);
   if(mx>-45-E&&mx<445+E+45){const stopped=t>=9.0&&t<9.6;const m=stopped?{x:mx,y:GY+8,face:1,...MOE,lean:30,armF:-14,armB:-10,eye:'closed',mouth:'pant',hatRot:-9,bob:1.5*Math.sin(t*14)}:Object.assign(walk(mx/9,34),{x:mx,y:GY+8,face:1,...MOE,lean:12,armB:-165,eye:'half',mouth:'pant',px:2,hatRot:-9});
    if(!stopped)for(let k=1;k<4;k++)s+=puff(mx-12-k*9,GY+4-k*2,3+k,(1-k/4)*.6);
-   s+=worker(m);const dp=((t*2.4)%1);s+=`<path d="M${r2(mx-10)} ${r2(GY-56+dp*10)} q-1.6 3 0 4 q1.6 -1 0 -4 z" fill="#8fc6ef" ${sw(1.1)} opacity="${r2(1-dp)}"/>`;}
+   s+=worker(m);const dp=((t*2.4)%1);if(!CARD)s+=`<path d="M${r2(mx-10)} ${r2(GY-56+dp*10)} q-1.6 3 0 4 q1.6 -1 0 -4 z" fill="#8fc6ef" ${sw(1.1)} opacity="${r2(1-dp)}"/>`;}
   // (The stampede's dust cloud, as one group marked as an effect: the depth test looks at characters, not at dust.)
   if(t>3.4&&t<5.4){const k=seg(t,3.4,5.4);s+='<g data-fx="dust">';for(let i=0;i<9;i++){const a=i*.7;s+=puff(CKX-30+Math.cos(a)*30+i*4,GY-20-Math.sin(a*1.3)*16,9+5*Math.sin(Math.PI*k),Math.sin(Math.PI*k)*.95);}s+='</g>';}
   if(t>2.75&&t<3.15){for(let i=0;i<3;i++)s+=puff(12+i*10,GY-4-((t*6+i)%1)*8,3,.7);s+=sfx(34,GY-30,'rumble',10,-4,'#fff',1+.06*Math.sin(t*60));}

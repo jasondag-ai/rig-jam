@@ -13,7 +13,7 @@ import { setGround } from './puppet-stage.ts';
 import type { Season } from './trees.ts';
 import { BOX, sizeFor, treeArt, type Species } from './trees.ts';
 import type { TimelineDef } from './strip-gags.ts';
-import { BALE_AT, CW, MUSKEG, WAVE3, baleAtRest, rng, tuft } from './wave3.ts';
+import { BALE_AT, CW, MUSKEG, WAVE3, baleAtRest, cardMode, rng, tuft } from './wave3.ts';
 
 /** The reference's strip, in its own units. */
 export const SCENE = { w: 390, top: 30, floor: 168, ground: 150 } as const;
@@ -578,5 +578,10 @@ export function auroraDef(host: EggHost, night: () => boolean, mountSky: (el: HT
 /** A flat still of a wave 3 gag for its log card: the puppets at one moment, cut close. */
 export function wave3Still(key: string, t: number, view: [number, number, number, number], back = ''): string {
   const gag = gagOf(key);
-  return `<svg class="egg-still wave3-still" viewBox="${view.join(' ')}" aria-hidden="true">${back}${gag.back ? gag.back(t, 0) : ''}${gag.render(t, 0)}${gag.front ? gag.front(t, 0) : ''}${gag.over ? gag.over(t, 0) : ''}</svg>`;
+  cardMode(true); // (no loose specks on a card: wave3.ts)
+  try {
+    return `<svg class="egg-still wave3-still" viewBox="${view.join(' ')}" aria-hidden="true">${back}${gag.back ? gag.back(t, 0) : ''}${gag.render(t, 0)}${gag.front ? gag.front(t, 0) : ''}${gag.over ? gag.over(t, 0) : ''}</svg>`;
+  } finally {
+    cardMode(false);
+  }
 }
