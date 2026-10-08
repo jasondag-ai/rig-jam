@@ -32,7 +32,7 @@ const GAGS = {
   marshmallow: { preview: 'marshmallow', clip: 'gag89_marshmallow', beats: ['walk-in', 'eyes-flare', 'telescope', 'roast', 'fwoomp', 'eyes-pop', 'yank', 'blow', 'sniff-shrug', 'crispy', 'ear-smoke', 'gone'] },
   bear: { preview: 'bear', clip: 'gag10_bear', beats: ['hare-nibbles', 'bear-in', 'sniff', 'sit', 'smug', 'strain', 'relief', 'spots-ears', 'snatch', 'long-look', 'swing', 'wipe', 'inspect', 'set-down', 'violated', 'bear-leaves', 'trudge', 'gone'] },
   bull: { preview: 'bull', clip: 'gag11_bull', beats: ['cow-grazes', 'bull-in', 'freeze', 'lick-hoof', 'slick', 'chest-puff', 'hearts', 'cow-looks', 'eyes-huge', 'hop-turn', 'bolts', 'paws', 'charge', 'last-heart', 'cow-back', 'catches-breath', 'grazes-again'] },
-  porcupine: { preview: 'porcupine', clip: 'gag12_porcupine', beats: ['quiet-bush', 'stroll-in', 'look-around', 'squat', 'poke', 'roll-pops', 'springs-out', 'porcupine-bolts', 'scurry'] },
+  porcupine: { preview: 'porcupine', clip: 'gag12_porcupine', beats: ['quiet-bush', 'stroll-in', 'look-around', 'squat', 'poke', 'roll-pops', 'springs-out', 'scurry', 'rustle', 'porcupine-bolts'] },
   gopherLunch: { preview: 'lunch', clip: 'gag13_gopher_lunch', beats: ['quiet-mound', 'stroll-in', 'plops-down', 'sets-it-down', 'phone', 'paw-peeks', 'feels-around', 'yank', 'chomp', 'crust-back', 'bite', 'eyes-huge', 'cheeks', 'ducks', 'deadpan', 'boils-over', 'hurls-crust', 'stomps-off', 'burp', 'quiet-again'] },
   sam: { preview: 'sam', clip: 'gag14_safety_sam', beats: ['bad-moves', 'march-in', 'looks-up', 'tsk', 'scribble', 'see-me', 'fingers-to-eyes', 'points', 'backs-off'] },
   tongue: { preview: 'tongue', clip: 'gag15_frozen_tongue', beats: ['frosty-riser', 'stroll-in', 'eyes-pipe', 'checks-around', 'lick', 'stuck', 'pulls', 'hewp', 'buddy-in', 'buddy-looks', 'phone-out', 'flash', 'deadpan', 'cracks-up', 'buddy-leaves', 'snowflake', 'buddy-back', 'sigh', 'pours', 'thwip', 'rubs-tongue', 'walk-off', 'riser-again'] },
@@ -392,7 +392,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     await tapAt(page, at.x, at.y);
     await wait(900);
     check(!(await page.$('.strip-layer')), 'two taps are not enough');
-    const watching = watch(page, 'porcupine', { parts: { porc: '.porcupine-layer svg.pup:nth-of-type(1) .root', worker: '.porcupine-layer svg.pup:nth-of-type(2) .head', bush: '.porcupine-layer svg.pup:nth-of-type(3)', shuf: '.porcupine-layer svg.pup:nth-of-type(4) .root', roll: '.porcupine-layer .pup-roll' } });
+    const watching = watch(page, 'porcupine', { parts: { porc: '.porcupine-layer svg.pup:nth-of-type(1) .root', worker: '.porcupine-layer svg.pup:nth-of-type(2) .head', bush: '.porcupine-layer svg.pup:nth-of-type(3)', shuf: '.porcupine-layer svg.pup:nth-of-type(4) .root', roll: '.porcupine-layer .pup-roll', feet: '.porcupine-layer svg.pup:nth-of-type(1) .feetF' } });
     const clipped = page.waitForSelector('.porcupine-layer', { state: 'attached', timeout: 8000 }).then(() => page.evaluate(() => { const l = document.querySelector('.porcupine-layer'); return { clip: l.querySelector('svg.pup').style.clipPath.startsWith('polygon'), pe: getComputedStyle(l).pointerEvents, z: l.querySelector('svg.pup').style.zIndex, bushZ: l.querySelectorAll('svg.pup')[2].style.zIndex }; }));
     await tapAt(page, at.x, at.y);
     const c = await clipped;
@@ -404,8 +404,20 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     check(walkIn.worker.r <= 0 && run.at(-1).shuf.r <= 2, `the worker strolls in from fully off screen and scurries off until fully off screen (${Math.round(walkIn.worker.r)} to ${Math.round(run.at(-1).shuf.r)})`);
     const bolt = log.filter((f) => f.porc.vis && f.porc.l < 5000).at(-1);
     check(bolt.porc.l >= W - 2, `the porcupine bolts out the other way until fully off screen (x ${Math.round(bolt.porc.l)})`);
-    const pop = log.filter((f) => f.roll && (f.beat === 'roll-pops' || f.beat === 'springs-out' || f.beat === 'porcupine-bolts'));
-    check(Math.min(...pop.map((f) => f.roll.t)) < pop[0].bush.t && pop.length > 4, 'the roll pops straight up over the bush');
+    // Jay's approved version (Oct 8): the roll flies STRAIGHT up over the bush and STRAIGHT back down onto the
+    // porcupine hiding there; Moe leaves; only then does the porcupine bolt, the roll riding out on its top quills.
+    const mid = (b) => (b.l + b.r) / 2;
+    const pop = log.filter((f) => f.roll?.vis && (f.beat === 'roll-pops' || f.beat === 'springs-out'));
+    const popX = pop.map((f) => mid(f.roll));
+    check(pop.length > 4 && Math.min(...pop.map((f) => f.roll.t)) < pop[0].bush.t && Math.max(...popX) - Math.min(...popX) < 1, `the roll pops straight up over the bush and straight back down, never sideways (${(Math.max(...popX) - Math.min(...popX)).toFixed(2)} px across over ${pop.length} frames)`);
+    // (Its feet: its quills puff up at the poke, which widens its box where it sits.)
+    // (Gone = the whole of him past the screen's edge.)
+    const moeLast = (run.find((f) => f.shuf.r <= 0) ?? run.at(-1)).t, waiting = log.filter((f) => f.t <= moeLast && f.porc.vis && f.feet), porc0 = mid(waiting[0].feet);
+    check(waiting.length > 100 && waiting.every((f) => Math.abs(mid(f.feet) - porc0) < 1.5), `the porcupine stays behind the bush until he has gone (its feet move ${Math.max(...waiting.map((f) => Math.abs(mid(f.feet) - porc0))).toFixed(1)} px at most; he is off screen ${((log.find((f) => f.beat === 'porcupine-bolts')?.t - moeLast) / 1000).toFixed(2)} s before it bolts)`);
+    const ride = log.filter((f) => f.beat === 'porcupine-bolts' && f.porc.vis && f.porc.l < 5000 && f.roll?.vis);
+    const gaps = ride.map((f) => mid(f.roll) - mid(f.porc));
+    check(ride.length > 10 && mid(ride.at(-1).roll) > mid(ride[0].roll) + 100 && Math.max(...gaps) - Math.min(...gaps) < 6 && ride.every((f) => f.roll.b <= f.porc.b), `the roll rides out on the porcupine's quills (${ride.length} frames, ${Math.round(mid(ride.at(-1).roll) - mid(ride[0].roll))} px along with it)`);
+    check(!log.at(-1).roll?.vis || log.at(-1).roll.l >= W - 2, 'and is gone with it: no roll left behind');
     check(c.pe === 'none' && log.every((f) => f.others === 0), 'the layer takes no touches; nothing else was on stage');
     await context.close();
   }

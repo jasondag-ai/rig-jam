@@ -6,7 +6,7 @@ import { STAGE, propBack, propLine, signStand as signStandLine } from './strip-g
 import { LANE_UP } from './scenery.ts';
 import { BUSH_BOX, BUSH_FRAC, bushMarkup } from './gag-bush.ts';
 import { LUNCH_BEATS, LUNCH_END, MOUND_DRAWN, lunchPose, moundWidthFor } from './gopher-lunch.ts';
-import { PC_BEATS, PC_END, SHIFT, pcPose } from './porcupine.ts';
+import { PC_BEATS, PC_BOLT, PC_BOLT_END, PC_END, SHIFT, pcPose } from './porcupine.ts';
 import { SAM, SAM_BEATS, SAM_END, backGlove, samPose } from './sam.ts';
 import { BUDDY, BUDDY_FAR, BUDDY_STOP, STAND, TONGUE_BEATS, TONGUE_END, tonguePose } from './frozen-tongue.ts';
 import { RISER_TAP, RISER_X, riserBox, riserHeight } from './strip-gags.ts';
@@ -14,7 +14,7 @@ import { treeArt } from './trees.ts';
 import { eggOff, lunchAlways, lunchNever, rollPinned } from './flags.ts';
 import { DEER_BEATS, DEER_END, DEER_STOP, SURVEY_BEATS, SURVEY_END, SURVEY_LINES, TRI_AT, T_PICKUP, T_PLANT, TOUR_BEATS, TOUR_END, TOUR_HER, TOUR_HIM, deerPose, heldTripod, surveyPose, tourPose } from './sign-gags.ts';
 import { BULL_BEATS, BULL_END, COW_REST, SHIFT as PRIMP_SHIFT, T_BACK, T_GRAZE, T_HOME, bullPose } from './bull.ts';
-import { A_BEATS, A_END, A_SHAKE, BIFFY_SIZE, B_BEATS, B_END, B_OFF, B_ROLL_OFF, B_SHAKE, B_SHUT, biffy } from './biffy.ts';
+import { A_BEATS, A_END, A_SHAKE, BIFFY_SIZE, B_BEATS, B_END, B_OFF, B_OUT, B_ROLL_OFF, B_SHAKE, B_SHUT, biffy } from './biffy.ts';
 import { L_BEATS, L_END, lPose } from './landowner.ts';
 import { N_BEATS, N_END, nPose } from './near-miss.ts';
 import { BIFFY_GAP, BIFFY_X, SIGN_X, biffyBox, biffyLane, biffyStand, signLane, signStand, stripGeom } from './strip-gags.ts';
@@ -93,12 +93,15 @@ describe('Near Miss, landowner and biffy: the references, as approved', () => {
   it("the biffy gags keep the reference timing, but for B's shorter way out by the near edge", () => {
     // (A's last beat is the game's: the indicator clicks back to the green it began with.)
     expect(A_BEATS.map((b) => b[0])).toEqual([0, 0.3, 0.5, 0.75, 1.7, 1.95, 2.3, 2.7, 3.1, 3.55, 4.5, 5.0]);
-    // B: two bumps, so it shakes from the start; the shuffler leaves by the near edge at the
-    // reference's pace (about 57 px a second at 390), so he is off sooner and the door shuts sooner.
-    expect(B_BEATS.map((b) => b[0])).toEqual([0, 0.05, 0.5, 0.8, 1.1, 1.4, 2.9, B_OFF, B_SHUT]);
-    // (Quality pass, Oct 8: tiny steps cover little ground. He is slower than the reference's pace, and on screen for a good 2 s.)
-    expect((BIFFY_X * 390 + 70) / (B_OFF - 2.9)).toBeLessThan((0.7 * 390 + 70) / 6);
-    expect(B_OFF - 2.9).toBeGreaterThan(2);
+    // B (Jay's approved version, Oct 8): two bumps, so it shakes from the start; the roll is gone by 2.0; his glove
+    // pats the floor once, pauses, pats twice in a panic and whips back in; he comes out of the dark at B_OUT and
+    // shuffles straight off the near edge, slower than the reference's pace (about 57 px a second at 390), on
+    // screen for a good 2 s.
+    expect(B_BEATS.map((b) => b[0])).toEqual([0, 0.05, 0.5, 0.8, 1.1, 1.4, 1.95, 2.85, 3.3, B_OUT, B_OUT + 0.4, B_OFF, B_SHUT]);
+    expect(B_BEATS.map((b) => b[1])).toEqual(['sits', 'jolt', 'door-open', 'roll-out', 'roll-away', 'reach', 'pause', 'panic', 'withdraw', 'out', 'chase', 'off-screen', 'door-shut']);
+    expect((BIFFY_X * 390 + 70) / (B_OFF - B_OUT)).toBeLessThan((0.7 * 390 + 70) / 6);
+    expect(B_OFF - B_OUT).toBeGreaterThan(2);
+    expect(B_ROLL_OFF).toBeLessThan(B_OUT);
     expect(B_ROLL_OFF).toBeLessThan(B_OFF);
     expect(A_END).toBeGreaterThan(5.0);
     expect(B_END).toBeGreaterThan(B_SHUT + 0.9);
@@ -376,7 +379,9 @@ describe('the porcupine (gag 12)', () => {
 
   it('plays the reference with its clock started at SHIFT: the porcupine is behind the bush from the first frame', () => {
     expect(SHIFT).toBe(2.4);
-    expect(PC_BEATS.map((b) => b[0])).toEqual([0, 1.0, 3.0, 3.7, 5.1, 5.2, 5.5, 5.6, 5.8]);
+    expect(PC_BEATS.map((b) => b[0])).toEqual([0, 1.0, 3.0, 3.7, 5.1, 5.2, 5.5, 5.8, 7.5, 7.8]);
+    expect(PC_BEATS.at(-1)![1]).toBe('porcupine-bolts');
+    expect(PC_BOLT - SHIFT).toBeCloseTo(7.8, 5);
     for (let t = 0; t < 5.5; t += 0.25) expect(pcPose(t + SHIFT).pc).toMatchObject({ x: 0, show: true });
     // The worker: not there, strolls in, looks about, squats behind the bush, POKE.
     expect(pcPose(0.5 + SHIFT).w.show).toBe(false);
@@ -386,12 +391,16 @@ describe('the porcupine (gag 12)', () => {
     expect(pcPose(4.8 + SHIFT).w.y).toBeGreaterThan(13);
     expect(pcPose(5.2 + SHIFT).w.starburst).toBeGreaterThan(0);
     expect(pcPose(5.2 + SHIFT).w.hatY).toBeLessThan(-5);
-    // Then the shuffler off one way and the porcupine, quills up, off the other.
+    // Then the shuffler off one way; THE PORCUPINE WAITS behind the bush, quills up, until he has gone (Jay, Oct 8),
+    // and only then bolts off the other way.
     expect(pcPose(6 + SHIFT).w.show).toBe(false);
     expect(pcPose(6 + SHIFT).s).toMatchObject({ show: true });
     expect(pcPose(7.89 + SHIFT, -320, -900).s.x).toBeLessThan(-880);
-    expect(pcPose(6.5 + SHIFT).pc).toMatchObject({ face: 1, puff: 1 });
-    expect(pcPose(7.59 + SHIFT, -320, -300, 800).pc.x).toBeGreaterThan(780);
+    for (let t = 5.5; t < 7.8; t += 0.25) expect(pcPose(t + SHIFT).pc).toMatchObject({ x: 0, show: true, puff: 1 });
+    expect(pcPose(8.5 + SHIFT).pc).toMatchObject({ face: 1, puff: 1, show: true });
+    expect(pcPose(8.5 + SHIFT).pc.x).toBeGreaterThan(0);
+    expect(pcPose(PC_BOLT_END - 0.01, -320, -300, 800).pc.x).toBeGreaterThan(780);
+    expect(PC_END).toBeGreaterThan(PC_BOLT_END - SHIFT);
     expect(pcPose(PC_END + SHIFT).pc.show).toBe(false);
     expect(pcPose(PC_END + SHIFT).s.show).toBe(false);
   });

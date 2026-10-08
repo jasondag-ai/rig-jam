@@ -1247,6 +1247,17 @@ something, give exact clicks and one command at a time.
   layer worked its ground line out a pixel short of the biffy's, so the roll and the shuffler
   played BEHIND the biffy and seemed to come from behind it. The layer now takes the biffy's own
   line (`setGround(over, biffy.layer.dataset.ground, 'set')` in `biffyBDef`).
+- THE TWO GAGS AS JAY APPROVED THEM (Oct 8, written into biffy.ts and porcupine.ts by the COO; keep
+  them exactly). BIFFY B: the roll (a loose paper end on its rim, a contact shadow; the box only
+  moves and the drawing inside turns) is gone by `B_ROLL_OFF` 2.0; a work GLOVE comes out of the
+  dark and pats the floor at 1.80, then 2.94 and 3.08 (a `tap` each: `GAG_SOUNDS.biffyB` `reach`,
+  `panic`); Moe, at the BIFFY'S scale (`BIFFY_SHUFFLER_FRAC`), comes out of the dark at `B_OUT` 3.5
+  in the porcupine's clutch pose and shuffles straight off the near edge (no dither); `B_OFF` 5.6,
+  `B_SHUT` 5.9, `B_END` 7.0. Beats: reach, pause, panic, withdraw, out, chase. PORCUPINE: Moe holds
+  the roll in his glove; at the poke it goes straight up and straight down onto the hidden
+  porcupine; Moe leaves; then the porcupine bolts with the roll on its top quills (`PC_BOLT` 10.2
+  reference time = 7.8 gag time, where its `scurry` plays; `PC_END` 9.7). (The notes above this
+  on Biffy B's dither, pace and timings are superseded by this.)
 - LOG CARDS HAVE NO LOOSE SPECKS (`cardMode` in wave3.ts, set by `wave3Still`): a card's still
   leaves out the sweat drop (Dinner Bell), the ball on the sand and the whistled notes (Out
   Cold) and the dust puffs (Three Swings). Cards of the gags that now star Moe show him.

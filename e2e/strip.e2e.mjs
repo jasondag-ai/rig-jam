@@ -30,7 +30,7 @@ const BEATS = {
   nearMiss: ['sniff', 'stretch', 'look', 'double-take', 'eyes-huge', 'duck', 'hotshot', 'dust-settles', 'dusty', 'near-miss', 'cough', 'gone'],
   landowner: ['ride-in', 'skid', 'head-shake', 'turn', 'fist', 'rev', 'wheelie', 'hat-off', 'hat-catch', 'gone'],
   biffyA: ['sits', 'jolt', 'door-open', 'oblivious', 'look-back', 'eye-pop', 'nod', 'reach', 'pull-shut', 'occupied', 'done', 'unlocked'],
-  biffyB: ['sits', 'jolt', 'door-open', 'roll-out', 'roll-away', 'grope', 'shuffle', 'off-screen', 'door-shut'],
+  biffyB: ['sits', 'jolt', 'door-open', 'roll-out', 'roll-away', 'reach', 'pause', 'panic', 'withdraw', 'out', 'chase', 'off-screen', 'door-shut'],
 };
 const QUIET = '?cover=0&magpie=0&worker=0&moose=0&cooldown=0&off=lunch,sam,tongue';
 const cardium = REGIONS.findIndex((r) => r.id === 'cardium');
@@ -188,11 +188,15 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
                 const o = roll.offsetParent.getBoundingClientRect();
                 // (It turns about its own middle, so its middle only moves by the transform's shift.)
                 const origin = getComputedStyle(roll).transformOrigin.split(' ').map(parseFloat);
-                const div = { x: o.left + roll.offsetLeft + w / 2 + m.e, y: o.top + roll.offsetTop + h / 2 + m.f, centred: Math.abs(origin[0] - w / 2) < 0.01 && Math.abs(origin[1] - h / 2) < 0.01 };
+                // (The box no longer turns: its DRAWING does, and must turn about its own middle. The box's size may be a fraction of a pixel.)
+                const rb = roll.getBoundingClientRect(), sv = getComputedStyle(roll.querySelector('svg')), so = sv.transformOrigin.split(' ').map(parseFloat);
+                const div = { x: rb.left + rb.width / 2, y: rb.top + rb.height / 2, centred: Math.abs(so[0] - parseFloat(sv.width) / 2) < 0.01 && Math.abs(so[1] - parseFloat(sv.height) / 2) < 0.01 };
                 const s = roll.querySelector('svg circle').getBoundingClientRect();
-                out.push({ beat: layer.dataset.beat, t: performance.now(), div, svg: { x: s.left + s.width / 2, y: s.top + s.height / 2 }, display: getComputedStyle(roll.querySelector('svg')).display, lh: getComputedStyle(roll).lineHeight, o: getComputedStyle(roll).opacity });
+                // (Jay's approved roll, Oct 8: the box only MOVES, with its contact shadow flat on the ground; the drawing inside it turns, its loose paper end showing the turn.)
+                const sh = roll.querySelector('.rollSh')?.getBoundingClientRect();
+                out.push({ boxTurn: Math.abs(m.b) + Math.abs(m.c), svgTurn: getComputedStyle(roll.querySelector('svg')).transform, tab: !!roll.querySelector('svg .tab'), sh: sh && { w: sh.width, h: sh.height, top: sh.top, mid: sh.left + sh.width / 2 }, beat: layer.dataset.beat, t: performance.now(), div, svg: { x: s.left + s.width / 2, y: s.top + s.height / 2 }, display: getComputedStyle(roll.querySelector('svg')).display, lh: getComputedStyle(roll).lineHeight, o: getComputedStyle(roll).opacity });
               }
-              if (out.length && (!layer || out.at(-1).beat === 'grope' || out.length > 400)) return res(out);
+              if (out.length && (!layer || out.at(-1).beat === 'reach' || out.length > 400)) return res(out);
               requestAnimationFrame(tick);
             };
             tick();
@@ -202,14 +206,18 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       const off = Math.max(...frames.map((f) => Math.hypot(f.svg.x - f.div.x, f.svg.y - f.div.y)));
       const ys = rolling.map((f) => f.svg.y);
       check(frames[0].display === 'block' && frames[0].div.centred && frames.length > 40, `the roll's drawing is a block in its box (display ${frames[0].display}; ${frames.length} frames watched)`);
-      check(off <= 0.5, `its centre is the centre of the box that turns: never more than ${off.toFixed(2)} px apart (0.5 allowed)`);
-      check(rolling.length > 30 && Math.max(...ys) - Math.min(...ys) <= 0.5, `rolling (0.8 to 2.6 s), its centre stays on one line: ${(Math.max(...ys) - Math.min(...ys)).toFixed(2)} px up and down over ${rolling.length} frames (0.5 allowed)`);
+      check(off <= 0.5, `the drawing turns about the centre of its box: never more than ${off.toFixed(2)} px apart (0.5 allowed)`);
+      check(rolling.length > 30 && Math.max(...ys) - Math.min(...ys) <= 0.5, `rolling (0.8 to 2.0 s), its centre stays on one line: ${(Math.max(...ys) - Math.min(...ys)).toFixed(2)} px up and down over ${rolling.length} frames (0.5 allowed)`);
       // One constant speed, no easing: equal steps in equal times, from the first frame it moves.
       const xs = rolling.map((f) => f.svg.x), ts = rolling.map((f) => f.t);
       const v = (xs.at(-1) - xs[0]) / (ts.at(-1) - ts[0]);
       const bend = Math.max(...rolling.map((f, i) => Math.abs(f.svg.x - (xs[0] + v * (ts[i] - ts[0])))));
       check(v < 0 && bend < 2.5, `at one constant speed, no easing (${(-v * 1000).toFixed(0)} px a second, never more than ${bend.toFixed(1)} px off a straight line)`);
-      check(frames.every((f) => f.o === '1' || f.beat === 'grope'), 'no fade: it waits behind the shut door and is simply there when the door opens');
+      check(frames.every((f) => f.o === '1' || f.beat === 'reach'), 'no fade: it waits behind the shut door and is simply there when the door opens');
+      const turns = new Set(rolling.map((f) => f.svgTurn));
+      check(rolling.every((f) => f.boxTurn < 0.001) && turns.size > rolling.length * 0.8 && frames[0].tab, `the box only moves and the drawing inside it turns, a loose paper end on its rim (${turns.size} different turns over ${rolling.length} frames)`);
+      const shTop = rolling.map((f) => f.sh?.top ?? NaN), shOff = Math.max(...rolling.map((f) => Math.abs((f.sh?.mid ?? NaN) - f.div.x)));
+      check(rolling.every((f) => f.sh && f.sh.w > f.sh.h * 2) && Math.max(...shTop) - Math.min(...shTop) <= 0.5 && shOff <= 0.6, `its contact shadow lies flat under it and goes with it, never turning (${shOff.toFixed(2)} px off its middle at most)`);
       await context.close();
     }
 
@@ -252,7 +260,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       const log = await watching;
       check(sameBeats(log, 'biffyB'), `the reference beats, in order (${beatsOf(log).length} of ${BEATS.biffyB.length})`);
       const rollEnd = log.filter((f) => f.roll?.vis).at(-1);
-      const manEnd = log.filter((f) => f.beat === 'shuffle' && f.man).at(-1);
+      const manEnd = log.filter((f) => (f.beat === 'out' || f.beat === 'chase') && f.man).at(-1);
       const shakeB = sway(log);
       check(shakeB > shakeA * 1.4, `two bumps: a bigger shake than Biffy A's (${shakeB.toFixed(1)} px against ${shakeA.toFixed(1)})`);
       // The biffy stands left of the middle, so the near edge is the left one.
