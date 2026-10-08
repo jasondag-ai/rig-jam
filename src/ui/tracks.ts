@@ -27,7 +27,10 @@ export interface Sweep {
   hi: number;
 }
 
-const clampToPad = (v: number) => Math.max(0, Math.min(SIZE, v));
+/** The side of the pad being played, in cells (one board is on screen at a time; the track layer sets it per level). */
+let PAD = SIZE;
+export const setPadSize = (cells: number): void => { PAD = cells; };
+const clampToPad = (v: number) => Math.max(0, Math.min(PAD, v));
 
 /** Follows a truck's position during a drag and splits it into sweeps at each reversal. */
 export class DragPath {
@@ -156,7 +159,7 @@ export function sweepVary(seed: number): SweepVary {
  */
 export function sweepSegments(orient: 'h' | 'v', lane: number, s: Sweep, wear: Wear, extra = 0, vary: SweepVary = NO_VARY): Segment[] {
   const start = s.lo + (s.lo <= 0 ? 0 : END_INSET);
-  const end = s.hi - (s.hi >= SIZE ? 0 : END_INSET);
+  const end = s.hi - (s.hi >= PAD ? 0 : END_INSET);
   if (end <= start) return [];
   const runs: { from: number; to: number; level: number }[] = [];
   for (let c = Math.floor(start); c < Math.ceil(end); c++) {

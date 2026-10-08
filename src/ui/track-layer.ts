@@ -5,7 +5,7 @@
 import { SIZE } from '../engine/index.ts';
 import type { Motion } from './spray.ts';
 import type { Ground } from './themes.ts';
-import { DragPath, addWear, removeWear, sweepCells, sweepSegments, sweepVary, trackOpacity, wearLevel, type Sweep, type Wear } from './tracks.ts';
+import { DragPath, addWear, removeWear, setPadSize, sweepCells, sweepSegments, sweepVary, trackOpacity, wearLevel, type Sweep, type Wear } from './tracks.ts';
 
 const NS = 'http://www.w3.org/2000/svg';
 const PARTS = ['tt-edge', 'tt-mark', 'tt-tread'];
@@ -55,6 +55,12 @@ export class TrackLayer {
     this.svg.setAttribute('viewBox', `0 0 ${SIZE * 100} ${SIZE * 100}`);
     this.svg.setAttribute('preserveAspectRatio', 'none');
     this.svg.setAttribute('aria-hidden', 'true');
+  }
+
+  /** The pad's side in cells: 6, or 8 on a Big Pad. Marks are drawn in hundredths of a cell. */
+  setSize(cells: number): void {
+    setPadSize(cells);
+    this.svg.setAttribute('viewBox', `0 0 ${cells * 100} ${cells * 100}`);
   }
 
   setGround(ground: Ground): void {

@@ -14,6 +14,8 @@ export interface BermGeometry {
   /** How far the outer slope runs past the board's edge, px. */
   over: number;
   gates: Pick<Gate, 'side' | 'index'>[];
+  /** The pad's side in cells (6 unless it is a Big Pad). */
+  size?: number;
 }
 
 /** How far the outer slope spills past the board, as a share of the band. */
@@ -36,7 +38,7 @@ const smooth = (a: number, b: number, x: number) => {
  * ways). Zero on the pad, beyond the outer foot, and in every gate's gap.
  */
 export function bermHeight(g: BermGeometry, x: number, y: number): number {
-  const pad = g.cell * SIZE;
+  const pad = g.cell * (g.size ?? SIZE);
   const ox = x < 0 ? -x : x > pad ? x - pad : 0;
   const oy = y < 0 ? -y : y > pad ? y - pad : 0;
   const d = Math.hypot(ox, oy);
@@ -126,7 +128,7 @@ const LIGHT = (() => {
 export function paintBerm(canvas: HTMLCanvasElement, g: BermGeometry, ground: Ground, seed: number, scale: number): void {
   const look = BERM_LOOKS[ground];
   const edge = g.band + g.over; // pad origin sits this far into the canvas
-  const css = g.cell * SIZE + edge * 2;
+  const css = g.cell * (g.size ?? SIZE) + edge * 2;
   const n = Math.max(1, Math.round(css * scale));
   canvas.width = canvas.height = n;
   const ctx = canvas.getContext('2d');
@@ -141,7 +143,7 @@ export function paintBerm(canvas: HTMLCanvasElement, g: BermGeometry, ground: Gr
   const rise = g.band * 0.62;
   const H = new Float32Array(n * n);
   const base = new Float32Array(n * n);
-  const pad = g.cell * SIZE;
+  const pad = g.cell * (g.size ?? SIZE);
   for (let j = 0; j < n; j++) {
     const y = j * px - edge;
     const inRows = y > 0 && y < pad;
@@ -250,7 +252,7 @@ export function paintBerm(canvas: HTMLCanvasElement, g: BermGeometry, ground: Gr
  */
 function tufts(ctx: CanvasRenderingContext2D, g: BermGeometry, look: Look, seed: number, scale: number): void {
   const rand = mulberry32(seed ^ 0x9e3779b9);
-  const pad = g.cell * SIZE;
+  const pad = g.cell * (g.size ?? SIZE);
   const edge = g.band + g.over;
   const winter = look.turf === null;
   ctx.save();

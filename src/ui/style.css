@@ -522,6 +522,14 @@ input,
   padding: 10px 0;
 }
 
+/* THE BIG PAD (8 x 8, Clearwater): the lease takes the screen's width but for 3 px a side, so a
+   cell comes to about 44 px on a phone 390 wide (42 at 375). Everything on the board is sized in
+   cells, so the trucks, gates and symbols follow. */
+.screen.game.big-pad .stage {
+  margin-left: calc(3px - max(16px, var(--safe-left)));
+  margin-right: calc(3px - max(16px, var(--safe-right)));
+}
+
 .note {
   margin: 0 0 12px;
   min-height: 1.3em;

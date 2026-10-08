@@ -29,8 +29,8 @@ export interface ExitPlan {
  * cell's size and `fence` the berm band's thickness. The roll takes its tail to `EXIT_CLEAR`
  * cells past the berm's outer edge, whatever its length and wherever it was let go.
  */
-export function exitPlan(side: Side, from: { x: number; y: number }, w: number, h: number, cell: number, fence: number): ExitPlan {
-  const pad = cell * SIZE;
+export function exitPlan(side: Side, from: { x: number; y: number }, w: number, h: number, cell: number, fence: number, size: number = SIZE): ExitPlan {
+  const pad = cell * size;
   const horizontal = side === 'left' || side === 'right';
   const length = horizontal ? w : h;
   // From its leading edge to the pad's edge (less if it was let go already nosing into the gate's gap).
@@ -44,7 +44,7 @@ export function exitPlan(side: Side, from: { x: number; y: number }, w: number, 
 export const EXIT_MOST_MS = ROLL_MS.most + EXIT_FADE_MS;
 
 /** Is the truck's tail through the gate? `box` is the truck on the pad (px): true once no part of it is on the pad or in the berm's band. */
-export function tailClear(side: Side, box: { x: number; y: number; w: number; h: number }, cell: number, fence: number): boolean {
-  const pad = cell * SIZE;
+export function tailClear(side: Side, box: { x: number; y: number; w: number; h: number }, cell: number, fence: number, size: number = SIZE): boolean {
+  const pad = cell * size;
   return side === 'left' ? box.x + box.w <= -fence : side === 'right' ? box.x >= pad + fence : side === 'top' ? box.y + box.h <= -fence : box.y >= pad + fence;
 }

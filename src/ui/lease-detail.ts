@@ -5,7 +5,7 @@
 // puddles on mud, gentle wind drifts on snow). No photo texture, no grain, no hard value step: all
 // of it is flat, soft and low in contrast, ground and never something sitting in a cell. Tire
 // tracks draw on top (tracks.ts).
-import { SIZE, type Level } from '../engine/index.ts';
+import { SIZE, sizeOf, type Level } from '../engine/index.ts';
 import { mulberry32 } from '../engine/rng.ts';
 import type { Ground } from './themes.ts';
 
@@ -48,13 +48,16 @@ export interface Detail {
   stains: Patch[];
   /** Seeds the fine texture (gravel specks and stones, mud specks, clods and streaks), drawn at paint time. */
   seed: number;
+  /** The pad's side in cells (6; 8 on a Big Pad). Missing means 6. */
+  size?: number;
 }
 
 /** How far a puddle may reach from its centre, in cells (it stays inside its own cell block). */
 export const PUDDLE_REACH = 0.62;
 
 /** Cells a puddle must keep off: the cell in front of every gate, and every obstacle. */
-export function keepDry(level: Pick<Level, 'gates' | 'obstacles'>): Set<string> {
+export function keepDry(level: Pick<Level, 'gates' | 'obstacles' | 'size'>): Set<string> {
+  const SIZE = sizeOf(level);
   const dry = new Set<string>();
   for (const g of level.gates) {
     const last = SIZE - 1;
@@ -65,7 +68,7 @@ export function keepDry(level: Pick<Level, 'gates' | 'obstacles'>): Set<string> 
 }
 
 /** The cells a puddle centred at (x, y) can touch. */
-export function puddleCells(x: number, y: number): string[] {
+export function puddleCells(x: number, y: number, SIZE = 6): string[] {
   const cells: string[] = [];
   for (let r = Math.floor(y - PUDDLE_REACH); r <= Math.floor(y + PUDDLE_REACH); r++)
     for (let c = Math.floor(x - PUDDLE_REACH); c <= Math.floor(x + PUDDLE_REACH); c++) if (r >= 0 && c >= 0 && r < SIZE && c < SIZE) cells.push(`${r},${c}`);
@@ -73,10 +76,11 @@ export function puddleCells(x: number, y: number): string[] {
 }
 
 /** What goes on a level's ground. Pure: the same level and ground always give the same detail. */
-export function planDetail(level: Pick<Level, 'gates' | 'obstacles'>, ground: Ground, seed: number): Detail {
+export function planDetail(level: Pick<Level, 'gates' | 'obstacles' | 'size'>, ground: Ground, seed: number): Detail {
+  const SIZE = sizeOf(level);
   const rng = mulberry32(seed ^ 0x51ed270b);
   const between = (lo: number, hi: number) => lo + rng() * (hi - lo);
-  const detail: Detail = { ground, patches: [], pebbles: [], puddles: [], drifts: [], lanes: [], stains: [], seed };
+  const detail: Detail = { ground, patches: [], pebbles: [], puddles: [], drifts: [], lanes: [], stains: [], seed, ...(SIZE === 6 ? {} : { size: SIZE }) };
 
   // Large soft colour fields, lighter and darker, over the pad and out under the berm.
   const patches = 9 + Math.floor(rng() * 4);
@@ -131,7 +135,7 @@ export function planDetail(level: Pick<Level, 'gates' | 'obstacles'>, ground: Gr
         const at = between(0, Math.PI * 2);
         return { dx: Math.cos(at) * far, dy: Math.sin(at) * far * 0.7, rx, ry: rx * between(0.55, 0.85), rot: between(-0.5, 0.5) };
       });
-      if (puddleCells(x, y).some((c) => dry.has(c))) continue;
+      if (puddleCells(x, y, SIZE).some((c) => dry.has(c))) continue;
       if (detail.puddles.some((p) => Math.hypot(p.x - x, p.y - y) < 2.2)) continue;
       detail.puddles.push({ x, y, lobes });
     }
@@ -191,7 +195,7 @@ function paintGrain(ctx: CanvasRenderingContext2D, detail: Detail, cell: number,
   if (!grain || !lumps) return;
   const rng = mulberry32(detail.seed ^ 0x7e57a11);
   const lo = -band;
-  const span = cell * SIZE + band * 2;
+  const span = cell * (detail.size ?? SIZE) + band * 2;
   const cells = (span / cell) ** 2;
 
   // Mud: a few faint wet streaks first, under the specks.
@@ -265,7 +269,7 @@ function softEllipse(ctx: CanvasRenderingContext2D, x: number, y: number, rx: nu
  * side); `cell` and `band` are in CSS px and `scale` is device px per CSS px.
  */
 export function paintDetail(canvas: HTMLCanvasElement, detail: Detail, cell: number, band: number, scale: number): void {
-  const css = cell * SIZE + band * 2;
+  const css = cell * (detail.size ?? SIZE) + band * 2;
   canvas.width = canvas.height = Math.max(1, Math.round(css * scale));
   const ctx = canvas.getContext('2d');
   if (!ctx) return;

@@ -1,5 +1,5 @@
 import { EXIT_MOST_MS } from './exit.ts';
-import { SolverLimitError, canUndo, getMoveRange, isWon, newGame, nextMove, tryMove, undo, type GameState, type Level, type Move, SIZE } from '../engine/index.ts';
+import { SolverLimitError, canUndo, getMoveRange, isWon, newGame, nextMove, tryMove, undo, type GameState, type Level, type Move, SIZE, sizeOf } from '../engine/index.ts';
 import { seedFrom } from '../engine/rng.ts';
 import { BoardView } from './board-view.ts';
 import { sceneryHtml } from './scenery.ts';
@@ -109,6 +109,7 @@ export class GameView {
   private scenery: HTMLElement;
   /** Which region this level is in ('daily' for the Daily Pad): the gopher's mound is Cardium's. */
   private regionId: string;
+  private bigPad = false;
 
   /** Null while gags are switched off (flags.ts). */
   /**
@@ -196,6 +197,8 @@ export class GameView {
   ) {
     this.level = level;
     this.regionId = where.regionId;
+    // A BIG PAD (8 x 8, Clearwater): the board takes nearly the whole width, and no gag plays yet (they are drawn for a pad of 6).
+    this.bigPad = sizeOf(level) > SIZE;
     this.theme = theme;
     this.daily = daily;
     this.handlers = handlers;
@@ -222,7 +225,7 @@ export class GameView {
       if (this.wiggle.reversal(performance.now())) this.fire('landowner');
     };
     this.el = document.createElement('div');
-    this.el.className = 'screen game';
+    this.el.className = `screen game${this.bigPad ? ' big-pad' : ''}`;
     this.el.innerHTML = `
       <div class="scenery" aria-hidden="true"></div>
       <div class="vignette" aria-hidden="true"></div>
@@ -744,6 +747,7 @@ export class GameView {
    * only for a gag that shares its character or prop, and then follows it on. Once per level.
    */
   private fire(id: GagId): void {
+    if (this.bigPad && !this.eggForced) return;
     if (this.eggForced || isWon(this.state) || this.eggDone.has(id) || this.eggsOn.has(id) || this.eggQueue.includes(id)) return;
     if (id === 'magpie' ? !this.magpie : id === 'worker' ? !this.worker : id === 'moose' ? !this.moose : !this.strips[id]) return;
     if (mustWait(id, this.eggsOn)) this.eggQueue.push(id);
