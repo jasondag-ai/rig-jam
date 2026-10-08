@@ -22,7 +22,9 @@ const check = (ok, text) => {
 };
 const OWN_CLOCK = ['magpie', 'worker', 'moose'];
 const browser = await webkit.launch();
-const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, hasTouch: true, reducedMotion: 'reduce' });
+// (`VIEW=390x664` checks at another size, Safari's visible area for one.)
+const [VW, VH] = (process.env.VIEW ?? '390x844').split('x').map(Number);
+const context = await browser.newContext({ viewport: { width: VW, height: VH }, deviceScaleFactor: 1, hasTouch: true, reducedMotion: 'reduce' });
 const page = await context.newPage();
 page.on('pageerror', (e) => console.log('ERR', e.message));
 

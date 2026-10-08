@@ -11,7 +11,8 @@
 //    an Undo in the middle starts the count again; once Dinner Bell is in the log the same five play ONE PEA
 //    ("Watching your carbs, Moe?")
 //  - both leave the scene exactly as it was (the level's pixels before and after)
-//  - on a very short strip (375 x 667) the scene is still there and the pair does not play
+//  - all of it full screen (390 x 844, 375 x 812) AND in Safari's visible area with its toolbars showing (390 x 664, 375 x 635),
+//    where the lease is moved up so the strip has room: the gags play there too, and never cover the board, the tip line or the buttons
 // Run with the dev server up: npm run test:e2e:clearwater-gags
 import { webkit } from 'playwright';
 import { REGIONS } from '../src/levels/regions.ts';
@@ -26,6 +27,8 @@ const check = (ok, text) => {
   console.log(`   ${ok ? 'ok  ' : 'FAIL'} ${text}`);
 };
 const CW = REGIONS.findIndex((r) => r.id === 'clearwater');
+// Full screen (a home-screen app), and Safari's visible area with its toolbars showing.
+const SIZES = [[390, 844], [375, 812], [390, 664], [375, 635]];
 const browser = await webkit.launch();
 
 async function open([width, height], query = '') {
@@ -89,7 +92,7 @@ const beatsOf = async (id) => (await import('../src/ui/wave3.ts')).WAVE3[id].bea
 /** The beats a watch must have seen: every one but the first (the watch may begin after it) and any shorter than 0.2 s (a slow frame of this headless browser at DPR 3 can step over those; the unit tests hold their times). */
 const mustSee = async (id) => { const b = (await import('../src/ui/wave3.ts')).WAVE3[id].beats; return b.filter((x, i) => i > 0 && (i === b.length - 1 || b[i + 1][0] - x[0] >= 0.2)).map((x) => x[1]); };
 
-for (const size of [[390, 844], [375, 812]]) {
+for (const size of SIZES) {
   console.log(`\nwebkit ${size[0]} x ${size[1]}: the standard Clearwater scene`);
   const { context, page, errors } = await open(size, '&gagtest=1');
   let first = null, same = true, all = true;
@@ -106,11 +109,31 @@ for (const size of [[390, 844], [375, 812]]) {
   check(s.mats && s.mats.l >= 0 && s.mats.r <= s.w + 0.5 && s.mats.t >= s.strip.top && s.mats.b <= s.strip.bottom && s.mats.l > s.w * 0.6, `the rig mat stack stands at the lane's right end, whole on the screen (${Math.round(s.mats.l)} to ${Math.round(s.mats.r)} of ${s.w})`);
   check(s.aspen && s.aspen.t >= s.strip.top - 1 && s.aspen.b <= s.strip.bottom, 'the gold aspen stands whole inside the strip (its crown is not cut at the berm)');
   check(Number(s.layers[0].ground) < Number(s.layers[1].ground) && Number(s.layers[1].ground) < Number(s.layers[2].ground), `depth: the ground under everything, the trees behind the mat stack (ground lines ${s.layers.map((l) => l.ground).join(' < ')})`);
+  // Every gag held through its run: nothing it draws reaches over the board or down over the tip line and the buttons.
+  await enter(page, 0);
+  const cover = await page.evaluate(async () => {
+    const g = window.__rhrGag, out = [];
+    const board = document.querySelector('.board .pad').getBoundingClientRect(), note = document.querySelector('.note').getBoundingClientRect(), strip = document.querySelector('.board').getBoundingClientRect().bottom;
+    for (const id of g.names()) {
+      let top = Infinity, bottom = -Infinity, played = false;
+      for (let t = 0; t <= g.end(id) + 1e-6; t += 0.25) {
+        if (!g.hold(id, t)) break;
+        played = true;
+        await new Promise((q) => requestAnimationFrame(q));
+        for (const el of document.querySelectorAll(`.strip-layer[data-gag="${id}"] g.pup > *`)) { if (el.tagName === 'clipPath') continue; let r = el.getBoundingClientRect(); if (r.width < 1 || r.right < 0 || r.left > innerWidth) continue; let lo = r.bottom; /* (what is cut off by a clip does not show: the mud wave is cut at the strip's floor) */ const clip = (el.getAttribute('clip-path') ?? '').match(/#([\w-]+)/); if (clip) { const c = document.getElementById(clip[1])?.firstElementChild?.getBoundingClientRect(); if (c) lo = Math.min(lo, c.bottom); } top = Math.min(top, r.top); bottom = Math.max(bottom, lo); }
+      }
+      g.release(id);
+      out.push({ id, played, overBoard: Math.round(board.bottom - top), overNote: Math.round(bottom - note.top), tall: Math.round(bottom - top), strip: Math.round(note.top - strip) });
+    }
+    return out;
+  });
+  check(cover.length === 5 && cover.every((c) => c.played), `all five play at this size (the strip is ${cover[0]?.strip} px tall)`);
+  check(cover.every((c) => c.overBoard <= 0 && c.overNote <= 2), `none of them ever reaches over the lease's pad or down over the tip line and buttons (${cover.map((c) => `${c.id} ${c.overBoard}/${c.overNote}`).join(', ')})`);
   check(errors.length === 0, `no script errors (${errors[0] ?? 'none'})`);
   await context.close();
 }
 
-for (const size of [[390, 844], [375, 812]]) {
+for (const size of SIZES) {
   console.log(`\nwebkit ${size[0]} x ${size[1]}: the pair on one trigger`);
   const { context, page, errors } = await open(size, '&audiolog');
   await enter(page, 0);
@@ -169,7 +192,7 @@ const plan = (level) => { let s = newGame(level); return solve(level).map((m) =>
 const move = (page, m) => drag(page, m.id, m.delta + (m.out ? Math.sign(m.delta) * 0.4 : 0), m.out ? 950 : 420);
 const onNow = (page) => page.$$eval('.strip-layer[data-gag]', (ls) => [...new Set(ls.map((l) => l.dataset.gag))]);
 
-for (const size of [[390, 844], [375, 812]]) {
+for (const size of SIZES) {
   console.log(`\nwebkit ${size[0]} x ${size[1]}: Fresh Wash, Dinner Bell and One Pea`);
   const { context, page, errors } = await open(size);
   const log = () => page.evaluate(() => JSON.parse(localStorage.getItem('rush-hour-rigs:log') ?? '{"found":[]}').found);
@@ -221,18 +244,6 @@ for (const size of [[390, 844], [375, 812]]) {
   await wait(500);
   check((await log()).includes('pea'), 'One Pea is in the Wildlife Log');
   check(errors.length === 0, `no script errors (${errors[0] ?? 'none'})`);
-  await context.close();
-}
-
-console.log('\nwebkit 375 x 667 (iPhone SE): a very short strip');
-{
-  const { context, page } = await open([375, 667]);
-  await enter(page, 0);
-  const s = await scene(page);
-  await tapMats(page, 3);
-  await wait(900);
-  const playing = (await page.$$('.strip-layer[data-gag]')).length;
-  check(s.layers.every(Boolean) && s.mats && playing === 0, `the scene is there (strip ${Math.round(s.strip.bottom - s.strip.top)} px tall); the pair does not play where there is no room for it`);
   await context.close();
 }
 

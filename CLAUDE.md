@@ -1091,8 +1091,7 @@ something, give exact clicks and one command at a time.
   pill in the dig yet.
 - THE STANDARD CLEARWATER SCENE (`ClearProp`, scene-stage.ts; every Clearwater level; the generic
   scenery puts no trees below the board there), from `clearwater_sightings_reference.html`
-  (`bgClear`; saved Oct 7 19:26). Its strip runs lower than Mannville's (`CW_SCENE` floor 184: the
-  puddle lies in the FRONT lane). Three layers, none takes a touch: `.clear-ground` (under
+  (`bgClear`; saved Oct 7 19:26). Its strip is its own (`CW_SCENE`: see below, "a quarter bigger"). Three layers, none takes a touch: `.clear-ground` (under
   everything in the strip, the biffy and sign too: lichen bands, the SANDY TWO-TRACK run on to both
   screen edges, the MUD PUDDLE, tufts), `.clear-layer` (behind the walking lane: four spruce and
   the GOLD ASPEN in the board's own drawings, `CW_TREES`, `CW_ASPEN`; FIREWEED and RED FALL
@@ -1117,8 +1116,7 @@ something, give exact clicks and one command at a time.
   A STACKED PAIR ON ONE TRIGGER (`GAG_TRIGGERS.golf` / `.cold`): three taps on the mat stack
   (`ClearProp.hitMats`; other taps give it a small knock) play Three Swings; once that is in the
   Wildlife Log (`swings`) the same taps play Out Cold. Each once a level. `?gag=golf|cold`.
-  ON A VERY SHORT STRIP (an iPhone SE, 375 x 667: 54 px under the Big Pad) the scene is drawn and
-  the pair does not play (`SCENE_MIN`).
+  On a strip too short for the scene (under about 56 px) it is drawn and the gags do not play (`SCENE_MIN`).
 - THE OTHER THREE (same reference, same port). A Clearwater gag may draw on THREE LANES, each a
   layer on its own ground line (`sceneDef`: `back`/`backY` behind the rig mat stack, `render` on
   the walking lane, `front`/`frontY` between us and the lane), and may say SEVERAL LINES in the
@@ -1137,6 +1135,22 @@ something, give exact clicks and one command at a time.
   (move after move, each one a truck leaving; any other move or an Undo starts the count again:
   `GameView.exitRun`) play Dinner Bell; once that is in the log, One Pea. (Every Clearwater level's
   solution ends with a run of at least nine.) `?gag=wash|bell|pea`.
+- CLEARWATER'S CHARACTERS ARE A QUARTER BIGGER, AND THE BIG PAD'S STRIP COMES FIRST (Jay, Oct 8, on
+  his iPhone in Safari: they were tiny). Two things, and nothing is scaled by hand:
+  (1) THE SCENE IS TIGHTER THAN THE REFERENCE'S: `CW_SCENE` runs from y 47 to y 170 (123 units,
+  where the reference's strip is 154), so the same strip shows everything 25% bigger. The empty
+  band under the lane went first: the mud puddle lies on the two-track's own near rut (`PUD.y`
+  162, not 175) and the water hauler drives at `FRONT_Y` GY+16 (not GY+28). Then the top: the
+  aspen is 84 tall and the last spruce 66, just inside the strip. The mud wave is cut off at the
+  strip's floor (`cwFloor`), as the reference's is at the foot of its own picture.
+  (2) THE LEASE MOVES UP FOR THE STRIP (`GameView.liftBigPad`, `clearStripWanted`): on a Big Pad
+  the spare height goes to the bottom strip until its scene stands at full size, leaving at
+  least `SKY_LEAST` (6 px) of sky under the HUD; never down. In Safari with its toolbars showing
+  (390 x 664) the strip was 55 px, too short for the gags at all; it is 72 to 85 px now and they
+  play. The lease stays inside the stage: nothing covers the HUD, the tip line or the buttons
+  (`test:e2e:clearwater-gags` holds every gag through its run at 390 x 844, 375 x 812, 390 x 664
+  and 375 x 635 and measures it). `test:e2e:depth` has Safari's two sizes too; `VIEW=390x664 npm
+  run test:e2e:frames` checks first and last frames there.
 - A BIG PAD BUILDS ONLY ITS OWN GAGS (`BIG_PAD_GAGS`: the five): the older ones are drawn for a pad
   of 6 and are not made there. The biffy and the lease sign stand as on every level.
 - CLEARWATER'S SOUNDS: Jay's five new files (`~/Desktop/RHR Art Inbox/Sound files/clearwater/`,

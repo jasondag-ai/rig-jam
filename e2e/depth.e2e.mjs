@@ -25,7 +25,8 @@ const OWN = {
   nearMiss: ['mound'], gopherLunch: ['mound'], bale: ['bakken'], beaver: ['mann-front'], muskeg: ['mann-layer'],
 };
 const TIE = 2; // px: ground lines closer than this are the same lane
-const SIZES = [['iPhone', 390, 844, 3], ['Galaxy S23', 360, 780, 3], ['Pixel', 412, 915, 2.625]].filter((s) => !process.env.SIZE || s[0].startsWith(process.env.SIZE));
+// (And Safari's visible area with its toolbars showing, where a Big Pad moves its lease up for the strip.)
+const SIZES = [['iPhone', 390, 844, 3], ['Galaxy S23', 360, 780, 3], ['Pixel', 412, 915, 2.625], ['Safari 390', 390, 664, 3], ['Safari 375', 375, 635, 3]].filter((s) => !process.env.SIZE || s[0].startsWith(process.env.SIZE));
 
 const browser = await webkit.launch();
 const found = [];
