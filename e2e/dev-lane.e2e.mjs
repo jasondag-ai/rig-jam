@@ -7,7 +7,7 @@
 //  3. "You can come back tomorrow." is said only on a Daily Pad's win card.
 //  4. The Wildlife Log's depth gauge never lies over a card's picture or its words.
 // DEV = the dev build (default the dev server of ~/Rig-Jam-next on 5181, started with RIG_CHANNEL=dev; or the dev
-// site), LIVE = the live build (default the live site). `ONLY=label|saves|line|pill`.
+// site), LIVE = the live build (default the live site). `ONLY=label|saves|line|pill|pads`.
 import { webkit } from 'playwright';
 import { DAILY_LEVELS, REGIONS } from '../src/levels/regions.ts';
 import { newGame, solve, tryMove } from '../src/engine/index.ts';
@@ -174,6 +174,65 @@ if (!ONLY || ONLY === 'pill') {
     await wait(300);
     const below = await page.evaluate(() => { const r = document.querySelector('.dig-gauge-pill').getBoundingClientRect(); return { slim: document.querySelector('.dig-gauge').classList.contains('slim'), w: r.width, text: document.querySelector('.dig-depth').textContent }; });
     check(!below.slim && below.w >= 70, `below the last card it is the pill again (${Math.round(below.w)} px wide, "${below.text}")`);
+    await context.close();
+  }
+}
+
+// ---------- 5. Daily Pads forever (job U2): ?pad=N on the dev copy, and a day after pad 60 ----------
+if (!ONLY || ONLY === 'pads') {
+  const { readFileSync } = await import('node:fs');
+  const { parseLevel } = await import('../src/engine/index.ts');
+  const { blockOf, padSlot } = await import('../src/ui/daily-pads.ts');
+  const padFromDisk = (pad) => { const b = blockOf(padSlot(pad)); return parseLevel(JSON.parse(readFileSync(new URL(`../public/${b.file}`, import.meta.url), 'utf8'))[padSlot(pad) - b.from]); };
+  for (const w of [375, 390]) {
+    console.log(`\nwebkit ${w} wide: the dev copy's ?pad=N opens that Daily Pad, it plays, and nothing is saved`);
+    for (const pad of [61, 200, 790, 791]) {
+      const context = await phone(w), page = await context.newPage();
+      const errors = []; page.on('pageerror', (e) => errors.push(e.message));
+      await page.goto(`${DEV}?${QUIET}&pad=${pad}`, { waitUntil: 'networkidle' });
+      await page.waitForSelector('.board .truck.sprite-on', { timeout: 10000 }).catch(() => {});
+      await wait(400);
+      const level = padFromDisk(pad);
+      const hud = ((await page.evaluate(() => document.querySelector('.hud')?.textContent)) ?? '').replace(/\s+/g, ' ');
+      const onPad = await page.evaluate(() => [...document.querySelectorAll('.board .truck')].map((t) => t.dataset.id).sort().join(''));
+      const theme = await page.evaluate(() => document.querySelector('.screen.game')?.dataset.theme ?? document.querySelector('.screen.game')?.className ?? '');
+      await clear(page, level).catch(() => {});
+      const won = (await page.locator('button:has-text("Play again")').count()) === 1;
+      const stored = await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('rush-hour-rigs:v2') ?? '{}'); return Object.keys(p.best ?? {}).length; });
+      // What the phone REALLY holds afterwards: a second page of the same browser, without the link.
+      const other = await context.newPage();
+      await other.goto(`${DEV}?${QUIET}`, { waitUntil: 'networkidle' });
+      const real = await other.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('rush-hour-rigs') && k !== 'rush-hour-rigs:region'));
+      const streak = await other.evaluate(() => document.querySelector('.daily-btn')?.classList.contains('done'));
+      check(hud.includes(`Daily Pad #${pad}`) && onPad === level.trucks.map((t) => t.id).sort().join('') && won && stored === 1 && real.length === 0 && !streak && errors.length === 0, `?pad=${pad}: "Daily Pad #${pad}" opens${pad > 790 ? ` (the level of pad ${padSlot(pad)}, round again)` : ''}, its ${level.trucks.length} trucks are cleared at par ${level.par} (theme ${String(theme).match(/summer|spring/)?.[0] ?? '?'}), and nothing is saved: ${real.length} keys, today's pad not marked done${errors.length ? ' ERR ' + errors[0] : ''}`);
+      await context.close();
+    }
+  }
+  // The live build does not read the link (on the live site it simply is not there).
+  {
+    const context = await phone(390), page = await context.newPage();
+    await page.goto(`${LIVE}?${QUIET}&pad=200`, { waitUntil: 'networkidle' });
+    await wait(600);
+    check(!!(await page.$('.screen.levels')) && !(await page.$('.board')), 'the live build ignores ?pad=200: its level list opens as ever');
+    await context.close();
+  }
+  // A day after pad 60 (the clock set to Dec 1, 2026: pad 63): the home page names it, its par comes in, and it plays.
+  for (const w of [375, 390]) {
+    const context = await phone(w), page = await context.newPage();
+    await page.clock.setFixedTime(new Date(2026, 11, 1, 12, 0, 0));
+    await page.goto(`${DEV}?${QUIET}`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('.daily-btn');
+    await page.waitForFunction(() => /par \d/.test(document.querySelector('.daily-sub')?.textContent ?? ''), null, { timeout: 8000 }).catch(() => {});
+    const btn = await page.evaluate(() => ({ title: document.querySelector('.daily-title').textContent, sub: document.querySelector('.daily-sub').textContent }));
+    const level = padFromDisk(63);
+    await page.locator('.daily-btn').click();
+    await page.waitForSelector('.board .truck.sprite-on', { timeout: 8000 }).catch(() => {});
+    await wait(400);
+    const hud = ((await page.evaluate(() => document.querySelector('.hud')?.textContent)) ?? '').replace(/\s+/g, ' ');
+    await clear(page, level).catch(() => {});
+    const won = (await page.locator('button:has-text("Play again")').count()) === 1;
+    const saved = await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('rush-hour-rigs:v2') ?? '{}'); return { best: p.best ?? {}, days: p.dailyCleared ?? [] }; });
+    check(btn.title === 'Daily Pad #63' && btn.sub.includes(`par ${level.par}`) && hud.includes('Daily Pad #63') && won && saved.best.d63 === level.par && saved.days.includes('2026-12-01'), `webkit ${w} wide, the phone's date Dec 1, 2026: the home page says "${btn.title}" and "${btn.sub}", it opens and is cleared at par ${level.par}, and that day counts (${JSON.stringify(saved.days)})`);
     await context.close();
   }
 }

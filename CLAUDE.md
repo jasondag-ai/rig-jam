@@ -1345,6 +1345,41 @@ something, give exact clicks and one command at a time.
   card's picture and no caption (there is no place over two columns of cards where the full pill
   covers neither). Below the cards it is the pill again.
 
+## Daily Pads forever (October upgrade, job U2; Oct 9; on `next`)
+- A FRESH DAILY PAD EVERY DAY UNTIL NOV 27, 2028, THE SAME FOR EVERYONE. Pads 1 to 60 (Sep 30 to
+  Nov 28, 2026) are `src/levels/daily.json`, in the game's script, EXACTLY AS THEY WERE (a test
+  pins the file's hash). Pads 61 to 790 (Nov 29, 2026 to Nov 27, 2028; 730 pads) are made once
+  and fixed: `public/daily/pads-<from>-<to>.json`, blocks of `DAILY_BLOCK` (30) pads, 25 files,
+  about 26 KB each, NOT in the game's script (the main bundle grew 2 KB).
+- **REGENERATE BEFORE NOV 2028.** After pad 790 the pads repeat from pad 61 (`padSlot`; never from
+  pad 1). To add years: raise `DAILY_LAST` in `src/ui/daily-pads.ts`, run `node
+  tools/gen-daily.ts` (about 12 minutes for 730; finished pads come from `tools/.gen-cache/daily/`
+  or are made again the same), commit the new files. Never regenerate a pad that has been live.
+- `tools/gen-daily.ts` MAKES THEM BY THE SAME ROAD AS PADS 1 TO 60: `dailySlot(i)` of gen-levels.ts
+  (odd pads 5 trucks and 1 piece of equipment, even pads 6 and 2; par 6 to 8), the same search in
+  the same shards run by gen-levels.ts's own worker, the looks dealt from the same seeds
+  (`dressDaily`), the seed the pad's place (5000 + pad - 1). `--check 6` makes pads 1 to 6 again
+  and compares them with daily.json (they come out the same). NO PAD REPEATS (`layoutKey`: the
+  layout whatever the paint): a pad whose seed gave no level in the band, or the layout of a
+  region's level or an earlier pad, is made from its next seed (`SEED_STEP`), in pad order. Each
+  is parsed and solved before it is written. Pars: 102 at 6, 336 at 7, 292 at 8.
+- THE GAME (`src/ui/daily-pads.ts`, pure and tested; main.ts `showDaily`): `dailyLevel(pad)` gives
+  pads 1 to 60 at once and fetches the one block a later pad lies in (kept for the visit; a failed
+  fetch is asked for again). The home page fetches today's and tomorrow's ahead (`warmDaily`) and
+  writes the par in when it comes; if a block cannot be had, a toast says so. THE SERVICE WORKER
+  KEEPS EVERY BLOCK (they are public files), so any day's pad plays offline once the game has
+  been opened (`test:e2e:offline` opens Dec 1, 2026's with the network gone). The theme rule is
+  the old one (`dailyTheme`: odd summer, even spring). The live build until the merge still
+  wraps after pad 60, so from Nov 29 dev and live show different pads.
+- `?pad=N`, THE DEV COPY ONLY (`isDev()`; `padLink`): opens Daily Pad N to try it, AND SAVES
+  NOTHING (no streak, hard hats or log: the page's storage is the in-memory copy of demo-link.ts).
+  The live build does not read it.
+- NOTHING NEW IS SAVED. (A new pad's best score is saved under its id, `d61`...: the live build
+  keeps ids it does not know.)
+- Tests: `daily-pads.test.ts` (pads 1 to 60 unchanged, the calendar, every new pad solved at its
+  par inside the band, no repeats, the repeat from 61, fetching); `test:e2e:devlane` `ONLY=pads`
+  (`?pad=61|200|790|791` open, play and save nothing; the phone's date set to Dec 1, 2026).
+
 ## Sighting fixes (Job Y, Oct 9)
 - NEAR MISS: THE GOPHER COMES UP IN FRONT OF THE MOUND. His layer ends at the hole line, and a
   ground line worked out from that stood above the mound's own, so the mound was drawn over him
@@ -1596,6 +1631,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:offline` – the built site under the Pages base path: the service worker registers, fills its cache through 503s, and the game plays with the network gone (builds first; needs no dev server)
 - `npm run test:e2e:click` – the buttons' one click and the haptic tick: every kind of button, never on a drag, a tick per truck out, nothing with the switch off (start the dev server first)
 - `npm run test:e2e:devlane` – the dev lane: the DEV label on dev and not on live, one save read by both builds, the Daily-only line, the depth gauge clear of the cards (`DEV=`, `LIVE=`, `ONLY=label|saves|line|pill`)
+- `node tools/gen-daily.ts [--check n]` – Daily Pads 61 to 790 into `public/daily/` (REGENERATE BEFORE NOV 2028); `--check` remakes pads 1..n and compares them with daily.json
 - `sh tools/push-dev.sh` – push branch `next` to the dev repo and wait for the dev site's build id
 - `npm run test:e2e:judge` – judge-proofing: a fresh visitor with a mouse at 1440 x 900 and 1280 x 720 in both engines, Share, the credit line, `?demo=1`, the load-error page; screenshots (start the dev server first)
 - `npm run test:e2e:sightings` – every sighting on its real trigger at Safari's visible size, and every tappable prop answers a tap (`VIEW=375x635`, `ONLY=beaver`, `URL=` the live site; start the dev server first)
