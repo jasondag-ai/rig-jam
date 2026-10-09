@@ -1308,6 +1308,43 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `~/Desktop/RHR Art Inbox/qc/judge/` (`OUT=` another folder).
 
+## The dev lane (October upgrade, job U1; Oct 9)
+- TWO SITES, ONE WEB ORIGIN: the live game https://jasondag-ai.github.io/rig-jam/ (repo `rig-jam`,
+  branch `main`) and the dev copy https://jasondag-ai.github.io/rig-jam-next/ (repo `rig-jam-next`,
+  whose main is this repo's branch `next`). The same Action builds both; `base: './'` serves either
+  path. `sh tools/push-dev.sh` (from `~/Rig-Jam-next`, branch `next` only) pushes and waits for the
+  dev build id; `sh tools/check-live.sh` is for main. NO COMMITS TO MAIN FROM UPGRADE WORK.
+- THE CHANNEL (vite.config.ts `CHANNEL`; `APP.channel`, `isDev()` in version.ts): 'dev' when the
+  build runs in a repo whose name ends in `-next` (or `RIG_CHANNEL=dev`, e.g. `RIG_CHANNEL=dev npx
+  vite --port 5181` in `~/Rig-Jam-next`), else 'live'. A dev build's `version.json` carries
+  `"channel":"dev"`. Unit tests also run in the dev repo's Action, where the channel IS dev: a
+  test must hold on either.
+- THE DEV LABEL, dev builds only: "DEV" after Settings' version line (`versionText`) and a small
+  chip in the home page's top left corner (`.dev-chip`). The live build says it nowhere.
+- THE DEV COPY KEEPS ITS OWN OFFLINE CACHES (service-worker.ts `cachePrefix`): an origin's caches
+  are shared, and a worker taking over deletes every cache with its prefix but its own. Live's
+  are `rhr-*`, dev's `next-rhr-*`, so neither wipes the other's offline copy.
+- ONE SAVE FOR BOTH (they share `localStorage` on a phone that has opened both), SO THE DEV BUILD
+  MAY ONLY ADD. `e2e/fixtures/live-contract-<build>.json` is what the live build reads (keys,
+  fields, types, the sightings, styles, regions and levels it knows), made from main's own
+  modules; `save-compat.test.ts` holds everything this build writes to it, and a round trip
+  through the live build. WHAT THE LIVE BUILD DOES WITH WHAT IT DOES NOT KNOW: a sighting id it
+  does not know is dropped when it next saves the log; an unknown music style falls back to its
+  default; a field added to `rush-hour-rigs:v2` is lost when it saves progress. So: new data that
+  must survive goes in a NEW KEY (declare it in the test's `DEV_ADDS.keys`); a new sighting, style
+  or region must be declared in `DEV_ADDS`, on purpose. (Reset progress on either build clears
+  every `rush-hour-rigs:` key.) WHEN MAIN CHANGES WHAT IT SAVES, make a new contract file from it.
+- `npm run test:e2e:devlane` (WebKit, DPR 3, 375 and 390; `DEV=` the dev build, default the dev
+  server on 5181; `LIVE=` the live build, default the live site): the label on dev and not on
+  live; a save written by the dev build shown whole by the live build, byte for byte untouched,
+  played on there and read back by the dev build; the two polish items below.
+- POLISH: "You can come back tomorrow." is a Daily Pad line only (`DAILY_ONLY_LINES` in lines.ts,
+  `companyLine(..., daily)`). THE DEPTH GAUGE BESIDE THE CARDS IS A SLIM TAB (`.dig-gauge.slim`,
+  set in log-dig-view.ts from the first card's top to the last card's foot): flush with the
+  screen's right edge, in the page's margin, its reading turned on its side, so it covers no
+  card's picture and no caption (there is no place over two columns of cards where the full pill
+  covers neither). Below the cards it is the pill again.
+
 ## Hints in a row (Job X, Oct 9)
 - THE KEPT LINE ALWAYS STARTS AT THE MOVE BEING HINTED (`src/ui/hint-line.ts`, pure and tested;
   `GameView.hintPath`): one solve gives the whole best line and it is kept so the next hints are
@@ -1524,6 +1561,8 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:gagsounds` – every gag (all 26) with sound on in WebKit: cues, timing, output level, lazy loading (`ONLY=beaver` runs one; start the dev server first)
 - `npm run test:e2e:offline` – the built site under the Pages base path: the service worker registers, fills its cache through 503s, and the game plays with the network gone (builds first; needs no dev server)
 - `npm run test:e2e:click` – the buttons' one click and the haptic tick: every kind of button, never on a drag, a tick per truck out, nothing with the switch off (start the dev server first)
+- `npm run test:e2e:devlane` – the dev lane: the DEV label on dev and not on live, one save read by both builds, the Daily-only line, the depth gauge clear of the cards (`DEV=`, `LIVE=`, `ONLY=label|saves|line|pill`)
+- `sh tools/push-dev.sh` – push branch `next` to the dev repo and wait for the dev site's build id
 - `npm run test:e2e:judge` – judge-proofing: a fresh visitor with a mouse at 1440 x 900 and 1280 x 720 in both engines, Share, the credit line, `?demo=1`, the load-error page; screenshots (start the dev server first)
 - `npm run test:e2e:sightings` – every sighting on its real trigger at Safari's visible size, and every tappable prop answers a tap (`VIEW=375x635`, `ONLY=beaver`, `URL=` the live site; start the dev server first)
 - `npm run test:e2e:save` – a real save from the live build before Clearwater, loaded into this build at four phone sizes: everything kept, the update bar (start the dev server first)
