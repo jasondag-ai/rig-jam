@@ -64,7 +64,7 @@ for (const viewport of [{ width: 375, height: 667 }, { width: 375, height: 553 }
     };
   });
   check(/image/.test(g.cls) && g.fills && g.fit === 'cover', `the image fills the screen, cropped to fit (${g.cls})`);
-  check(g.text === 'RUSH HOURRIGS' || g.text === 'RUSH HOUR RIGS', `title "${g.text}" in ${g.font.split(',')[0]}`);
+  check(g.text === 'RIGJAM' || g.text === 'RIG JAM', `title "${g.text}" in ${g.font.split(',')[0]}`);
   check(g.title.top >= 0 && g.title.bottom < g.vh * 0.32 && g.title.left >= 0 && g.title.right <= g.vw, `title in the sky at the top (${Math.round(g.title.top)}..${Math.round(g.title.bottom)} of ${g.vh})`);
   check(g.start.top > g.vh * 0.72 && g.start.bottom <= g.vh, `TAP TO START near the bottom (${Math.round(g.start.top)} of ${g.vh})`);
   check(['title-slam', 'cover-push', 'cloud-drift', 'start-pulse'].every((n) => g.anims.includes(n)), `slam, push-in, clouds, pulse (${[...new Set(g.anims)].join(', ')})`);
