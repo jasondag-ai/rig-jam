@@ -1345,6 +1345,40 @@ something, give exact clicks and one command at a time.
   card's picture and no caption (there is no place over two columns of cards where the full pill
   covers neither). Below the cards it is the pill again.
 
+## Classic Rock music (October upgrade, job U7; Oct 9; on `next`)
+- A FOURTH MUSIC STYLE, "Classic Rock" (`MUSIC_STYLES`, id `classic`; Country stays the default),
+  whose in-play loop GETS HEAVIER AS THE PLAYER MOVES UP THE REGIONS: `classic_menu` and four
+  in-play loops, `classic_play1` (the calmest, 100 BPM) to `classic_play4` (the heaviest).
+- THE TABLE, ONE PLACE: `PLAY_TIER` in `src/audio/pack.ts` (a region's id to its tier; `playTier`
+  gives 1 for anything not named): Cardium 1, Montney 2, Duvernay 3, Mannville, Bakken and
+  Clearwater 4, the Daily Pad (`daily`) 3. **SUNDAY TURNAROUND (U3) AND BALDONNEL (U6) USE TIER
+  4: add their ids to the table when they come.** `GameView` passes `playTier(regionId)` with
+  `sound.setGround`; the engine keeps it with the scene (`setScene(scene, tier)`) and
+  `musicKey(style, scene, tier)` picks the loop. Country, 80s Retro and Chill have ONE in-play
+  loop each and play it whatever the tier (the fallback; tested), exactly as before.
+- THE FILES are Manus's pack (`~/Desktop/RHR Art Inbox/Sound files/classic_rock/`, notes in its
+  `RIGJAM_MUSIC_HANDOFF.md`): five finished loops, seamless, at -16 LUFS. They are NOT re-cut and
+  NOT re-levelled, and `tools/audio-pack.py` is NOT run over them; but they came two to three
+  times the size of the other music, so `python3 tools/music-classic.py` encodes each again as
+  the others are (decoded once, then Ogg Opus 112 kb/s first and MP3 128 kb/s behind: 1.4 to 2
+  MB each, 18 MB for the ten files), measures `seconds` (from the decoded loop) and `mean` (from
+  the MP3 that ships) into pack.json, and adds the five Credits rows (Pixabay Content License;
+  no attribution needed). `masters/` is never shipped. Like all music they are fetched only when
+  wanted and are not in the service worker's precache.
+- A CHANGE OF LOOP IS A CROSSFADE WITH NO GAP (engine.ts `syncMusic`, every style): the loop that
+  is playing plays on until the next one is fetched and decoded, and only then fades out as the
+  new one fades in (`MUSIC_FADE`). It used to fade out at once, so the first time a loop was
+  wanted there was silence while its file came. Another level of the same tier does not disturb
+  the loop.
+- SETTINGS: the four style buttons are on ONE row (`.music-styles`, four columns): a second row
+  would push the panel past a phone's screen.
+- SAVES: nothing new. The live build does not know `classic`: it plays Country, and saves Country
+  if a sound setting is changed there (Jay: fine; `DEV_ADDS.styles` in save-compat.test.ts).
+- Tests: pack.test.ts (the table, the keys, the fallback, the files' sizes and levels, no
+  masters); `test:e2e:audio` (each region's loop, the Daily Pad's, every change a crossfade with
+  sound going out throughout, Country still `country_play`, and every loop's join in Chromium
+  and WebKit). NOBODY HAS LISTENED: the levels and joins are measured, not heard.
+
 ## Daily Pads forever (October upgrade, job U2; Oct 9; on `next`)
 - A FRESH DAILY PAD EVERY DAY UNTIL NOV 27, 2028, THE SAME FOR EVERYONE. Pads 1 to 60 (Sep 30 to
   Nov 28, 2026) are `src/levels/daily.json`, in the game's script, EXACTLY AS THEY WERE (a test
@@ -1631,6 +1665,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:offline` – the built site under the Pages base path: the service worker registers, fills its cache through 503s, and the game plays with the network gone (builds first; needs no dev server)
 - `npm run test:e2e:click` – the buttons' one click and the haptic tick: every kind of button, never on a drag, a tick per truck out, nothing with the switch off (start the dev server first)
 - `npm run test:e2e:devlane` – the dev lane: the DEV label on dev and not on live, one save read by both builds, the Daily-only line, the depth gauge clear of the cards (`DEV=`, `LIVE=`, `ONLY=label|saves|line|pill`)
+- `python3 tools/music-classic.py [folder]` – encodes Manus's five Classic Rock loops like the game's other music and writes their pack.json and Credits entries (needs ffmpeg)
 - `node tools/gen-daily.ts [--check n]` – Daily Pads 61 to 790 into `public/daily/` (REGENERATE BEFORE NOV 2028); `--check` remakes pads 1..n and compares them with daily.json
 - `sh tools/push-dev.sh` – push branch `next` to the dev repo and wait for the dev site's build id
 - `npm run test:e2e:judge` – judge-proofing: a fresh visitor with a mouse at 1440 x 900 and 1280 x 720 in both engines, Share, the credit line, `?demo=1`, the load-error page; screenshots (start the dev server first)

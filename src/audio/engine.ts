@@ -336,20 +336,30 @@ class AudioEngine {
     if (want === this.wanted) return;
     this.wanted = want;
     const ctx = this.ctx;
-    const old = this.music;
-    if (old) {
+    const fadeOut = (m: { src: AudioBufferSourceNode; gain: GainNode }): void => {
+      m.gain.gain.cancelScheduledValues(ctx.currentTime);
+      m.gain.gain.setTargetAtTime(0, ctx.currentTime, MUSIC_FADE / 3);
+      m.src.stop(ctx.currentTime + MUSIC_FADE + 0.1);
+    };
+    // Music off: the loop that is playing fades away at once.
+    if (!want) {
+      if (this.music) fadeOut(this.music);
       this.music = null;
-      old.gain.gain.cancelScheduledValues(ctx.currentTime);
-      old.gain.gain.setTargetAtTime(0, ctx.currentTime, MUSIC_FADE / 3);
-      old.src.stop(ctx.currentTime + MUSIC_FADE + 0.1);
+      return;
     }
-    if (!want) return;
+    // A CHANGE OF LOOP IS A CROSSFADE WITH NO GAP (job U7): the loop that is playing PLAYS ON until the next one is
+    // fetched and decoded, and only then fades out as the new one fades in. (It used to fade out at once, and the
+    // first time a loop was wanted there was silence for as long as its file took to come.)
     const formats = pickFormat(musicInfo(want).formats, (type) => (typeof Audio === 'undefined' ? '' : new Audio().canPlayType(type)));
     const mp3 = musicInfo(want).formats.find((f) => f.type === 'audio/mpeg');
     const urls = [...new Set([...formats, ...(mp3 ? [mp3] : [])].map((f) => `music/${f.file}`))];
     void this.fetchBuffer(`music:${want}`, urls).then((buffer) => {
       // Still the loop that is wanted? (The player may have moved on while it loaded.)
-      if (!buffer || this.wanted !== want || this.music?.key === want) return;
+      if (this.wanted !== want || this.music?.key === want) return;
+      const old = this.music;
+      this.music = null;
+      if (old) fadeOut(old);
+      if (!buffer) return; // (it would not come: silence, rather than the wrong loop)
       const src = ctx.createBufferSource();
       src.buffer = buffer;
       src.loop = true;
