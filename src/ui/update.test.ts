@@ -8,12 +8,14 @@ describe('the version', () => {
     expect(APP.version).toMatch(/^\d+\.\d+\.\d+$/);
     expect(APP.build.length).toBeGreaterThan(0);
     expect(versionText({ version: '0.9.0', build: 'a1b2c3d' })).toBe('Version 0.9.0 (a1b2c3d)');
-    expect(versionText()).toBe(`Version ${APP.version} (${APP.build})`);
+    // (This test also runs in the dev repo's own Action, where the build IS the dev copy.)
+    expect(versionText()).toBe(`Version ${APP.version} (${APP.build})${isDev() ? ' DEV' : ''}`);
     // The dev lane's copy says so; the live game never does.
     expect(versionText({ version: '0.9.0', build: 'a1b2c3d', channel: 'dev' })).toBe('Version 0.9.0 (a1b2c3d) DEV');
     expect(versionText({ version: '0.9.0', build: 'a1b2c3d', channel: 'live' })).toBe('Version 0.9.0 (a1b2c3d)');
-    expect(APP.channel).toBe('live');
-    expect(isDev()).toBe(false);
+    expect(['live', 'dev']).toContain(APP.channel);
+    expect(isDev()).toBe(APP.channel === 'dev');
+    expect(isDev({ channel: 'live' })).toBe(false);
     expect(isDev({ channel: 'dev' })).toBe(true);
   });
 });
