@@ -1,5 +1,5 @@
 import { EXIT_MOST_MS } from './exit.ts';
-import { SolverLimitError, canUndo, getMoveRange, isWon, newGame, nextMove, tryMove, undo, type GameState, type Level, type Move, SIZE, sizeOf } from '../engine/index.ts';
+import { SolverLimitError, canUndo, getMoveRange, isWon, newGame, nextMove, solve, tryMove, undo, type GameState, type Level, type Move, SIZE, sizeOf } from '../engine/index.ts';
 import { seedFrom } from '../engine/rng.ts';
 import { BoardView } from './board-view.ts';
 import { sceneryHtml } from './scenery.ts';
@@ -101,6 +101,9 @@ export class GameView {
   /** 0 = no hint showing, 1 = truck highlighted, 2 = destination shown. */
   private hintStep: 0 | 1 | 2 = 0;
   private hint: Move | null = null;
+  /** Cached solve path so subsequent hints on the same line are instant. */
+  private hintPath: Move[] | null = null;
+  private hintSolving = false;
   private noteTimer = 0;
   private theme: Theme;
   private daily: DailyInfo | null;
@@ -703,7 +706,7 @@ export class GameView {
       if (now - this.lastExitAt <= GAG_TRIGGERS.nearMiss.backToBackMs) this.fire('nearMiss');
       this.lastExitAt = now;
     }
-    this.resetHint();
+    this.resetHint({ id, delta: result.delta });
     this.showLevelHint();
     this.board.sync(this.state, true, result.exited ? id : undefined);
     // A witness line: with a gag on screen, the player's move makes a driver remark on it. Only
@@ -1047,7 +1050,7 @@ export class GameView {
     if (this.strips.gopherLunch && !this.eggDone.has('gopherLunch') && !lunchNever() && lunchComes(loadProgress().demo || lunchAlways())) this.fire('gopherLunch');
   }
 
-  private hintPressed(): void {
+  private async hintPressed(): Promise<void> {
     if (this.hintStep === 1 && this.hint) {
       const range = getMoveRange(this.state, this.hint.id);
       this.board.showHintTarget(this.hint, this.state, range?.exitDelta === this.hint.delta);
@@ -1056,7 +1059,7 @@ export class GameView {
       this.updateHud();
       return;
     }
-    if (this.hintStep !== 0) return;
+    if (this.hintStep !== 0 || this.hintSolving) return;
 
     const spent = spendHint(loadProgress());
     if (!spent) {
@@ -1064,11 +1067,25 @@ export class GameView {
       return;
     }
     let move: Move | null;
-    try {
-      move = nextMove(this.state);
-    } catch (e) {
-      if (!(e instanceof SolverLimitError)) throw e;
-      move = null;
+    if (this.hintPath && this.hintPath.length > 0) {
+      // Cached from the last solve: instant.
+      move = this.hintPath[0];
+    } else {
+      // Show a message and let it paint before the solver blocks.
+      this.note('Calling the dispatcher\u2026', true);
+      this.hintSolving = true;
+      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+      if (!this.el.isConnected) return; // left the screen while waiting
+      this.hintSolving = false;
+      let path: Move[] | null;
+      try {
+        path = solve(this.state.level, 500_000, this.state.trucks, this.state.moves);
+      } catch (e) {
+        if (!(e instanceof SolverLimitError)) throw e;
+        path = null;
+      }
+      move = path?.[0] ?? null;
+      this.hintPath = path && path.length > 1 ? path.slice(1) : null;
     }
     if (!move) {
       this.note('The dispatcher is stumped too. Try Restart.');
@@ -1082,7 +1099,15 @@ export class GameView {
     this.updateHud();
   }
 
-  private resetHint(): void {
+  private resetHint(played?: { id: string; delta: number }): void {
+    // If the player followed the hint, advance the cached path; otherwise drop it.
+    if (played && this.hint && played.id === this.hint.id && played.delta === this.hint.delta) {
+      // hintPath already points at the move AFTER this.hint (sliced at solve time or shifted here).
+      if (this.hintPath && this.hintPath.length > 0) this.hintPath = this.hintPath.slice(1);
+      else this.hintPath = null;
+    } else {
+      this.hintPath = null;
+    }
     this.hint = null;
     this.hintStep = 0;
     this.board.clearHint();

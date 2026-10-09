@@ -3762,8 +3762,7 @@ canvas.berm-night { opacity: 0; transition: opacity var(--night-out) ease-in-out
 .gate[data-side='bottom'] .clock { left: 10%; top: 50%; transform: translate(-50%, -50%); }
 .gate[data-side='left'] .clock { left: 50%; top: 10%; transform: translate(-50%, -50%); }
 .gate[data-side='right'] .clock { left: 50%; top: 90%; transform: translate(-50%, -50%); }
-/* Shut for this move: the gate's colour is held back a little, so the open ones stand out. */
-.board .gate.shift-gate:not(.shift-open) .gw .g-leaf { filter: saturate(0.55) brightness(0.9); }
+/* Shut clock gates keep their full colour; the clock itself is the open/shut signal. */
 .board.gate-art .gate.shift-gate .gw .g-badge { left: 40%; }
 
 /* A tanker's load tag, beside its symbol badge toward the tail: a hollow drop until it has stopped
@@ -4339,4 +4338,32 @@ body:has(.update-bar) .toast { margin-top: var(--bar-room, 0px); }
 .overlay.win .sound-nudge img { width: 26px; height: 26px; }
 @media (prefers-reduced-motion: reduce) {
   .overlay.win .sound-nudge { animation: none; }
+}
+
+/* ---------- Landscape block: a touch phone held sideways gets this over the whole game ---------- */
+.landscape-block { display: none; }
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 499px) {
+  .landscape-block {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    background: var(--sky, #4fb0ff);
+    color: var(--ink, #2b1e16);
+    font: 700 20px/1.35 'Fredoka', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  .landscape-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 24px 32px;
+    border: 3px solid var(--outline, #2b1e16);
+    border-radius: 20px;
+    background: var(--cream, #fffdf5);
+    box-shadow: 0 4px 0 var(--outline, #2b1e16);
+    text-align: center;
+  }
 }

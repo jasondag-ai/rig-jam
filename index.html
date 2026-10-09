@@ -47,6 +47,13 @@
         setTimeout(function () { fail('This is taking a while. Check your connection, then tap Reload.'); }, 12000);
       })();
     </script>
+    <!-- LANDSCAPE BLOCK: on a phone held sideways the game is unplayable; this covers everything until they turn it. -->
+    <div class="landscape-block" aria-label="Turn your phone upright">
+      <div class="landscape-card">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="10" y="4" width="28" height="40" rx="4" stroke="#2b1e16" stroke-width="3" fill="#fff"/><circle cx="24" cy="38" r="2" fill="#2b1e16"/><path d="M38 18l5-5m0 0l-5-5m5 5H32" stroke="#2b1e16" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Turn your phone upright</span>
+      </div>
+    </div>
     <noscript><p style="position:fixed;inset:auto 0 24px;margin:0;color:#fff;font:700 18px system-ui,sans-serif;text-align:center">Rig Jam needs JavaScript to run.</p></noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
