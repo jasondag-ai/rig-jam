@@ -10,7 +10,7 @@ import { sound } from '../audio/engine.ts';
 import type { GagId } from './gag-triggers.ts';
 import { BEAR_BEATS, BEAR_END, BEAR_FRAC, BEAR_GAP, bPose, bearApply, bearScene } from './bear.ts';
 import { BUSH_BOX, BUSH_FRAC, bushMarkup } from './gag-bush.ts';
-import { LUNCH_BEATS, LUNCH_END, LUNCH_GAP, lunchApply, lunchPose, lunchScene, moundWidthFor } from './gopher-lunch.ts';
+import { LIP, LUNCH_BEATS, LUNCH_END, LUNCH_GAP, MOUND_BOX, lunchApply, lunchPose, lunchScene, moundWidthFor } from './gopher-lunch.ts';
 import { BUDDY_STOP, RISER_FRAC, TONGUE_BEATS, TONGUE_END, TONGUE_LINE, riserPup, tongueApply, tonguePose, tongueScene } from './frozen-tongue.ts';
 import { SAM_BEATS, SAM_END, SAM_X, samFrame, samPose, samScene } from './sam.ts';
 import { PC_BEATS, PC_END, PORC_FRAC, QUILL_SHUFFLER_FRAC, SHIFT, pcApply, pcPose, porcupineScene } from './porcupine.ts';
@@ -548,6 +548,16 @@ export const nearMissDef: TimelineDef = {
     // The gopher lives in a layer that ends at the hole line, so he comes up out of the hole.
     const under = layer('gopher-layer');
     under.style.height = `${hole.y}px`;
+    // HE COMES UP OUT OF THE HOLE, IN FRONT OF THE MOUND (Job Y). His layer ends at the hole line, and a line worked
+    // out from that stood ABOVE the mound's own (530 against 539 at 390 x 664), so the whole mound was drawn over
+    // him and he rose BEHIND it. His layer stands on the mound's own ground line (put on after it: drawn over it),
+    // and the hole's near lip is drawn over him on that same line, as in Gopher Lunch.
+    const moundLine = Number(mound.dataset.ground);
+    const lips = layer('gopher-lip-layer');
+    if (Number.isFinite(moundLine)) { setGround(under, moundLine, 'set'); setGround(lips, moundLine, 'set'); }
+    const frame = lips.getBoundingClientRect();
+    const lip = makePup(lips, LIP, { vw: MOUND_BOX.vw, vh: MOUND_BOX.vh, ax: 0, ay: 0, frac: m.width / (frame.width || screen.width), spot: { x: (m.left - frame.left) / (frame.width || screen.width), y: (m.top - frame.top) / (frame.height || screen.height) } });
+    place(lip);
     const over = layer('hotshot-layer');
     const scene = nearMissScene(under, over, { x: hole.x / screen.width, y: 1 }, stripGeom(screen.width, host.strip()).ground / screen.height, scale);
     scene.holeY = hole.y;
