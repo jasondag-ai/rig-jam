@@ -1,4 +1,6 @@
-# Rush Hour Rigs
+# Rig Jam
+
+Renamed from Rush Hour Rigs on Oct 9, 2026 (trademark).
 
 STANDING RULE, BEFORE EVERY JOB: read `GAME_BIBLE.md`, `ART_BIBLE.md` and `STANDING_RULES.md` from
 `~/Desktop/RHR Art Inbox/` (those are the latest versions). If any differs from the copy in the
