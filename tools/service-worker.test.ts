@@ -7,7 +7,7 @@ const pub = (p: string) => new URL(`../public/${p}`, import.meta.url);
 describe('PWA', () => {
   it('has an installable manifest with icons that exist', () => {
     const m = JSON.parse(readFileSync(pub('manifest.webmanifest'), 'utf8'));
-    expect(m).toMatchObject({ name: 'Rush Hour Rigs', start_url: './', scope: './', display: 'standalone' });
+    expect(m).toMatchObject({ name: 'Rig Jam', start_url: './', scope: './', display: 'standalone' });
     const sizes = m.icons.map((i: { sizes: string }) => i.sizes);
     expect(sizes).toEqual(expect.arrayContaining(['192x192', '512x512']));
     for (const icon of m.icons) expect(existsSync(pub(icon.src))).toBe(true);

@@ -82,7 +82,7 @@ describe('share text', () => {
   it('has pad, moves vs par, hats, badge, streak and link', () => {
     expect(shareText(base)).toBe(
       [
-        'Rush Hour Rigs 🚛 Daily Pad #3',
+        'Rig Jam 🚛 Daily Pad #3',
         '👷👷👷 8 moves · par 8',
         '🦺 ZERO INCIDENT',
         '🚧 Days without incident: 3',

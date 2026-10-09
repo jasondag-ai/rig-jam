@@ -97,7 +97,7 @@ export interface ShareInput {
 /** Spoiler-free result: no layout, just the numbers. */
 export function shareText(r: ShareInput): string {
   return [
-    `Rush Hour Rigs 🚛 Daily Pad #${r.pad}`,
+    `Rig Jam 🚛 Daily Pad #${r.pad}`,
     `${'👷'.repeat(r.hats)}${'▫️'.repeat(3 - r.hats)} ${r.moves} moves · par ${r.par}`,
     ...(r.zeroIncident ? ['🦺 ZERO INCIDENT'] : []),
     `🚧 Days without incident: ${r.streak}`,

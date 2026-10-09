@@ -212,7 +212,7 @@ def main() -> None:
             run('-i', str(tmp), '-af', f'afade=t=in:d=0.003,afade=t=out:st={max(0, seconds - fade):.3f}:d={fade}', '-ac', '1', '-ar', '44100', '-b:a', '128k', str(out))
         m = measure(out)
         pack['sfx'][key] = {'seconds': m['seconds'], 'mean': m['mean'], 'peak': m['peak'], 'loop': loop}
-        c = sfx_credits.get(src) or {'title': '', 'author': 'Synthesized for Rush Hour Rigs', 'licence': 'Original', 'url': ''}
+        c = sfx_credits.get(src) or {'title': '', 'author': 'Synthesized for Rig Jam', 'licence': 'Original', 'url': ''}
         credits.append({'use': key, 'kind': 'sfx', 'file': src, **c})
 
     for key, (folder, stem, ogg_dir, bake) in MUSIC.items():

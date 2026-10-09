@@ -163,7 +163,7 @@ function showLevels(requested = savedRegion()): void {
       <button class="help" aria-label="How to play">?</button>
       <button class="binoculars" aria-label="Wildlife Log">${BINOCULARS}</button>
       <button class="gear" aria-label="Settings">${uiImg('icon_gear')}</button>
-      <h1>Rush Hour Rigs</h1>
+      <h1>Rig Jam</h1>
       ${Object.keys(progress.best).length ? '' : '<p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>'}
     </header>
     <div class="daily-block"></div>

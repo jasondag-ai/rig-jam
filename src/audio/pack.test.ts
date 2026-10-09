@@ -308,7 +308,7 @@ describe('credits', () => {
     const groups = sfxCredits();
     expect(groups.reduce((n, g) => n + g.count, 0)).toBe(65);
     // (The outhouse door, the pumpjack, and the seventeen synthesized picks of the sound pass, and the buttons' click.)
-    expect(groups.find((g) => g.author === 'Synthesized for Rush Hour Rigs')?.count).toBe(25);
+    expect(groups.find((g) => g.author === 'Synthesized for Rig Jam')?.count).toBe(25);
     // Nothing picked needs an attribution licence (no CC BY track): Pixabay, Mixkit, CC0 and our own.
     for (const c of CREDITS) expect(c.licence, c.file).toMatch(/Pixabay|Mixkit|CC0|Original/);
   });

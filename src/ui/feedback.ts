@@ -45,7 +45,7 @@ export function lastLevel(): string {
 
 /** What the Copy button copies: the address, then version, phone and level, ready to paste into an email. */
 export function feedbackText(email: string, info: { version: string; phone: string; screen: string; level: string }): string {
-  return [`To: ${email}`, 'Subject: Rush Hour Rigs feedback', '', 'What happened:', '', '', '---', info.version, `Phone: ${info.phone} (${info.screen})`, `Level: ${info.level}`].join('\n');
+  return [`To: ${email}`, 'Subject: Rig Jam feedback', '', 'What happened:', '', '', '---', info.version, `Phone: ${info.phone} (${info.screen})`, `Level: ${info.level}`].join('\n');
 }
 
 /** The same, read off this phone. */
