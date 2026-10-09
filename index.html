@@ -15,7 +15,39 @@
     <title>Rush Hour Rigs</title>
   </head>
   <body>
-    <div id="app"></div>
+    <!-- NEVER A WHITE SCREEN: until the game is up this shows in its place (the game replaces everything inside #app
+         with its first screen). Styled right here, so it shows even if the game's own files never arrive. If the
+         game's script or styles fail to load, or it breaks while starting, or nothing has come after 12 seconds, it
+         says so and offers Reload. -->
+    <div id="app">
+      <div id="boot" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#4fb0ff;color:#fff;font:700 20px/1.35 system-ui,-apple-system,'Segoe UI',sans-serif;text-align:center">
+        <div style="font-size:30px;letter-spacing:.5px;text-shadow:0 3px 0 #2b1e16">RUSH HOUR RIGS</div>
+        <div id="boot-msg" style="max-width:320px;text-shadow:0 2px 0 #2b1e16">Loading&hellip;</div>
+        <button id="boot-reload" type="button" hidden style="font:inherit;color:#2b1e16;background:#ffd23f;border:3px solid #2b1e16;border-radius:16px;padding:12px 28px;min-height:48px;cursor:pointer" onclick="location.reload()">Reload</button>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var failed = false;
+        function up() { return !document.getElementById('boot'); }
+        function fail(text) {
+          if (failed || up()) return;
+          failed = true;
+          document.getElementById('boot-msg').textContent = text;
+          document.getElementById('boot-reload').hidden = false;
+        }
+        var gone = "The game didn't load. Check your connection, then tap Reload.";
+        // A script or stylesheet that never arrived (these errors do not bubble: listen on the way down).
+        window.addEventListener('error', function (e) {
+          var t = e.target;
+          if (t && t !== window && (t.tagName === 'SCRIPT' || t.tagName === 'LINK')) fail(gone);
+          else if (t === window) fail('Something went wrong starting the game. Tap Reload to try again.');
+        }, true);
+        window.addEventListener('unhandledrejection', function () { fail('Something went wrong starting the game. Tap Reload to try again.'); });
+        setTimeout(function () { fail('This is taking a while. Check your connection, then tap Reload.'); }, 12000);
+      })();
+    </script>
+    <noscript><p style="position:fixed;inset:auto 0 24px;margin:0;color:#fff;font:700 18px system-ui,sans-serif;text-align:center">Rush Hour Rigs needs JavaScript to run.</p></noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
