@@ -481,6 +481,81 @@
     }
    ],
    "crossfaded": false
+  },
+  "classic_menu": {
+   "seconds": 114.28,
+   "mean": -19.5,
+   "formats": [
+    {
+     "file": "classic_menu.opus",
+     "type": "audio/ogg; codecs=opus"
+    },
+    {
+     "file": "classic_menu.mp3",
+     "type": "audio/mpeg"
+    }
+   ],
+   "crossfaded": true
+  },
+  "classic_play1": {
+   "seconds": 124.8,
+   "mean": -19.9,
+   "formats": [
+    {
+     "file": "classic_play1.opus",
+     "type": "audio/ogg; codecs=opus"
+    },
+    {
+     "file": "classic_play1.mp3",
+     "type": "audio/mpeg"
+    }
+   ],
+   "crossfaded": true
+  },
+  "classic_play2": {
+   "seconds": 131.67,
+   "mean": -19.2,
+   "formats": [
+    {
+     "file": "classic_play2.opus",
+     "type": "audio/ogg; codecs=opus"
+    },
+    {
+     "file": "classic_play2.mp3",
+     "type": "audio/mpeg"
+    }
+   ],
+   "crossfaded": true
+  },
+  "classic_play3": {
+   "seconds": 99.69,
+   "mean": -19.3,
+   "formats": [
+    {
+     "file": "classic_play3.opus",
+     "type": "audio/ogg; codecs=opus"
+    },
+    {
+     "file": "classic_play3.mp3",
+     "type": "audio/mpeg"
+    }
+   ],
+   "crossfaded": true
+  },
+  "classic_play4": {
+   "seconds": 132.92,
+   "mean": -18.8,
+   "formats": [
+    {
+     "file": "classic_play4.opus",
+     "type": "audio/ogg; codecs=opus"
+    },
+    {
+     "file": "classic_play4.mp3",
+     "type": "audio/mpeg"
+    }
+   ],
+   "crossfaded": true
   }
  }
 }

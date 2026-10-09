@@ -637,5 +637,50 @@
   "author": "alphaproxy",
   "licence": "Pixabay Content License",
   "url": "https://pixabay.com/music/beats-chillhop-mix-136000/"
+ },
+ {
+  "use": "classic_menu",
+  "kind": "music",
+  "file": "music/classic_menu.opus",
+  "title": "Stylish Upbeat Rock",
+  "author": "Audioknap",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/music/rock-stylish-upbeat-rock-615339/"
+ },
+ {
+  "use": "classic_play1",
+  "kind": "music",
+  "file": "music/classic_play1.opus",
+  "title": "Keep It Moving (This Classic Rock)",
+  "author": "AlexGrohl",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/music/rock-keep-it-moving-this-classic-rock-470595/"
+ },
+ {
+  "use": "classic_play2",
+  "kind": "music",
+  "file": "music/classic_play2.opus",
+  "title": "Energy Action Sport Rock",
+  "author": "kornevmusic",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/music/rock-energy-action-sport-rock-615473/"
+ },
+ {
+  "use": "classic_play3",
+  "kind": "music",
+  "file": "music/classic_play3.opus",
+  "title": "Groove Rock and Roll",
+  "author": "CreativeFoxMusic",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/music/rock-groove-rock-and-roll-585265/"
+ },
+ {
+  "use": "classic_play4",
+  "kind": "music",
+  "file": "music/classic_play4.opus",
+  "title": "Vintage Rock",
+  "author": "ikoliks",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/music/hard-rock-vintage-rock-327950/"
  }
 ]
