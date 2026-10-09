@@ -137,6 +137,9 @@ export function bumpLine(hit: BumpHit, nth: number, last: string | null, random:
 //   par   – cleared at par
 //   close – one to three moves over par
 //   over  – worse than that
+/** Company Man lines that only make sense on a Daily Pad's win card (there is another one tomorrow). */
+export const DAILY_ONLY_LINES: readonly string[] = ['You can come back tomorrow.'];
+
 export const COMPANY_LINES = {
   par: [
     "Textbook. I'll tell head office.",

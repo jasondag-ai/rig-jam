@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mulberry32 } from '../engine/rng.ts';
 import { companyLine, tierFor } from './company.ts';
-import { COMPANY_LINES, FOURTH_WALL_LINES } from './lines.ts';
+import { COMPANY_LINES, DAILY_ONLY_LINES, FOURTH_WALL_LINES } from './lines.ts';
 
 describe('Company Man', () => {
   it('picks the tier by result', () => {
@@ -42,5 +42,19 @@ describe('Company Man', () => {
     expect(FOURTH_WALL_LINES).toEqual(['I saw it too. Get back to work.', 'Quit watching the wildlife. Watch the trucks.']);
     // Any result: over par too.
     expect(FOURTH_WALL_LINES).toContain(companyLine(20, 8, () => 0, true));
+  });
+
+  it('"You can come back tomorrow." is said only on a Daily Pad\'s win card', () => {
+    expect(DAILY_ONLY_LINES).toEqual(['You can come back tomorrow.']);
+    expect(COMPANY_LINES.par).toContain('You can come back tomorrow.');
+    // A level's card: never, however the dice fall.
+    for (let i = 0; i < 400; i++) expect(DAILY_ONLY_LINES).not.toContain(companyLine(8, 8, () => (i % 97) / 97));
+    for (let i = 0; i < 400; i++) expect(DAILY_ONLY_LINES).not.toContain(companyLine(8, 8, Math.random, false, false));
+    // The Daily Pad's card: it can come up.
+    const said = new Set<string>();
+    for (let i = 0; i < 400; i++) said.add(companyLine(8, 8, () => (i % 97) / 97, false, true));
+    expect(said.has('You can come back tomorrow.')).toBe(true);
+    // And there is always something else to say on a level's card.
+    expect(COMPANY_LINES.par.filter((l) => !DAILY_ONLY_LINES.includes(l)).length).toBeGreaterThan(2);
   });
 });

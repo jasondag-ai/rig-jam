@@ -1206,7 +1206,7 @@ export class GameView {
           <button class="btn quiet" data-act="levels">All levels</button>
         </div>
       </div>`;
-    this.winEl.querySelector('.company-says')!.textContent = companyLine(moves, par, Math.random, this.gagsThisLevel.size > 0);
+    this.winEl.querySelector('.company-says')!.textContent = companyLine(moves, par, Math.random, this.gagsThisLevel.size > 0, !!this.daily);
     setBannerCap(this.winEl.querySelector<HTMLElement>('.card h2')!);
     // The characters are flat puppet stills in the worker's build (win-cast.ts), one expression per
     // result (par, close, over), moved only by the little GSAP motion below.
