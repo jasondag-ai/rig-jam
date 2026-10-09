@@ -627,7 +627,7 @@ export class GameView {
     // (On the next frame: changing a size from inside the resize watcher's own callback makes the browser complain.)
     if (!this.noteEl.style.minHeight && this.noteEl.textContent) requestAnimationFrame(() => { if (!this.noteEl.style.minHeight && this.noteEl.textContent && this.noteEl.offsetHeight > 0) this.noteEl.style.minHeight = `${this.noteEl.offsetHeight}px`; });
     const r = this.stage.getBoundingClientRect();
-    this.board.resize(r.width, r.height);
+    this.board.resize(r.width, deskHeight(r.width, r.height));
     this.liftPad(r);
     // Sky meets the ground just above the board; trees stand around it.
     const screen = this.el.getBoundingClientRect();
@@ -1235,13 +1235,27 @@ export class GameView {
     confettiBurst(this.winEl, this.winEl.clientHeight);
   }
 
-  /** One tap: copy the spoiler-free result, ready to paste into Messages. */
+  /** One tap: copy the spoiler-free result, ready to paste anywhere. */
   private async share(button: HTMLElement): Promise<void> {
     const ok = await copyText(this.shareMessage);
-    button.textContent = ok ? 'Copied! Paste it in Messages' : 'Could not copy';
+    button.textContent = ok ? 'Copied! Paste it anywhere.' : 'Could not copy';
     button.classList.toggle('done', ok);
   }
 }
+
+/**
+ * A SHORT DESKTOP WINDOW (1280 x 720 and the like; Jay, Oct 8): the game's column is as wide there as it gets, and
+ * a lease as big as the stage is tall leaves nothing under it, so the bottom strip and all its sightings were gone.
+ * There the lease is made just small enough to leave `DESK_ROOM` of spare height, which `liftPad` shares out: a
+ * strip about as tall as a phone's in Safari, and a little sky. Never under `DESK_LEAST`. A taller window already
+ * has that room and is not touched; A PHONE IS NEVER TOUCHED (a mouse, and the column at its desktop width).
+ */
+export const DESK_ROOM = 114, DESK_LEAST = 340, DESK_WIDTH = 500;
+export function deskHeight(width: number, height: number, desktop: boolean = isDesktop()): number {
+  if (!desktop || width < DESK_WIDTH) return height;
+  return Math.min(height, Math.max(height - DESK_ROOM, DESK_LEAST));
+}
+const isDesktop = (): boolean => typeof matchMedia === 'function' && matchMedia('(hover: hover) and (pointer: fine)').matches;
 
 /** Preview/test hook: ?idle=0.1 makes the magpie and spotter turn up 10x sooner. */
 function idleScale(): number {
