@@ -6,7 +6,7 @@
 //    without a ghost click landing on the next screen
 //  - every button/link is at least 44x44 with touch-action set
 // Run: npm run dev -- --host   (in one terminal), then:  npm run test:e2e
-// Or against the live site:  URL=https://jasondag-ai.github.io/rush-hour-rigs/ npm run test:e2e
+// Or against the live site:  URL=https://jasondag-ai.github.io/rig-jam/ npm run test:e2e
 import { UNLOCKED } from './progress.mjs';
 import { chromium, webkit, devices } from 'playwright';
 import { DAILY_LEVELS, REGIONS } from '../src/levels/regions.ts';

@@ -672,7 +672,7 @@ something, give exact clicks and one command at a time.
 ## Cover (title screen)
 - `src/ui/cover.ts`: shown on every app open (never between levels). Hero image `public/cover.webp`
   (1080x1920, under 300 KB; NOT preloaded in index.html any more: the preload went unused whenever the cover is skipped, and the browser warned) fills the screen (`object-fit: cover`);
-  "RUSH HOUR RIGS" slams down into the sky with a bounce and a dust puff; 8s push-in; two soft
+  "RIG JAM" slams down into the sky with a bounce and a dust puff; 8s push-in; two soft
   clouds drift (blurred white puffs with a pale blue underside at about half opacity, matched to the
   image's own clouds; on wide screens they sit up in the thin strip of sky); TAP TO START pulses. One tap anywhere (`onTap`, no ghost click) opens the level list. If the
   image isn't loaded within 1s (`IMAGE_WAIT_MS`) the title shows over a sky gradient. Reduced motion:
@@ -1005,7 +1005,7 @@ something, give exact clicks and one command at a time.
   padding of every screen it shows over and of any overlay open there (and toasts drop below it),
   so it never lies over the header's buttons. Never give it a z-index fight instead.
 - THE SERVICE WORKER (`tools/service-worker.ts`): every path comes from its own scope
-  (`self.registration.scope`), so it serves the site at `/` and under `/rush-hour-rigs/` alike;
+  (`self.registration.scope`), so it serves the site at `/` and under `/rig-jam/` alike;
   main.ts registers `sw.js` beside the page with that scope. ITS INSTALL CANNOT BE SUNK BY ONE BAD
   FETCH: the core (the page, its script, its styles) first, then the rest `PRECACHE_BATCH` at a
   time, each file tried `PRECACHE_TRIES` times; what still will not come is cached when the game

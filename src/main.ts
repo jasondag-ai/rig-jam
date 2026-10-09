@@ -552,7 +552,7 @@ document.fonts?.ready.then(() => game?.fit());
 // Offline play and Add to Home Screen. Only in the built site, so dev reloads stay simple.
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   // The worker sits beside the page, wherever the site is served from (the site's root, or
-  // /rush-hour-rigs/ on GitHub Pages): its address and its scope are worked out from the page's own.
+  // /rig-jam/ on GitHub Pages): its address and its scope are worked out from the page's own.
   const register = () => void navigator.serviceWorker.register(new URL('sw.js', document.baseURI), { scope: new URL('./', document.baseURI).pathname }).catch(() => {});
   if (document.readyState === 'complete') register();
   else window.addEventListener('load', register);

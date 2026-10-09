@@ -1,4 +1,6 @@
-# Rush Hour Rigs: standing rules (read with GAME_BIBLE.md)
+# Rig Jam: standing rules (read with GAME_BIBLE.md)
+
+Renamed from Rush Hour Rigs on Oct 9, 2026 (trademark).
 
 These rules override anything older in the Game Bible. Every gag, prop and scene change must pass all of them. Added Oct 6, 2026.
 

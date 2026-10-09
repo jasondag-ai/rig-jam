@@ -1,4 +1,4 @@
-// OFFLINE (Job U): the built site, served under the GitHub Pages base path (/rush-hour-rigs/), by a
+// OFFLINE (Job U): the built site, served under the GitHub Pages base path (/rig-jam/), by a
 // little server of its own that can be made to turn requests away.
 //  - the service worker registers, with its scope on the base path, in Chromium and in WebKit
 //  - it fills its cache even when the host turns a burst of requests away (503s): the install is
@@ -11,7 +11,7 @@ import { createServer } from 'node:http';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 
-const BASE = '/rush-hour-rigs/';
+const BASE = '/rig-jam/';
 const DIST = join(process.cwd(), 'dist');
 let failures = 0;
 const check = (ok, text) => {

@@ -3,7 +3,7 @@
 
 /** Daily Pad #1 is this local date. */
 export const DAILY_EPOCH = '2026-09-30';
-export const GAME_URL = 'https://jasondag-ai.github.io/rush-hour-rigs/';
+export const GAME_URL = 'https://jasondag-ai.github.io/rig-jam/';
 
 /** Local calendar date as 'YYYY-MM-DD'. */
 export function dayKey(date: Date): string {

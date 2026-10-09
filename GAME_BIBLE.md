@@ -1,6 +1,8 @@
-# Rush Hour Rigs: Game Bible
+# Rig Jam: Game Bible
 
-The master reference for Rush Hour Rigs. Every Manus and Claude Code prompt is built from this file. It covers the vision, the screen, the camera rules, every gag and every decision made. Art rules (style, accuracy, never-draw list) live in ART_BIBLE.md. Update this file whenever Jay changes a decision.
+Renamed from Rush Hour Rigs on Oct 9, 2026 (trademark).
+
+The master reference for Rig Jam. Every Manus and Claude Code prompt is built from this file. It covers the vision, the screen, the camera rules, every gag and every decision made. Art rules (style, accuracy, never-draw list) live in ART_BIBLE.md. Update this file whenever Jay changes a decision.
 
 Last updated: Oct 3, 2026. Built from all project conversations and the live repo.
 
@@ -13,7 +15,7 @@ Clear every truck off an Alberta oilfield lease pad through the gate that matche
 - **Audience:** anyone. Judges and the general public first, oilfield workers second. Every gag must be funny without industry knowledge. Terminology stays industry-accurate (see section 8).
 - **Hook for the post:** a P.Eng with zero game-dev experience shipped this by directing AI.
 - **Deadline:** hackathon post by Oct 30, 2026 (due Nov 1). Beta with friends and family next.
-- **Live:** https://jasondag-ai.github.io/rush-hour-rigs/
+- **Live:** https://jasondag-ai.github.io/rig-jam/
 - **Art direction:** stylized Pixar-like 3D (locked Oct 3). See ART_BIBLE.md.
 
 ## 2. What's built (as of Oct 3)

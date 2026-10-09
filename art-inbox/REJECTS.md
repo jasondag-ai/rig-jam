@@ -7,7 +7,7 @@ listed here was accepted.
 
 ## 1. `bear_wipe` (12 frames)
 
-Redo `bear_wipe` for Rush Hour Rigs. Problems with the last delivery: it has 15 frames (spec: 12,
+Redo `bear_wipe` for Rig Jam. Problems with the last delivery: it has 15 frames (spec: 12,
 section 5 Batch C item 6), and the rabbit is held down at the bear's side and hip and then waved in
 front of him, so it never reads as wiping his bottom (spec: "holds a rabbit flat on his rump under
 the tail, two strokes, relieved face"). Deliver exactly 12 frames on a 512 x 512 transparent canvas,

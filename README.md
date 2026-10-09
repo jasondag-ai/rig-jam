@@ -5,7 +5,7 @@ Renamed from Rush Hour Rigs on Oct 9, 2026 (trademark).
 A mobile-first sliding puzzle set on a 6x6 oilfield lease pad. Drag each truck along its length and
 drive it out through the gate of its color. Clear the pad in as few moves as you can.
 
-**Play:** https://jasondag-ai.github.io/rush-hour-rigs/
+**Play:** https://jasondag-ai.github.io/rig-jam/
 
 ## Develop
 ```

@@ -25,7 +25,7 @@ export const PRECACHE_TRIES = 3;
  * its styles); `rest`: everything else (sprites, sounds, icons, fonts).
  *
  * EVERY PATH IS RELATIVE TO THE WORKER'S OWN ADDRESS (`self.registration.scope`), so the same
- * worker serves the site at `/` and under `/rush-hour-rigs/` on GitHub Pages.
+ * worker serves the site at `/` and under `/rig-jam/` on GitHub Pages.
  *
  * THE INSTALL CANNOT BE SUNK BY ONE BAD FETCH. (It used to ask for all two hundred files at once
  * with `cache.addAll`, which fails as a whole if any one of them fails: on a slow line or a host

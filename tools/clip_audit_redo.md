@@ -10,7 +10,7 @@ One task per gag (GAME_BIBLE section 8). Each prompt is complete on its own. Att
 
 ### 1. Magpie (replaces magpie_land, magpie_poop, magpie_fly_off)
 
-Rush Hour Rigs, magpie gag. Stylized Pixar-like 3D, soft warm light from the top left, match the attached magpie model sheet exactly. ONE locked camera for all three clips: pure side view, bird facing right, 1080 x 1080, 24 fps, solid #00FF00 background, no ground, no shadow, no text. The magpie stays IN PLACE in every clip: body centred at frame centre, feet line at 70% of frame height, the whole bird (tail included) inside the frame with a 10% margin, same size in all three (bird about 40% of frame width). It never enters, leaves or crosses the frame; the game moves it.
+Rig Jam, magpie gag. Stylized Pixar-like 3D, soft warm light from the top left, match the attached magpie model sheet exactly. ONE locked camera for all three clips: pure side view, bird facing right, 1080 x 1080, 24 fps, solid #00FF00 background, no ground, no shadow, no text. The magpie stays IN PLACE in every clip: body centred at frame centre, feet line at 70% of frame height, the whole bird (tail included) inside the frame with a 10% margin, same size in all three (bird about 40% of frame width). It never enters, leaves or crosses the frame; the game moves it.
 Pose A = standing side-on, wings folded, tail level. Pose F = mid-flap in flight, wings level, feet tucked.
 - `magpie_land.mp4` (2 s): starts in Pose F flapping in place, flares its wings, feet come down, ends in Pose A.
 - `magpie_poop.mp4` (3 s): starts in Pose A, small hop in place, cheeky look at the camera, tail lifts, a small white dropping falls, tail settles, ends in Pose A.
@@ -19,7 +19,7 @@ The last frame of each clip must be identical to the first frame of the next. Al
 
 ### 2. Sleeping spotter (replaces spotter_sit, spotter_sleep_loop, spotter_wake)
 
-Rush Hour Rigs, sleeping spotter gag. Stylized Pixar-like 3D, match the attached spotter model sheet exactly: red FR coveralls with reflective stripes, hi-vis vest, white hard hat, safety glasses, gloves, boots, gas monitor at the chest. NO flags. ONE locked camera for every clip: front 3/4 view at ground level, 1080 x 1080, 24 fps, #00FF00 background, ground line at 80% of frame height, no shadow, no text, no Zs. He stays IN PLACE: feet centred on the ground line, whole body and the orange pail inside the frame with a 10% margin, same size in every clip.
+Rig Jam, sleeping spotter gag. Stylized Pixar-like 3D, match the attached spotter model sheet exactly: red FR coveralls with reflective stripes, hi-vis vest, white hard hat, safety glasses, gloves, boots, gas monitor at the chest. NO flags. ONE locked camera for every clip: front 3/4 view at ground level, 1080 x 1080, 24 fps, #00FF00 background, ground line at 80% of frame height, no shadow, no text, no Zs. He stays IN PLACE: feet centred on the ground line, whole body and the orange pail inside the frame with a 10% margin, same size in every clip.
 Pose S = sitting on the upturned orange pail, hands on knees, head up. Pose Z = same seat, head dropped forward, asleep.
 - `spotter_walk_loop.mp4` (1 s): walking in place carrying the pail by its handle; last frame identical to the first.
 - `spotter_sit.mp4` (3 s): starts standing with the pail, sets it down upside down, sits, settles into Pose S, nods off, ends in Pose Z.
@@ -29,21 +29,21 @@ Pose S = sitting on the upturned orange pail, hands on knees, head up. Pose Z = 
 
 ### 3. Biffy (replaces biffy_bump; biffy_shuffle was rescued as a loop but a matched pair is better)
 
-Rush Hour Rigs, biffy gag. Stylized Pixar-like 3D, match the attached biffy_worker model sheet. ONE locked camera for both clips: pure side view at ground level, 1080 x 1080, 24 fps, #00FF00 background, ground line at 80% of frame height, no shadow, no text. The blue portable toilet with white roof stands with its door facing right; the unseen fence and truck are to its LEFT (behind it). Biffy the same size and position in both clips (about 45% of frame height, base on the ground line, centred at 35% of frame width).
+Rig Jam, biffy gag. Stylized Pixar-like 3D, match the attached biffy_worker model sheet. ONE locked camera for both clips: pure side view at ground level, 1080 x 1080, 24 fps, #00FF00 background, ground line at 80% of frame height, no shadow, no text. The blue portable toilet with white roof stands with its door facing right; the unseen fence and truck are to its LEFT (behind it). Biffy the same size and position in both clips (about 45% of frame height, base on the ground line, centred at 35% of frame width).
 - `biffy_bump.mp4` (2 s): starts with the biffy still, door shut. It is hit from BEHIND (from the left): it jolts and rocks toward the right twice, the door bangs open to the right. Ends with the door open, biffy still.
 - `biffy_worker_shuffle_loop.mp4` (1 s): the worker alone, no biffy, IN PLACE, strict side profile facing right, never facing the camera: bent over, pants round his ankles, trying to pull them up, tiny quick shuffling steps, the side of one round bare cartoon cheek (no detail), toilet paper stuck to his boot trailing behind, mortified face. Feet centred on the ground line; last frame identical to the first.
 - `biffy_worker_step_out.mp4` (2 s): starts on the last frame of biffy_bump (door open, biffy included); the worker steps out through the door in that same side profile; ends with him just clear of the door in the first pose of the shuffle loop.
 
 ### 4. Landowner on his quad (replaces landowner_scold)
 
-Rush Hour Rigs, landowner gag. Stylized Pixar-like 3D, match the attached landowner model sheet: older rancher, cowboy hat, plaid shirt, jeans, work boots, grey moustache. He rides a red utility quad (ATV), no brand marks. ONE locked camera: pure side view at ground level, quad facing LEFT, 1080 x 1080, 24 fps, #00FF00 background, ground line at 80% of frame height, no shadow, no text. Quad and rider stay IN PLACE, centred, whole quad inside the frame with a 10% margin, same size in every clip.
+Rig Jam, landowner gag. Stylized Pixar-like 3D, match the attached landowner model sheet: older rancher, cowboy hat, plaid shirt, jeans, work boots, grey moustache. He rides a red utility quad (ATV), no brand marks. ONE locked camera: pure side view at ground level, quad facing LEFT, 1080 x 1080, 24 fps, #00FF00 background, ground line at 80% of frame height, no shadow, no text. Quad and rider stay IN PLACE, centred, whole quad inside the frame with a 10% margin, same size in every clip.
 Pose R = seated, both hands on the bars.
 - `landowner_quad_ride_loop.mp4` (1 s): riding in place in Pose R, wheels turning, body bouncing; last frame identical to the first.
 - `landowner_quad_scold.mp4` (3 s): starts in Pose R with the wheels stopped, he rises a little, shakes his fist toward the upper left three times, scowling, sits back; ends in Pose R.
 
 ### 5. Bear and rabbit (replaces bear_enter, bear_wipe, bear_exit, rabbit_deadpan)
 
-Rush Hour Rigs, legendary bear gag. Stylized Pixar-like 3D, match the attached bear and rabbit model sheets. ONE locked camera for every clip: pure side view at ground level, bear facing RIGHT, 1080 x 1080, 24 fps, #00FF00 background, ground line at 80% of frame height, no shadow, no bush, no text. The bear stays IN PLACE, feet centred on the ground line, whole body inside the frame with a 10% margin, same size in every clip (standing on all fours he is about 45% of frame height).
+Rig Jam, legendary bear gag. Stylized Pixar-like 3D, match the attached bear and rabbit model sheets. ONE locked camera for every clip: pure side view at ground level, bear facing RIGHT, 1080 x 1080, 24 fps, #00FF00 background, ground line at 80% of frame height, no shadow, no bush, no text. The bear stays IN PLACE, feet centred on the ground line, whole body inside the frame with a 10% margin, same size in every clip (standing on all fours he is about 45% of frame height).
 Pose W = standing on all fours, side-on. Pose Q = squatting side-on, rump back.
 - `bear_walk_loop.mp4` (1 s): walk cycle in place from Pose W; last frame identical to the first.
 - `bear_squat.mp4` (4 s): starts in Pose W, turns his rump back and squats into Pose Q, strains with eyes squeezed shut; ends in Pose Q, eyes open, head turned down to the right as if noticing something small.
@@ -54,13 +54,13 @@ Pose W = standing on all fours, side-on. Pose Q = squatting side-on, rump back.
 
 ### 6. Near miss: gopher and hotshot (replaces gopher_hotshot)
 
-Rush Hour Rigs, near-miss gag. Stylized Pixar-like 3D, match the attached gopher and hotshot model sheets. Two clips on ONE locked camera: pure side view at ground level, 1920 x 1080, 24 fps, #00FF00 background, ground line at 80% of frame height, no shadow, no text.
+Rig Jam, near-miss gag. Stylized Pixar-like 3D, match the attached gopher and hotshot model sheets. Two clips on ONE locked camera: pure side view at ground level, 1920 x 1080, 24 fps, #00FF00 background, ground line at 80% of frame height, no shadow, no text.
 - `gopher_peek.mp4` (5 s): a Richardson's ground squirrel and its dirt mound, IN PLACE at the centre of the frame, mound base on the ground line, gopher about 12% of frame height. Starts with the empty hole; he pops up, smug, looks right, eyes go wide, dives in; 1 s of the empty hole; he pokes back up covered in dust and blinks twice; ends with him looking out, dusty.
 - `hotshot_drive_loop.mp4` (1 s): a generic white 1-ton crew cab DUALLY pickup (made-up grille, light bar, buggy whip flag) towing a black gooseneck flatdeck trailer, facing LEFT, IN PLACE and centred, wheels on the ground line, truck and trailer together about 80% of frame width (about 6x the gopher's height), wheels spinning fast, body shaking; last frame identical to the first. No dust (the game adds it).
 
 ### 7. Lost goose (replaces goose_lost_double_take; the three loops are usable after re-centring)
 
-Rush Hour Rigs, lost goose gag. Stylized Pixar-like 3D, match the attached goose model sheet. ONE locked camera for all clips: PURE SIDE VIEW, 720 x 720, 24 fps, #00FF00 background, no text. The goose stays IN PLACE with its body centred at frame centre, the same size in every clip (wingspan about 40% of frame width), never facing the camera.
+Rig Jam, lost goose gag. Stylized Pixar-like 3D, match the attached goose model sheet. ONE locked camera for all clips: PURE SIDE VIEW, 720 x 720, 24 fps, #00FF00 background, no text. The goose stays IN PLACE with its body centred at frame centre, the same size in every clip (wingspan about 40% of frame width), never facing the camera.
 Pose L = mid-flap flying LEFT, clumsy and wobbly. Pose R = mid-flap flying RIGHT, neck stretched, determined.
 - `goose_lost_flap_loop.mp4` (2 s): Pose L wobbling flap cycle; last frame identical to the first.
 - `goose_lost_double_take.mp4` (3 s): starts in Pose L, glances back over his shoulder to the right, snaps his head round in a double take, flips to face right in place, honks; ends in Pose R.

@@ -45,7 +45,7 @@ function serviceWorker(): Plugin {
   };
 }
 
-// base './' makes the build work both locally and under /rush-hour-rigs/ on GitHub Pages.
+// base './' makes the build work both locally and under /rig-jam/ on GitHub Pages.
 export default defineConfig({
   base: './',
   server: { host: true },

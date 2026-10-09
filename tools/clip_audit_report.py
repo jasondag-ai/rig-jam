@@ -47,7 +47,7 @@ def main(out):
         rows.append(f"| {c['file']} | {c['gag']} | {c['res']}, {c['fps']} fps, {c['duration']:.0f} s, {c['frames']} f | {travel} | {seam} | {'<br>'.join(hs) or 'n/a'} | {camera} | {om} | **{verdict}** | {reason} |")
     body = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'clip_audit_redo.md')).read()
     with open(os.path.join(out, 'CLIP_AUDIT.md'), 'w') as f:
-        f.write(f"""# Rush Hour Rigs: clip audit ({len(clips)} clips)
+        f.write(f"""# Rig Jam: clip audit ({len(clips)} clips)
 
 Measured by `tools/clip_audit.py` on copies in `clips_raw/` (originals untouched), against
 GAME_BIBLE.md sections 4 and 6. Green screen keyed out on every frame; all numbers use the foreground.

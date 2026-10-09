@@ -804,7 +804,7 @@ PAGE = r"""<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>Rush Hour Rigs: sound picks</title>
+<title>Rig Jam: sound picks</title>
 <style>
   :root { --ink: #2b1e16; --dim: #6f5a47; --cream: #fff7e6; --card: #fffdf6; --line: #2b1e16; --go: #2fb65a; --pick: #ffc93c; }
   * { box-sizing: border-box; }
@@ -844,7 +844,7 @@ PAGE = r"""<!doctype html>
 <body>
 <main>
   <h1>Sound picks</h1>
-  <p>Rush Hour Rigs, sound pass, step 1. Tap the green button to hear an option, tap its letter to pick it. Your picks are kept on this phone. When you are done, tap <b>Copy my picks</b> at the bottom and send them over.</p>
+  <p>Rig Jam, sound pass, step 1. Tap the green button to hear an option, tap its letter to pick it. Your picks are kept on this phone. When you are done, tap <b>Copy my picks</b> at the bottom and send them over.</p>
   <p class="dim">Each option shows its loudness (average and peak, in dB: closer to 0 is louder), measured the same way as the sounds already in the game, so the mix can be matched once you have picked. "pack" is an alternate from your cartoon sound pack; "made" is a clean synthesized sound. If your phone is on silent, turn the ringer on.</p>
 
   <div class="box"><b>The audit</b>
@@ -903,7 +903,7 @@ for (const c of CUES) {
   c.el = box;
 }
 function text() {
-  return 'Rush Hour Rigs sound picks\n' + CUES.map((c) => { const o = c.options.find((x) => x.letter === picks[c.id]); return `${c.id}: ${o ? o.letter + ' (' + o.label + ')' : 'no pick yet'}`; }).join('\n');
+  return 'Rig Jam sound picks\n' + CUES.map((c) => { const o = c.options.find((x) => x.letter === picks[c.id]); return `${c.id}: ${o ? o.letter + ' (' + o.label + ')' : 'no pick yet'}`; }).join('\n');
 }
 function show() {
   for (const c of CUES) c.el.querySelectorAll('.opt').forEach((el) => el.classList.toggle('picked', picks[c.id] === el.dataset.letter));

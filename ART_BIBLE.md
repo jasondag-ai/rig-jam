@@ -1,4 +1,6 @@
-# Rush Hour Rigs: Art Bible
+# Rig Jam: Art Bible
+
+Renamed from Rush Hour Rigs on Oct 9, 2026 (trademark).
 
 Every image for the game follows this file. If an image breaks a rule here, it is rejected. Gag rules, screen zones and camera rules live in GAME_BIBLE.md.
 

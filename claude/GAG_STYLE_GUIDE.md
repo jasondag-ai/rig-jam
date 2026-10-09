@@ -1,4 +1,6 @@
-# Rush Hour Rigs: Gag Character Style Guide
+# Rig Jam: Gag Character Style Guide
+
+Renamed from Rush Hour Rigs on Oct 9, 2026 (trademark).
 
 The rules for every gag character. The approved example is the magpie: `magpie_puppet_reference.html` (RHR Art Inbox on the Desktop). When in doubt, match the magpie.
 

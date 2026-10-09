@@ -6,7 +6,7 @@
 //     strip) up over the lease's pad.
 //  2. EVERY TAPPABLE PROP IN EVERY REGION ANSWERS A TAP: with its sighting, or (the biffy, the gopher's mound, the round
 //     bale, the lease sign in winter) with a small knock of its own.
-// Run with the dev server up, or against the live site: URL=https://jasondag-ai.github.io/rush-hour-rigs/ npm run test:e2e:sightings
+// Run with the dev server up, or against the live site: URL=https://jasondag-ai.github.io/rig-jam/ npm run test:e2e:sightings
 import { webkit } from 'playwright';
 import { REGIONS, DAILY_LEVELS } from '../src/levels/regions.ts';
 import { gateFor, getMoveRange, newGame, sizeOf, solve, tryMove } from '../src/engine/index.ts';

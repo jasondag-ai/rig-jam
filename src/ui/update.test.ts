@@ -107,7 +107,7 @@ describe('knowing a new version is out', () => {
     expect(sw).toContain('const REST = ["sprites/a.webp","audio/sfx/tap.mp3"]');
     expect(PRECACHE_BATCH).toBeLessThanOrEqual(8);
     expect(PRECACHE_TRIES).toBeGreaterThanOrEqual(2);
-    // Under /rush-hour-rigs/ as at the root: every address comes from the worker's own scope, never from "/".
+    // Under /rig-jam/ as at the root: every address comes from the worker's own scope, never from "/".
     expect(sw).toContain('const SCOPE = self.registration.scope;');
     expect(sw).not.toMatch(/['"]\/(assets|sprites|audio|index)/);
     // Only a good page is kept as the offline copy; a failed fetch answers with the cached page.

@@ -86,7 +86,7 @@ describe('share text', () => {
         '👷👷👷 8 moves · par 8',
         '🦺 ZERO INCIDENT',
         '🚧 Days without incident: 3',
-        'https://jasondag-ai.github.io/rush-hour-rigs/',
+        'https://jasondag-ai.github.io/rig-jam/',
       ].join('\n'),
     );
   });

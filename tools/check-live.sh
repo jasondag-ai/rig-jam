@@ -4,7 +4,7 @@
 # stuck "waiting" (it happened on Oct 6: two and a half hours, the old build live all the while),
 # it says so, and how to start it again.
 #   sh tools/check-live.sh
-URL="https://jasondag-ai.github.io/rush-hour-rigs/version.json"
+URL="https://jasondag-ai.github.io/rig-jam/version.json"
 WANT=$(git rev-parse --short=7 origin/main)
 i=0
 while [ $i -lt 30 ]; do

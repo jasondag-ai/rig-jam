@@ -190,7 +190,7 @@ for (const [name, engine, opts] of [['a desktop (Chrome)', chromium, { viewport:
     await wait(200);
     const pasted = await page.evaluate(() => document.getElementById('paste-here').value);
     check(copied === want && label === 'Copied! Paste it anywhere.', `Share copies the result exactly, and says so ("${label}"): ${JSON.stringify(copied)}`);
-    check(pasted === want && want.split('\n').length >= 4 && want.endsWith('https://jasondag-ai.github.io/rush-hour-rigs/'), `and it pastes cleanly into a text box: ${want.split('\n').length} plain lines, the link last`);
+    check(pasted === want && want.split('\n').length >= 4 && want.endsWith('https://jasondag-ai.github.io/rig-jam/'), `and it pastes cleanly into a text box: ${want.split('\n').length} plain lines, the link last`);
   } else {
     check(label === 'Copied! Paste it anywhere.', `Share says it copied ("${label}"; Safari's engine lets no script read the clipboard back)`);
   }
