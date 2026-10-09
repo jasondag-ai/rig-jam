@@ -1227,8 +1227,8 @@ something, give exact clicks and one command at a time.
 - WHO IS MOE NOW: the sleepy worker, Occupied and The Runaway Roll (the man in the biffy), the
   porcupine's worker (walking and scurrying), Gopher Lunch, the one stuck to the riser in Frozen
   Tongue (his buddy in blue is not), Muskeg Boots, Personal Cloud, and the Clearwater five as
-  before. LEFT AS THEY WERE, and Jay was told: the Marshmallow worker (he shrugs and eats it:
-  not clearly trouble), Safety Sam, the surveyor, the win card's mascot (the worker himself).
+  before. THE MARSHMALLOW WORKER AND THE WIN CARD'S MASCOT STAY RED (Jay, Oct 8: not in trouble); so do
+  Safety Sam and the surveyor.
 - THE SUITCASE CARRY (Three Swings, Out Cold; wave3.ts `held(k)`, `CARRY`, `carry`): walking in
   and off, Moe's arm hangs with a small swing, his hand round the middle of the shaft, the shovel
   level, blade forward. At tee-up it turns up into the upright `SHOVEL` grip (`teeUp`), and back
@@ -1268,9 +1268,16 @@ something, give exact clicks and one command at a time.
 - A judge opening the link cold, on a laptop or a phone, gets it in ten seconds. ON A DESKTOP the
   game is the same 560 px column, centred (`#app` `max-width`), the lease the largest square that
   fits; the mouse drags through the same pointer code as a finger (grab cursor). Nothing was
-  changed for it: `test:e2e:judge` holds it at 1440 x 900 and 1280 x 720 in both engines. (At
-  1280 x 720 there is no room under the lease for the bottom strip, so the strip's sightings do
-  not show in a window that short: Jay knows.)
+  changed for it: `test:e2e:judge` holds it at 1440 x 900 and 1280 x 720 in both engines.
+- A SHORT DESKTOP WINDOW KEEPS ITS BOTTOM STRIP (`deskHeight` in game-view.ts, used by `fit`): at
+  1280 x 720 the lease filled the stage's whole height, so there was no strip and none of its
+  sightings. With a mouse (`(hover: hover) and (pointer: fine)`) and the column at its desktop
+  width (`DESK_WIDTH` 500), the lease is made just small enough to leave `DESK_ROOM` (114 px),
+  which `liftPad` shares out between the strip and the sky; never under `DESK_LEAST` (340). At
+  1280 x 720 the lease is 434 px over a strip of 68 to 99 px, and the strip's sightings play. A
+  taller window (1440 x 900) has that room already and is as it was. A PHONE IS NEVER TOUCHED:
+  21 phone screenshots (390 x 664, 375 x 635, 390 x 844; the list and a level of every region)
+  were the same pixel for pixel before and after.
 - NEVER A WHITE SCREEN (index.html): `#app` starts with `#boot`, a loading page styled inline (the
   game's blue, its name, "Loading…"), which the first screen replaces. If the game's script or
   stylesheet fails to load, or the game throws while starting, or nothing is up after 12 s, it
@@ -1284,7 +1291,7 @@ something, give exact clicks and one command at a time.
   mode" switch, which is saved and has its own demo log.
 - CREDIT: Settings ends with "Built by Jay Dagenais, directing AI (Claude)" (`.app-credit`) over
   the version line. The panel still fits 390 x 844 without scrolling.
-- SHARE was checked, not changed: the Daily Pad's result is copied exactly and pastes as five
+- SHARE: its button says "Copied! Paste it anywhere." (Jay, Oct 8). The Daily Pad's result is copied exactly and pastes as five
   plain lines, the link last (read back from the clipboard and pasted into a text box in
   Chrome's engine, desktop and phone; Safari's engine lets no script read the clipboard, so
   there only the button's "Copied!" is checked).

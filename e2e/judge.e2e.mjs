@@ -78,7 +78,7 @@ for (const [name, engine] of [['chrome', chromium], ['safari', webkit]]) {
     await wait(700);
     await shot('2_level1');
     const b = await box(page, '.board'), ctl = await box(page, '.controls'), hd = await box(page, '.hud'), app = await box(page, '#app');
-    check(Math.abs(b.x + b.w / 2 - W / 2) <= 1 && Math.abs(b.w - b.h) <= 1 && b.y >= 0 && b.b <= H && b.w >= 420 && b.w <= 560, `the lease is centred (${(b.x + b.w / 2 - W / 2).toFixed(1)} px off the middle), square (${Math.round(b.w)} x ${Math.round(b.h)}) and whole on the screen: not stretched`);
+    check(Math.abs(b.x + b.w / 2 - W / 2) <= 1 && Math.abs(b.w - b.h) <= 1 && b.y >= 0 && b.b <= H && b.w >= 400 && b.w <= 560, `the lease is centred (${(b.x + b.w / 2 - W / 2).toFixed(1)} px off the middle), square (${Math.round(b.w)} x ${Math.round(b.h)}) and whole on the screen: not stretched`);
     check(ctl.b <= H + 0.5 && hd.y >= -0.5 && ctl.x >= app.x - 0.5 && ctl.r <= app.x + app.w + 0.5 && (await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)), 'the HUD and the three buttons are on the screen with it; nothing scrolls');
     const cursor = await page.evaluate(() => getComputedStyle(document.querySelector('.truck')).cursor);
     const level = REGIONS[0].levels[0];
@@ -112,6 +112,56 @@ for (const [name, engine] of [['chrome', chromium], ['safari', webkit]]) {
   await browser.close();
 }
 
+// ---------- 1b. A short desktop window still has its bottom strip, and the strip's sightings play there ----------
+// (At 1280 x 720 the lease used to fill the stage's whole height: no strip, no sightings. It is now just small
+// enough to leave one. A taller window is as it was.)
+for (const [name, engine] of [['chrome', chromium], ['safari', webkit]]) {
+  const browser = await engine.launch();
+  console.log(`\n${name} 1280 x 720: the bottom strip and its sightings`);
+  const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, hasTouch: false });
+  const page = await context.newPage();
+  await page.goto(`${ROOT}?cover=0&demo=1&night=0&bird=0&nap=0&surveyor=0&tourists=0&lunch=0&soundnudge=0`, { waitUntil: 'networkidle' });
+  await page.waitForSelector('.screen.levels');
+  const enter = async (r) => { if (await page.$('.hud [data-act="levels"]')) { await page.locator('.hud [data-act="levels"]').click(); await page.waitForSelector('.screen.levels'); } await page.locator('.region-tab').nth(r).click(); await page.locator('.level-btn').nth(2).click(); await page.waitForSelector('.board .truck.sprite-on'); await wait(600); };
+  const strip = () => page.evaluate(() => { const g = (s) => document.querySelector(s).getBoundingClientRect(); const b = g('.board'), n = g('.note'), h = g('.hud'); return { board: b.width, square: Math.abs(b.width - b.height) <= 1, centred: Math.abs(b.left + b.width / 2 - innerWidth / 2) <= 1, strip: n.top - b.bottom, sky: b.top - h.bottom }; });
+  /** Clicks a prop (with the mouse) and watches its sighting: does it come on the screen, and does it keep to the strip? */
+  const sighting = async (gag, sel, clicks) => {
+    const at = await page.evaluate((s) => { const r = document.querySelector(s).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, sel);
+    for (let k = 0; k < clicks; k++) { await page.mouse.click(at.x, at.y); await wait(160); }
+    await page.waitForSelector(`.strip-layer[data-gag="${gag}"]`, { state: 'attached', timeout: 6000 }).catch(() => {});
+    return page.evaluate(([gag]) => new Promise((done) => { const t0 = performance.now(); let seen = false, top = Infinity, bottom = -Infinity; const pad = document.querySelector('.board .pad').getBoundingClientRect(), note = document.querySelector('.note').getBoundingClientRect();
+      const tick = () => { for (const el of document.querySelectorAll(`.strip-layer[data-gag="${gag}"] svg.pup > *, .strip-layer[data-gag="${gag}"] g.pup > *`)) { if (el.tagName === 'clipPath' || el.hasAttribute('data-fx')) continue; const r = el.getBoundingClientRect(), cs = getComputedStyle(el); if (r.width < 2 || r.right < 4 || r.left > innerWidth - 4 || cs.visibility === 'hidden') continue; seen = true; top = Math.min(top, r.top); bottom = Math.max(bottom, r.bottom); }
+        if (performance.now() - t0 > 3500) return done({ on: !!document.querySelector(`.strip-layer[data-gag="${gag}"]`) || seen, seen, overPad: Math.round(pad.bottom - top), overNote: Math.round(bottom - note.top) }); requestAnimationFrame(tick); }; tick(); }), [gag]);
+  };
+  await enter(0);
+  const c = await strip();
+  check(c.strip >= 80 && c.sky >= 6 && c.square && c.centred && c.board >= 400, `Cardium: a strip of ${Math.round(c.strip)} px under a lease of ${Math.round(c.board)} px, still square and centred, ${Math.round(c.sky)} px of sky over it; the biffy, the bush, the sign and the mound stand in it (${await page.evaluate(() => ['.biffy-layer svg', '.bush-layer svg', '.sign-layer svg', '[data-anchor="mound"]'].filter((q) => { const r = document.querySelector(q)?.getBoundingClientRect(); return r && r.height > 8 && r.bottom <= document.querySelector('.note').getBoundingClientRect().top + 4; }).length)} of 4)`);
+  const deer = await sighting('deer', '.sign-layer svg', 1);
+  check(deer.seen && deer.overPad <= 0 && deer.overNote <= 4, `a click on the lease sign: Back Scratcher plays in the strip (${deer.seen ? `${-deer.overPad} px clear of the pad` : 'NOT SEEN'})`);
+  await enter(0);
+  const porc = await sighting('porcupine', '.bush-layer svg', 3);
+  check(porc.seen && porc.overPad <= 0 && porc.overNote <= 4, `three clicks on the bush: Porcupine plays in the strip (${porc.seen ? 'seen' : 'NOT SEEN'})`);
+  await enter(3);
+  const m = await strip();
+  const beaver = await sighting('beaver', '.mann-front svg svg', 3);
+  check(m.strip >= 62 && beaver.seen && beaver.overNote <= 4, `Mannville: a strip of ${Math.round(m.strip)} px, and three clicks on the tall aspen bring the Beaver (${beaver.seen ? 'seen' : 'NOT SEEN'})`);
+  await enter(5);
+  const w = await strip();
+  // (Under the demo link the log is complete, so the rig mats give the second of their pair, Out Cold.)
+  const golf = await sighting('cold', '.clear-mats .cw-mats', 3);
+  check(w.strip >= 62 && golf.seen && golf.overPad <= 0 && golf.overNote <= 4, `Clearwater: a strip of ${Math.round(w.strip)} px, and three clicks on the rig mats bring Out Cold (${golf.seen ? 'seen' : 'NOT SEEN'})`);
+  await page.screenshot({ path: join(OUT, `${name}_1280x720_6_strip_sighting.png`) });
+  await context.close();
+  // And a taller window is exactly as it was: the lease as wide as the column allows.
+  const tall = await browser.newContext({ viewport: { width: 1440, height: 900 }, hasTouch: false });
+  const tp = await tall.newPage();
+  await tp.goto(`${ROOT}?cover=0&demo=1&night=0`, { waitUntil: 'networkidle' });
+  await tp.locator('.level-btn').nth(2).click();
+  await tp.waitForSelector('.board .truck.sprite-on');
+  check(Math.round((await box(tp, '.board')).w) === 528, 'at 1440 x 900 the lease is 528 px, as before');
+  await browser.close();
+}
+
 // ---------- 2. Share: the Daily Pad's result, copied and pasted ----------
 const daily = DAILY_LEVELS[padLevelIndex(padNumber(dayKey(new Date())), DAILY_LEVELS.length)];
 for (const [name, engine, opts] of [['a desktop (Chrome)', chromium, { viewport: { width: 1280, height: 720 }, hasTouch: false, permissions: ['clipboard-read', 'clipboard-write'] }], ['a phone (Chrome, 390 x 844)', chromium, { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2, permissions: ['clipboard-read', 'clipboard-write'] }], ['an iPhone (Safari, 390 x 664)', webkit, { viewport: { width: 390, height: 664 }, hasTouch: true, deviceScaleFactor: 3 }]]) {
@@ -139,10 +189,10 @@ for (const [name, engine, opts] of [['a desktop (Chrome)', chromium, { viewport:
     await page.keyboard.press(process.platform === 'darwin' ? 'Meta+V' : 'Control+V');
     await wait(200);
     const pasted = await page.evaluate(() => document.getElementById('paste-here').value);
-    check(copied === want && label.startsWith('Copied!'), `Share copies the result exactly, and says so ("${label}"): ${JSON.stringify(copied)}`);
+    check(copied === want && label === 'Copied! Paste it anywhere.', `Share copies the result exactly, and says so ("${label}"): ${JSON.stringify(copied)}`);
     check(pasted === want && want.split('\n').length >= 4 && want.endsWith('https://jasondag-ai.github.io/rush-hour-rigs/'), `and it pastes cleanly into a text box: ${want.split('\n').length} plain lines, the link last`);
   } else {
-    check(label.startsWith('Copied!'), `Share says it copied ("${label}"; Safari's engine lets no script read the clipboard back)`);
+    check(label === 'Copied! Paste it anywhere.', `Share says it copied ("${label}"; Safari's engine lets no script read the clipboard back)`);
   }
   await browser.close();
 }
