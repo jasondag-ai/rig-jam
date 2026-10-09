@@ -248,6 +248,23 @@ input,
   color: var(--accent);
 }
 
+/* The dev lane's copy only (version.ts `isDev`): a small label in the home page's top left corner, clear of the title. */
+.brand .dev-chip {
+  position: absolute;
+  left: 0;
+  top: -6px;
+  padding: 1px 7px 2px;
+  border: 2px solid var(--outline);
+  border-radius: 8px;
+  background: #ffd23f;
+  color: var(--outline);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
 .brand p {
   margin: 0 0 14px;
   padding: 8px 12px;

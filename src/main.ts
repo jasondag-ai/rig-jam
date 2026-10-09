@@ -26,7 +26,7 @@ import { onTap } from './ui/tap.ts';
 import { copyText } from './ui/clipboard.ts';
 import { feedbackEmail, feedbackNow, rememberLevel } from './ui/feedback.ts';
 import { showUpdateBar, watchForUpdates } from './ui/update.ts';
-import { versionText } from './ui/version.ts';
+import { isDev, versionText } from './ui/version.ts';
 import { fakeRegions, furthestOpen, runRegionBar } from './ui/region-bar.ts';
 import { shouldShowCover, showCover } from './ui/cover.ts';
 import { applyUiArt, uiImg } from './ui/ui-art.ts';
@@ -164,6 +164,7 @@ function showLevels(requested = savedRegion()): void {
       <button class="binoculars" aria-label="Wildlife Log">${BINOCULARS}</button>
       <button class="gear" aria-label="Settings">${uiImg('icon_gear')}</button>
       <h1>Rig Jam</h1>
+      ${isDev() ? '<span class="dev-chip" aria-label="Dev copy">DEV</span>' : ''}
       ${Object.keys(progress.best).length ? '' : '<p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>'}
     </header>
     <div class="daily-block"></div>
