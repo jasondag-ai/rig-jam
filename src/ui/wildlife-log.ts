@@ -3,6 +3,7 @@
 // (how to set the gag off) when tapped; demo mode shows the plain hint at once. Finding them all unlocks camo pickups (on by default once earned, with a switch in
 // Settings). Saved on this phone under a `rush-hour-rigs:` key, so "Reset progress" clears it too.
 // `?log=all` previews a full log.
+import { demoLink } from './demo-link.ts';
 import { STORAGE_PREFIX } from './progress.ts';
 import { dressCamo } from './sprites.ts';
 
@@ -114,6 +115,9 @@ export function loadLog(demo = false): WildlifeLog {
   } catch {
     log = parseLog(null);
   }
+  // (`?demo=1`, the hidden link for recording video: every card is shown found. The trucks keep their own paint:
+  // camo is not handed out by it. Nothing is saved: demo-link.ts.)
+  if (demoLink()) return { ...log, found: LOG_ENTRIES.map((e) => e.id) };
   return typeof location !== 'undefined' && previewAll(location.search) ? { ...log, found: LOG_ENTRIES.map((e) => e.id), camoEarned: true } : log;
 }
 

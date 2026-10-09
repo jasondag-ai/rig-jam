@@ -1,3 +1,4 @@
+import { demoLink } from './ui/demo-link.ts'; // FIRST: `?demo=1` keeps every write in memory (see the file)
 import { bearStill } from './ui/bear.ts';
 import { nightStill } from './ui/night.ts';
 import { musicCredits, sfxCredits } from './audio/credits.ts';
@@ -356,6 +357,7 @@ function showSettings(screen: HTMLElement): void {
         ${feedbackEmail() ? `<div class="feedback"><b>Send feedback</b><span class="feedback-mail">${esc(feedbackEmail())}</span><button class="btn quiet" data-act="copy-feedback">Copy address and details</button><small>Adds your app version, phone and level.</small></div>` : ''}
         <button class="btn danger" data-act="reset">Reset progress</button>
         <button class="btn" data-act="close">Done</button>
+        <p class="app-credit">Built by Jay Dagenais, directing AI (Claude)</p>
         <p class="app-version">${esc(versionText())}</p>
       </div>
       <div class="step credits" hidden>
@@ -432,8 +434,9 @@ function showLog(regionIndex: number): void {
   game = null;
   sound.quiet();
   // Demo mode shows its own log; the real one comes back when demo mode is switched off.
-  const demo = loadProgress().demo;
-  const log = loadLog(demo);
+  // (Under the hidden `?demo=1` link the log is simply shown complete, with no DEMO label: it is for recording video.)
+  const demo = loadProgress().demo && !demoLink();
+  const log = loadLog(loadProgress().demo);
   const entries = LOG_ENTRIES;
   const have = foundCount(log);
   const screen = document.createElement('div');
