@@ -10,6 +10,7 @@ import { NUDGE_LINE, nightComes, nightForced, nightRgba, nightSky } from './nigh
 import { WITNESS_LINES } from './lines.ts';
 import { hatsHtml } from './hats.ts';
 import { copyText } from './clipboard.ts';
+import { hintOf, lineAfter, lineFrom } from './hint-line.ts';
 import { shareText, streak, zeroIncident } from './daily.ts';
 import { hardHats, loadProgress, type Progress, recordDailyClear, recordWin, saveProgress, spendHint } from './progress.ts';
 import { streakSignHtml } from './sign.ts';
@@ -1066,11 +1067,9 @@ export class GameView {
       this.note('Out of hints. Clear a level at par to earn one.');
       return;
     }
-    let move: Move | null;
-    if (this.hintPath && this.hintPath.length > 0) {
-      // Cached from the last solve: instant.
-      move = this.hintPath[0];
-    } else {
+    // (The kept line starts at the move being hinted: hint-line.ts.)
+    let move: Move | null = hintOf(this.hintPath);
+    if (!move) {
       // Show a message and let it paint before the solver blocks.
       this.note('Calling the dispatcher\u2026', true);
       this.hintSolving = true;
@@ -1084,8 +1083,8 @@ export class GameView {
         if (!(e instanceof SolverLimitError)) throw e;
         path = null;
       }
-      move = path?.[0] ?? null;
-      this.hintPath = path && path.length > 1 ? path.slice(1) : null;
+      this.hintPath = lineFrom(path);
+      move = hintOf(this.hintPath);
     }
     if (!move) {
       this.note('The dispatcher is stumped too. Try Restart.');
@@ -1100,14 +1099,8 @@ export class GameView {
   }
 
   private resetHint(played?: { id: string; delta: number }): void {
-    // If the player followed the hint, advance the cached path; otherwise drop it.
-    if (played && this.hint && played.id === this.hint.id && played.delta === this.hint.delta) {
-      // hintPath already points at the move AFTER this.hint (sliced at solve time or shifted here).
-      if (this.hintPath && this.hintPath.length > 0) this.hintPath = this.hintPath.slice(1);
-      else this.hintPath = null;
-    } else {
-      this.hintPath = null;
-    }
+    // If the player played the hinted move, the kept line moves on to the next; anything else drops it.
+    this.hintPath = lineAfter(this.hintPath, this.hint, played);
     this.hint = null;
     this.hintStep = 0;
     this.board.clearHint();
