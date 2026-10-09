@@ -531,6 +531,19 @@ export class TimelineGag {
 
 // ---------- The four gags ----------
 
+/**
+ * A layer for a camera's flash (puppet-stage.ts `camFlash`): over the lease, made by the gag's own `layer` (so it
+ * goes when the gag goes) but NOT one of its strip layers: it carries no character and no beat, so it gives up the
+ * strip layer's name and the gag's, and nothing that looks at a gag's layers (the beat's mark, the depth rule, the
+ * tests) sees it. Make it FIRST: the gag's last layer must stay the one its beats are marked on.
+ */
+function flashLayer(layer: (cls: string) => HTMLElement): HTMLElement {
+  const el = layer('over-lease');
+  el.className = 'scene-layer puppet-layer flash-layer';
+  delete el.dataset.gag;
+  return el;
+}
+
 /** Gag 4: needs the permanent gopher mound (Cardium). */
 export const nearMissDef: TimelineDef = {
   name: 'nearMiss',
@@ -886,8 +899,7 @@ export const touristsDef = (sign: SignProp): TimelineDef => ({
   end: TOUR_END,
   stillAt: 3.45,
   build(layer, host) {
-    // (The flash's own layer, over the lease, is made first: the gag's last layer stays the one its beats are marked on.)
-    const flashOn = layer('flash-layer over-lease');
+    const flashOn = flashLayer(layer);
     const s = signStage(layer, host, 'tourists-layer');
     const scr = host.screen.getBoundingClientRect();
     const scene: any = tourScene(s.stage, s.frame, sign.pup, s.scale, s.spot, true, flashOn, { x: s.spot.x * scr.width, y: (s.strip.top + s.strip.bottom) / 2 });
@@ -911,8 +923,7 @@ export const tongueDef = (riser: RiserProp): TimelineDef => ({
     const screen = host.screen.getBoundingClientRect();
     const strip = host.strip();
     const scale = riser.scale();
-    // (The flash's own layer, over the lease, is made first: the gag's last layer stays the one its beats are marked on.)
-    const flashOn = layer('flash-layer over-lease');
+    const flashOn = flashLayer(layer);
     const scene = tongueScene(layer('tongue-layer'), riser.pup, scale, flashOn, { x: RISER_X * screen.width, y: (strip.top + strip.bottom) / 2 });
     // In from past the left edge; the worker leaves that way, his buddy comes back from past the right edge and leaves that way (their drawing's units, from the riser).
     const w = WORKER_FRAC * scale * screen.width, u = w / 120, from = -(RISER_X * screen.width + w) / u, far = ((1 - RISER_X) * screen.width + w) / u;

@@ -1051,9 +1051,15 @@ export class GameView {
 
   private onHint(): void {
     if (isWon(this.state)) return;
-    this.hintPressed();
-    // Gopher lunch (Cardium): any press of Hint may bring the worker in with his sandwich. AFTER the hint's own
-    // message is up: a message of two lines takes its room first (`note`), so he is placed for the lease as it stands.
+    // Gopher lunch (Cardium): a press of Hint brings the worker in with his sandwich. AFTER the hint's own message is
+    // up: a message of two lines takes its room first (`note`), so he is placed for the lease as it stands. (The
+    // hint is worked out a frame or two later, "Calling the dispatcher...": so he waits for that too. Fired straight
+    // after the press, as it was for a while, he was placed for the old layout and played a line too low.)
+    void this.hintPressed().then(() => this.lunchOnHint());
+  }
+
+  private lunchOnHint(): void {
+    if (!this.el.isConnected || isWon(this.state)) return;
     if (this.strips.gopherLunch && !this.eggDone.has('gopherLunch') && this.chance('gopherLunch', GAG_TRIGGERS.gopherLunch.chance, lunchNever() ? false : lunchAlways() ? true : null)) this.fire('gopherLunch');
   }
 

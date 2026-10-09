@@ -1308,8 +1308,9 @@ something, give exact clicks and one command at a time.
   layer of its own (`gopher-lip-layer`, Gopher Lunch's `LIP`), made before the hotshot's layer.
 - CAMERA FLASHES (Frozen Tongue, Tourists; puppet-stage.ts `camFlash`, `FLASH_S` 0.15): a quick
   soft burst of white over the WHOLE game screen, brightest at the camera, on a layer of its own
-  over the lease (`flash-layer over-lease`, made first so the gag's last layer is still the one
-  its beats are marked on). It used to light the bottom strip only: a hard-edged box. None with
+  over the lease (strip-gags.ts `flashLayer`: made by the gag's own `layer`, so it goes with the
+  gag, but not one of its strip layers, so the beat's mark, the depth rule and the tests do not
+  see it). It used to light the bottom strip only: a hard-edged box. None with
   reduced motion (`display: none`).
 - CHANCE SIGHTINGS NEVER FEEL BROKEN (gag-triggers.ts `Chances`, `CHANCES`; `GameView.chance`):
   the magpie, the sleepy worker, the bear, Gopher Lunch, the surveyor and the tourists. UNTIL A
@@ -1319,6 +1320,11 @@ something, give exact clicks and one command at a time.
   tests' pins (`?bird=`, `?nap=`, `?bear=`, `?lunch=`, `?surveyor=`, `?tourists=`) still settle
   it either way. (Where the notes above say "1 in 2" or "1 in 3" for these six, read it with
   this rule.)
+- GOPHER LUNCH WAITS FOR THE HINT'S MESSAGE (`GameView.onHint` > `lunchOnHint`): since the hint
+  is worked out a frame or two after the press ("Calling the dispatcher..."), the lunch fired
+  straight after the press was placed before the two-line message took its room, and played a
+  line too low (the fault of "A TALL MESSAGE TAKES ITS ROOM AT ONCE", back again). He is fired
+  once `hintPressed` has finished.
 - HINTS NEVER SAY "MAY" OR QUOTE ODDS (a test holds them to it): a hint shows only while its
   sighting is unfound, and then following it always works. Changed: Magpie, Sleepy Worker,
   Gopher Lunch, Surveyor, Tourists ("They show up on your first move"), and the Bear (its "He

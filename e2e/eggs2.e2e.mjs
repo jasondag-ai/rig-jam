@@ -603,7 +603,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     await tapRiser(-60, 0);
     await wait(400);
     check(!(await page.$('.strip-layer')), 'a tap 60 px off the riser does not count');
-    const watching = watch(page, 'tongue', { parts: { worker: '.tongue-layer svg.pup:nth-of-type(1) .torso', buddy: '.tongue-layer svg.pup:nth-of-type(2) .torso', tongue: '.tongue-layer .pup-overlay .tongue', flake: '.tongue-layer .pup-overlay .flake', flash: '.tongue-layer .pup-flash', coffee: '.tongue-layer .pup-overlay .coffee', thwip: '.tongue-layer .pup-overlay .thwip', thermos: '.tongue-layer svg.pup:nth-of-type(2) .thermos' } }, 36000);
+    const watching = watch(page, 'tongue', { parts: { worker: '.tongue-layer svg.pup:nth-of-type(1) .torso', buddy: '.tongue-layer svg.pup:nth-of-type(2) .torso', tongue: '.tongue-layer .pup-overlay .tongue', flake: '.tongue-layer .pup-overlay .flake', flash: '.flash-layer .pup-flash', coffee: '.tongue-layer .pup-overlay .coffee', thwip: '.tongue-layer .pup-overlay .thwip', thermos: '.tongue-layer svg.pup:nth-of-type(2) .thermos' } }, 36000);
     const bubble = bubbleOf(page, 'tongue', 20000);
     const size = await tapRiser(-20, 18);
     const log = await watching;
@@ -620,9 +620,11 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     check(stuck.length > 20 && stuck.every((f) => Math.abs(f.tongue.r - (riser.x - 4)) < 6) && Math.max(...stuck.map((f) => f.tongue.r - f.tongue.l)) > Math.min(...stuck.map((f) => f.tongue.r - f.tongue.l)) + 3, 'his tongue is stuck to the real riser and stretches as he pulls');
     const b = await bubble;
     check(b?.text === 'HEWP!' && b.box.x >= 4 && b.box.x + b.box.width <= W - 4, `"${b?.text}", on screen`);
-    const flashes = log.filter((f) => +f.flash?.vis && f.beat === 'flash');
-    const strip = await page.evaluate(() => ({ top: document.querySelector('.board').getBoundingClientRect().bottom, bottom: document.querySelector('.note').getBoundingClientRect().top }));
-    check(flashes.length > 2 && flashes.every((f) => f.flash.t >= strip.top - 1 && f.flash.b <= strip.bottom + 1), 'the camera flash lights the bottom strip only, never the lease');
+    // (Job Y: a quick soft flash over the WHOLE game screen, about 150 ms; it used to be a box on the bottom strip.)
+    const flashes = log.filter((f) => f.flash?.vis && f.beat === 'flash');
+    const innerH = await page.evaluate(() => innerHeight);
+    const lit = log.filter((f) => f.flash?.vis), span = lit.length ? lit.at(-1).t - lit[0].t : -1;
+    check(flashes.length >= 2 && flashes.every((f) => f.flash.l <= 0.5 && f.flash.t <= 0.5 && f.flash.r >= W - 0.5 && f.flash.b >= innerH - 0.5) && span > 0 && span < 260, `the camera's flash is over the whole game screen, and quick (${Math.round(span)} ms lit, ${flashes.length} frames)`);
     check(log.some((f) => f.beat === 'snowflake' && f.flake), 'a snowflake drifts down onto his nose');
     check(log.filter((f) => f.beat === 'walk-off' || f.beat === 'riser-again').every((f) => !f.tongue), 'the tongue comes free');
     const fin = log.at(-1);
