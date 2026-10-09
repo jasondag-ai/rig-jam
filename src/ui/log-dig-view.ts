@@ -170,6 +170,8 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
   // down the screen as the page scrolls (log-deep.ts `gaugeLine`): 0 at the grass, 6,371 at the
   // centre, 12,742 at Kerguelen. The stopwatch starts the first time the page is scrolled down
   // past the grass and stops on reaching the end; back at the very top it is ready to go again.
+  /** How far above the first card the gauge turns slim (px): its own height as a tab, and a little. */
+  const GAUGE_REACH = 150;
   const depthEl = col.querySelector<HTMLElement>('.dig-depth')!, clockEl = col.querySelector<HTMLElement>('.dig-clock')!;
   let frame = 0, started = 0, done = false, ticker = 0, shown = '';
   // Swipes while the dig is timed: a gesture counts only once it has moved the page a quarter of a screen (log-deep.ts `SwipeCount`).
@@ -187,6 +189,15 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
     const text = kmText(km);
     if (text !== shown) depthEl.textContent = shown = text;
     col.dataset.km = km.toFixed(3);
+    // BESIDE THE CARDS THE GAUGE IS A SLIM TAB on the screen's edge (`.slim`): the full pill lay over the right
+    // column's pictures. From the first card's top to the last card's foot it stands in the page's margin, its
+    // reading turned on its side; below the cards it is the pill again.
+    const gauge = depthEl.closest<HTMLElement>('.dig-gauge');
+    const cards = col.querySelectorAll<HTMLElement>('.log-card');
+    if (gauge && cards.length) {
+      const at = gauge.getBoundingClientRect().top, first = cards[0].getBoundingClientRect().top, last = cards[cards.length - 1].getBoundingClientRect().bottom;
+      gauge.classList.toggle('slim', at > first - GAUGE_REACH && at < last + GAUGE_REACH / 3);
+    }
     showTiles(top - colTop, top - colTop + sc.clientHeight);
     const now = performance.now();
     if (!started && !done && top > 0 && km > 0) {

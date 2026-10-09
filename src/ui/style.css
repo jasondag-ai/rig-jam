@@ -4230,6 +4230,28 @@ svg.dig-tunnel {
   line-height: 1.15;
 }
 
+/* BESIDE THE CARDS (log-dig-view.ts sets `.slim`): a slim tab flush with the screen's right edge, in the page's
+   margin, its reading turned on its side, so it covers no card's picture and no caption. */
+.dig-gauge.slim .dig-gauge-pill {
+  right: -16px;
+  min-width: 0;
+  width: 22px;
+  padding: 7px 0 7px 1px;
+  /* (Turned on its side, a line runs DOWN: the depth, then the stopwatch under it, on that one line.) */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  border-right: 0;
+  border-radius: 10px 0 0 10px;
+  box-shadow: -2px 3px 0 var(--outline);
+  writing-mode: vertical-rl;
+  line-height: 1;
+}
+.dig-gauge.slim .dig-depth { font-size: 12px; }
+.dig-gauge.slim .dig-clock { font-size: 11px; }
+
 .dig-depth { font-size: 14px; font-weight: 700; white-space: nowrap; }
 .dig-clock { font-size: 12px; font-style: normal; font-weight: 600; color: var(--ink-dim); white-space: nowrap; }
 .dig-clock.final { color: #1f7a3d; font-weight: 700; }
