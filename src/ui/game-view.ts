@@ -23,7 +23,7 @@ import { defaultKind } from './vehicles.ts';
 import { applyCamo, loadLog, record, saveLog, sightingToast, type Sighting } from './wildlife-log.ts';
 import { bearAlways, bearNever, eggOff, gagTest, lunchAlways, lunchNever, rollPinned, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
-import { BackAndForth, GAG_TRIGGERS, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump, type GagId } from './gag-triggers.ts';
+import { BackAndForth, CHANCES, GAG_TRIGGERS, Wiggle, bermBump, mustWait, wrongGateBump, type GagId } from './gag-triggers.ts';
 import { BakkenProp, ClearProp, MANN_SCENE, SCENE, SCENE_MIN, clearStripWanted, sceneStripWanted, MANN_SIGN_X, MannProp, auroraDef, sceneDef } from './scene-stage.ts';
 import { BALE_LINE, BELL_LINES, FORE_LINE, PEA_LINES } from './lines.ts';
 import { WAVE3 } from './wave3.ts';
@@ -395,8 +395,8 @@ export class GameView {
           const onTruck = !!down?.truck;
           down = null;
           if (!tap) return;
-          // A truck tapped, not dragged: the magpie may come (one time in two, once a level).
-          if (onTruck && this.magpie && !this.eggDone.has('magpie') && !this.eggsOn.has('magpie') && this.roll('bird', GAG_TRIGGERS.magpie.chance)) this.fire('magpie');
+          // A truck tapped, not dragged: the magpie comes (always until he is in the log; then one time in two, never two misses running: `chance`). Once a level.
+          if (onTruck && this.magpie && !this.eggDone.has('magpie') && !this.eggsOn.has('magpie') && this.chance('magpie', GAG_TRIGGERS.magpie.chance, rollPinned('bird'))) this.fire('magpie');
           // The frosty riser, tapped three times: the frozen tongue.
           if (this.riser?.fits && this.riser.hit(e.clientX, e.clientY) && ++this.riserTaps >= GAG_TRIGGERS.tongue.riserTaps) {
             this.riserTaps = 0;
@@ -408,7 +408,7 @@ export class GameView {
           // have been, it only shakes.
           if (onBush && this.strips.bear && !this.eggsOn.has('bear') && ++this.bushTaps >= GAG_TRIGGERS.bear.bushTaps) {
             this.bushTaps = 0;
-            if (!this.eggDone.has('bear') && !bearNever() && bearComes(loadProgress().demo || bearAlways())) this.fire('bear');
+            if (!this.eggDone.has('bear') && this.chance('bear', GAG_TRIGGERS.bear.chance, bearNever() ? false : bearAlways() ? true : null)) this.fire('bear');
             else this.bush!.shake();
           } else if (onBush && this.strips.porcupine && !this.eggsOn.has('porcupine') && ++this.bushTaps >= GAG_TRIGGERS.porcupine.bushTaps) {
             this.bushTaps = 0;
@@ -685,7 +685,7 @@ export class GameView {
     // The tourists: the first move on the Daily Pad may bring them to the sign.
     if (this.daily && !this.toured && this.strips.tourists) {
       this.toured = true;
-      if (this.roll('tourists', GAG_TRIGGERS.tourists.chance)) this.fire('tourists');
+      if (this.chance('tourists', GAG_TRIGGERS.tourists.chance, rollPinned('tourists'))) this.fire('tourists');
     }
     // Gag triggers (gag-triggers.ts): the same truck back and forth; two exits back to back.
     if (this.backForth.moved(id, delta) >= GAG_TRIGGERS.landowner.backAndForth) this.fire('landowner');
@@ -766,12 +766,18 @@ export class GameView {
     this.showLevelHint();
     this.updateHud();
     // The surveyor: the Restart button may bring him to check the sign (once a visit).
-    if (!this.surveyed && this.strips.surveyor && this.roll('surveyor', GAG_TRIGGERS.surveyor.chance)) this.fire('surveyor');
+    if (!this.surveyed && this.strips.surveyor && this.chance('surveyor', GAG_TRIGGERS.surveyor.chance, rollPinned('surveyor'))) this.fire('surveyor');
   }
 
-  /** A roll for a gag that comes only some of the time: always in demo mode; `?<name>=1` / `=0` pin it (tests). */
-  private roll(name: string, chance: number): boolean {
-    return rollPinned(name) ?? rollComes(chance, loadProgress().demo);
+  /**
+   * Does a chance sighting come on this try (gag-triggers.ts `Chances`)? ALWAYS until it is in the player's Wildlife
+   * Log; after that on its `chance`, but never two misses in a row. Always in demo mode. `pin`: a test's switch
+   * (`?bird=1`, `?bear=0`...), which settles it either way.
+   */
+  private chance(gag: GagId, chance: number, pin: boolean | null): boolean {
+    if (pin !== null) return pin;
+    if (loadProgress().demo) return true;
+    return CHANCES.comes(gag, chance, loadLog(false).found.includes(EGG_SIGHTING[gag]));
   }
 
   /**
@@ -1009,7 +1015,7 @@ export class GameView {
     const wrongGate = GAG_TRIGGERS.sam.wrongGate && !!bumped && wrongGateBump(bumped, direction, hit, this.level.gates);
     if (++this.bumpRun >= GAG_TRIGGERS.sam.bumpsInARow || wrongGate) this.fire('sam');
     // The sleepy worker: a truck slides into another truck, and he may come (one time in two).
-    if (hit === 'truck' && this.worker?.canPlay() && !this.eggDone.has('worker') && !this.eggsOn.has('worker') && this.roll('nap', GAG_TRIGGERS.worker.chance)) this.fire('worker');
+    if (hit === 'truck' && this.worker?.canPlay() && !this.eggDone.has('worker') && !this.eggsOn.has('worker') && this.chance('worker', GAG_TRIGGERS.worker.chance, rollPinned('nap'))) this.fire('worker');
     if (berm === 'top' && ++this.topBumps >= GAG_TRIGGERS.moose.topBermBumps) this.fire('moose');
     // The runaway bale: a bump into the bottom berm next to the bale (the truck's lane within a cell of it).
     if (berm === 'bottom' && this.bakken && bumped) {
@@ -1045,10 +1051,16 @@ export class GameView {
 
   private onHint(): void {
     if (isWon(this.state)) return;
-    this.hintPressed();
-    // Gopher lunch (Cardium): any press of Hint may bring the worker in with his sandwich. AFTER the hint's own
-    // message is up: a message of two lines takes its room first (`note`), so he is placed for the lease as it stands.
-    if (this.strips.gopherLunch && !this.eggDone.has('gopherLunch') && !lunchNever() && lunchComes(loadProgress().demo || lunchAlways())) this.fire('gopherLunch');
+    // Gopher lunch (Cardium): a press of Hint brings the worker in with his sandwich. AFTER the hint's own message is
+    // up: a message of two lines takes its room first (`note`), so he is placed for the lease as it stands. (The
+    // hint is worked out a frame or two later, "Calling the dispatcher...": so he waits for that too. Fired straight
+    // after the press, as it was for a while, he was placed for the old layout and played a line too low.)
+    void this.hintPressed().then(() => this.lunchOnHint());
+  }
+
+  private lunchOnHint(): void {
+    if (!this.el.isConnected || isWon(this.state)) return;
+    if (this.strips.gopherLunch && !this.eggDone.has('gopherLunch') && this.chance('gopherLunch', GAG_TRIGGERS.gopherLunch.chance, lunchNever() ? false : lunchAlways() ? true : null)) this.fire('gopherLunch');
   }
 
   private async hintPressed(): Promise<void> {

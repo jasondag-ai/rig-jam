@@ -244,7 +244,7 @@ await page.reload({ waitUntil: 'networkidle' });
 const demoLog = () => page.evaluate(() => JSON.parse(localStorage.getItem('rush-hour-rigs:demo-log') ?? '{"found":[]}').found);
 log = await openLog();
 const hints = Object.fromEntries(log.cards.map((c) => [c.id, c.text]));
-check(log.count === `0/${N}` && hints.magpie === 'Tap a truck without dragging it. He may fly in.' && hints.biffy === 'Bump a truck into the bottom berm.' && hints.bear === 'In Duvernay, tap the snowy bush three times. He comes one time in three.' && log.cards.every((c) => c.text.length > 10 && c.text !== riddleOf(c.id)), 'demo mode: the demo log starts empty and every card shows its hint');
+check(log.count === `0/${N}` && hints.magpie === 'Tap a truck without dragging it.' && hints.biffy === 'Bump a truck into the bottom berm.' && hints.bear === 'In Duvernay, tap the snowy bush three times.' && log.cards.every((c) => c.text.length > 10 && c.text !== riddleOf(c.id)), 'demo mode: the demo log starts empty and every card shows its hint');
 await page.$eval('.log-head .back', (b) => b.click());
 await wait(200);
 await enter(cardium, bumpLevel);

@@ -603,7 +603,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     await tapRiser(-60, 0);
     await wait(400);
     check(!(await page.$('.strip-layer')), 'a tap 60 px off the riser does not count');
-    const watching = watch(page, 'tongue', { parts: { worker: '.tongue-layer svg.pup:nth-of-type(1) .torso', buddy: '.tongue-layer svg.pup:nth-of-type(2) .torso', tongue: '.tongue-layer .pup-overlay .tongue', flake: '.tongue-layer .pup-overlay .flake', flash: '.tongue-layer .pup-flash', coffee: '.tongue-layer .pup-overlay .coffee', thwip: '.tongue-layer .pup-overlay .thwip', thermos: '.tongue-layer svg.pup:nth-of-type(2) .thermos' } }, 36000);
+    const watching = watch(page, 'tongue', { parts: { worker: '.tongue-layer svg.pup:nth-of-type(1) .torso', buddy: '.tongue-layer svg.pup:nth-of-type(2) .torso', tongue: '.tongue-layer .pup-overlay .tongue', flake: '.tongue-layer .pup-overlay .flake', flash: '.flash-layer .pup-flash', coffee: '.tongue-layer .pup-overlay .coffee', thwip: '.tongue-layer .pup-overlay .thwip', thermos: '.tongue-layer svg.pup:nth-of-type(2) .thermos' } }, 36000);
     const bubble = bubbleOf(page, 'tongue', 20000);
     const size = await tapRiser(-20, 18);
     const log = await watching;
@@ -620,9 +620,11 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
     check(stuck.length > 20 && stuck.every((f) => Math.abs(f.tongue.r - (riser.x - 4)) < 6) && Math.max(...stuck.map((f) => f.tongue.r - f.tongue.l)) > Math.min(...stuck.map((f) => f.tongue.r - f.tongue.l)) + 3, 'his tongue is stuck to the real riser and stretches as he pulls');
     const b = await bubble;
     check(b?.text === 'HEWP!' && b.box.x >= 4 && b.box.x + b.box.width <= W - 4, `"${b?.text}", on screen`);
-    const flashes = log.filter((f) => +f.flash?.vis && f.beat === 'flash');
-    const strip = await page.evaluate(() => ({ top: document.querySelector('.board').getBoundingClientRect().bottom, bottom: document.querySelector('.note').getBoundingClientRect().top }));
-    check(flashes.length > 2 && flashes.every((f) => f.flash.t >= strip.top - 1 && f.flash.b <= strip.bottom + 1), 'the camera flash lights the bottom strip only, never the lease');
+    // (Job Y: a quick soft flash over the WHOLE game screen, about 150 ms; it used to be a box on the bottom strip.)
+    const flashes = log.filter((f) => f.flash?.vis && f.beat === 'flash');
+    const innerH = await page.evaluate(() => innerHeight);
+    const lit = log.filter((f) => f.flash?.vis), span = lit.length ? lit.at(-1).t - lit[0].t : -1;
+    check(flashes.length >= 2 && flashes.every((f) => f.flash.l <= 0.5 && f.flash.t <= 0.5 && f.flash.r >= W - 0.5 && f.flash.b >= innerH - 0.5) && span > 0 && span < 260, `the camera's flash is over the whole game screen, and quick (${Math.round(span)} ms lit, ${flashes.length} frames)`);
     check(log.some((f) => f.beat === 'snowflake' && f.flake), 'a snowflake drifts down onto his nose');
     check(log.filter((f) => f.beat === 'walk-off' || f.beat === 'riser-again').every((f) => !f.tongue), 'the tongue comes free');
     const fin = log.at(-1);
@@ -723,11 +725,11 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       if (mode === 'game') check(by.bear?.art && by.bear.legendary && !!(await page.$('.log-card[data-id="bear"] .legend-tag')), 'the Bear has a LEGENDARY card with a gold frame and puppet art');
       if (mode === 'game') check(by.bull?.art && by.bull.text === riddleOf('bull'), 'Bull and Cow has a card with puppet art');
       if (mode === 'game') check(by.porcupine?.art && by.lunch?.art && by.porcupine.text === riddleOf('porcupine'), 'Porcupine and Gopher Lunch have cards with puppet art');
-      else check(by.porcupine.text === 'In Cardium, tap the bush three times.' && by.lunch.text === 'In Cardium, press Hint. He may show up for lunch.', 'demo mode shows the porcupine\'s and the lunch\'s hints');
+      else check(by.porcupine.text === 'In Cardium, tap the bush three times.' && by.lunch.text === 'In Cardium, press Hint.', 'demo mode shows the porcupine\'s and the lunch\'s hints');
       if (mode === 'game') check(by.sam?.art && by.tongue?.art && by.sam.text === riddleOf('sam'), 'Safety Sam and Frozen Tongue have cards with puppet art');
       else check(by.sam.text === 'Bump three times in a row, or push a truck at a wrong-colour gate.' && by.tongue.text === 'On a winter level, tap the frosty pipe stand three times.', 'demo mode shows Sam\'s and the tongue\'s hints');
       if (mode === 'game') check(by.marshmallow?.art && by.geese?.art && by.marshmallow.text === riddleOf('marshmallow') && by.geese.text === riddleOf('geese'), `Marshmallow and Lost Goose have cards with puppet art; the game hides the hints (${cards.length} cards)`);
-      else check(by.marshmallow.text === 'Tap a flare stack three times.' && by.geese.text === 'Press Undo three times in a row.' && by.bear.text === 'In Duvernay, tap the snowy bush three times. He comes one time in three.' && by.bull.text === 'In Montney, tap the cow.', 'demo mode shows each gag\'s hint');
+      else check(by.marshmallow.text === 'Tap a flare stack three times.' && by.geese.text === 'Press Undo three times in a row.' && by.bear.text === 'In Duvernay, tap the snowy bush three times.' && by.bull.text === 'In Montney, tap the cow.', 'demo mode shows each gag\'s hint');
       await context.close();
     }
   }

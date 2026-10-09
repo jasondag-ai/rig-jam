@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BackAndForth, GAG_TRIGGERS, SHARES, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump } from './gag-triggers.ts';
+import { BackAndForth, Chances, GAG_TRIGGERS, SHARES, Wiggle, bearComes, bermBump, lunchComes, mustWait, rollComes, wrongGateBump } from './gag-triggers.ts';
 import { BEAR_BEATS, BEAR_END, bPose } from './bear.ts';
 import { BUSH_X, COW_X, PORC_BUSH_X, bearBox, bushBox, cowBox, moundSpot } from './strip-gags.ts';
 import { STAGE, propBack, propLine, signStand as signStandLine } from './strip-gags.ts';
@@ -705,5 +705,51 @@ describe('the depth rule: the strip has one front-to-back order', () => {
       expect(moundSpot(w, strip).baseY).toBe(row2);
       if (strip.bottom - strip.top > 140) expect(row2).toBeGreaterThan(signStandLine(w, strip).ground + 20);
     }
+  });
+});
+
+describe('chance sightings never feel broken (Job Y)', () => {
+  it('until a sighting is in the Wildlife Log its trigger ALWAYS works, whatever the dice say', () => {
+    const c = new Chances();
+    for (let i = 0; i < 20; i++) expect(c.comes('magpie', 1 / 2, false, () => 0.999)).toBe(true);
+    expect(c.comes('bear', 1 / 3, false, () => 0.999)).toBe(true);
+  });
+
+  it('once it is in the log the chance applies, but never two misses in a row: after a miss the next try always works', () => {
+    const c = new Chances();
+    // A hit on the dice is a hit.
+    expect(c.comes('magpie', 1 / 2, true, () => 0.49)).toBe(true);
+    // A miss, and the very next try works even on the worst roll; then the dice are back.
+    expect(c.comes('magpie', 1 / 2, true, () => 0.5)).toBe(false);
+    expect(c.owed('magpie')).toBe(true);
+    expect(c.comes('magpie', 1 / 2, true, () => 0.999)).toBe(true);
+    expect(c.owed('magpie')).toBe(false);
+    expect(c.comes('magpie', 1 / 2, true, () => 0.999)).toBe(false);
+    // On the worst dice there is never a second miss running, for any of the six.
+    for (const [key, chance] of [['magpie', GAG_TRIGGERS.magpie.chance], ['worker', GAG_TRIGGERS.worker.chance], ['bear', GAG_TRIGGERS.bear.chance], ['gopherLunch', GAG_TRIGGERS.gopherLunch.chance], ['surveyor', GAG_TRIGGERS.surveyor.chance], ['tourists', GAG_TRIGGERS.tourists.chance]] as const) {
+      const d = new Chances();
+      const tries = Array.from({ length: 40 }, () => d.comes(key, chance, true, () => 0.999));
+      expect(tries.some((x, i) => i > 0 && !x && !tries[i - 1]), key).toBe(false);
+      expect(tries.filter(Boolean).length, key).toBe(20);
+    }
+  });
+
+  it('each sighting keeps its own count, and a miss is owed across levels until it is paid', () => {
+    const c = new Chances();
+    expect(c.comes('bear', 1 / 3, true, () => 0.9)).toBe(false);
+    expect(c.comes('magpie', 1 / 2, true, () => 0.9)).toBe(false);
+    expect(c.comes('bear', 1 / 3, true, () => 0.9)).toBe(true);
+    expect(c.owed('magpie')).toBe(true);
+    c.reset();
+    expect(c.owed('magpie')).toBe(false);
+  });
+
+  it('with random dice it still comes about as often as its chance says, or more (a miss is always made good)', () => {
+    let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const c = new Chances(); let hits = 0;
+    for (let i = 0; i < 6000; i++) if (c.comes('bear', 1 / 3, true, rnd)) hits++;
+    // One in three on the dice, and every miss followed by a sure thing: 3 in 5 over a long run.
+    expect(hits / 6000).toBeGreaterThan(0.55);
+    expect(hits / 6000).toBeLessThan(0.65);
   });
 });

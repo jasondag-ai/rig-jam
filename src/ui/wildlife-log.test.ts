@@ -55,7 +55,7 @@ describe('Wildlife Log', () => {
 
   it('the Bear is the one legendary entry', () => {
     expect(LOG_ENTRIES.filter((e) => e.legendary).map((e) => e.id)).toEqual(['bear']);
-    expect(LOG_ENTRIES.find((e) => e.id === 'bear')!.hint).toBe('In Duvernay, tap the snowy bush three times. He comes one time in three.');
+    expect(LOG_ENTRIES.find((e) => e.id === 'bear')!.hint).toBe('In Duvernay, tap the snowy bush three times.');
   });
 
   it('demo sightings are worded differently', () => {
@@ -83,7 +83,7 @@ describe('log hints and Night Shift', () => {
       expect(e.hint, e.id).toMatch(/^(In |On |Tap |Press |Bump |Slide |Drive |Play |Leave |Scroll |Clear |After )/);
       expect(e.hint, e.id).toMatch(/[.)]$/);
     }
-    expect(LOG_ENTRIES.find((e) => e.id === 'tourists')!.hint).toBe('Play the Daily Pad. They may show up on your first move (spring to fall).');
+    expect(LOG_ENTRIES.find((e) => e.id === 'tourists')!.hint).toBe('Play the Daily Pad. They show up on your first move (spring to fall).');
   });
 
   it('Night Shift is a log entry like any other: found when the lease goes fully dark', () => {
@@ -91,5 +91,12 @@ describe('log hints and Night Shift', () => {
     expect(night).toMatchObject({ name: 'Night Shift', caption: 'Lights out on the lease.', hint: 'Leave any lease alone until it goes dark.' });
     expect(sightingToast('night', 4)).toBe(`New sighting! Night Shift (4/${LOG_ENTRIES.length})`);
     expect(LOG_ENTRIES).toHaveLength(33);
+  });
+
+  it('no hint says "may" or quotes odds: a sighting not yet found always comes when its hint is followed (Job Y)', () => {
+    for (const e of LOG_ENTRIES) {
+      expect(/\bmay\b/i.test(e.hint), `${e.id}: "${e.hint}"`).toBe(false);
+      expect(/one time in|sometimes|might/i.test(e.hint), `${e.id}: "${e.hint}"`).toBe(false);
+    }
   });
 });

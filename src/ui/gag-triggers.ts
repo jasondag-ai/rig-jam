@@ -204,6 +204,29 @@ export const SHARES: Record<GagId, string[]> = {
 /** Must this gag wait for one of those playing? */
 export const mustWait = (id: GagId, playing: Iterable<GagId>): boolean => [...playing].some((p) => p === id || SHARES[p].some((x) => SHARES[id].includes(x)));
 
+/**
+ * CHANCE SIGHTINGS NEVER FEEL BROKEN (Jay, Oct 9; Job Y). The magpie, the sleepy worker, the bear, Gopher Lunch,
+ * the surveyor and the tourists each come on a roll of the dice (their `chance` above). The rule round the dice:
+ *   - UNTIL A SIGHTING IS IN THE PLAYER'S WILDLIFE LOG, ITS TRIGGER ALWAYS WORKS (`inLog` false).
+ *   - After that the chance applies, BUT NEVER TWO MISSES IN A ROW: after a miss, the next try always works.
+ * `Chances` remembers each sighting's last miss for as long as the page is open (across levels; nothing is saved).
+ */
+export class Chances {
+  private missed = new Set<string>();
+  /** Does it come on this try? `key`: the sighting; `inLog`: has the player found it already? */
+  comes(key: string, chance: number, inLog: boolean, random: () => number = Math.random): boolean {
+    if (!inLog || this.missed.has(key)) { this.missed.delete(key); return true; }
+    const hit = random() < chance;
+    if (!hit) this.missed.add(key);
+    return hit;
+  }
+  /** Was its last try a miss (so the next one works)? */
+  owed(key: string): boolean { return this.missed.has(key); }
+  reset(): void { this.missed.clear(); }
+}
+/** The game's own: one for the page. */
+export const CHANCES = new Chances();
+
 /** A roll for a gag that comes only some of the time (`chance`): always in demo mode. */
 export const rollComes = (chance: number, demo: boolean, random: () => number = Math.random): boolean => demo || random() < chance;
 

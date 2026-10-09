@@ -283,7 +283,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       if (mode === 'game') {
         check(cards.map((c) => c.id).slice(0, 3).join() === 'magpie,spotter,moose' && cards.every((c) => c.art), 'lists the live gags, each with card art from its puppet');
         check(cards.every((c) => c.text === riddleOf(c.id)), 'game mode hides the hints');
-      } else check(cards[1].text === 'Slide one truck into another. He may wander in.' && cards[2].text === 'In Duvernay, bump a truck into the top berm twice.', `demo mode shows each gag's hint ("${cards[1].text}" / "${cards[2].text}")`);
+      } else check(cards[1].text === 'Slide one truck into another.' && cards[2].text === 'In Duvernay, bump a truck into the top berm twice.', `demo mode shows each gag's hint ("${cards[1].text}" / "${cards[2].text}")`);
       await context.close();
     }
   }

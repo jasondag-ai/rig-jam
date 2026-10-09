@@ -25,8 +25,8 @@ export interface LogEntry {
 
 /** One entry per gag in the game, in the order the page lists them. */
 export const LOG_ENTRIES: LogEntry[] = [
-  { id: 'magpie', name: 'Magpie', caption: 'Never park under a tree.', hint: "Tap a truck without dragging it. He may fly in.", riddle: "A parked truck, a light touch, and trouble from above." },
-  { id: 'spotter', name: 'Sleepy Worker', caption: 'On the clock. Allegedly.', hint: "Slide one truck into another. He may wander in.", riddle: "When two trucks meet, somebody finds a quiet seat." },
+  { id: 'magpie', name: 'Magpie', caption: 'Never park under a tree.', hint: "Tap a truck without dragging it.", riddle: "A parked truck, a light touch, and trouble from above." },
+  { id: 'spotter', name: 'Sleepy Worker', caption: 'On the clock. Allegedly.', hint: "Slide one truck into another.", riddle: "When two trucks meet, somebody finds a quiet seat." },
   { id: 'moose', name: 'Moose', caption: 'Just checking in.', hint: "In Duvernay, bump a truck into the top berm twice.", riddle: "Knock twice on the north wall when the snow is down." },
   { id: 'nearmiss', name: 'Near Miss', caption: 'Owns the lease. Pays no rent.', hint: "In Cardium, drive two trucks out one right after the other.", riddle: "Two leave Cardium in a hurry. Somebody underground notices." },
   { id: 'landowner', name: 'Angry Landowner', caption: 'Wants a word about the ruts.', hint: "Drive one truck back and forth four times, or wiggle it fast.", riddle: "Back and forth, back and forth. Somebody owns that grass." },
@@ -35,12 +35,12 @@ export const LOG_ENTRIES: LogEntry[] = [
   { id: 'marshmallow', name: 'Marshmallow', caption: 'Mmm. Crispy.', hint: "Tap a flare stack three times.", riddle: "The flame is lit. Third time is a snack." },
   { id: 'geese', name: 'Lost Goose', caption: 'Wrong way, buddy.', hint: "Press Undo three times in a row.", riddle: "Take it back, take it back, take it back. Then look up." },
   { id: 'porcupine', name: 'Porcupine', caption: 'Check behind the bush first.', hint: "In Cardium, tap the bush three times.", riddle: "Three knocks on a Cardium bush. Somebody prickly lives there." },
-  { id: 'lunch', name: 'Gopher Lunch', caption: 'He left you the crust.', hint: "In Cardium, press Hint. He may show up for lunch.", riddle: "Ask for help in Cardium. Somebody was about to eat." },
+  { id: 'lunch', name: 'Gopher Lunch', caption: 'He left you the crust.', hint: "In Cardium, press Hint.", riddle: "Ask for help in Cardium. Somebody was about to eat." },
   { id: 'sam', name: 'Safety Sam', caption: 'See me.', hint: "Bump three times in a row, or push a truck at a wrong-colour gate.", riddle: "Three strikes, or the wrong door. Somebody is writing it down." },
   { id: 'tongue', name: 'Frozen Tongue', caption: 'HEWP!', hint: "On a winter level, tap the frosty pipe stand three times.", riddle: "Cold steel in winter. Three taps and somebody will lick it." },
-  { id: 'surveyor', name: 'Surveyor', caption: 'Off a metre. Or not.', hint: "Press Restart. He may come to check the sign.", riddle: "Start over, and somebody checks the measurements." },
+  { id: 'surveyor', name: 'Surveyor', caption: 'Off a metre. Or not.', hint: "Press Restart.", riddle: "Start over, and somebody checks the measurements." },
   { id: 'deer', name: 'Back Scratcher', caption: "That's the spot.", hint: "Tap the lease sign (spring to fall).", riddle: "The blank sign is good for more than reading." },
-  { id: 'tourists', name: 'Tourists', caption: 'A real oil sign!', hint: "Play the Daily Pad. They may show up on your first move (spring to fall).", riddle: "Today's pad draws a crowd. Sometimes." },
+  { id: 'tourists', name: 'Tourists', caption: 'A real oil sign!', hint: "Play the Daily Pad. They show up on your first move (spring to fall).", riddle: "Today's pad draws a crowd. Sometimes." },
   { id: 'muskeg', name: 'Muskeg Boots', caption: 'The muskeg keeps what it takes.', hint: "In Mannville, tap the big muskeg puddle three times.", riddle: "The big Mannville puddle is deeper than it looks. Ask it three times." },
   { id: 'cattrain', name: 'Cat Train', caption: 'One always falls behind.', hint: "In Mannville, drive a convoy out in order, one right after the other.", riddle: "One, then two, nose to tail out of Mannville." },
   { id: 'beaver', name: 'Beaver', caption: 'Measure twice. Bonk once.', hint: "In Mannville, tap the tall aspen three times.", riddle: "The tall Mannville aspen is in somebody's way. Knock three times." },
@@ -60,7 +60,7 @@ export const LOG_ENTRIES: LogEntry[] = [
   { id: 'bull', name: 'Bull and Cow', caption: 'Spring in the Montney.', hint: "In Montney, tap the cow.", riddle: "She is only grazing in the Montney. Say hello." },
   // Not a gag: found by scrolling the log's own dig right through the Earth (log-deep.ts). Its card shows the player's best time.
   { id: 'dug', name: 'Dug Through', caption: 'Alberta to Kerguelen, the short way.', hint: "Scroll this log down. Keep going. All the way down.", riddle: "This page has a bottom. Probably.", hidden: true },
-  { id: 'bear', name: 'Bear', caption: 'Does what bears do in the woods.', hint: "In Duvernay, tap the snowy bush three times. He comes one time in three.", riddle: "A snowy bush in Duvernay. Three knocks, and luck.", legendary: true },
+  { id: 'bear', name: 'Bear', caption: 'Does what bears do in the woods.', hint: "In Duvernay, tap the snowy bush three times.", riddle: "A snowy bush in Duvernay. Three knocks, and luck.", legendary: true },
 ];
 /** How many of the log's entries have been found (a saved log may hold ids from gags since retired). */
 export const foundCount = (log: WildlifeLog): number => LOG_ENTRIES.filter((e) => log.found.includes(e.id)).length;

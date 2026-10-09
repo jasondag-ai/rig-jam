@@ -845,7 +845,7 @@ something, give exact clicks and one command at a time.
   gag plays right through (`GameView.seen`; the worker counts once he is asleep). Saved in
   `rush-hour-rigs:log` (`v: 3`), so Reset progress clears it.
 - HINTS are plain and short and say where and what to do ("In Cardium, tap the bush three
-  times."); a gag that comes on a roll says "He may ...". No em dashes. A test holds them to it.
+  times."); never "may" and never odds (Job Y: an unfound sighting always comes). No em dashes. A test holds them to it.
 - NIGHT SHIFT (`night`): not a gag. Found when the lease has gone fully dark (the idle fade has
   finished: `GameView.nightSeen`, once a visit; not when night is pinned with `?night=1`). Same
   toast and card as a gag. Its art is `nightStill()` (night.ts): the pad at night, the flare glowing.
@@ -1344,6 +1344,40 @@ something, give exact clicks and one command at a time.
   screen's right edge, in the page's margin, its reading turned on its side, so it covers no
   card's picture and no caption (there is no place over two columns of cards where the full pill
   covers neither). Below the cards it is the pill again.
+
+## Sighting fixes (Job Y, Oct 9)
+- NEAR MISS: THE GOPHER COMES UP IN FRONT OF THE MOUND. His layer ends at the hole line, and a
+  ground line worked out from that stood above the mound's own, so the mound was drawn over him
+  and he rose behind it. `nearMissDef` now stands his layer on the mound's own line
+  (`mound.dataset.ground`, `setGround(..., 'set')`) and draws the hole's near lip over him on a
+  layer of its own (`gopher-lip-layer`, Gopher Lunch's `LIP`), made before the hotshot's layer.
+- CAMERA FLASHES (Frozen Tongue, Tourists; puppet-stage.ts `camFlash`, `FLASH_S` 0.15): a quick
+  soft burst of white over the WHOLE game screen, brightest at the camera, on a layer of its own
+  over the lease (strip-gags.ts `flashLayer`: made by the gag's own `layer`, so it goes with the
+  gag, but not one of its strip layers, so the beat's mark, the depth rule and the tests do not
+  see it). It used to light the bottom strip only: a hard-edged box. None with
+  reduced motion (`display: none`).
+- CHANCE SIGHTINGS NEVER FEEL BROKEN (gag-triggers.ts `Chances`, `CHANCES`; `GameView.chance`):
+  the magpie, the sleepy worker, the bear, Gopher Lunch, the surveyor and the tourists. UNTIL A
+  SIGHTING IS IN THE PLAYER'S WILDLIFE LOG ITS TRIGGER ALWAYS WORKS; after that its chance
+  applies, BUT NEVER TWO MISSES IN A ROW (after a miss the next try always works; the miss is
+  remembered while the page is open, across levels, and is not saved). Demo mode: always. The
+  tests' pins (`?bird=`, `?nap=`, `?bear=`, `?lunch=`, `?surveyor=`, `?tourists=`) still settle
+  it either way. (Where the notes above say "1 in 2" or "1 in 3" for these six, read it with
+  this rule.)
+- GOPHER LUNCH WAITS FOR THE HINT'S MESSAGE (`GameView.onHint` > `lunchOnHint`): since the hint
+  is worked out a frame or two after the press ("Calling the dispatcher..."), the lunch fired
+  straight after the press was placed before the two-line message took its room, and played a
+  line too low (the fault of "A TALL MESSAGE TAKES ITS ROOM AT ONCE", back again). He is fired
+  once `hintPressed` has finished.
+- HINTS NEVER SAY "MAY" OR QUOTE ODDS (a test holds them to it): a hint shows only while its
+  sighting is unfound, and then following it always works. Changed: Magpie, Sleepy Worker,
+  Gopher Lunch, Surveyor, Tourists ("They show up on your first move"), and the Bear (its "He
+  comes one time in three." is gone).
+- `test:e2e:sightings` has a third part (`ONLY=chance`): with the dice left alone, a fresh log
+  and then a full one, one tap on a parked truck brings the magpie in each region of 6 x 6, three
+  taps on the Duvernay bush the bear, the Daily Pad's first move the tourists (first try with a
+  fresh log; the second at the latest with a full one). `tools/qc-filmstrip.mjs` takes `safari375`.
 
 ## Hints in a row (Job X, Oct 9)
 - THE KEPT LINE ALWAYS STARTS AT THE MOVE BEING HINTED (`src/ui/hint-line.ts`, pure and tested;

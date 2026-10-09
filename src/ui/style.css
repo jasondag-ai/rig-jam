@@ -3417,8 +3417,21 @@ img.hat { width: 100%; height: auto; }
 .puppet-layer.geese-layer { z-index: 0; }
 .puppet-layer .pup-overlay { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .puppet-layer .pup-feather { border: 1.5px solid #2b1e16; }
-/* Frozen tongue: the buddy's camera flash lights the bottom strip only, never the lease. */
-.puppet-layer .pup-flash { position: absolute; left: 0; width: 100%; background: #fff; opacity: 0; pointer-events: none; z-index: 8; }
+/* (Its layer lies over the lease, the HUD and the buttons, and takes no touch.) */
+.puppet-layer.flash-layer { z-index: 9; pointer-events: none; }
+/* A camera's flash (Frozen Tongue, Tourists; puppet-stage.ts `camFlash`): a quick soft burst of white over the whole
+   game screen, brightest at the camera (--fx, --fy), with no edge anywhere. Its layer is over the lease. */
+.puppet-layer .pup-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 120% 95% at var(--fx, 50%) var(--fy, 80%), #fff 0%, rgba(255, 255, 255, 0.82) 38%, rgba(255, 255, 255, 0.34) 100%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 8;
+}
+@media (prefers-reduced-motion: reduce) {
+  .puppet-layer .pup-flash { display: none; }
+}
 /* Gopher lunch: the gopher's box ends at the hole line; the sandwich and the crust. */
 .puppet-layer .pup-clip { position: absolute; left: 0; top: 0; width: 100%; overflow: hidden; pointer-events: none; }
 .puppet-layer .pup-food { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; }

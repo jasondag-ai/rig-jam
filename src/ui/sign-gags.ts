@@ -18,7 +18,7 @@
 // stage about the sign (`mirror`); nothing here knows left from right, except the sign's own
 // moves and the overlay's lettering, which are turned back.
 /* eslint-disable */
-import { addEl, makePup, place } from './puppet-stage.ts';
+import { FLASH_S, camFlash, makePup, place } from './puppet-stage.ts';
 const O = '#2b1e16';
 const ease = x => x<.5 ? 2*x*x : 1-Math.pow(-2*x+2,2)/2;
 const clamp = (x,a=0,b=1) => Math.max(a,Math.min(b,x));
@@ -361,7 +361,7 @@ export const TOUR_END = 9.1;
 export const TOUR_LINE = {from:2.4, to:2.9, text:'A real oil sign!'};
 /** Where they stop (units from the sign, on the near side): he by the sign, close enough to lean an elbow on it; she back a few steps with the phone. */
 export const TOUR_HIM = -40, TOUR_HER = -128;
-export function tourScene(stage, frame, sign, f, spot, mirror, flashBox){
+export function tourScene(stage, frame, sign, f, spot, mirror, flashHost, flashAt){
   const sc = stageOf(stage, frame, sign, f, spot, mirror);
   sc.him = z(makePup(stage, WORKER, {vw:120, vh:120, ax:60, ay:108, frac:.19*f, spot}), 5);
   dress(sc.him, {top:'#29a3a6', shade:'#1f8487', pants:'#d9c38a', shins:SKIN, boots:'#b98a5a', hands:SKIN, forearm:SKIN, beard:false, hat:CAP('#d6402f'), torsoExtra:FLOWERS});
@@ -370,9 +370,8 @@ export function tourScene(stage, frame, sign, f, spot, mirror, flashBox){
   dress(sc.her, {top:'#ef7fa8', shade:'#d8618c', pants:'#f1efe6', shins:SKIN, boots:'#b98a5a', hands:SKIN, forearm:SKIN, beard:false, hat:SUNHAT, hair:HAIR});
   sc.her.q('.armF .fore').insertAdjacentHTML('afterbegin', PHONE);
   sc.ov = overlay(stage);
-  // The camera's flash lights the bottom strip only, never the lease.
-  sc.flash = addEl(frame, 'pup-flash');
-  if (flashBox) Object.assign(sc.flash.style, { top: `${flashBox.top}px`, height: `${flashBox.height}px` });
+  // The camera's flash: a quick soft burst over the whole game screen, from where they stand (puppet-stage.ts `camFlash`).
+  sc.flash = camFlash(flashHost ?? frame, flashAt ?? { x: 0, y: 0 });
   return sc;
 }
 /** The pose at a time. `off`: how far from the sign (their units) they are fully off the near edge (the reference: 360). */
@@ -389,7 +388,7 @@ export function tourPose(t, off = 360){
   else if (t < 3.7){ m.dx = HIM; h.dx = HER;                                                        // he spins round and poses; she lines up the shot
     if (t < 3.1) hop(m, seg(t,2.9,3.1), 1, -1); const k = ease(seg(t,3.05,3.3)); if (t >= 3.1) posing(m, k);
     const kh = ease(seg(t,2.9,3.2)); h.phone = true; h.arF = lerp(-10, -92, kh); h.foF = lerp(-10, -18, kh); happy(h); h.px = 74.5; h.py = 32.5; h.rot = 3*kh;
-    flash = t > 3.5 && t < 3.75 ? 1 - seg(t,3.5,3.75) : 0; }
+    flash = t > 3.5 && t < 3.5 + FLASH_S ? 1 - seg(t,3.5,3.5 + FLASH_S) : 0; }
   else if (t < 4.5){ m.dx = HIM; h.dx = HER; posing(m, 1); h.phone = true; h.arF = -55; h.foF = -60; h.head = 10; h.px = 73; h.py = 36; happy(h); one = seg(t,3.85,4.3);   // she admires the photo
     if (t > 4.25){ m.thumb = false; m.arF = -175; m.foF = -60; m.head = -4; m.mouth = 'M65 47 Q68 45 71 47'; m.lid = 'M65 26 L75 26 L75 31 L65 31 Z'; } }                          // slap!
   else if (t < 5.1){ m.dx = HIM; h.dx = HER; m.face = -1; shock(m); shock(h); m.px = h.px = 74.5; h.phone = true; h.arF = -30; swarm = {k: seg(t,4.5,5.1), phase:'rise'}; m.arF = -60; h.foF = -40; }
@@ -403,7 +402,7 @@ export function tourPose(t, off = 360){
 export function tourApply(sc, P, t){
   const {m, h} = P, r = sc.stage.getBoundingClientRect(), u = sc.him.frac*r.width/120;
   place(sc.sign); place(sc.him, m.dx); pupApply(sc.him, m); place(sc.her, h.dx*(.19/.178)); pupApply(sc.her, h);
-  sc.flash.style.opacity = String(P.flash*.6);
+  sc.flash.style.opacity = String(P.flash*.85);
   let html = '';
   const mos = (x, y, i) => { const s = Math.max(1.6, 1.3*u), wv = Math.sin(t*90 + i)*.6 + .8; return `<ellipse cx="${x - s*.9}" cy="${y - s*.9}" rx="${s*.9}" ry="${s*.45*wv}" fill="#ffffff" opacity=".8"/><ellipse cx="${x + s*.9}" cy="${y - s*.9}" rx="${s*.9}" ry="${s*.45*wv}" fill="#ffffff" opacity=".8"/><circle cx="${x}" cy="${y}" r="${s*.8}" fill="${O}"/>`; };
   const headM = pt(sc, sc.him, '.head', 63, 30), headH = pt(sc, sc.her, '.head', 63, 30);
