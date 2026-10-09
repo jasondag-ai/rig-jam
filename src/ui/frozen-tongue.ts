@@ -9,7 +9,7 @@
 // the worker stumbles back rubbing it and both hop-turn and walk off their own ways. It ends on
 // the empty riser, exactly as it began. strip-gags.ts puts it on screen.
 /* eslint-disable */
-import { addEl, makePup, place, type Pup } from './puppet-stage.ts';
+import { FLASH_S, camFlash, makePup, place, type Pup } from './puppet-stage.ts';
 import { WORKER, WORKER_FRAC, asMoe } from './worker.ts';
 const O = '#2b1e16';
 const ease = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
@@ -110,7 +110,7 @@ export function tonguePose(t: number, from = -300, out = -330, BS = BUDDY_STOP, 
   if (t >= 5.6 && t < 7.0){ b.show = true; const k = seg(t,5.6,7.0); b.dx = lerp(from, BS, 1 - Math.pow(1-k,1.6)); walk(b, 1.5, 24, .3); }
   else if (t >= 7.0 && t < 7.4){ b.show = true; b.dx = BS; b.px = 74; b.brow = 'M65 23 Q70 21 76 23'; b.head = -3; }
   else if (t >= 7.4 && t < 8.6){ b.show = true; b.dx = BS; const k = ease(seg(t,7.4,7.8)); b.arF = lerp(0, -70, k); b.foF = lerp(-10, -60, k); b.phone = true; b.px = 74; b.lid = 'M65 27 L75 27 L75 30 L65 30 Z';
-    b.mouth = 'M64 46.5 Q68 49 72 46.5'; if (t > 7.9) b.mouth = 'M63 46 Q68 51 73 46 Z'; flash = t > 7.9 && t < 8.15 ? 1 - seg(t,7.9,8.15) : 0; }
+    b.mouth = 'M64 46.5 Q68 49 72 46.5'; if (t > 7.9) b.mouth = 'M63 46 Q68 51 73 46 Z'; flash = t > 7.9 && t < 7.9 + FLASH_S ? 1 - seg(t,7.9,7.9 + FLASH_S) : 0; }
   else if (t >= 8.6 && t < 9.6){ b.show = true; b.dx = BS; b.arF = -40; b.foF = -75 + Math.sin(t*40)*6; b.phone = true; b.head = 12; b.px = 72.8; b.py = 36.2;
     const c = Math.abs(Math.sin(t*15)); b.y = -c*1.6; b.mouth = 'M63 46 Q68 52 73 46 Z'; b.lid = 'M65 27 Q70 32 75 27 L75 33 L65 33 Z'; }   // cracks up, typing
   else if (t >= 9.6 && t < 11.2){ b.show = true; const k = seg(t,9.6,11.2); b.face = k < .08 ? 1 : -1; b.dx = lerp(BS, out, clamp((k-.08)/.92)); b.y = k < .08 ? -Math.sin(k/.08*Math.PI)*5 : 0;
@@ -155,8 +155,8 @@ function pt(B: Pup, sel: string, x: number, y: number): { x: number; y: number }
 /** The riser, standing at `spot` (shares of its layer). */
 export const riserPup = (host: HTMLElement, spot: { x: number; y: number }, scale: number): Pup => makePup(host, RISER, { ...RISER_BOX, frac: RISER_FRAC * scale, spot });
 
-/** The worker, his buddy, the overlay and the flash on a layer; the riser is the permanent one. `flashBox`: the strip the flash lights (px). */
-export function tongueScene(layer: HTMLElement, riser: Pup, scale: number, flashBox: { top: number; height: number }): any {
+/** The worker, his buddy and the overlay on a layer; the riser is the permanent one. `flashHost`: a layer over the lease for the camera's flash, which lights the whole screen from `flashAt` (px). */
+export function tongueScene(layer: HTMLElement, riser: Pup, scale: number, flashHost: HTMLElement, flashAt: { x: number; y: number }): any {
   const z = (p: Pup, n: number) => ((p.svg.style.zIndex = String(n)), p);
   const sc: any = { riser };
   sc.worker = z(makePup(layer, STUCK, { vw: 120, vh: 120, ax: 60, ay: 108, frac: WORKER_FRAC * scale, spot: { ...riser.spot } }), 5);
@@ -166,8 +166,7 @@ export function tongueScene(layer: HTMLElement, riser: Pup, scale: number, flash
   sc.ov.setAttribute('class', 'pup-overlay');
   sc.ov.style.zIndex = '7';
   layer.appendChild(sc.ov);
-  sc.flash = addEl(layer, 'pup-flash');
-  Object.assign(sc.flash.style, { top: `${flashBox.top}px`, height: `${flashBox.height}px` });
+  sc.flash = camFlash(flashHost, flashAt);
   sc.head = { x: 0, y: 0 };
   return sc;
 }
@@ -205,7 +204,7 @@ export function tongueApply(sc: any, P: any, t: number): void {
   if (sc.ovHtml !== html) sc.ov.innerHTML = sc.ovHtml = html;
   // where his head is, for the "HEWP!" bubble
   sc.head = pt(sc.worker, '.head', 46, 6);
-  sc.flash.style.opacity = String(P.flash*.75);
+  sc.flash.style.opacity = String(P.flash*.85);
 }
 
 /** Wildlife Log card art: stuck to the pipe, eyes huge. Drawn into one picture (the riser shares his units). */

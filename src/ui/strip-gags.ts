@@ -886,8 +886,11 @@ export const touristsDef = (sign: SignProp): TimelineDef => ({
   end: TOUR_END,
   stillAt: 3.45,
   build(layer, host) {
+    // (The flash's own layer, over the lease, is made first: the gag's last layer stays the one its beats are marked on.)
+    const flashOn = layer('flash-layer over-lease');
     const s = signStage(layer, host, 'tourists-layer');
-    const scene: any = tourScene(s.stage, s.frame, sign.pup, s.scale, s.spot, true, { top: s.strip.top, height: Math.max(0, s.strip.bottom - s.strip.top) });
+    const scr = host.screen.getBoundingClientRect();
+    const scene: any = tourScene(s.stage, s.frame, sign.pup, s.scale, s.spot, true, flashOn, { x: s.spot.x * scr.width, y: (s.strip.top + s.strip.bottom) / 2 });
     const off = Math.max(360, s.near + 10);
     return {
       apply: (t) => tourApply(scene, tourPose(t, off), t),
@@ -908,7 +911,9 @@ export const tongueDef = (riser: RiserProp): TimelineDef => ({
     const screen = host.screen.getBoundingClientRect();
     const strip = host.strip();
     const scale = riser.scale();
-    const scene = tongueScene(layer('tongue-layer'), riser.pup, scale, { top: strip.top, height: Math.max(0, strip.bottom - strip.top) });
+    // (The flash's own layer, over the lease, is made first: the gag's last layer stays the one its beats are marked on.)
+    const flashOn = layer('flash-layer over-lease');
+    const scene = tongueScene(layer('tongue-layer'), riser.pup, scale, flashOn, { x: RISER_X * screen.width, y: (strip.top + strip.bottom) / 2 });
     // In from past the left edge; the worker leaves that way, his buddy comes back from past the right edge and leaves that way (their drawing's units, from the riser).
     const w = WORKER_FRAC * scale * screen.width, u = w / 120, from = -(RISER_X * screen.width + w) / u, far = ((1 - RISER_X) * screen.width + w) / u;
     return {

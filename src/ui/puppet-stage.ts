@@ -69,6 +69,16 @@ export function place(p: Pup, dxUnits = 0): { r: DOMRect; w: number; u: number }
   return { r, w, u };
 }
 
+/** A CAMERA FLASH (Job Y): a quick, soft-edged burst of white over the WHOLE game screen, brightest at the camera (`at`, px in `host`), about 150 ms. `host` is a layer over the lease. (It used to light the bottom strip only, which read as a hard-edged box.) No flash with reduced motion (style.css). */
+export const FLASH_S = 0.15;
+export function camFlash(host: HTMLElement, at: { x: number; y: number }): HTMLElement {
+  const el = addEl(host, 'pup-flash');
+  const r = host.getBoundingClientRect();
+  el.style.setProperty('--fx', `${r.width ? (at.x / r.width) * 100 : 50}%`);
+  el.style.setProperty('--fy', `${r.height ? (at.y / r.height) * 100 : 80}%`);
+  return el;
+}
+
 export function addEl(host: HTMLElement, cls: string, html = ''): HTMLElement {
   const d = document.createElement('div');
   d.className = cls;
