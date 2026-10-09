@@ -2,6 +2,14 @@
 
 Renamed from Rush Hour Rigs on Oct 9, 2026 (trademark).
 
+DEV LANE (October upgrade, job U1; Oct 9): UPGRADE WORK GOES TO BRANCH `next`; `main` GETS BUG FIXES
+ONLY UNTIL THE MERGE. `next` is worked in its own folder, `~/Rig-Jam-next` (a git worktree with its own
+`npm ci`: never link `node_modules`), and is published as the DEV COPY at
+https://jasondag-ai.github.io/rig-jam-next/ by `sh tools/push-dev.sh` (it pushes `next` to the repo
+`jasondag-ai/rig-jam-next` as its main, where the same Action builds it, and waits for the dev build
+id). The live game (/rig-jam/, this repo's `main`, `sh tools/check-live.sh`) is not touched by it.
+See "The dev lane" below for the DEV label, the shared saves and the caches.
+
 STANDING RULE, BEFORE EVERY JOB: read `GAME_BIBLE.md`, `ART_BIBLE.md` and `STANDING_RULES.md` from
 `~/Desktop/RHR Art Inbox/` (those are the latest versions). If any differs from the copy in the
 repo root, copy it over the repo copy and commit that change before starting the job.
