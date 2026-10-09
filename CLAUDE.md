@@ -1300,6 +1300,18 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `~/Desktop/RHR Art Inbox/qc/judge/` (`OUT=` another folder).
 
+## Hints in a row (Job X, Oct 9)
+- THE KEPT LINE ALWAYS STARTS AT THE MOVE BEING HINTED (`src/ui/hint-line.ts`, pure and tested;
+  `GameView.hintPath`): one solve gives the whole best line and it is kept so the next hints are
+  instant; a hint is the line's first move (`hintOf`), and when the player plays exactly that
+  move the line moves on by one (`lineAfter`). Any other move, Undo and Restart drop it, and the
+  next hint solves afresh. THE BUG: the line was kept from its second move after a solve and cut
+  again when the hinted move was played, so the second hint in a row skipped a move (Cardium 9:
+  "move B", then "move B back").
+- `hint-line.test.ts` follows hints from the start to the end on Cardium 9, Bakken 7 and
+  Clearwater 10 (every hint legal, exactly par moves, one solve); `npm run test:e2e:hints` does
+  the same in the game itself, and after a move that is not the hint, after Undo and after Restart.
+
 ## An old save keeps everything (the Clearwater ship, Oct 8)
 - A NEW REGION, NEW LOG ENTRIES AND NEW SOUNDS ARE ADDED BESIDE WHAT A PHONE HAS SAVED. Never rename
   or drop a level id, a sighting id or a storage key, and never change a level's par downward so

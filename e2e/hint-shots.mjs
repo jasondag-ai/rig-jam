@@ -67,7 +67,9 @@ for (const reduced of [false, true]) {
     check(gates.n > 0 && gates.colored, `${gates.n} gates, each leaf painted its gate colour`);
     check(gates.own, 'each gate has its own posts, inside its own stretch of berm');
     check(gates.pairs.every((gap) => gap >= 3), `neighbouring gates keep a gap of berm between them (${gates.pairs.map((g) => g.toFixed(0) + 'px').join(', ') || 'none side by side here'})`);
-    check(gates.badge >= 18 && gates.badge <= 23, `badge readable but secondary (${gates.badge.toFixed(0)}px)`);
+    // (A Big Pad's berm band is thinner, 0.34 of a cell of 44 px, and the badge rides on it: about 15 px there.)
+    const big = (REGIONS[region].levels[index].size ?? 6) > 6;
+    check(big ? gates.badge >= 14 && gates.badge <= 23 : gates.badge >= 18 && gates.badge <= 23, `badge readable but secondary (${gates.badge.toFixed(0)}px${big ? ', on a Big Pad' : ''})`);
 
     await page.locator('[data-act="hint"]').click();
     await wait(700);
@@ -98,6 +100,108 @@ for (const reduced of [false, true]) {
       check(reduced ? two.ghost?.anim === 'none' : two.ghost?.anim === 'ghost-pulse', reduced ? 'no pulse with reduced motion' : 'slow pulse');
     }
     if (!reduced) await page.screenshot({ path: join(OUT, `gates_${name}_hint2.png`) });
+    await context.close();
+  }
+}
+// ---------- Hints in a row (Job X): take a hint, play it, again and again, in the game itself ----------
+// The kept line used to lose a move after every solve, so the second hint in a row skipped one (on Cardium 9:
+// "move B", then "move B back"). Followed to the end, every hint must be a legal move and the level must be
+// cleared in exactly par moves. Then: a move that is not the hint, Undo and Restart, and hints still lead home.
+{
+  const drag = (page, id, cells, settle = 420) => page.evaluate(async ([truckId, n, ms]) => {
+    const el = document.querySelector(`.truck[data-id="${truckId}"]:not(.exiting)`), r = el.getBoundingClientRect(), h = el.classList.contains('horiz');
+    const cell = parseFloat(document.querySelector('.board').style.getPropertyValue('--cell'));
+    let x = r.x + r.width / 2, y = r.y + r.height / 2;
+    const ev = (type) => el.dispatchEvent(new PointerEvent(type, { pointerId: 81, pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, bubbles: true, cancelable: true, buttons: 1 }));
+    ev('pointerdown');
+    for (let k = 0; k < 8; k++) { if (h) x += (n * cell) / 8; else y += (n * cell) / 8; ev('pointermove'); await new Promise((q) => setTimeout(q, 17)); }
+    ev('pointerup');
+    await new Promise((q) => setTimeout(q, ms));
+  }, [id, cells, settle]);
+  const { tryMove, undo, isWon } = await import('../src/engine/index.ts');
+  const many = JSON.stringify({ ...JSON.parse(UNLOCKED), hints: 200 });
+  /** Presses Hint twice (which truck, then where) and reads the move it shows off the screen. */
+  const hintShown = async (page, state) => {
+    await page.locator('[data-act="hint"]').click();
+    await page.waitForSelector('.truck.hinted', { timeout: 20000 });
+    const id = await page.evaluate(() => document.querySelector('.truck.hinted').dataset.id);
+    await page.locator('[data-act="hint"]').click();
+    await wait(250);
+    const range = getMoveRange(state, id);
+    const delta = await page.evaluate(([truckId]) => { const g = document.querySelector('.ghost'); if (!g) return null; const t = document.querySelector(`.truck[data-id="${truckId}"]`).getBoundingClientRect(), r = g.getBoundingClientRect(), cell = parseFloat(document.querySelector('.board').style.getPropertyValue('--cell')); const h = document.querySelector(`.truck[data-id="${truckId}"]`).classList.contains('horiz'); return Math.round((h ? r.left - t.left : r.top - t.top) / cell); }, [id]);
+    return { id, delta: delta ?? range?.exitDelta ?? 0, exit: delta === null };
+  };
+  /** Follows hints from where the pad stands to the end. */
+  const follow = async (page, state) => {
+    const moves = []; let legal = true;
+    while (!isWon(state) && moves.length < 60) {
+      const h = await hintShown(page, state);
+      const r = tryMove(state, h.id, h.delta);
+      if (!r) { legal = false; moves.push(h); break; }
+      moves.push(h);
+      await drag(page, h.id, h.delta + (r.exited ? Math.sign(h.delta) * 0.4 : 0), r.exited ? 900 : 380);
+      state = r.state;
+    }
+    return { state, moves, legal };
+  };
+  const hud = (page) => page.evaluate(() => parseInt(document.querySelector('.hud').textContent.match(/(\d+)\s*moves?/)?.[1] ?? '-1', 10));
+  for (const [id, n] of [['cardium', 9], ['bakken', 7], ['clearwater', 10]]) {
+    const ri = REGIONS.findIndex((r) => r.id === id), level = REGIONS[ri].levels[n - 1];
+    console.log(`\nwebkit 390x844: hints in a row on ${REGIONS[ri].name} ${n} (par ${level.par})`);
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true });
+    const page = await context.newPage();
+    const errors = []; page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto(`${ROOT}?cover=0&night=0&bird=0&nap=0&surveyor=0&tourists=0&lunch=0&soundnudge=0&off=sam,nearmiss,landowner,biffya,biffyb,tumbleweed,bale`, { waitUntil: 'networkidle' });
+    await page.evaluate((p) => { localStorage.clear(); localStorage.setItem('rush-hour-rigs:v2', p); }, many);
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.locator('.region-tab').nth(ri).click();
+    await page.locator('.level-btn').nth(n - 1).click();
+    await page.waitForSelector('.board .truck.sprite-on');
+    await wait(500);
+    const run = await follow(page, newGame(level));
+    await wait(900);
+    const back = run.moves.some((m, i) => i > 0 && m.id === run.moves[i - 1].id && m.delta === -run.moves[i - 1].delta);
+    check(run.legal && isWon(run.state) && run.moves.length === level.par && !back && (await page.locator('button:has-text("Play again")').count()) === 1, `a hint, play it, again: ${run.moves.length} hints, every one a legal move, none undoing the last, and the level is cleared in ${run.state.moves} moves (par ${level.par})`);
+    if (id === 'cardium') {
+      // A move that is not the hint, then Undo, then Restart: after each, hints still lead home.
+      await page.locator('button:has-text("Play again")').click();
+      await page.waitForSelector('.board .truck.sprite-on');
+      await wait(500);
+      let state = newGame(level);
+      const first = await hintShown(page, state);
+      const other = state.trucks.map((t) => ({ t, r: getMoveRange(state, t.id) })).find(({ t, r }) => t.id !== first.id && (r.max >= 1 || r.min <= -1));
+      const d = other.r.max >= 1 ? 1 : -1;
+      await drag(page, other.t.id, d);
+      state = tryMove(state, other.t.id, d).state;
+      const afterOther = await follow(page, state);
+      await wait(900);
+      check(afterOther.legal && isWon(afterOther.state), `after a move that was NOT the hint, the hints start afresh from where the pad stands: ${afterOther.moves.length} more, all legal, and it is cleared`);
+      await page.locator('button:has-text("Play again")').click();
+      await page.waitForSelector('.board .truck.sprite-on');
+      await wait(500);
+      state = newGame(level);
+      const h1 = await hintShown(page, state);
+      const r1 = tryMove(state, h1.id, h1.delta);
+      await drag(page, h1.id, h1.delta);
+      await page.locator('.controls [data-act="undo"]').click();
+      await wait(400);
+      state = undo(r1.state);
+      const afterUndo = await follow(page, state);
+      await wait(900);
+      check(afterUndo.legal && isWon(afterUndo.state) && afterUndo.state.moves === level.par, `after a hinted move and Undo, the hints start afresh: cleared in ${afterUndo.state.moves} moves (par ${level.par})`);
+      await page.locator('button:has-text("Play again")').click();
+      await page.waitForSelector('.board .truck.sprite-on');
+      await wait(500);
+      state = newGame(level);
+      const h2 = await hintShown(page, state);
+      await drag(page, h2.id, h2.delta);
+      await page.locator('.controls [data-act="restart"]').click();
+      await wait(500);
+      const afterRestart = await follow(page, newGame(level));
+      await wait(900);
+      check(afterRestart.legal && isWon(afterRestart.state) && afterRestart.moves.length === level.par, `after a hinted move and Restart, the hints start from the top: cleared in ${afterRestart.moves.length} moves (par ${level.par})`);
+    }
+    check(errors.length === 0, `no script errors (${errors[0] ?? 'none'})`);
     await context.close();
   }
 }
