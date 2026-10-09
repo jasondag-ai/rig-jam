@@ -26,7 +26,14 @@ ribbon_top, ribbon_bottom = min(bs), max(bs)
 # trim is shaded, never this exact flat colour for more than a stray pixel, so whole rows are needed.
 # The lettering is judged as the block the eye sees: yellow letters with their dark outline and lip.
 ink = lambda p: (p[0] > 248 and 186 <= p[1] <= 202 and p[2] < 45) or (abs(p[0] - 42) < 5 and abs(p[1] - 26) < 5 and abs(p[2] - 12) < 5)
-rows = [y for y in range(ribbon_top, ribbon_bottom + 1) if sum(1 for x in range(S(left + width * 0.2), S(left + width * 0.8)) if ink(px[x, y])) >= S(4)]
+# ONLY WHAT LIES ON THE RIBBON COUNTS: the banner is an arc, so beside its crown a row of the screenshot is still the
+# scenery behind the card, and a tree's dark outline there is the very colour of the lettering's outline. (On a day
+# whose Daily Pad had trees behind the banner's shoulders, they were read as letters touching the ribbon's top.) In
+# each row the letters are looked for between that row's own leftmost and rightmost blue.
+def inked(y):
+    xs = [x for x in range(S(left + width * 0.1), S(left + width * 0.9)) if blue(px[x, y])]
+    return len(xs) > 0 and sum(1 for x in range(min(xs), max(xs) + 1) if ink(px[x, y])) >= S(4)
+rows = [y for y in range(ribbon_top, ribbon_bottom + 1) if inked(y)]
 text_top, text_bottom = min(rows), max(rows)
 
 # Frame: from the card's outer edge in to the gold trim round the cream box.

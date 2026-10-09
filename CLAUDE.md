@@ -580,6 +580,9 @@ something, give exact clicks and one command at a time.
   element boxes: `tools/card-check.py` (called from `e2e/card.e2e.mjs`) measures the blue showing
   above and below the banner's letters and the frame's thickness at the sides and bottom. A fix
   that only measures right in Chromium does not count.
+  (The checker looks for the letters only between each row's own blue: beside the banner's
+  crown a row is still the scenery behind the card, and a tree's dark outline there was once read
+  as lettering touching the ribbon's top. Oct 9: the card was right, the checker was not.)
 - Confetti (`GameView.confetti`): on a perfect solve, 40 small hard hats and orange/yellow scraps
   fall for about 1.5 s in a layer UNDER the card (never over its buttons), then the layer is
   removed. Not made under reduced motion.
