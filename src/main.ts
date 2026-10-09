@@ -13,7 +13,8 @@ import { biffyAStill, biffyBStill, landownerStill, nearMissStill } from './ui/st
 import { magpieStill } from './ui/magpie.ts';
 import './ui/style.css';
 import { DAILY_LEVELS, REGIONS, dailyTheme } from './levels/regions.ts';
-import { STAND_DOWN_TOAST, dayKey, newlySaved, padLevelIndex, padNumber, streak } from './ui/daily.ts';
+import { STAND_DOWN_TOAST, dayKey, newlySaved, padNumber, streak } from './ui/daily.ts';
+import { dailyLevel, dailyLevelNow, padLink, warmDaily } from './ui/daily-pads.ts';
 import { showTutorial } from './ui/tutorial.ts';
 import { deerStill, surveyorStill, touristsStill } from './ui/sign-gags.ts';
 import { toast } from './ui/toast.ts';
@@ -216,7 +217,8 @@ function showLevels(requested = savedRegion()): void {
   // Today's Daily Pad and the streak sign, above the regions.
   const today = dayKey(new Date());
   const pad = padNumber(today);
-  const daily = DAILY_LEVELS[padLevelIndex(pad, DAILY_LEVELS.length)];
+  // (Pads 1 to 60 are to hand; a later pad's level is fetched, and its par is written in when it comes: daily-pads.ts.)
+  const daily = dailyLevelNow(pad, DAILY_LEVELS);
   const s = streak(progress.dailyCleared, today);
   // The weekly Safety Stand-Down saves a streak by itself; say so once, the first time it shows.
   const saved = newlySaved(s, progress.standDowns);
@@ -229,9 +231,12 @@ function showLevels(requested = savedRegion()): void {
     ${streakSignHtml(s)}
     <button class="daily-btn${s.clearedToday ? ' done' : ''}">
       <span class="daily-title">Daily Pad #${pad}</span>
-      <span class="daily-sub">${s.clearedToday ? 'Cleared today ✓ Come back tomorrow' : `Today's pad · par ${daily.par} · same for everyone`}</span>
+      <span class="daily-sub">${s.clearedToday ? 'Cleared today ✓ Come back tomorrow' : `Today's pad · ${daily ? `par ${daily.par} · ` : ''}same for everyone`}</span>
     </button>`;
-  block.querySelector('.daily-btn')!.addEventListener('click', () => showDaily());
+  block.querySelector('.daily-btn')!.addEventListener('click', () => void showDaily());
+  if (!daily && !s.clearedToday) void dailyLevel(pad, DAILY_LEVELS).then((l) => { const sub = block.querySelector('.daily-sub'); if (sub?.isConnected) sub.textContent = `Today's pad · par ${l.par} · same for everyone`; }).catch(() => {});
+  // Today's pad (and tomorrow's) is fetched ahead, so a tap opens it at once and it is there offline.
+  warmDaily(pad, DAILY_LEVELS);
   onTap(screen.querySelector('.brand')!, '.gear', () => showSettings(screen));
   onTap(screen.querySelector('.brand')!, '.help', () => void showTutorial(screen));
   onTap(screen.querySelector('.brand')!, '.binoculars', () => showLog(regionIndex));
@@ -534,11 +539,23 @@ function showLog(regionIndex: number): void {
   screen.querySelector('.scenery')!.innerHTML = sceneryHtml(themeFor(regionIndex), rect.width, horizon + 40, { x: 0, y: horizon, width: rect.width, height: 0 }, { below: false, maxTree: 64 });
 }
 
-/** Today's Daily Pad, picked by the phone's local date. */
-function showDaily(): void {
+/**
+ * Today's Daily Pad, picked by the phone's local date. (`tryPad`: the dev copy's `?pad=N`, to try any pad; nothing
+ * it does is saved: demo-link.ts.) A pad after the 60th is fetched (daily-pads.ts): if it cannot be had, a toast
+ * says so and the screen stays where it was.
+ */
+async function showDaily(tryPad?: number): Promise<void> {
   const day = dayKey(new Date());
-  const pad = padNumber(day);
-  const level = { ...DAILY_LEVELS[padLevelIndex(pad, DAILY_LEVELS.length)], name: `Daily Pad #${pad}` };
+  const pad = tryPad ?? padNumber(day);
+  let base;
+  try {
+    base = await dailyLevel(pad, DAILY_LEVELS);
+  } catch {
+    void toast("Couldn't load today's pad", { sub: 'Check your connection and try again', ms: 3200 });
+    if (tryPad !== undefined) showLevels();
+    return;
+  }
+  const level = { ...base, name: `Daily Pad #${pad}` };
   const theme = THEMES[themeOverride(location.search) ?? dailyTheme(pad)];
   game?.leave();
   rememberLevel(level.name);
@@ -584,7 +601,10 @@ if (!forcedGag()) {
     const p = loadProgress();
     return !p.demo && Object.keys(p.best).length === 0 && p.dailyCleared.length === 0;
   };
-  if (shouldShowCover(location.search, navigator.webdriver === true)) showCover(app, () => (firstRun() ? showGame(0, 0) : showLevels()));
+  // (The dev copy's `?pad=N`: straight into Daily Pad N, to try it. Nothing is saved: demo-link.ts.)
+  const tryPad = isDev() ? padLink() : null;
+  if (tryPad !== null) void showDaily(tryPad);
+  else if (shouldShowCover(location.search, navigator.webdriver === true)) showCover(app, () => (firstRun() ? showGame(0, 0) : showLevels()));
   else showLevels();
 }
 // Every truck sprite, quietly, once the first screen is up (each level also warms its own first).
