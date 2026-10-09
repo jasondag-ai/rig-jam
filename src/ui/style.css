@@ -2166,8 +2166,9 @@ canvas.lease-detail {
 
 .music-styles {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  /* (Four styles on one row: a second row would push Settings past a phone's screen.) */
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
 }
 
 .btn.style-pick {

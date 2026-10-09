@@ -39,6 +39,8 @@ class AudioEngine {
   private ringing = new Map<string, { src: AudioBufferSourceNode; gain: GainNode }[]>();
   private warmed = new Set<SfxKey>();
   private scene: Scene = 'menu';
+  /** In play: the level's music tier (pack.ts `PLAY_TIER`). Only Classic Rock has a loop for each. */
+  private tier = 1;
   private music: { key: MusicKey; src: AudioBufferSourceNode; gain: GainNode } | null = null;
   private wanted: MusicKey | null = null;
   private installed = false;
@@ -134,9 +136,10 @@ class AudioEngine {
   }
 
   /** The menus or a level: each has its own loop of the chosen style. */
-  setScene(scene: Scene): void {
-    if (scene === this.scene) return;
+  setScene(scene: Scene, tier = 1): void {
+    if (scene === this.scene && tier === this.tier) return;
     this.scene = scene;
+    this.tier = tier;
     this.syncMusic();
   }
 
@@ -329,7 +332,7 @@ class AudioEngine {
   /** Plays the loop for the chosen style and the scene, if Music is on; fades between loops. Fetched only now. */
   private syncMusic(): void {
     if (!this.ctx) return;
-    const want = this.settings.music ? musicKey(this.settings.style, this.scene) : null;
+    const want = this.settings.music ? musicKey(this.settings.style, this.scene, this.tier) : null;
     if (want === this.wanted) return;
     this.wanted = want;
     const ctx = this.ctx;
@@ -448,10 +451,10 @@ export const sound = {
     audio.play('streak', { delay: 0.9 });
   },
   /** A level begins (its ground no longer changes the sound): the in-play music, a fresh exit chain. */
-  setGround(_g: Ground | null): void {
+  setGround(_g: Ground | null, tier = 1): void {
     chain = 0;
     lastExitAt = null;
-    audio.setScene('play');
+    audio.setScene('play', tier);
   },
   /** A level opens with these gags in it: fetch the sounds only they use (the rest are fetched with the switch). */
   warm(ids: GagId[]): void {

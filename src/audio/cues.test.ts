@@ -14,8 +14,10 @@ describe('sound settings', () => {
     expect(parseAudioSettings(JSON.stringify({ sfx: 'yes', style: 'polka' }))).toEqual(DEFAULT_AUDIO);
   });
 
-  it('offers three music styles; a style saved under the old synth engine keeps its nearest new one', () => {
-    expect(MUSIC_STYLES.map((s) => s.name)).toEqual(['Country', '80s Retro', 'Chill']);
+  it('offers four music styles, Country the default; a style saved under the old synth engine keeps its nearest new one', () => {
+    expect(MUSIC_STYLES.map((s) => s.name)).toEqual(['Country', '80s Retro', 'Chill', 'Classic Rock']);
+    expect(parseAudioSettings(null).style).toBe('country');
+    expect(parseAudioSettings(JSON.stringify({ sfx: true, music: true, style: 'classic' }))).toEqual({ sfx: true, music: true, style: 'classic' });
     expect(parseAudioSettings(JSON.stringify({ sfx: true, music: true, style: 'synth' }))).toEqual({ sfx: true, music: true, style: 'retro' });
     expect(parseAudioSettings(JSON.stringify({ style: 'lofi' })).style).toBe('chill');
   });

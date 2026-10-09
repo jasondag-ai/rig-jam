@@ -59,16 +59,39 @@ export function gainFor(key: SfxKey): number {
 
 // ---------- Music ----------
 
-export type MusicStyle = 'country' | 'retro' | 'chill';
+export type MusicStyle = 'country' | 'retro' | 'chill' | 'classic';
 export const MUSIC_STYLES: { id: MusicStyle; name: string }[] = [
   { id: 'country', name: 'Country' },
   { id: 'retro', name: '80s Retro' },
   { id: 'chill', name: 'Chill' },
+  { id: 'classic', name: 'Classic Rock' },
 ];
 /** Where the player is: the menus (cover, level list, log) or a level. Each style has a loop for each. */
 export type Scene = 'menu' | 'play';
 export type MusicKey = keyof typeof pack.music;
-export const musicKey = (style: MusicStyle, scene: Scene): MusicKey => `${style}_${scene}` as MusicKey;
+/**
+ * CLASSIC ROCK GETS HEAVIER AS THE PLAYER MOVES UP THE REGIONS (job U7): it has four in-play loops, `classic_play1`
+ * (the calmest, 100 BPM) to `classic_play4` (the heaviest), and a level plays the one of its TIER. THE TABLE, the one
+ * place to retune it: a region's id (GameView's `regionId`; the Daily Pad's is 'daily') to its tier; anything not
+ * named is tier 1. (Sunday Turnaround, U3, and Baldonnel, U6, are to use tier 4: name them here when they come.)
+ * Country, 80s Retro and Chill have ONE in-play loop each, whatever the tier (`musicKey` falls back to it).
+ */
+export const PLAY_TIER: Record<string, number> = {
+  cardium: 1,
+  montney: 2,
+  duvernay: 3,
+  mannville: 4,
+  bakken: 4,
+  clearwater: 4,
+  daily: 3,
+};
+export const playTier = (regionId: string): number => PLAY_TIER[regionId] ?? 1;
+/** The loop for a style, a scene and (in play) a tier: the style's loop of that tier if it has one, else its one in-play loop. */
+export const musicKey = (style: MusicStyle, scene: Scene, tier = 1): MusicKey => {
+  if (scene === 'menu') return `${style}_menu` as MusicKey;
+  const tiered = `${style}_play${tier}`;
+  return (tiered in pack.music ? tiered : `${style}_play` in pack.music ? `${style}_play` : `${style}_play1`) as MusicKey;
+};
 export const musicInfo = (key: MusicKey): { seconds: number; mean: number; formats: { file: string; type: string }[]; crossfaded: boolean } => pack.music[key];
 
 /**

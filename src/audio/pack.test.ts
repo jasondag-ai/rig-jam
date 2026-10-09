@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { CREDITS, musicCredits, sfxCredits } from './credits.ts';
 import { GAG_LOOPS, GAG_SOUNDS, gagKeys, parseCue } from './gag-sounds.ts';
 import { WAVE3 } from '../ui/wave3.ts';
-import { CORE_KEYS, LAZY_KEYS, MAX_TRIM, MUSIC_STYLES, MUSIC_VOLUME, SFX_KEYS, TARGET_MEAN, VOLUME, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, sfxInfo, type SfxKey } from './pack.ts';
+import { CORE_KEYS, LAZY_KEYS, MAX_TRIM, MUSIC_STYLES, MUSIC_TARGET_MEAN, MUSIC_VOLUME, PLAY_TIER, SFX_KEYS, TARGET_MEAN, VOLUME, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, playTier, sfxInfo, type SfxKey } from './pack.ts';
 import { GAG_TRIGGERS, type GagId } from '../ui/gag-triggers.ts';
 
 const pub = (f: string) => new URL(`../../public/audio/${f}`, import.meta.url);
@@ -15,7 +15,9 @@ describe("the sound pack: Jay's picks, as files", () => {
     for (const old of ['rattle', 'win', 'gate', 'exit']) { expect(SFX_KEYS).not.toContain(old); expect(existsSync(pub(`sfx/${old}.mp3`)), old).toBe(false); }
     for (const key of SFX_KEYS) expect(existsSync(pub(`sfx/${key}.mp3`)), key).toBe(true);
     expect(readdirSync(pub('sfx')).sort()).toEqual(SFX_KEYS.map((k) => `${k}.mp3`).sort());
-    const music = MUSIC_STYLES.flatMap((s) => (['menu', 'play'] as const).flatMap((scene) => musicInfo(musicKey(s.id, scene)).formats.map((f) => f.file)));
+    // (Every style's menu loop and its in-play loops: one for most, one a tier for Classic Rock.)
+    const keys = new Set(MUSIC_STYLES.flatMap((s) => [musicKey(s.id, 'menu'), ...[1, 2, 3, 4].map((tier) => musicKey(s.id, 'play', tier))]));
+    const music = [...keys].flatMap((k) => musicInfo(k).formats.map((f) => f.file));
     expect(readdirSync(pub('music')).sort()).toEqual(music.sort());
   });
 
@@ -103,15 +105,49 @@ describe('the mix: a volume for every sound, so nothing jumps out', () => {
 });
 
 describe('music loops', () => {
-  it('three styles, each with a menu loop and an in-play loop, gapless first and MP3 as the fallback', () => {
-    expect(MUSIC_STYLES.map((s) => s.id)).toEqual(['country', 'retro', 'chill']);
-    for (const s of MUSIC_STYLES) for (const scene of ['menu', 'play'] as const) {
-      const info = musicInfo(musicKey(s.id, scene));
+  it('four styles, each with a menu loop and an in-play loop for every tier, gapless first and MP3 as the fallback', () => {
+    expect(MUSIC_STYLES.map((s) => s.id)).toEqual(['country', 'retro', 'chill', 'classic']);
+    for (const s of MUSIC_STYLES) for (const [scene, tier] of [['menu', 1], ['play', 1], ['play', 2], ['play', 3], ['play', 4]] as const) {
+      const info = musicInfo(musicKey(s.id, scene, tier));
       expect(info.formats.map((f) => f.type)).toEqual([expect.stringMatching(/^audio\/ogg; codecs=(vorbis|opus)$/), 'audio/mpeg']);
       for (const f of info.formats) expect(existsSync(pub(`music/${f.file}`)), f.file).toBe(true);
       expect(info.seconds).toBeGreaterThan(55);
       expect(info.seconds).toBeLessThan(150);
     }
+  });
+
+  it('Classic Rock gets heavier up the regions: one table of tiers, and the older styles keep their one in-play loop', () => {
+    // The table (pack.ts `PLAY_TIER`): Cardium 1, Montney 2, Duvernay 3, Mannville, Bakken and Clearwater 4, the Daily Pad 3, anything else 1.
+    expect(PLAY_TIER).toEqual({ cardium: 1, montney: 2, duvernay: 3, mannville: 4, bakken: 4, clearwater: 4, daily: 3 });
+    expect(['cardium', 'montney', 'duvernay', 'mannville', 'bakken', 'clearwater', 'daily', 'somewhere-new'].map(playTier)).toEqual([1, 2, 3, 4, 4, 4, 3, 1]);
+    expect([1, 2, 3, 4].map((tier) => musicKey('classic', 'play', tier))).toEqual(['classic_play1', 'classic_play2', 'classic_play3', 'classic_play4']);
+    expect(musicKey('classic', 'play')).toBe('classic_play1');
+    expect(musicKey('classic', 'play', 9)).toBe('classic_play1');
+    expect(musicKey('classic', 'menu', 4)).toBe('classic_menu');
+    // THE FALLBACK: Country, 80s Retro and Chill play their one loop whatever the tier, exactly as before.
+    for (const tier of [1, 2, 3, 4]) {
+      expect(musicKey('country', 'play', tier)).toBe('country_play');
+      expect(musicKey('retro', 'play', tier)).toBe('retro_play');
+      expect(musicKey('chill', 'play', tier)).toBe('chill_play');
+    }
+    expect(musicKey('country', 'play')).toBe('country_play');
+    expect(musicKey('country', 'menu', 3)).toBe('country_menu');
+    // The five loops as shipped: encoded like the rest (Ogg Opus first, MP3 behind), one seamless loop each, the lengths Manus cut.
+    const want = { classic_menu: 114.28, classic_play1: 124.8, classic_play2: 131.67, classic_play3: 99.69, classic_play4: 132.92 } as const;
+    for (const [key, seconds] of Object.entries(want)) {
+      const info = musicInfo(key as keyof typeof want);
+      expect(info.seconds, key).toBeCloseTo(seconds, 1);
+      expect(info.crossfaded, key).toBe(true);
+      expect(info.formats, key).toEqual([{ file: `${key}.opus`, type: 'audio/ogg; codecs=opus' }, { file: `${key}.mp3`, type: 'audio/mpeg' }]);
+      // No bigger than the other loops for its length: about 112 kb/s and 128 kb/s (they came at 190 and 320).
+      for (const f of info.formats) expect(statSync(pub(`music/${f.file}`)).size / info.seconds, f.file).toBeLessThan(17_500);
+      // All five within a decibel of one another and of the target, so a change of region is no jump in loudness; in play, quieter than the menu.
+      expect(Math.abs(info.mean - MUSIC_TARGET_MEAN), key).toBeLessThan(1.5);
+      expect(musicGain(key as keyof typeof want)).toBeCloseTo((key.endsWith('_menu') ? MUSIC_VOLUME.menu : MUSIC_VOLUME.play) * 10 ** ((MUSIC_TARGET_MEAN - info.mean) / 20), 3);
+    }
+    // masters/ (the uncut songs) is not shipped.
+    expect(existsSync(pub('music/masters'))).toBe(false);
+    expect(readdirSync(pub('music')).some((f) => /full|master/i.test(f))).toBe(false);
   });
 
   it('Bitstream Dreams and Chill Beat (weak loop points) and the Country songs have a 2 s crossfade baked into their loop', () => {
@@ -300,7 +336,8 @@ describe("the sound pass: Jay's picks, each on its beat, levelled alike", () => 
 describe('credits', () => {
   it('every file in the game has a row, from the packs\' own CREDITS', () => {
     expect(CREDITS.filter((c) => c.kind === 'sfx').length).toBe(65);
-    expect(musicCredits().map((c) => c.title)).toEqual(['Fun On The Farm', 'Tap Room Rag', '50 Over The Speed Limit', 'BITSTREAM DREAMS', 'Chill Beat', 'Chillhop mix']);
+    expect(musicCredits().map((c) => c.title)).toEqual(['Fun On The Farm', 'Tap Room Rag', '50 Over The Speed Limit', 'BITSTREAM DREAMS', 'Chill Beat', 'Chillhop mix', 'Stylish Upbeat Rock', 'Keep It Moving (This Classic Rock)', 'Energy Action Sport Rock', 'Groove Rock and Roll', 'Vintage Rock']);
+    for (const c of CREDITS.filter((x) => x.use.startsWith('classic_'))) expect(c).toMatchObject({ kind: 'music', licence: 'Pixabay Content License', file: `music/${c.use}.opus` });
     for (const c of CREDITS) {
       expect(c.author, c.file).toBeTruthy();
       expect(c.licence, c.file).toBeTruthy();

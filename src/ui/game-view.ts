@@ -15,6 +15,7 @@ import { shareText, streak, zeroIncident } from './daily.ts';
 import { hardHats, loadProgress, type Progress, recordDailyClear, recordWin, saveProgress, spendHint } from './progress.ts';
 import { streakSignHtml } from './sign.ts';
 import { audio, sound } from '../audio/engine.ts';
+import { playTier } from '../audio/pack.ts';
 import { NUDGE_TEXT, markNudgeOffered, nudgeDue, nudgeOffered } from '../audio/sound-nudge.ts';
 import { toast } from './toast.ts';
 import { uiImg } from './ui-art.ts';
@@ -275,7 +276,7 @@ export class GameView {
     this.stage.append(this.board.el);
     this.board.setLevel(level);
     this.board.setGround(theme.ground, theme.berm === 'sand');
-    sound.setGround(theme.ground);
+    sound.setGround(theme.ground, playTier(this.regionId));
     // The depth strip: every prop, every bottom-strip tree and every strip gag is a child of it, drawn by its ground line. Under the night's shade.
     this.depth = document.createElement('div');
     this.depth.className = 'scene-layer puppet-layer depth-strip';

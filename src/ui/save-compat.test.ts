@@ -114,7 +114,14 @@ const contract = JSON.parse(readFileSync(new URL('../../e2e/fixtures/live-contra
   audio: { fields: Record<string, string>; styles: string[] }; regions: string[]; levels: Record<string, number>; dailyLevels: string[];
 };
 /** What the dev build adds that the live build does not know. Each entry is a decision: say why beside it. */
-const DEV_ADDS: { keys: string[]; sightings: string[]; styles: string[]; regions: string[] } = { keys: [], sightings: [], styles: [], regions: [] };
+const DEV_ADDS: { keys: string[]; sightings: string[]; styles: string[]; regions: string[] } = {
+  keys: [],
+  sightings: [],
+  // Classic Rock (job U7). The live build does not know it and plays Country instead; if the player changes a sound
+  // setting there, the style is saved as Country. Jay, Oct 9: "if live resets my style to Country after I play dev, that's fine."
+  styles: ['classic'],
+  regions: [],
+};
 const typeOf = (v: unknown): string => (Array.isArray(v) ? 'array' : v === null ? 'null' : typeof v);
 
 /** A full save, written by THIS build's own code into an empty phone. */
