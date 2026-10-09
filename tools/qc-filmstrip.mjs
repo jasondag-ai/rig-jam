@@ -1,6 +1,6 @@
 // A filmstrip of one gag for Jay to check by eye: a frame every 0.25 s, held on the gag's own
 // clock (?gagtest=1), in a phone's engine and size.
-//   node tools/qc-filmstrip.mjs <gag> <iphone|iphone375|safari|s23|pixel> <out folder> [region tab] [level] [query] [sky|strip]
+//   node tools/qc-filmstrip.mjs <gag> <iphone|iphone375|safari|safari375|s23|pixel> <out folder> [region tab] [level] [query] [sky|strip]
 // Needs the dev server (URL=… to point elsewhere) and Pillow (PYTHON=… for the python that has it).
 import { chromium, webkit } from 'playwright';
 import { execFileSync } from 'node:child_process';
@@ -12,6 +12,7 @@ const PHONES = {
   iphone: { engine: webkit, name: 'iPhone (WebKit, 390 x 844, DPR 3)', viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 },
   iphone375: { engine: webkit, name: 'iPhone (WebKit, 375 x 812, DPR 3)', viewport: { width: 375, height: 812 }, deviceScaleFactor: 3 },
   safari: { engine: webkit, name: 'iPhone in Safari, toolbars showing (WebKit, 390 x 664, DPR 3)', viewport: { width: 390, height: 664 }, deviceScaleFactor: 3 },
+  safari375: { engine: webkit, name: 'iPhone in Safari, toolbars showing (WebKit, 375 x 635, DPR 3)', viewport: { width: 375, height: 635 }, deviceScaleFactor: 3 },
   s23: { engine: chromium, name: 'Galaxy S23 (Chromium, 360 x 780, DPR 3)', viewport: { width: 360, height: 780 }, deviceScaleFactor: 3 },
   pixel: { engine: chromium, name: 'Pixel (Chromium, 412 x 915, DPR 2.625)', viewport: { width: 412, height: 915 }, deviceScaleFactor: 2.625 },
 };

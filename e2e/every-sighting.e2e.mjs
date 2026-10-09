@@ -197,7 +197,7 @@ const PROPS = {
   bakken: [['the biffy', '.biffy-layer svg', 1], ['the round bale', '.bakken-layer svg > *', 1], ['the lease sign', '.sign-layer svg', 1]],
   clearwater: [['the biffy', '.biffy-layer svg', 1], ['the rig mat stack', '.clear-mats .cw-mats', 3], ['the mud puddle', '.clear-ground path[fill="#6b5a3a"]', 1]],
 };
-if (!ONLY) {
+if (!ONLY || ONLY === 'props') {
   console.log(`\nwebkit ${VW} x ${VH}: every tappable prop answers a tap`);
   for (const [region, props] of Object.entries(PROPS)) {
     const li = region === 'montney' ? REGIONS[R.montney].levels.findIndex((l) => l.obstacles.some((o) => o.kind === 'flare')) : 2;
@@ -216,6 +216,69 @@ if (!ONLY) {
     const known = { 'biffy-layer': 1, 'bush-layer': 1, 'sign-layer': 1, 'cow-layer': 1, 'riser-layer': 1, 'mann-layer': 1, 'mann-front': 1, 'bakken-layer': 1, 'clear-ground': 1, 'clear-layer': 1, 'clear-mats': 1 };
     const odd = standing.filter((c) => !known[c.split(/\s+/)[0]]);
     check(odd.length === 0 && (region !== 'clearwater' || !standing.some((c) => c.startsWith('sign-layer'))), `${REGIONS[R[region]].name}: every prop standing in its strip is one of those (${[...new Set(standing.map((c) => c.split(/\s+/)[0]))].join(', ')})${region === 'clearwater' ? '; no lease sign on the Big Pad' : ''}`);
+  }
+}
+
+// ---------- 3. Chance sightings, with the dice left alone (Job Y) ----------
+// Until a sighting is in the Wildlife Log its trigger ALWAYS works; after that its chance applies, but never two
+// misses in a row. So with a FRESH log the first try brings it, every time; with a FULL log the second try at the
+// latest. Nothing is pinned here: these are the game's own dice.
+if (!ONLY || ONLY === 'chance') {
+  const { LOG_ENTRIES } = await import('../src/ui/wildlife-log.ts');
+  const FULL = JSON.stringify({ v: 3, found: LOG_ENTRIES.map((e) => e.id), camo: false, camoEarned: true });
+  const openPlain = async (log) => {
+    const context = await browser.newContext({ viewport: { width: VW, height: VH }, deviceScaleFactor: 3, hasTouch: true });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto(`${ROOT}?cover=0&soundnudge=0&night=0`, { waitUntil: 'networkidle' });
+    await page.evaluate(([p, l]) => { localStorage.clear(); localStorage.setItem('rush-hour-rigs:v2', p); if (l) localStorage.setItem('rush-hour-rigs:log', l); }, [UNLOCKED, log]);
+    await page.reload({ waitUntil: 'networkidle' });
+    return { context, page, errors };
+  };
+  const up = (page, sel, ms = 1500) => page.waitForSelector(sel, { state: 'attached', timeout: ms }).then(() => true, () => false);
+  for (const [name, log] of [['a fresh log (nothing found yet)', null], ['a full log (everything found)', FULL]]) {
+    console.log(`\nwebkit ${VW} x ${VH}: chance sightings on their real triggers, the dice left alone, with ${name}`);
+    const sure = !log;
+    // The magpie: ONE tap on a parked truck, in each region of 6 x 6.
+    const tries = [];
+    for (const id of ['cardium', 'montney', 'duvernay', 'mannville', 'bakken']) {
+      const { context, page, errors } = await openPlain(log);
+      await enter(page, R[id], 2);
+      const truck = await centre(page, '.truck');
+      let n = 0;
+      for (n = 1; n <= 2; n++) { await tapAt(page, truck, 1, 80); if (await up(page, LAYER.magpie)) break; }
+      const seen = n <= 2 && (await playing(page, 'magpie', { within: 500, watch: 2500 })).seen;
+      tries.push([REGIONS[R[id]].name, n <= 2 && seen ? n : 0]);
+      if (errors.length) check(false, `${id}: a script error (${errors[0]})`);
+      await context.close();
+    }
+    check(tries.every(([, n]) => (sure ? n === 1 : n >= 1)), sure ? `one tap on a parked truck brings the magpie, first time, in every region of 6 x 6 (${tries.map(([r, n]) => `${r}: ${n === 1 ? 'yes' : 'NO'}`).join(', ')})` : `a tap on a parked truck brings the magpie by the second try at the latest in every region of 6 x 6 (${tries.map(([r, n]) => `${r}: ${n ? 'try ' + n : 'NEVER'}`).join(', ')})`);
+    // The bear: three taps on the Duvernay bush.
+    {
+      const { context, page } = await openPlain(log);
+      await enter(page, R.duvernay, 2);
+      let n = 0;
+      for (n = 1; n <= 2; n++) { await tapOn(page, '.bush-layer svg', 3); if (await up(page, '.strip-layer[data-gag="bear"]')) break; await wait(700); }
+      const seen = n <= 2 && (await playing(page, 'bear', { within: 500, watch: 3000 })).seen;
+      check(sure ? n === 1 && seen : n <= 2 && seen, sure ? `three taps on the Duvernay bush bring the bear, first time (${seen ? 'yes' : 'NO'})` : `three taps on the Duvernay bush bring the bear by the second go at the latest (${seen ? 'go ' + n : 'NEVER'})`);
+      await context.close();
+    }
+    // The tourists: the Daily Pad's first move.
+    {
+      const level = DAILY_LEVELS[padLevelIndex(padNumber(dayKey(new Date())), DAILY_LEVELS.length)];
+      const { context, page } = await openPlain(log);
+      let n = 0, seen = false;
+      for (n = 1; n <= 2 && !seen; n++) {
+        await enterDaily(page);
+        await play(page, plan(level)[0]);
+        if (await up(page, '.strip-layer[data-gag="tourists"]', 2000)) { seen = (await playing(page, 'tourists', { within: 500, watch: 3000 })).seen; break; }
+        await page.locator('.hud [data-act="levels"]').click();
+        await page.waitForSelector('.screen.levels');
+      }
+      check(sure ? n === 1 && seen : seen, sure ? `the Daily Pad's first move brings the tourists, first time (${seen ? 'yes' : 'NO'})` : `the Daily Pad's first move brings the tourists by the second visit at the latest (${seen ? 'visit ' + n : 'NEVER'})`);
+      await context.close();
+    }
   }
 }
 
