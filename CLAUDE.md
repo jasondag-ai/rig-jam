@@ -1264,6 +1264,33 @@ something, give exact clicks and one command at a time.
 - `tools/qc-filmstrip.mjs` takes `safari` (WebKit 390 x 664). Before and after sheets of this
   pass: `~/Desktop/RHR Art Inbox/qc/polish/before/` and `after/`.
 
+## Judge-proofing (Oct 8)
+- A judge opening the link cold, on a laptop or a phone, gets it in ten seconds. ON A DESKTOP the
+  game is the same 560 px column, centred (`#app` `max-width`), the lease the largest square that
+  fits; the mouse drags through the same pointer code as a finger (grab cursor). Nothing was
+  changed for it: `test:e2e:judge` holds it at 1440 x 900 and 1280 x 720 in both engines. (At
+  1280 x 720 there is no room under the lease for the bottom strip, so the strip's sightings do
+  not show in a window that short: Jay knows.)
+- NEVER A WHITE SCREEN (index.html): `#app` starts with `#boot`, a loading page styled inline (the
+  game's blue, its name, "Loading…"), which the first screen replaces. If the game's script or
+  stylesheet fails to load, or the game throws while starting, or nothing is up after 12 s, it
+  says so and shows a Reload button. Nothing of it is left once the game is up.
+- `?demo=1`, THE HIDDEN LINK FOR RECORDING VIDEO (`src/ui/demo-link.ts`, the FIRST import of
+  main.ts): for that page load every region and level is open (`loadProgress().demo` is true),
+  the Wildlife Log is shown complete with no DEMO label (`loadLog`; camo is not handed out, the
+  trucks keep their paint), and NOTHING IS SAVED: `keepInMemory` lays a copy in memory over
+  `localStorage`, so every write (scores, hints, the log, settings, the region) lasts for the
+  page and never reaches the phone. No button or label names it. It is not Settings' own "demo
+  mode" switch, which is saved and has its own demo log.
+- CREDIT: Settings ends with "Built by Jay Dagenais, directing AI (Claude)" (`.app-credit`) over
+  the version line. The panel still fits 390 x 844 without scrolling.
+- SHARE was checked, not changed: the Daily Pad's result is copied exactly and pastes as five
+  plain lines, the link last (read back from the clipboard and pasted into a text box in
+  Chrome's engine, desktop and phone; Safari's engine lets no script read the clipboard, so
+  there only the button's "Copied!" is checked).
+- `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
+  sizes in both engines to `~/Desktop/RHR Art Inbox/qc/judge/` (`OUT=` another folder).
+
 ## An old save keeps everything (the Clearwater ship, Oct 8)
 - A NEW REGION, NEW LOG ENTRIES AND NEW SOUNDS ARE ADDED BESIDE WHAT A PHONE HAS SAVED. Never rename
   or drop a level id, a sighting id or a storage key, and never change a level's par downward so
@@ -1468,6 +1495,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:gagsounds` – every gag (all 26) with sound on in WebKit: cues, timing, output level, lazy loading (`ONLY=beaver` runs one; start the dev server first)
 - `npm run test:e2e:offline` – the built site under the Pages base path: the service worker registers, fills its cache through 503s, and the game plays with the network gone (builds first; needs no dev server)
 - `npm run test:e2e:click` – the buttons' one click and the haptic tick: every kind of button, never on a drag, a tick per truck out, nothing with the switch off (start the dev server first)
+- `npm run test:e2e:judge` – judge-proofing: a fresh visitor with a mouse at 1440 x 900 and 1280 x 720 in both engines, Share, the credit line, `?demo=1`, the load-error page; screenshots (start the dev server first)
 - `npm run test:e2e:sightings` – every sighting on its real trigger at Safari's visible size, and every tappable prop answers a tap (`VIEW=375x635`, `ONLY=beaver`, `URL=` the live site; start the dev server first)
 - `npm run test:e2e:save` – a real save from the live build before Clearwater, loaded into this build at four phone sizes: everything kept, the update bar (start the dev server first)
 - `npm run test:e2e:audio` – sound: lazy loading, every cue, gag sounds, the three music styles, gapless loops, Credits (start the dev server first)
