@@ -4,7 +4,7 @@ import { DEMO_LOG_KEY, LOG_ENTRIES, LOG_KEY, camoOn, complete, foundCount, parse
 
 describe('Wildlife Log', () => {
   it('one entry per gag in the game, each with a name, caption and hint; none for the retired sprite gags', () => {
-    expect(LOG_ENTRIES.map((e) => e.name)).toEqual(['Magpie', 'Sleepy Worker', 'Moose', 'Near Miss', 'Angry Landowner', 'Occupied', 'The Runaway Roll', 'Marshmallow', 'Lost Goose', 'Porcupine', 'Gopher Lunch', 'Safety Sam', 'Frozen Tongue', 'Surveyor', 'Back Scratcher', 'Tourists', 'Muskeg Boots', 'Cat Train', 'Beaver', 'Aurora Howl', 'Tumbleweed', 'Prairie Dog Wave', 'Runaway Bale', 'Personal Cloud', 'Three Swings', 'Out Cold', 'Fresh Wash', 'Dinner Bell', 'One Pea', 'Night Shift', 'Bull and Cow', 'Dug Through', 'Bear']);
+    expect(LOG_ENTRIES.map((e) => e.name)).toEqual(['Magpie', 'Sleepy Worker', 'Moose', 'Near Miss', 'Angry Landowner', 'Occupied', 'The Runaway Roll', 'Marshmallow', 'Lost Goose', 'Porcupine', 'Gopher Lunch', 'Safety Sam', 'Frozen Tongue', 'Surveyor', 'Back Scratcher', 'Tourists', 'Muskeg Boots', 'Cat Train', 'Beaver', 'Aurora Howl', 'Tumbleweed', 'Prairie Dog Wave', 'Runaway Bale', 'Personal Cloud', 'Three Swings', 'Out Cold', 'Fresh Wash', 'Dinner Bell', 'One Pea', 'Overweight', 'Two Left Feet', 'Right of Way', 'Half Dressed', 'Last Ice', 'Late Croak', 'Lunch to Go', 'Night Shift', 'Bull and Cow', 'Dug Through', 'Bear']);
     const ids = LOG_ENTRIES.map((e) => e.id as string);
     for (const gone of ['pumper', 'hotshot', 'gopher']) expect(ids).not.toContain(gone);
     expect(LOG_ENTRIES.find((e) => e.id === 'bear')!.caption).toBe('Does what bears do in the woods.');
@@ -90,7 +90,7 @@ describe('log hints and Night Shift', () => {
     const night = LOG_ENTRIES.find((e) => e.id === 'night')!;
     expect(night).toMatchObject({ name: 'Night Shift', caption: 'Lights out on the lease.', hint: 'Leave any lease alone until it goes dark.' });
     expect(sightingToast('night', 4)).toBe(`New sighting! Night Shift (4/${LOG_ENTRIES.length})`);
-    expect(LOG_ENTRIES).toHaveLength(33);
+    expect(LOG_ENTRIES).toHaveLength(40);
   });
 
   it('no hint says "may" or quotes odds: a sighting not yet found always comes when its hint is followed (Job Y)', () => {

@@ -78,7 +78,7 @@ describe('a save from the live build before Clearwater', () => {
     expect(log.found).toEqual(saved.found);
     expect(log.found).toEqual(['nearmiss', 'geese']);
     expect(foundCount(log)).toBe(2);
-    expect(LOG_ENTRIES.length).toBe(33);
+    expect(LOG_ENTRIES.length).toBe(40);
     expect(camoOn(log)).toBe(false);
     // Every id the old log could hold is still an entry.
     for (const id of ['magpie', 'spotter', 'moose', 'nearmiss', 'landowner', 'biffy', 'biffyB', 'marshmallow', 'geese', 'porcupine', 'lunch', 'sam', 'tongue', 'surveyor', 'deer', 'tourists', 'muskeg', 'cattrain', 'beaver', 'aurora', 'tumbleweed', 'pdogs', 'bale', 'cloud', 'night', 'bull', 'dug', 'bear']) expect(LOG_ENTRIES.some((e) => e.id === id), id).toBe(true);
@@ -117,7 +117,9 @@ const contract = JSON.parse(readFileSync(new URL('../../e2e/fixtures/live-contra
 const DEV_ADDS: { keys: string[]; sightings: string[]; styles: string[]; regions: string[] } = {
   // Sunday Turnaround results (job U3): a key of their own, so the live build never reads, changes or drops them.
   keys: ['rush-hour-rigs:turnaround'],
-  sightings: [],
+  // Baldonnel's seven (job U6b). The live build does not know them and drops them from the log the next time it saves it
+  // (they can be found again); camo pickups already earned stay earned (`camoEarned` is kept by both builds).
+  sightings: ['overweight', 'cranes', 'bison', 'hare', 'ice', 'frogs', 'mosquito'],
   // Classic Rock (job U7). The live build does not know it and plays Country instead; if the player changes a sound
   // setting there, the style is saved as Country. Jay, Oct 9: "if live resets my style to Country after I play dev, that's fine."
   styles: ['classic'],

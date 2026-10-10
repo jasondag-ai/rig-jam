@@ -39,6 +39,8 @@ import { PREVIEWS, type GagId } from './ui/gag-triggers.ts';
 import { workerStill } from './ui/worker.ts';
 import { mountDig } from './ui/log-dig-view.ts';
 import { wave3Still } from './ui/scene-stage.ts';
+import { pond, puddle, scaleProp, snowbank } from './ui/bald-art.ts';
+import { BALD } from './ui/bald-gags.ts';
 import { MUSKEG, WAVE3 } from './ui/wave3.ts';
 import { mooseStill } from './ui/moose.ts';
 import { sceneryHtml } from './ui/scenery.ts';
@@ -65,6 +67,14 @@ const LOG_ART: Record<Sighting, () => string> = {
   wash: () => wave3Still('wash', 9.7, [92, 62, 196, 100]),
   bell: () => wave3Still('bell', 9.3, [150, 80, 100, 84]),
   pea: () => wave3Still('pea', 5.8, [176, 70, 132, 86]),
+  // Baldonnel (bald-gags.ts): the page's own still of each, with the prop it plays on drawn behind (the scenery is not the gag's).
+  overweight: () => wave3Still('overweight', 6.9, [96, 76, 134, 82], scaleProp((BALD as unknown as { overweight: { needle: (t: number) => number } }).overweight.needle(6.9))),
+  cranes: () => wave3Still('cranes', 7.9, [222, 78, 132, 80]),
+  bison: () => wave3Still('bison', 10.8, [230, 66, 124, 90]),
+  hare: () => wave3Still('hare', 6.6, [34, 84, 112, 70], snowbank()),
+  ice: () => wave3Still('ice', 8.4, [226, 60, 112, 76], pond()),
+  frogs: () => wave3Still('frogs', 7.8, [246, 112, 108, 62], puddle()),
+  mosquito: () => wave3Still('mosquito', 4.9, [226, 80, 104, 76]),
   muskeg: () => wave3Still('muskeg', 3.1, [72, 76, 134, 90], MUSKEG),
   cattrain: () => wave3Still('catTrain', 9.4, [204, 92, 96, 66]),
   beaver: () => wave3Still('beaver', 1.6, [68, 92, 146, 62]),
