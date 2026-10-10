@@ -7,7 +7,7 @@
 import { haptic } from './haptics.ts';
 import { STEP_CELLS, chordLift, nextChain, winCue } from './cues.ts';
 import { FINALE_ID, FINALE_SOUNDS, GAG_LOOPS, GAG_SOUNDS, finaleKeys, gagKeys, parseCue, type GagLoop } from './gag-sounds.ts';
-import { CORE_KEYS, LAZY_KEYS, MUSIC_FADE, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, sfxInfo, type MusicKey, type Scene, type SfxKey } from './pack.ts';
+import { CORE_KEYS, LAZY_KEYS, MUSIC_FADE, finaleTrack, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, sfxInfo, type MusicKey, type Scene, type SfxKey } from './pack.ts';
 import { loadAudioSettings, saveAudioSettings, type AudioSettings } from './settings.ts';
 import type { GagId } from '../ui/gag-triggers.ts';
 
@@ -43,6 +43,8 @@ class AudioEngine {
   private tier = 1;
   private music: { key: MusicKey; src: AudioBufferSourceNode; gain: GainNode } | null = null;
   private wanted: MusicKey | null = null;
+  /** Music in place of the scene's loop: one track (the finale's credits), or 'silence' (after it, until the cover). */
+  private override: MusicKey | 'silence' | null = null;
   private installed = false;
   private meter: AnalyserNode | null = null;
 
@@ -141,6 +143,16 @@ class AudioEngine {
     this.scene = scene;
     this.tier = tier;
     this.syncMusic();
+  }
+
+  /** Plays one track in place of the scene's loop (or nothing at all: 'silence'); null gives the scene its loop back. */
+  setOverride(what: MusicKey | 'silence' | null): void {
+    if (what === this.override) return;
+    this.override = what;
+    this.syncMusic();
+  }
+  overrideNow(): MusicKey | 'silence' | null {
+    return this.override;
   }
 
   private applyLevels(): void {
@@ -332,7 +344,7 @@ class AudioEngine {
   /** Plays the loop for the chosen style and the scene, if Music is on; fades between loops. Fetched only now. */
   private syncMusic(): void {
     if (!this.ctx) return;
-    const want = this.settings.music ? musicKey(this.settings.style, this.scene, this.tier) : null;
+    const want = !this.settings.music || this.override === 'silence' ? null : (this.override ?? musicKey(this.settings.style, this.scene, this.tier));
     if (want === this.wanted) return;
     this.wanted = want;
     const ctx = this.ctx;
@@ -506,6 +518,16 @@ export const sound = {
   /** The finale's credits: the menu loop of the player's music style, if Music is on. */
   finaleCredits(): void {
     audio.setScene('menu');
+    // The graduation music, once it is in the pack (pack.ts `finaleTrack`); until then the menu loop plays on.
+    audio.setOverride(finaleTrack());
+  },
+  /** The credits lift: the graduation music fades out, and it stays quiet for Still Here (the menu loop is back at the cover). With no track yet, the menu loop simply plays on. */
+  finaleCreditsOver(): void {
+    if (audio.overrideNow() && audio.overrideNow() !== 'silence') audio.setOverride('silence');
+  },
+  /** The finale hands over to the cover, or is left: the scene's own music again. */
+  finaleMusicOver(): void {
+    audio.setOverride(null);
   },
   /** Plays a list of cues for `id` (a gag, or the finale): one-shots now or after their delay, loops started and stopped. */
   cues(id: string, list: readonly string[]): void {

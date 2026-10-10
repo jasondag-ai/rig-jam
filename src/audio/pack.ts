@@ -103,6 +103,15 @@ export const musicKey = (style: MusicStyle, scene: Scene, tier = 1): MusicKey =>
 export const musicInfo = (key: MusicKey): { seconds: number; mean: number; formats: { file: string; type: string }[]; crossfaded: boolean } => pack.music[key];
 
 /**
+ * THE FINALE'S CREDITS MUSIC (job U9b): one track, `finale_credits` in pack.json's music (graduation music: Elgar's
+ * "Pomp and Circumstance" March No. 1; `python3 tools/audio-pack.py --finale-music` builds it from Jay's pick in
+ * `~/Desktop/RHR Art Inbox/Sound files/finale_music/`). UNTIL IT IS IN THE PACK THERE IS NO TRACK, and the credits
+ * keep the menu loop of the player's style. It follows the Music switch like any loop.
+ */
+export const FINALE_TRACK = 'finale_credits';
+export const finaleTrack = (music: Record<string, unknown> = pack.music): MusicKey | null => (FINALE_TRACK in music ? (FINALE_TRACK as MusicKey) : null);
+
+/**
  * Music sits WELL UNDER the effects, and the in-play loop is quieter than the menu loop (it plays
  * under thinking). These are the music's levels against an effect at full volume.
  */
@@ -110,7 +119,8 @@ export const MUSIC_VOLUME: Record<Scene, number> = { menu: 0.3, play: 0.17 };
 /** Every loop is first brought to about this average level (dB). */
 export const MUSIC_TARGET_MEAN = -18.5;
 export function musicGain(key: MusicKey): number {
-  const scene = key.endsWith('_menu') ? 'menu' : 'play';
+  // (The finale's track plays where a menu loop would, at a menu loop's level.)
+  const scene = key.endsWith('_menu') || (key as string) === FINALE_TRACK ? 'menu' : 'play';
   return MUSIC_VOLUME[scene] * Math.max(0.6, Math.min(1.6, db(MUSIC_TARGET_MEAN - pack.music[key].mean)));
 }
 /** Changing loops (menu to level, one style to another): the old one fades out and the new one in over this long (s). */

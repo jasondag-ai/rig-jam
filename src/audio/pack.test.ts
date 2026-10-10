@@ -5,7 +5,7 @@ import { FINALE_SOUNDS, GAG_LOOPS, GAG_SOUNDS, finaleKeys, gagKeys, parseCue } f
 import { BALD } from '../ui/bald-gags.ts';
 import { FINALE_BEATS } from '../ui/finale.ts';
 import { WAVE3 } from '../ui/wave3.ts';
-import { CORE_KEYS, LAZY_KEYS, MAX_TRIM, MUSIC_STYLES, MUSIC_TARGET_MEAN, MUSIC_VOLUME, PLAY_TIER, SFX_KEYS, TARGET_MEAN, VOLUME, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, playTier, sfxInfo, type SfxKey } from './pack.ts';
+import { CORE_KEYS, FINALE_TRACK, LAZY_KEYS, MAX_TRIM, MUSIC_STYLES, MUSIC_TARGET_MEAN, MUSIC_VOLUME, PLAY_TIER, SFX_KEYS, TARGET_MEAN, VOLUME, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, playTier, sfxInfo, finaleTrack, type SfxKey } from './pack.ts';
 import { GAG_TRIGGERS, type GagId } from '../ui/gag-triggers.ts';
 
 /** Baldonnel's seven sightings, and the nine files made for them and for the finale (job U10). */
@@ -415,6 +415,22 @@ describe("Baldonnel's sightings and the finale (job U10)", () => {
     // Moe's run from the camera to his spot: his steps from the beat he hurries off on until his hop-turn.
     expect(cues(FINALE_SOUNDS.photo, 'hurries-to-his')[0]).toMatchObject({ op: 'start', name: 'steps' });
     expect(cues(FINALE_SOUNDS.photo, 'hopturn-big-grin')[0]).toMatchObject({ op: 'stop', name: 'steps' });
+  });
+});
+
+describe("the finale's credits music (job U9b)", () => {
+  it('is one slot: the graduation track once it is in the pack, and until then no track (the menu loop plays on)', () => {
+    expect(finaleTrack({ country_menu: {} })).toBeNull();
+    expect(finaleTrack({ country_menu: {}, [FINALE_TRACK]: {} })).toBe(FINALE_TRACK);
+    // Whatever the pack holds today, the slot agrees with it; and a track that is there has both formats and a Credits row.
+    const now = finaleTrack();
+    expect(now).toBe(existsSync(pub(`music/${FINALE_TRACK}.mp3`)) ? FINALE_TRACK : null);
+    if (now) {
+      expect(musicInfo(now).formats.map((f) => f.type)).toEqual(['audio/ogg; codecs=opus', 'audio/mpeg']);
+      expect(CREDITS.find((c) => c.use === FINALE_TRACK)).toMatchObject({ kind: 'music' });
+      // It plays where a menu loop would, at a menu loop's level: well under the effects.
+      expect(musicGain(now)).toBeLessThanOrEqual(MUSIC_VOLUME.menu * 1.6);
+    }
   });
 });
 

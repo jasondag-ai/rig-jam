@@ -235,6 +235,7 @@ export class FinaleView {
     if (part !== 'photo') sound.finaleEnd();
     if (part === 'card' && !reducedMotion()) sound.finale('card', FINALE_BEATS.card[0][1]);
     if (part === 'credits') sound.finaleCredits();
+    if (part === 'still') sound.finaleCreditsOver();
     cancelAnimationFrame(this.raf);
     if (part !== 'card') this.tick();
   }
@@ -252,13 +253,20 @@ export class FinaleView {
     this.raf = requestAnimationFrame(this.tick);
   };
   private beat(part: FinalePart, t: number): void {
-    const b = FINALE_BEATS[part].reduce((name, x) => (t >= x[0] ? x[1] : name), FINALE_BEATS[part][0][1]);
-    if (this.el.dataset.beat === b && this.beatPart === part) return;
-    this.el.dataset.beat = b;
+    const beats = FINALE_BEATS[part];
+    let at = 0;
+    for (let k = 0; k < beats.length; k++) if (t >= beats[k][0]) at = k;
+    if (this.beatPart === part && this.beatAt === at) return;
+    // The sounds of EVERY beat reached since the last frame (audio/gag-sounds.ts `FINALE_SOUNDS`), each once, in order: a
+    // slow frame may pass two beats at once (the photo drops 0.1 s before the magpie's chuckle), and neither may lose
+    // its sound. Not for a still, nor a frame held by a test.
+    const from = this.beatPart === part ? this.beatAt + 1 : 0;
+    if (this.held === null && !reducedMotion()) for (let k = Math.min(from, at); k <= at; k++) sound.finale(part, beats[k][1]);
+    this.el.dataset.beat = beats[at][1];
     this.beatPart = part;
-    // The beat's sounds (audio/gag-sounds.ts `FINALE_SOUNDS`), once, as it starts. Not for a still, nor a frame held by a test.
-    if (this.held === null && !reducedMotion()) sound.finale(part, b);
+    this.beatAt = at;
   }
+  private beatAt = 0;
   private beatPart: FinalePart | null = null;
   private set(layer: HTMLElement, html: string, key: string): void {
     if (this.last[key] === html) return;
@@ -393,6 +401,8 @@ export class FinaleView {
     this.over.flash?.remove();
     delete this.over.flash;
     const H = this.el.clientHeight, W = this.el.clientWidth, k = Math.min(1, W / 390);
+    // (As the credits lift, their music fades out with them.)
+    if (t >= CREDITS_OUT && this.held === null) sound.finaleCreditsOver();
     const fo = 1 - seg(t, CREDITS_OUT, FINALE_DUR.credits);
     const dim = this.layer('dim', 'finale-dim');
     dim.style.opacity = (t < CREW_GONE ? 0.86 * seg(t, 0, CREW_GONE) : 0.86 * fo).toFixed(3);
@@ -472,6 +482,7 @@ export class FinaleView {
     const holder = (this.over.cover = document.createElement('div'));
     holder.className = 'finale-cover';
     this.el.append(holder);
+    sound.finaleMusicOver();
     const cover = this.opts.onCover(holder);
     this.el.dataset.part = 'cover';
     requestAnimationFrame(() => holder.classList.add('up'));
@@ -485,6 +496,7 @@ export class FinaleView {
     this.timers.forEach((t) => window.clearTimeout(t));
     this.board.stopAmbient();
     sound.finaleEnd();
+    sound.finaleMusicOver();
   }
 
   /** For the tests (`?gagtest=1`): the photo held like any strip gag (`__rhrGag`), and any part at any time (`__rhrFinale`). */

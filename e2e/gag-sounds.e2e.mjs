@@ -9,7 +9,7 @@
 // Needs a running dev server (or URL=…). `ONLY=beaver` runs one gag.
 import { webkit } from 'playwright';
 import { GAG_SOUNDS, gagKeys, finaleKeys, parseCue } from '../src/audio/gag-sounds.ts';
-import { CORE_KEYS, LAZY_KEYS } from '../src/audio/pack.ts';
+import { CORE_KEYS, LAZY_KEYS, finaleTrack } from '../src/audio/pack.ts';
 import { PREVIEWS } from '../src/ui/gag-triggers.ts';
 import { UNLOCKED } from './progress.mjs';
 
@@ -160,7 +160,7 @@ if (!process.env.ONLY || process.env.ONLY === 'finale') {
   // Everything heard from here on, with the part and the part's own time it was heard at.
   await page.evaluate(() => {
     const a = window.__rhrAudio; let seen = 0, part = null, t0 = 0;
-    window.__fin = { heard: [], peak: 0, parts: [], scrub: [], music: {}, beats: [], beat: null };
+    window.__fin = { heard: [], peak: 0, parts: [], scrub: [], steps: [], music: {}, beats: [], beat: null };
     const tick = () => {
       const s = document.querySelector('.screen.finale'), now = performance.now();
       const p = s?.dataset.part ?? (document.querySelector('#app > .screen.cover') ? 'cover' : null);
@@ -170,7 +170,9 @@ if (!process.env.ONLY || process.env.ONLY === 'finale') {
       window.__fin.peak = Math.max(window.__fin.peak, a.peak());
       const on = a.loopRunning('finale:scrub'), last = window.__fin.scrub.at(-1);
       if (!last || last.on !== on) window.__fin.scrub.push({ on, part, t: (now - t0) / 1000 });
-      if (part) window.__fin.music[part] = a.musicState()?.key ?? null;
+      const st = a.repeatRunning('finale:steps'), lastS = window.__fin.steps.at(-1);
+      if (!lastS || lastS.on !== st) window.__fin.steps.push({ on: st, part, t: (now - t0) / 1000 });
+      if (part) { const k = a.musicState()?.key ?? null, seen = (window.__fin.music[part] ??= []); if (seen.at(-1) !== k) seen.push(k); }
       requestAnimationFrame(tick);
     };
     tick();
@@ -197,13 +199,18 @@ if (!process.env.ONLY || process.env.ONLY === 'finale') {
   check(each(pops, [0.9, 1.15, 1.4], 0.2) && tada.length === 1 && near(tada[0], 1.7, 0.2), `the card: the win's own sounds, a pop a hard hat as it pops in (${pops.join(', ')} s) and the ta-da (${tada.join()} s)`);
   const beeps = at('photo', 'timer_beep'), slow = beeps.filter((t) => t < 4.9), fast = beeps.filter((t) => t >= 4.9);
   check(each(slow, [1.65, 2.25, 2.85, 3.45, 4.05, 4.65]) && each(fast, [5.0, 5.18, 5.36, 5.54, 5.72]), `the self-timer: slow (${slow.join(', ')} s), then fast (${fast.join(', ')} s), until the snap`);
+  const run1 = fin.heard.filter((h) => h.part === 'photo' && h.n === 'finale:steps').map((h) => +h.t.toFixed(2)), stepsNow = fin.steps.filter((x) => x.part === 'photo');
+  check(run1.length >= 4 && run1.length <= 6 && near(run1[0], 1.9) && Math.max(...run1) < 3.2 && stepsNow.some((x) => !x.on && x.t > 2.9 && x.t < 3.5), `Moe's footsteps from the camera to his spot, until his hop-turn (${run1.join(', ')} s; stopped by ${stepsNow.filter((x) => !x.on && x.t > 1).map((x) => x.t.toFixed(2)).join()} s)`);
   const cam = at('photo', 'camera'), splat = at('photo', 'splat'), pol = at('photo', 'polaroid'), heh = at('photo', 'chuckle');
   check(cam.length === 1 && near(cam[0], 5.86) && splat.length === 1 && Math.abs(splat[0] - cam[0]) < 0.03, `the camera on the flash (${cam.join()} s) and the splat with it (${splat.join()} s)`);
   // (The flash and the photo are heavy frames at DPR 3: the picture itself runs a frame or two late there, and the sound goes with the picture. Held to their own beats.)
   const onBeat = (part, beat, n) => { const b = fin.beats.find((x) => x.part === part && x.beat === beat), h = fin.heard.find((x) => x.part === part && x.n === n && b && x.t >= b.t - 0.02); return b && h ? h.t - b.t : NaN; };
   check(pol.length === 1 && near(pol[0], 6.05, 0.3) && near(onBeat('photo', 'the-photo-drops', 'polaroid'), 0, 0.06) && heh.length === 1 && near(heh[0], 6.15, 0.3) && near(onBeat('photo', 'heh-heh-the', 'chuckle'), 0, 0.06) && near(onBeat('photo', 'splat-flash-at', 'camera'), 0, 0.06), `the Polaroid's whirr as the photo drops (${pol.join()} s); the magpie's chuckle (${heh.join()} s)`);
-  check(mid.music === 'retro_menu' && fin.music.credits === 'retro_menu', `under the credits: the menu loop of the player's own style (${mid.music})`);
-  check(fin.heard.filter((h) => h.part === 'credits').length === 0, 'the credits have no effects of their own');
+  // (The graduation music once it is in the pack, `finale_credits`; until then the menu loop of the player's style. It fades out as the credits lift and Still Here is quiet; with no track yet the menu loop plays on.)
+  const TRACK = finaleTrack();
+  check(mid.music === (TRACK ?? 'retro_menu') && fin.music.credits.includes(TRACK ?? 'retro_menu'), `under the credits: ${TRACK ? 'the graduation music' : "the menu loop of the player's own style (no graduation music in the pack yet)"} (${mid.music})`);
+  check(TRACK ? fin.music.still.join() === '' && fin.music.credits.at(-1) === null : fin.music.still.join() === 'retro_menu', `as the credits lift: ${TRACK ? 'it fades out, and Still Here is quiet' : 'the menu loop plays on'} (${fin.music.credits.map(String).join(' > ')}; then ${fin.music.still.map(String).join(' > ')})`);
+  check(fin.heard.filter((h) => h.part === 'credits' && !h.n.startsWith('music:')).length === 0, 'the credits have no effects of their own');
   const creak = at('still', 'creak'), scrub = fin.scrub.filter((x) => x.part === 'still');
   const ons = scrub.filter((x) => x.on).map((x) => +x.t.toFixed(2)), offs = scrub.filter((x) => !x.on && x.t > 1).map((x) => +x.t.toFixed(2));
   check(each(creak, [2.2, 9.6]), `Still Here: the creak as the door opens and as it shuts (${creak.join(', ')} s)`);
