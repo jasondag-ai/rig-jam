@@ -153,6 +153,9 @@ const CRANE_IN_Y=104, CRANE_OUT_Y=102, BIRD_IN_Y=96, BIRD_OUT_Y=92, FEATHER_Y=52
 '''
 footer = r'''
 
+// (The finale's crew photo, finale-art.ts, stands these same puppets in a row.)
+export { crane, bison, hare, frog, magpie };
+
 // Each gag draws all its lanes in one pass (as the page does); the stage asks for them one at a time.
 for (const g of Object.values(BALD)) {
   let key = '', val = null;

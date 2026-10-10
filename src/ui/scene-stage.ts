@@ -103,7 +103,7 @@ export const BIG_PUDDLE = { x: 108, y: 142, w: 84, h: 20 };
 /** Where the lease sign stands on a Mannville level (a share of the screen's width): left of the lane aspen, whose crown would hide its visitors. */
 export const MANN_SIGN_X = 0.44;
 
-const tree = (t: { species: Species; x: number; base: number; h: number }, season: Season): string => {
+export const tree = (t: { species: Species; x: number; base: number; h: number }, season: Season): string => {
   const [bw, bh] = BOX[t.species];
   const w = (t.h * bw) / bh;
   return `<svg x="${(t.x - w / 2).toFixed(2)}" y="${(t.base - t.h).toFixed(2)}" width="${w.toFixed(2)}" height="${t.h}" viewBox="0 0 ${bw} ${bh}" overflow="visible">${treeArt(t.species, season, sizeFor(t.species, t.h))}</svg>`;

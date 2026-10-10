@@ -29,7 +29,7 @@ const mixC = (a: string, b: string, k: number) => { const pa = [1,3,5].map(i => 
 const BL='#3d7cc9', BL2='#2d62a6', RED='#e8862e', RED2='#bf6418', DARK='#8a4513', FACE='#e58f7a', STUB='#9c7656', STRIPE='#d5dbe2', SKIN='#f0c09a', BUM='#f3b39b', HAT='#f2c230', BOOT='#5a3a24';
 
 /* ---------------- the biffy (front view, door hinged on the left) ---------------- */
-const DOOR = `<g class="door">
+export const DOOR = `<g class="door">
     <rect x="22" y="38" width="56" height="94" fill="${BL}" stroke="${O}" stroke-width="2.6"/>
     <path d="M30 50 L70 50 M30 55 L70 55 M30 60 L70 60" stroke="${BL2}" stroke-width="2.6"/>
     <rect class="ind" x="44" y="41" width="12" height="5" rx="1.5" fill="#56b05a" stroke="${O}" stroke-width="1.6"/>

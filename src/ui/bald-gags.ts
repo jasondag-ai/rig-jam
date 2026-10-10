@@ -526,6 +526,9 @@ BALD.mosquito = { name:'Lunch to Go', dur:8.0, still:4.9,
   return{s,o,B,F};}};
 
 
+// (The finale's crew photo, finale-art.ts, stands these same puppets in a row.)
+export { crane, bison, hare, frog, magpie };
+
 // Each gag draws all its lanes in one pass (as the page does); the stage asks for them one at a time.
 for (const g of Object.values(BALD)) {
   let key = '', val = null;
