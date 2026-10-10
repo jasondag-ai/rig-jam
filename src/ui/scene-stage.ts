@@ -397,15 +397,17 @@ export class ClearProp {
 
 /**
  * Baldonnel's black spruce, from its reference (`bgBald`), in the board's own spruce drawing (ONE ART STYLE, as in
- * Mannville and Clearwater), dark in the thaw theme's tones. The left pair stands 56 further right than in the
- * reference, clear of the biffy; the three tallest are a little shorter, so their tips stay inside the strip.
+ * Mannville and Clearwater), dark in the thaw theme's tones. THE REFERENCE'S LEFT PAIR (x 10 and 26, by the sign)
+ * STANDS ON THE POND'S FAR BANK AT THE RIGHT (x 344 and 360), with the one already there: at the left it would
+ * stand under the biffy, and anywhere else on the left Right of Way parks Moe's pickup in front of it for five
+ * seconds (nobody parks on a prop). The tallest are a little shorter, so their tips stay inside the strip.
  */
 export const BD_TREES: { species: Species; x: number; base: number; h: number }[] = [
-  { species: 'spruce', x: 66, base: 98, h: 50 },
-  { species: 'spruce', x: 82, base: 102, h: 44 },
   { species: 'spruce', x: 150, base: 96, h: 46 },
   { species: 'spruce', x: 166, base: 100, h: 52 },
   { species: 'spruce', x: 186, base: 96, h: 40 },
+  { species: 'spruce', x: 344, base: 96, h: 44 },
+  { species: 'spruce', x: 360, base: 94, h: 40 },
   { species: 'spruce', x: 378, base: 94, h: 46 },
 ];
 /** How much strip Baldonnel's scene wants on a screen `screenW` wide to stand at its full size (px). */
@@ -501,7 +503,8 @@ export class BaldProp {
   propAt(x: number, y: number): SVGGElement | null {
     const screen = this.host.screen.getBoundingClientRect(), g = this.geom();
     for (const p of BD_PROPS) {
-      const b = tapBox(g, p.box);
+      // (The pond runs off the right edge of the screen, however wide the screen is.)
+      const b = tapBox(g, p.cls === 'bd-pond' ? { ...p.box, w: Math.max(p.box.w, g.left + g.worldW - p.box.x) } : p.box);
       if (x - screen.left >= b.left && x - screen.left <= b.right && y - screen.top >= b.top && y - screen.top <= b.bottom) return this.host.screen.querySelector<SVGGElement>(`.${p.cls}`);
     }
     return null;

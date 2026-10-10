@@ -1,7 +1,8 @@
 // @ts-nocheck
 // BALDONNEL'S SEVEN SIGHTINGS (October upgrade, job U6b), ported from
 // `~/Desktop/RHR Art Inbox/baldonnel_sightings_reference.html` (saved Oct 9 17:36) as the Clearwater ones were
-// (wave3.ts): the reference's new puppets (sandhill crane, bison, snowshoe hare in its spring coat, wood frog,
+// (wave3.ts). THIS FILE IS WRITTEN BY `python3 tools/port-baldonnel.py`: change a sighting there and run it again.
+// The reference's new puppets (sandhill crane, bison, snowshoe hare in its spring coat, wood frog,
 // mosquito, pike, the magpie, the bits Moe carries) and its seven gags copied AS WRITTEN by a script, each as
 // `BALD.<key>` in wave3's shape: `beats` [time, id, text], `dur`, `still`, `lead(E)` / `tail(E)`, and what it draws:
 // `render` (the walking lane), `back` (a lane behind it), `front` (a lane in front), `over` (sound words and whistled
@@ -23,6 +24,8 @@
 //     front of the lane the bearded worker walks (`front`).
 //   - THE SCALE'S NEEDLE is the scenery's own (scene-stage.ts `BaldProp.needle`): Overweight only says where it
 //     points (`needle`).
+//   - SAME START, SAME END: the page writes "garooo" from its very first frame and draws the puddle's water line
+//     through the whole of Late Croak; here the word comes a moment in and the line only while a frog is up.
 //   - LINES ("Shoo!", "Got one!", "Hey!") are said in the game's own bubble (`lines`; texts in lines.ts).
 import { GY, OL, C, sfx, r2, rng, w3worker as worker, clamp, seg, io, es, inr, lerp, hop, kf, sw, walk, note, hardHat, handW, blob, MOE, BEARD, puff, pickup } from './wave3.ts';
 import { SB, SCX, PAD, DIAL, POND, PUD2 } from './bald-art.ts';
@@ -271,7 +274,7 @@ BALD.cranes = { name:'Two Left Feet', dur:12.8, still:7.9,
   s+=worker(p);
   // the feather comes down from the flight onto his hat
   if(t>=9.5&&t<10.25){const k=seg(t,9.5,10.25);const hx=x-1,hy=GY-67;s+=`<g transform="translate(${r2(lerp(x+70,hx,k)+8*Math.sin(k*9))} ${r2(lerp(FEATHER_Y,hy,io(k)))}) rotate(${r2(-20+30*Math.sin(k*8))})">${FEATHER_G}</g>`;}
-  if(t>=0&&t<1.2)o+=sfx(70,GAROO_Y,'garooo',10,-6,'#fff',.9+.1*Math.sin(t*20));
+  if(t>.1&&t<1.2)o+=sfx(70,GAROO_Y,'garooo',10,-6,'#fff',.9+.1*Math.sin(t*20));
   if(t>2.7&&t<3.0)o+=sfx(CA+18,GY-70,'garoo',8,-6,'#fff');
   return{s,o,B,F};}};
 
@@ -471,8 +474,8 @@ BALD.frogs = { name:'Late Croak', dur:10.8, still:7.8,
    else if(t<8.0){if(i===2){q.sac=1.4*Math.sin(Math.PI*seg(t,7.6,8.0));q.eye='closed';}else{q.eye='n';}}
    else{if(i===2){q.eye='wide';q.blush=.9;q.sq=.08;}else{q.eye='half';q.px=1.8;}}
    fr+=frog(q);});
-  F+=`<clipPath id="pudclip"><rect x="-900" y="-200" width="2400" height="${surf+200}"/></clipPath><g clip-path="url(#pudclip)">${fr}</g>`;
-  F+=`<path d="M${PUD2.x-38} ${surf} h76" stroke="#a2a996" stroke-width="1.4" stroke-linecap="round"/>`;
+  if(fr)F+=`<clipPath id="pudclip"><rect x="-900" y="-200" width="2400" height="${surf+200}"/></clipPath><g clip-path="url(#pudclip)">${fr}</g>`;
+  if(fr)F+=`<path d="M${PUD2.x-38} ${surf} h76" stroke="#a2a996" stroke-width="1.4" stroke-linecap="round"/>`;
   FROGS.forEach((G,i)=>{F+=ripple(G.x,surf,seg(t,G.on,G.on+.6),7)+ripple(G.x,surf,seg(t,8.7+i*.2,9.4+i*.2),8);});
   F+=ripple(PUD2.x,surf,seg(t,0,.5),10);
   // notes and sound words

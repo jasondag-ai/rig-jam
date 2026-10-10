@@ -168,9 +168,10 @@ describe("Baldonnel's seven sightings (job U6b)", () => {
     expect(drivesOnSoft(soft, { orient: 'v', row: 0, col: 3, length: 2 }, 1)).toBe(true);
     expect(drivesOnSoft(soft, { ...pickup, length: 3 }, 1)).toBe(false);
     expect(drivesOnSoft([], pickup, 4)).toBe(false);
-    // WHERE IT CAN BE DONE: on levels 1, 5, 6, 7 and 8 a pickup has a patch in its lane (driven back and forth over it,
-    // three times is easy). On 2, 3, 4, 9 and 10 no pickup can reach a patch at all, so Lunch to Go cannot come there
-    // (the levels are job U6's and are not this job's to change).
+    // WHERE IT CAN BE DONE, on the ten levels as job U6 left them: on levels 1, 5, 6, 7 and 8 one pickup has a patch in its
+    // lane, and that patch lies in its gate's own cell, so it crosses the patch only on its way OUT (once; three times
+    // means driving out, Undo, and again). On 2, 3, 4, 9 and 10 no pickup can reach a patch at all. (The levels are not
+    // this job's to change: Jay has been told.)
     const can = REGIONS.find((r) => r.id === 'baldonnel')!.levels.map((l) => l.trucks.some((t) => t.length === 2 && l.soft.some((c) => (t.orient === 'h' ? c.row === t.row : c.col === t.col))));
     expect(can).toEqual([true, false, false, false, true, true, true, true, false, false]);
   });

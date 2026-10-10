@@ -6,7 +6,8 @@
 // muddy two-track. (The trees are the board's own drawings: scene-stage.ts `BD_TREES`.) Pure strings.
 //
 // MOVED FROM THE REFERENCE, each for a rule (scene-stage.ts says where everything stands):
-//   - the bison sign and the left two spruce stand 56 further right, clear of the biffy in the strip's corner;
+//   - the bison sign stands 56 further right, clear of the biffy in the strip's corner; the two spruce beside it
+//     stand at the right, on the pond's far bank (scene-stage.ts `BD_TREES` says why);
 //   - the meltwater puddle lies on the two-track's near rut (y 163, not 174) and the three front snow patches on
 //     the lane's near edge (not y 180 to 185), so the scene can be cropped tighter and everything in it shows
 //     bigger on the same strip (Clearwater's lesson);
