@@ -166,5 +166,15 @@ for (const g of Object.values(BALD)) {
 }
 '''
 open('src/ui/bald-gags.ts','w').write(header+body+footer)
+# What the page says, for the tests (the build server has no Desktop): each gag's beats [time, text] and its log lines.
+import json
+page={}
+for gid,h in HEAD.items():
+    m=re.search(r"GAGS\.push\(\{id:'"+gid+r"'[^\n]*\n notes:[^\n]*\n beats:(\[.*\]),\n", '\n'.join(L))
+    beats=[[float(b.group(1)), b.group(2)] for b in re.finditer(r"\[([\d.]+),'((?:[^'\\]|\\.)*)'\]", m.group(1))]
+    card=re.search(r"Log card: “([^”]*)” Riddle: “([^”]*)” Plain hint: “([^”]*)”", h['notes'])
+    page[gid]={'name':h['name'],'beats':beats,'card':card.group(1).replace('’',"'"),'riddle':card.group(2).replace('’',"'"),'hint':card.group(3).replace('’',"'")}
+open('src/ui/bald-reference.json','w').write(json.dumps(page,ensure_ascii=False,indent=1)+'\n')
+
 print('written', len(body))
 

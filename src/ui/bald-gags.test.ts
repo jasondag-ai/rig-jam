@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import page from './bald-reference.json' with { type: 'json' };
 import { REGIONS } from '../levels/regions.ts';
 import { BALD } from './bald-gags.ts';
 import { PAD, POND, PUD2, SB } from './bald-art.ts';
@@ -10,6 +10,7 @@ import { LOG_ENTRIES, parseLog } from './wildlife-log.ts';
 
 type Gag = { name: string; dur: number; still: number; beats: [number, string, string][]; lead: (E: number) => number; tail: (E: number) => number; render: (t: number, E: number) => string; back?: (t: number, E: number) => string; front?: (t: number, E: number) => string; over: (t: number, E: number) => string; backY?: number; frontY?: number; lines?: { key: string; from: number; to: number; mouth: (t: number) => { x: number; y: number } }[] };
 const gags = BALD as unknown as Record<string, Gag>;
+const PAGE = page as unknown as Record<string, { name: string; beats: [number, string][]; card: string; riddle: string; hint: string }>;
 const IDS = ['overweight', 'cranes', 'bison', 'hare', 'ice', 'frogs', 'mosquito'];
 const all = (g: Gag, t: number, E: number) => g.render(t, E) + (g.back?.(t, E) ?? '') + (g.front?.(t, E) ?? '') + g.over(t, E);
 /** A puppet's own place: its outermost group (the magpie's inner flips are `translate(...) scale(...) translate(...)`). */
@@ -25,10 +26,9 @@ describe("Baldonnel's seven sightings (job U6b)", () => {
   });
 
   it("every beat of the page, in order, at the page's own time", () => {
-    const page = readFileSync(`${process.env.HOME}/Desktop/RHR Art Inbox/baldonnel_sightings_reference.html`, 'utf8');
+    // (`bald-reference.json` is the page's own beats and log lines, saved by tools/port-baldonnel.py: the build server has no Desktop.)
     for (const id of IDS) {
-      const m = page.match(new RegExp(`GAGS\\.push\\(\\{id:'${id}'[^\\n]*\\n notes:[^\\n]*\\n beats:(\\[.*\\]),\\n`))!;
-      const theirs = [...m[1].matchAll(/\[([\d.]+),'((?:[^'\\]|\\.)*)'\]/g)].map((b) => [Number(b[1]), b[2]]);
+      const theirs = PAGE[id].beats;
       expect(gags[id].beats.map(([t, , text]) => [t, text]), id).toEqual(theirs);
       const names = gags[id].beats.map((b) => b[1]);
       expect(new Set(names).size, id).toBe(names.length);
@@ -186,12 +186,11 @@ describe("Baldonnel's seven sightings (job U6b)", () => {
       frogs: ['Late Croak', 'Missed the cue.', 'The puddle has a choir. One member is late.', 'In Baldonnel, tap the puddle.'],
       mosquito: ['Lunch to Go', 'Takeout.', 'Soft ground, wet ground, hungry ground.', 'In Baldonnel, drive a pickup over a road ban patch 3 times.'],
     };
-    const page = readFileSync(`${process.env.HOME}/Desktop/RHR Art Inbox/baldonnel_sightings_reference.html`, 'utf8').replace(/’/g, "'");
     for (const id of IDS) {
       const e = LOG_ENTRIES.find((x) => x.id === id)!;
       expect([e.name, e.caption, e.riddle, e.hint], id).toEqual(want[id]);
       // Word for word the page's (its typographic apostrophes aside).
-      expect(page).toContain(`Log card: “${e.caption}” Riddle: “${e.riddle}” Plain hint: “${e.hint}”`);
+      expect([PAGE[id].name, PAGE[id].card, PAGE[id].riddle, PAGE[id].hint], id).toEqual(want[id]);
     }
     expect(LOG_ENTRIES).toHaveLength(40);
     // A log that had every sighting before Baldonnel, with its camo earned: still earned, though seven are now unfound.
