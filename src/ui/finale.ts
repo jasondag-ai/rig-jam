@@ -234,7 +234,8 @@ export class FinaleView {
     // (A part's own loops never run on into the next: the credits may be skipped while something is still to come.)
     if (part !== 'photo') sound.finaleEnd();
     if (part === 'card' && !reducedMotion()) sound.finale('card', FINALE_BEATS.card[0][1]);
-    if (part === 'credits') sound.finaleCredits();
+    // (The march starts with the crew photo and plays on through the credits.)
+    if (part === 'photo' || part === 'credits') sound.finaleMarch(part);
     if (part === 'still') sound.finaleCreditsOver();
     cancelAnimationFrame(this.raf);
     if (part !== 'card') this.tick();

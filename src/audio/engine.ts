@@ -7,7 +7,7 @@
 import { haptic } from './haptics.ts';
 import { STEP_CELLS, chordLift, nextChain, winCue } from './cues.ts';
 import { FINALE_ID, FINALE_SOUNDS, GAG_LOOPS, GAG_SOUNDS, finaleKeys, gagKeys, parseCue, type GagLoop } from './gag-sounds.ts';
-import { CORE_KEYS, LAZY_KEYS, MUSIC_FADE, finaleTrack, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, sfxInfo, type MusicKey, type Scene, type SfxKey } from './pack.ts';
+import { CORE_KEYS, FINALE_DUCK, FINALE_RISE, LAZY_KEYS, MUSIC_FADE, finaleTrack, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, sfxInfo, type MusicKey, type Scene, type SfxKey } from './pack.ts';
 import { loadAudioSettings, saveAudioSettings, type AudioSettings } from './settings.ts';
 import type { GagId } from '../ui/gag-triggers.ts';
 
@@ -45,6 +45,8 @@ class AudioEngine {
   private wanted: MusicKey | null = null;
   /** Music in place of the scene's loop: one track (the finale's credits), or 'silence' (after it, until the cover). */
   private override: MusicKey | 'silence' | null = null;
+  /** The override track's share of its own level (the finale's march is held down under the crew photo). */
+  private overrideLevel = 1;
   private installed = false;
   private meter: AnalyserNode | null = null;
 
@@ -153,6 +155,26 @@ class AudioEngine {
   }
   overrideNow(): MusicKey | 'silence' | null {
     return this.override;
+  }
+  /** The override track's level, as a share of its own (1 = full), reached over `seconds`. */
+  setOverrideLevel(level: number, seconds = 0): void {
+    this.overrideLevel = level;
+    const m = this.music;
+    if (!this.ctx || !m || m.key !== this.override) return;
+    const now = this.ctx.currentTime;
+    m.gain.gain.cancelScheduledValues(now);
+    m.gain.gain.setValueAtTime(m.gain.gain.value, now);
+    m.gain.gain.linearRampToValueAtTime(musicGain(m.key) * level, now + Math.max(0.02, seconds));
+  }
+  overrideLevelNow(): number {
+    return this.overrideLevel;
+  }
+  /** Fetches and decodes a piece of music ahead of time (if Music is on), so it can start on the moment it is asked for. */
+  warmMusic(key: MusicKey): void {
+    if (!this.ctx || !this.settings.music) return;
+    const formats = pickFormat(musicInfo(key).formats, (type) => (typeof Audio === 'undefined' ? '' : new Audio().canPlayType(type)));
+    const mp3 = musicInfo(key).formats.find((f) => f.type === 'audio/mpeg');
+    void this.fetchBuffer(`music:${key}`, [...new Set([...formats, ...(mp3 ? [mp3] : [])].map((f) => `music/${f.file}`))]);
   }
 
   private applyLevels(): void {
@@ -381,7 +403,7 @@ class AudioEngine {
       src.loopEnd = pts.end;
       const gain = ctx.createGain();
       gain.gain.setValueAtTime(0, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(musicGain(want), ctx.currentTime + MUSIC_FADE);
+      gain.gain.linearRampToValueAtTime(musicGain(want) * (want === this.override ? this.overrideLevel : 1), ctx.currentTime + MUSIC_FADE);
       src.connect(gain).connect(this.musicBus!);
       src.start(ctx.currentTime, pts.start);
       this.music = { key: want, src, gain };
@@ -390,9 +412,9 @@ class AudioEngine {
   }
 
   /** Tests: which loop is playing, and where its loop points are. */
-  musicState(): { key: string; loopStart: number; loopEnd: number; seconds: number; gain: number } | null {
+  musicState(): { key: string; loopStart: number; loopEnd: number; seconds: number; gain: number; level: number } | null {
     const m = this.music;
-    return m ? { key: m.key, loopStart: m.src.loopStart, loopEnd: m.src.loopEnd, seconds: m.src.buffer!.duration, gain: musicGain(m.key) } : null;
+    return m ? { key: m.key, loopStart: m.src.loopStart, loopEnd: m.src.loopEnd, seconds: m.src.buffer!.duration, gain: musicGain(m.key), level: m.key === this.override ? this.overrideLevel : 1 } : null;
   }
 }
 
@@ -511,15 +533,22 @@ export const sound = {
   /** The finale is to play: fetch the sounds only it uses. */
   finaleWarm(): void {
     audio.warm(finaleKeys().filter((k) => LAZY_KEYS.includes(k)));
+    // (And the march, if Music is on: it must be ready the moment the photo begins.)
+    const march = finaleTrack();
+    if (march) audio.warmMusic(march);
   },
   /** The finale is over, or was left: whatever it had running or still to come stops. */
   finaleEnd(): void {
     sound.gagEnd(FINALE_ID as GagId);
   },
-  /** The finale's credits: the menu loop of the player's music style, if Music is on. */
-  finaleCredits(): void {
+  /**
+   * THE MARCH (job U9c): it starts as the crew photo starts, held down under the photo's effects (`FINALE_DUCK`), and
+   * plays on through the credits, where it rises to its full level (`FINALE_RISE`). Once, if Music is on. A pack
+   * without the track keeps the menu loop of the player's style instead.
+   */
+  finaleMarch(part: 'photo' | 'credits'): void {
     audio.setScene('menu');
-    // The graduation music, once it is in the pack (pack.ts `finaleTrack`); until then the menu loop plays on.
+    audio.setOverrideLevel(part === 'photo' ? FINALE_DUCK : 1, part === 'photo' ? 0 : FINALE_RISE);
     audio.setOverride(finaleTrack());
   },
   /** The credits lift: the graduation music fades out, and it stays quiet for Still Here (the menu loop is back at the cover). With no track yet, the menu loop simply plays on. */
@@ -529,6 +558,7 @@ export const sound = {
   /** The finale hands over to the cover, or is left: the scene's own music again. */
   finaleMusicOver(): void {
     audio.setOverride(null);
+    audio.setOverrideLevel(1);
   },
   /** Plays a list of cues for `id` (a gag, or the finale): one-shots now or after their delay, loops started and stopped. */
   cues(id: string, list: readonly string[]): void {
