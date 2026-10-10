@@ -115,7 +115,8 @@ const contract = JSON.parse(readFileSync(new URL('../../e2e/fixtures/live-contra
 };
 /** What the dev build adds that the live build does not know. Each entry is a decision: say why beside it. */
 const DEV_ADDS: { keys: string[]; sightings: string[]; styles: string[]; regions: string[] } = {
-  keys: [],
+  // Sunday Turnaround results (job U3): a key of their own, so the live build never reads, changes or drops them.
+  keys: ['rush-hour-rigs:turnaround'],
   sightings: [],
   // Classic Rock (job U7). The live build does not know it and plays Country instead; if the player changes a sound
   // setting there, the style is saved as Country. Jay, Oct 9: "if live resets my style to Country after I play dev, that's fine."
@@ -150,6 +151,8 @@ async function devSave(): Promise<Map<string, string>> {
     A.saveAudioSettings({ sfx: true, music: true, style: A.MUSIC_STYLES.at(-1)!.id });
     F.rememberLevel(`${REGIONS.at(-1)!.name} ${REGIONS.at(-1)!.levels.length}`);
     fake.setItem('rush-hour-rigs:region', REGIONS.at(-1)!.id);
+    const T = await import('./turnaround.ts');
+    T.saveTurnResults(T.recordTurnaround(T.loadTurnResults(), 3, 31));
     return map;
   } finally { g.localStorage = before; g.location = where; }
 }
