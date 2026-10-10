@@ -763,5 +763,14 @@
   "author": "ikoliks",
   "licence": "Pixabay Content License",
   "url": "https://pixabay.com/music/hard-rock-vintage-rock-327950/"
+ },
+ {
+  "use": "finale_credits",
+  "kind": "music",
+  "file": "finale_music/finale_march_A.mp3",
+  "title": "Pomp and Circumstance March No. 1 (the trio)",
+  "author": "Edward Elgar; United States Marine Band",
+  "licence": "Public domain",
+  "url": "https://commons.wikimedia.org/wiki/File:ELGAR_Pomp_and_Circumstance_in_D,_Opus_39,_No._1_-_United_States_Marine_Band.mp3"
  }
 ]

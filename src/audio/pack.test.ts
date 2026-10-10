@@ -22,6 +22,9 @@ describe("the sound pack: Jay's picks, as files", () => {
     expect(readdirSync(pub('sfx')).sort()).toEqual(SFX_KEYS.map((k) => `${k}.mp3`).sort());
     // (Every style's menu loop and its in-play loops: one for most, one a tier for Classic Rock.)
     const keys = new Set(MUSIC_STYLES.flatMap((s) => [musicKey(s.id, 'menu'), ...[1, 2, 3, 4].map((tier) => musicKey(s.id, 'play', tier))]));
+    // (And the finale's one track, under its credits.)
+    const track = finaleTrack();
+    if (track) keys.add(track);
     const music = [...keys].flatMap((k) => musicInfo(k).formats.map((f) => f.file));
     expect(readdirSync(pub('music')).sort()).toEqual(music.sort());
   });
@@ -426,7 +429,12 @@ describe("the finale's credits music (job U9b)", () => {
     const now = finaleTrack();
     expect(now).toBe(existsSync(pub(`music/${FINALE_TRACK}.mp3`)) ? FINALE_TRACK : null);
     if (now) {
-      expect(musicInfo(now).formats.map((f) => f.type)).toEqual(['audio/ogg; codecs=opus', 'audio/mpeg']);
+      expect(musicInfo(now).formats.map((f) => f.type)).toEqual(['audio/ogg; codecs=vorbis', 'audio/mpeg']);
+      // Jay's pick, take A (the Marine Band), played once (not a loop), public domain; about 26 s, at the music's own level.
+      expect(musicInfo(now)).toMatchObject({ loop: false, crossfaded: false });
+      expect(musicInfo(now).seconds).toBeGreaterThan(20);
+      expect(Math.abs(musicInfo(now).mean - MUSIC_TARGET_MEAN)).toBeLessThan(3);
+      expect(CREDITS.find((c) => c.use === FINALE_TRACK)).toMatchObject({ file: 'finale_music/finale_march_A.mp3', licence: 'Public domain' });
       expect(CREDITS.find((c) => c.use === FINALE_TRACK)).toMatchObject({ kind: 'music' });
       // It plays where a menu loop would, at a menu loop's level: well under the effects.
       expect(musicGain(now)).toBeLessThanOrEqual(MUSIC_VOLUME.menu * 1.6);
@@ -437,7 +445,7 @@ describe("the finale's credits music (job U9b)", () => {
 describe('credits', () => {
   it('every file in the game has a row, from the packs\' own CREDITS', () => {
     expect(CREDITS.filter((c) => c.kind === 'sfx').length).toBe(74);
-    expect(musicCredits().map((c) => c.title)).toEqual(['Fun On The Farm', 'Tap Room Rag', '50 Over The Speed Limit', 'BITSTREAM DREAMS', 'Chill Beat', 'Chillhop mix', 'Stylish Upbeat Rock', 'Keep It Moving (This Classic Rock)', 'Energy Action Sport Rock', 'Groove Rock and Roll', 'Vintage Rock']);
+    expect(musicCredits().map((c) => c.title)).toEqual(['Fun On The Farm', 'Tap Room Rag', '50 Over The Speed Limit', 'BITSTREAM DREAMS', 'Chill Beat', 'Chillhop mix', 'Stylish Upbeat Rock', 'Keep It Moving (This Classic Rock)', 'Energy Action Sport Rock', 'Groove Rock and Roll', 'Vintage Rock', 'Pomp and Circumstance March No. 1 (the trio)']);
     for (const c of CREDITS.filter((x) => x.use.startsWith('classic_'))) expect(c).toMatchObject({ kind: 'music', licence: 'Pixabay Content License', file: `music/${c.use}.opus` });
     for (const c of CREDITS) {
       expect(c.author, c.file).toBeTruthy();
@@ -448,6 +456,6 @@ describe('credits', () => {
     // (The outhouse door, the pumpjack, and the seventeen synthesized picks of the sound pass, and the buttons' click.)
     expect(groups.find((g) => g.author === 'Synthesized for Rig Jam')?.count).toBe(25);
     // Nothing picked needs an attribution licence (no CC BY track): Pixabay, Mixkit, CC0 and our own.
-    for (const c of CREDITS) expect(c.licence, c.file).toMatch(/Pixabay|Mixkit|CC0|Original/);
+    for (const c of CREDITS) expect(c.licence, c.file).toMatch(/Pixabay|Mixkit|CC0|Original|Public domain/);
   });
 });

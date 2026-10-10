@@ -100,13 +100,15 @@ export const musicKey = (style: MusicStyle, scene: Scene, tier = 1): MusicKey =>
   const tiered = `${style}_play${tier}`;
   return (tiered in pack.music ? tiered : `${style}_play` in pack.music ? `${style}_play` : `${style}_play1`) as MusicKey;
 };
-export const musicInfo = (key: MusicKey): { seconds: number; mean: number; formats: { file: string; type: string }[]; crossfaded: boolean } => pack.music[key];
+/** (`loop: false`: a track that plays once, the finale's credits music; every other entry is a loop.) */
+export const musicInfo = (key: MusicKey): { seconds: number; mean: number; formats: { file: string; type: string }[]; crossfaded: boolean; loop?: boolean } => pack.music[key];
 
 /**
- * THE FINALE'S CREDITS MUSIC (job U9b): one track, `finale_credits` in pack.json's music (graduation music: Elgar's
- * "Pomp and Circumstance" March No. 1; `python3 tools/audio-pack.py --finale-music` builds it from Jay's pick in
- * `~/Desktop/RHR Art Inbox/Sound files/finale_music/`). UNTIL IT IS IN THE PACK THERE IS NO TRACK, and the credits
- * keep the menu loop of the player's style. It follows the Music switch like any loop.
+ * THE FINALE'S CREDITS MUSIC (job U9b): one track, `finale_credits` in pack.json's music: graduation music, the trio
+ * of Elgar's "Pomp and Circumstance" March No. 1 (Jay's pick, take A, the United States Marine Band; public domain;
+ * `python3 tools/audio-pack.py --finale-music` copies it in as delivered). It plays ONCE under the credits (26 s; it
+ * is not a loop), at a menu loop's level, follows the Music switch, and fades out as the credits lift. `finaleTrack`
+ * is null for a pack without it, and the credits then keep the menu loop of the player's style.
  */
 export const FINALE_TRACK = 'finale_credits';
 export const finaleTrack = (music: Record<string, unknown> = pack.music): MusicKey | null => (FINALE_TRACK in music ? (FINALE_TRACK as MusicKey) : null);

@@ -374,7 +374,8 @@ class AudioEngine {
       if (!buffer) return; // (it would not come: silence, rather than the wrong loop)
       const src = ctx.createBufferSource();
       src.buffer = buffer;
-      src.loop = true;
+      // (Every entry is a loop but the finale's credits track, which plays once and ends on its own fade.)
+      src.loop = musicInfo(want).loop !== false;
       const pts = loopPoints(buffer.getChannelData(0), buffer.sampleRate);
       src.loopStart = pts.start;
       src.loopEnd = pts.end;

@@ -20,7 +20,7 @@ Sources (not in the repo): the folders rhr_cartoon_sounds and rhr_music_styles, 
   src/audio/credits.json          the Credits screen: one row per file used, from the packs' CREDITS.md.
 
 Run: python3 tools/audio-pack.py [out_dir]   (default: the repo's public/audio)
-     python3 tools/audio-pack.py --finale-music  (only the finale's credits music, once Jay's pick is named in FINALE_MUSIC)
+     python3 tools/audio-pack.py --finale-music  (only the finale's credits music: Jay's pick, copied as delivered)
      python3 tools/audio-pack.py --finished  (only the FINISHED files, copied as they are; nothing else is rebuilt)
 """
 import json
@@ -188,44 +188,41 @@ def credits_table(path: Path) -> dict:
     return rows
 
 
-# THE FINALE'S CREDITS MUSIC (job U9b): graduation music under the credits, Elgar's "Pomp and Circumstance" March
-# No. 1. Manus is sourcing it into `~/Desktop/RHR Art Inbox/Sound files/finale_music/`. WHEN IT ARRIVES: name Jay's
-# pick here (`file`, in that folder), the part to play (`start`, `seconds`: the credits last 13 s and a tap skips
-# them; the game fades it out as they lift) and its Credits row, then run `python3 tools/audio-pack.py
-# --finale-music`. It writes public/audio/music/finale_credits.{opus,mp3} and its rows; the game plays it under the
-# credits from then on (src/audio/pack.ts `finaleTrack`). Until then `file` is None and the menu loop plays there.
+# THE FINALE'S CREDITS MUSIC (job U9b): graduation music under the credits, the trio of Elgar's "Pomp and Circumstance"
+# March No. 1, from Manus's pack `~/Desktop/RHR Art Inbox/Sound files/finale_music/` (HANDOFF.md, manifest.json).
+# JAY'S PICK (JAY_PICK.txt, Oct 10 12:41): take A, the United States Marine Band (public domain: the composition by
+# age, the recording as a work of the US federal government; no attribution needed). The file is FINISHED (26 s, at
+# the game's music level, a 2 s fade at its end, no silence in front), so both formats are COPIED AS THEY ARE: never
+# re-cut, re-levelled or re-encoded. `python3 tools/audio-pack.py --finale-music` writes
+# public/audio/music/finale_credits.{ogg,mp3} and its rows; it is NOT a loop (`loop: false`). A full run keeps it.
 FINALE_MUSIC_SRC = Path.home() / 'Desktop' / 'RHR Art Inbox' / 'Sound files' / 'finale_music'
-FINALE_MUSIC = {'file': None, 'start': 0.0, 'seconds': None, 'title': 'Pomp and Circumstance March No. 1', 'author': '', 'licence': '', 'url': ''}
+FINALE_MUSIC = {
+    'take': 'A', 'stem': 'finale_march',
+    'title': 'Pomp and Circumstance March No. 1 (the trio)', 'author': 'Edward Elgar; United States Marine Band', 'licence': 'Public domain',
+    'url': 'https://commons.wikimedia.org/wiki/File:ELGAR_Pomp_and_Circumstance_in_D,_Opus_39,_No._1_-_United_States_Marine_Band.mp3',
+}
 
 
 def finale_music() -> None:
-    """`--finale-music`: builds the one track, touching nothing else in the pack."""
+    """`--finale-music`: copies the one track in, touching nothing else in the pack."""
     m = FINALE_MUSIC
-    if not m['file']:
-        found = sorted(f.name for f in FINALE_MUSIC_SRC.iterdir()) if FINALE_MUSIC_SRC.exists() else []
-        sys.exit(f'no finale music picked yet: name the file in FINALE_MUSIC (in {FINALE_MUSIC_SRC}: {", ".join(found) or "nothing there"})')
-    src = FINALE_MUSIC_SRC / m['file']
-    if not src.exists():
-        sys.exit(f'missing {src}')
-    if not (m['author'] and m['licence']):
-        sys.exit('FINALE_MUSIC needs its author and licence (the Credits screen lists every file)')
-    out, tmp = ROOT / 'public' / 'audio' / 'music', ROOT / 'public' / 'audio' / '_tmp.wav'
-    cut = ['-ss', str(m['start'])] + (['-t', str(m['seconds'])] if m['seconds'] else [])
-    # (A short fade at each end of the cut, so it neither starts nor loops on a click.)
-    run(*cut, '-i', str(src), '-af', 'afade=t=in:d=0.05', '-ar', '44100', '-ac', '2', str(tmp))
-    seconds = measure(tmp)['seconds']
-    run('-i', str(tmp), '-af', f'afade=t=out:st={max(0, seconds - 0.4):.3f}:d=0.4', '-c:a', 'libopus', '-b:a', '112k', str(out / 'finale_credits.opus'))
-    run('-i', str(tmp), '-af', f'afade=t=out:st={max(0, seconds - 0.4):.3f}:d=0.4', '-c:a', 'libmp3lame', '-b:a', '128k', str(out / 'finale_credits.mp3'))
-    tmp.unlink(missing_ok=True)
+    name = f'{m["stem"]}_{m["take"]}'
+    out = ROOT / 'public' / 'audio' / 'music'
+    for ext in ('ogg', 'mp3'):
+        src = FINALE_MUSIC_SRC / f'{name}.{ext}'
+        if not src.exists():
+            sys.exit(f'missing {src}')
+        shutil.copyfile(src, out / f'finale_credits.{ext}')
+    seconds, mean = measure(out / 'finale_credits.ogg')['seconds'], measure(out / 'finale_credits.mp3')['mean']
     pack_path, credits_path = ROOT / 'src/audio/pack.json', ROOT / 'src/audio/credits.json'
     pack, credits = json.loads(pack_path.read_text()), json.loads(credits_path.read_text())
-    pack['music']['finale_credits'] = {'seconds': round(seconds, 3), 'mean': measure(out / 'finale_credits.mp3')['mean'],
-                                       'formats': [{'file': 'finale_credits.opus', 'type': 'audio/ogg; codecs=opus'}, {'file': 'finale_credits.mp3', 'type': 'audio/mpeg'}], 'crossfaded': False}
+    pack['music']['finale_credits'] = {'seconds': round(seconds, 3), 'mean': mean, 'loop': False,
+                                       'formats': [{'file': 'finale_credits.ogg', 'type': 'audio/ogg; codecs=vorbis'}, {'file': 'finale_credits.mp3', 'type': 'audio/mpeg'}], 'crossfaded': False}
     credits = [c for c in credits if c['use'] != 'finale_credits']
-    credits.append({'use': 'finale_credits', 'kind': 'music', 'file': f'finale_music/{m["file"]}', 'title': m['title'], 'author': m['author'], 'licence': m['licence'], 'url': m['url']})
+    credits.append({'use': 'finale_credits', 'kind': 'music', 'file': f'finale_music/{name}.mp3', 'title': m['title'], 'author': m['author'], 'licence': m['licence'], 'url': m['url']})
     pack_path.write_text(json.dumps(pack, indent=1) + '\n')
     credits_path.write_text(json.dumps(credits, indent=1) + '\n')
-    print(f'finale_credits: {seconds:.1f} s from {src.name}')
+    print(f'finale_credits: {seconds:.1f} s, take {m["take"]}, copied as delivered')
 
 
 def finished(pack: dict, credits: list) -> None:

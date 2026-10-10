@@ -610,6 +610,22 @@
     }
    ],
    "crossfaded": true
+  },
+  "finale_credits": {
+   "seconds": 25.98,
+   "mean": -18.8,
+   "loop": false,
+   "formats": [
+    {
+     "file": "finale_credits.ogg",
+     "type": "audio/ogg; codecs=vorbis"
+    },
+    {
+     "file": "finale_credits.mp3",
+     "type": "audio/mpeg"
+    }
+   ],
+   "crossfaded": false
   }
  }
 }
