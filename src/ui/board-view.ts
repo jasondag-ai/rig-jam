@@ -2,7 +2,7 @@ import { shiftOpen, SIZE, sizeOf, cabSide, convoyWaitingFor, getMoveRange, type 
 import { FLING_EASE, PUSH_HOLD_MS, addSample, fingerSpeed, flingDelta, flingDir, flingMs, flingOn, FLING_SPEED, type Sample } from './fling.ts';
 import { bumpTarget, pickSpeaker } from './bump.ts';
 import { placeBubble, type BubbleSide } from './bubble.ts';
-import { CLOCK, DROP, muskegSvg, rackSvg } from './floor-art.ts';
+import { CLOCK, DROP, muskegSvg, rackSvg, softSvg } from './floor-art.ts';
 import { bumpLine, type BumpHit } from './lines.ts';
 import { equipFit, equipmentSvg, gateClearance, phaseFor, runPumpjacks } from './obstacles.ts';
 import { VEHICLE_SVG, defaultKind } from './vehicles.ts';
@@ -159,6 +159,8 @@ export class BoardView {
       this.pad.insertBefore(f, this.tracks.svg);
     };
     for (const c of level.muskeg) floor('muskeg', c, muskegSvg(seedFrom(level.id) + c.row * SIZE + c.col));
+    // Baldonnel: road ban patches, thawed soft ground (a wall for a rig; pickups drive over).
+    for (const c of level.soft) floor('soft', c, softSvg(seedFrom(level.id) + c.row * SIZE + c.col));
     for (const c of level.racks) {
       // It lies across the lane of the tanker that loads there.
       const tanker = level.trucks.find((t) => t.load && (t.orient === 'h' ? t.row === c.row : t.col === c.col));

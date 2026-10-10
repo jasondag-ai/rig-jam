@@ -12,7 +12,7 @@
 // ESCALATION: the same truck hitting the same kind of thing again in one level says the 2nd, then
 // the 3rd line of `ESCALATION` instead of a line from the pool.
 
-export type BumpHit = 'truck' | 'wall' | 'pumpjack' | 'tank' | 'wellhead' | 'flare' | 'convoy' | 'load' | 'shift';
+export type BumpHit = 'truck' | 'wall' | 'pumpjack' | 'tank' | 'wellhead' | 'flare' | 'convoy' | 'load' | 'shift' | 'soft';
 
 export const BUMP_LINES = {
   any: [
@@ -71,6 +71,8 @@ export const BUMP_LINES = {
   load: ["Can't leave empty. Rack first.", 'Load up, then the gate opens.', "I'm empty. Stop me on the rack."],
   // A truck driven at a shift-change gate on an odd move (Bakken). Its own pool only.
   shift: ['Wrong shift. Even moves only.', "Clock says no. It's open next move.", 'Shift change. Try on an even move.'],
+  // A rig (3 cells) pushed at a road ban patch, soft thawed ground (Baldonnel). Its own driver, its own pool only.
+  soft: ["Road ban. I'm too heavy for that.", 'Soft ground. Rigs stay off it.', "That patch won't hold me. Send a pickup.", "Not on that mud. I'd sink to the axles."],
   tank: [
     "That tank's full, by the way.",
     "Tank's not a bumper.",
@@ -105,15 +107,16 @@ export const ESCALATION: Record<BumpHit, [string, string]> = {
   convoy: ['Still not your turn.', '...'],
   load: ['Still empty. Rack first.', '...'],
   shift: ['Still the wrong shift.', '...'],
+  soft: ['Still too soft for me.', '...'],
   tank: ['Again?!', "I'm just gonna sit here."],
   wellhead: ['Again?!', "I'm just gonna sit here."],
   flare: ['Again?!', "I'm just gonna sit here."],
 };
 
 
-/** Lines that fit a bump: the "any" pool plus the pool for what was hit (convoy, load, shift: their own pool only, so the line explains the rule). */
+/** Lines that fit a bump: the "any" pool plus the pool for what was hit (convoy, load, shift, soft: their own pool only, so the line explains the rule). */
 export function linesFor(hit: BumpHit): string[] {
-  if (hit === 'convoy' || hit === 'load' || hit === 'shift') return [...BUMP_LINES[hit]];
+  if (hit === 'convoy' || hit === 'load' || hit === 'shift' || hit === 'soft') return [...BUMP_LINES[hit]];
   return [...BUMP_LINES.any, ...BUMP_LINES[hit]];
 }
 

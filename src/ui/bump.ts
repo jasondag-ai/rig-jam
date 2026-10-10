@@ -4,7 +4,7 @@ import type { BumpHit } from './lines.ts';
 
 export interface BumpTarget {
   hit: BumpHit;
-  /** The truck that got hit ('truck'), the convoy truck the gate is waiting for ('convoy'), or the truck itself at its own shut gate ('load', 'shift'). */
+  /** The truck that got hit ('truck'), the convoy truck the gate is waiting for ('convoy'), or the truck itself at its own shut gate ('load', 'shift') or at soft ground ('soft'). */
   truckId: string | null;
 }
 
@@ -39,7 +39,10 @@ export function bumpTarget(state: GameState, id: string, range: MoveRange, direc
         ? o.row === row && col >= o.col && col < o.col + o.length
         : o.col === col && row >= o.row && row < o.row + o.length),
   );
-  return other ? { hit: 'truck', truckId: other.id } : { hit: 'wall', truckId: null };
+  if (other) return { hit: 'truck', truckId: other.id };
+  // A rig stopped at a road ban patch (soft ground, Baldonnel): its own driver says why.
+  if (t.length === 3 && state.level.soft.some((c) => c.row === row && c.col === col)) return { hit: 'soft', truckId: t.id };
+  return { hit: 'wall', truckId: null };
 }
 
 /**

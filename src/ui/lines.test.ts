@@ -85,6 +85,7 @@ describe('escalation: the same truck, the same kind of hit, again in the same le
       flare: ['Again?!', "I'm just gonna sit here."],
       load: ['Still empty. Rack first.', '...'],
       shift: ['Still the wrong shift.', '...'],
+      soft: ['Still too soft for me.', '...'],
     });
   });
 });

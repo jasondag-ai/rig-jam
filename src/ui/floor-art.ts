@@ -1,4 +1,4 @@
-// The floor of regions 4 and 5, drawn in code in the board's toy look (flat shapes, one light from
+// The floor of regions 4, 5 and 7 (SOFT GROUND: `softSvg`), drawn in code in the board's toy look (flat shapes, one light from
 // the top left, the trucks' dark outline): MUSKEG, a patch of dark peat with a wet sheen, and the
 // LOAD RACK, a small steel platform with a hose. Both are floor: trucks drive over them. Pure.
 import { mulberry32 } from '../engine/rng.ts';
@@ -38,6 +38,50 @@ export function muskegSvg(seed: number): string {
     `<path d="${path(0.7)}" fill="#1f1710" opacity="0.8"/>` +
     pools.map((p) => `<g transform="rotate(${r1(p.t)} ${r1(p.x)} ${r1(p.y)})"><ellipse cx="${r1(p.x)}" cy="${r1(p.y)}" rx="${r1(p.rx)}" ry="${r1(p.ry)}" fill="#3d4a4f"/><path d="M${r1(p.x - p.rx * 0.6)} ${r1(p.y - p.ry * 0.25)} q${r1(p.rx * 0.5)} ${r1(-p.ry * 0.7)} ${r1(p.rx)} 0" stroke="#c9dde6" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.85"/></g>`).join('') +
     tufts.map((t) => `<path d="M${r1(t.x)} ${r1(t.y)} l-3 -8 M${r1(t.x)} ${r1(t.y)} l0.5 -10 M${r1(t.x)} ${r1(t.y)} l3.5 -7" stroke="#8a8f3c" stroke-width="1.8" fill="none" stroke-linecap="round"/>`).join('') +
+    `</svg>`
+  );
+}
+
+/**
+ * SOFT GROUND, a road ban patch (Baldonnel): the frost has gone out of this cell. Dark wet mud that fills the cell
+ * and runs a little over its edges (so it shows round a pickup standing on it), two water-filled wheel ruts, and
+ * the last of the snow lying along its edges. Browner and wetter than muskeg's black peat, with no sedge: the two
+ * never share a level, but they must not read as the same thing. Seeded by its cell.
+ */
+export function softSvg(seed: number): string {
+  const rng = mulberry32(seed * 6151 + 29);
+  const n = 14, pts: [number, number][] = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2, r = 56 + rng() * 7;
+    const k = 1 / Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a))) ** 0.78;
+    pts.push([50 + Math.cos(a) * r * k, 50 + Math.sin(a) * r * k]);
+  }
+  const path = (scale: number) =>
+    pts.map(([x, y], i) => {
+      const [px, py] = pts[(i + n - 1) % n];
+      const s = (v: number) => r1(50 + (v - 50) * scale);
+      return `${i ? 'Q' : 'M'}${i ? `${s(px)} ${s(py)} ` : ''}${s((px + x) / 2)} ${s((py + y) / 2)}`;
+    }).join(' ') + ' Z';
+  // Two ruts lying one way across the patch (a wobble each), with standing water in them.
+  const tilt = r1(-24 + rng() * 48), gap = 13 + rng() * 4;
+  const rut = (y: number) => `M10 ${r1(y + rng() * 4 - 2)} Q30 ${r1(y - 5 + rng() * 4)} 50 ${r1(y + rng() * 4 - 2)} T90 ${r1(y + rng() * 4 - 2)}`;
+  const ruts = [50 - gap, 50 + gap].map(rut);
+  // Snow still lying along the edges: three or four small drifts on the rim, each a blob with a shaded foot.
+  const drifts = Array.from({ length: 4 }, (_, i) => {
+    const a = (i / 4) * Math.PI * 2 + 0.5 + rng() * 0.9, k = 1 / Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a))) ** 0.78;
+    return { x: 50 + Math.cos(a) * 54 * k, y: 50 + Math.sin(a) * 54 * k, rx: 10 + rng() * 7, ry: 5.5 + rng() * 3, t: (a * 180) / Math.PI + 90 };
+  });
+  const clods = Array.from({ length: 5 }, () => ({ x: 18 + rng() * 64, y: 18 + rng() * 64, r: 1.6 + rng() * 1.6 }));
+  return (
+    `<svg class="floor-art soft-art" viewBox="0 0 100 100" aria-hidden="true">` +
+    `<path d="${path(1)}" fill="#6b563a" stroke="${O}" stroke-width="2.4" stroke-linejoin="round"/>` +
+    `<path d="${path(0.9)}" fill="#4a3a26"/>` +
+    `<path d="${path(0.74)}" fill="#3d2f1e" opacity="0.85"/>` +
+    `<g transform="rotate(${tilt} 50 50)">` +
+    ruts.map((d) => `<path d="${d}" fill="none" stroke="#231a10" stroke-width="9" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#6f7d86" stroke-width="4.6" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#b9c8d2" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="9 13" opacity="0.9"/>`).join('') +
+    `</g>` +
+    clods.map((c) => `<circle cx="${r1(c.x)}" cy="${r1(c.y)}" r="${r1(c.r)}" fill="#7d6748"/>`).join('') +
+    drifts.map((d) => `<g transform="rotate(${r1(d.t)} ${r1(d.x)} ${r1(d.y)})"><ellipse cx="${r1(d.x)}" cy="${r1(d.y + 1.6)}" rx="${r1(d.rx)}" ry="${r1(d.ry)}" fill="#b4c2d0" stroke="${O}" stroke-width="1.6" stroke-opacity="0.55"/><ellipse cx="${r1(d.x)}" cy="${r1(d.y)}" rx="${r1(d.rx * 0.9)}" ry="${r1(d.ry * 0.78)}" fill="#f2f6f9"/></g>`).join('') +
     `</svg>`
   );
 }
