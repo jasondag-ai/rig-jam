@@ -187,6 +187,26 @@ export const BALE_LINE = 'Hey!';
 export const FORE_LINE = 'Fore.';
 /** Dinner Bell and One Pea (Clearwater): the reference's own lines, by the key the gag says them under. */
 export const BELL_LINES: Record<string, string> = { supper: 'Supper!', save: 'Save me some!' };
+/**
+ * THE FINALE (finale.ts), the reference page's own words. Moe at the camera and after the splat; the Company Man on
+ * the Perfect Game card (the first time he has ever been pleased); Moe at the biffy door.
+ */
+export const FINALE_LINES = { squeeze: 'Squeeze in!', seriously: 'Seriously?', company: 'Huh. Not bad.', still: "You're still here?", home: "Shift's over. Go home." } as const;
+/** What the Polaroid says under the photo. */
+export const FINALE_PHOTO = { caption: 'The crew. Zero incidents.*', small: '*almost' } as const;
+/**
+ * THE CREDITS that roll under the photo: [text, kind]. JAY EDITS EVERY LINE (the page's first draft, as written).
+ * Kinds: `title`, `head` (a small gold heading), `line`, `small`, `gap` (a space), `end` (the last line, which stops and holds).
+ */
+export const FINALE_CREDITS: readonly (readonly [string, 'title' | 'head' | 'line' | 'small' | 'gap' | 'end'])[] = [
+  ['Rig Jam', 'title'], ['Built by Jay Dagenais,', 'line'], ['directing AI (Claude)', 'line'], ['', 'gap'],
+  ['STARRING', 'head'], ['Slow Moe as himself', 'line'], ['The bearded worker', 'line'], ['Safety Sam', 'line'], ['The camp cook', 'line'], ['The Company Man', 'line'], ['The landowner', 'line'], ['', 'gap'],
+  ['AND', 'head'], ['The magpie (again)', 'line'], ['The bear (legendary)', 'line'], ['The bison, the bull and the cow', 'line'], ['and every other sighting', 'line'], ['', 'gap'],
+  ['FILMED ON LOCATION', 'head'], ['Cardium, Montney, Duvernay,', 'line'], ['Mannville, Bakken,', 'line'], ['Clearwater and Baldonnel', 'line'], ['', 'gap'],
+  ['PLAY-TESTED BY', 'head'], ['The Dagenais family', 'line'], ['', 'gap'],
+  ['No trucks were harmed', 'line'], ['in the making of this game.', 'line'], ['(Moe was, a little.)', 'small'], ['', 'gap'], ['', 'gap'],
+  ['Thanks for playing', 'end'],
+];
 /** Baldonnel's lines, said in the game's own bubble (the reference page's, word for word): Right of Way, Last Ice, Lunch to Go. */
 export const BALD_LINES: Record<string, string> = { shoo: 'Shoo!', got: 'Got one!', hey: 'Hey!' };
 export const PEA_LINES: Record<string, string> = { carbs: 'Watching your carbs, Moe?' };
