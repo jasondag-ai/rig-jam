@@ -43,45 +43,43 @@ export function muskegSvg(seed: number): string {
 }
 
 /**
- * SOFT GROUND, a road ban patch (Baldonnel): the frost has gone out of this cell. Dark wet mud that fills the cell
- * and runs a little over its edges (so it shows round a pickup standing on it), two water-filled wheel ruts, and
- * the last of the snow lying along its edges. Browner and wetter than muskeg's black peat, with no sedge: the two
- * never share a level, but they must not read as the same thing. Seeded by its cell.
+ * SOFT GROUND, a road ban patch (Baldonnel): the frost has gone out of this cell. Drawn simply and WHOLLY INSIDE ITS
+ * OWN CELL (Jay, Oct 10: the first drawing ran past the cell, so beside the berm the yard's clip cut it off, and it
+ * showed whole whenever the clip lifted for a truck driving out: it flickered). A rounded patch of dark wet mud, two
+ * water-filled wheel ruts, and a thin rim of the last snow just inside its edge, which shows on both sides of a
+ * pickup standing on it. Browner and wetter than muskeg's black peat, with no sedge. Seeded by its cell.
+ * `SOFT_INSET`: nothing of it comes nearer the cell's edge than this (of 100).
  */
+export const SOFT_INSET = 3;
 export function softSvg(seed: number): string {
   const rng = mulberry32(seed * 6151 + 29);
-  const n = 14, pts: [number, number][] = [];
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2, r = 56 + rng() * 7;
-    const k = 1 / Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a))) ** 0.78;
-    pts.push([50 + Math.cos(a) * r * k, 50 + Math.sin(a) * r * k]);
-  }
-  const path = (scale: number) =>
-    pts.map(([x, y], i) => {
-      const [px, py] = pts[(i + n - 1) % n];
-      const s = (v: number) => r1(50 + (v - 50) * scale);
-      return `${i ? 'Q' : 'M'}${i ? `${s(px)} ${s(py)} ` : ''}${s((px + x) / 2)} ${s((py + y) / 2)}`;
-    }).join(' ') + ' Z';
-  // Two ruts lying one way across the patch (a wobble each), with standing water in them.
-  const tilt = r1(-24 + rng() * 48), gap = 13 + rng() * 4;
-  const rut = (y: number) => `M10 ${r1(y + rng() * 4 - 2)} Q30 ${r1(y - 5 + rng() * 4)} 50 ${r1(y + rng() * 4 - 2)} T90 ${r1(y + rng() * 4 - 2)}`;
-  const ruts = [50 - gap, 50 + gap].map(rut);
-  // Snow still lying along the edges: three or four small drifts on the rim, each a blob with a shaded foot.
-  const drifts = Array.from({ length: 4 }, (_, i) => {
-    const a = (i / 4) * Math.PI * 2 + 0.5 + rng() * 0.9, k = 1 / Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a))) ** 0.78;
-    return { x: 50 + Math.cos(a) * 54 * k, y: 50 + Math.sin(a) * 54 * k, rx: 10 + rng() * 7, ry: 5.5 + rng() * 3, t: (a * 180) / Math.PI + 90 };
-  });
-  const clods = Array.from({ length: 5 }, () => ({ x: 18 + rng() * 64, y: 18 + rng() * 64, r: 1.6 + rng() * 1.6 }));
+  // A rounded square, a little uneven: its corners' radii and its sides' bulge differ from patch to patch.
+  const lo = SOFT_INSET + 3, hi = 100 - SOFT_INSET - 3;
+  const shape = (inset: number, wob: number[]) => {
+    const a = lo + inset, b = hi - inset, r = 15 - inset * 0.5;
+    const [w0, w1, w2, w3] = wob;
+    return `M${r1(a + r)} ${r1(a + w0)} Q50 ${r1(a - w0)} ${r1(b - r)} ${r1(a + w1)} Q${r1(b)} ${r1(a)} ${r1(b - w1)} ${r1(a + r)} Q${r1(b + w1)} 50 ${r1(b - w2)} ${r1(b - r)} Q${r1(b)} ${r1(b)} ${r1(b - r)} ${r1(b - w2)} Q50 ${r1(b + w2)} ${r1(a + r)} ${r1(b - w3)} Q${r1(a)} ${r1(b)} ${r1(a + w3)} ${r1(b - r)} Q${r1(a - w3)} 50 ${r1(a + w0)} ${r1(a + r)} Q${r1(a)} ${r1(a)} ${r1(a + r)} ${r1(a + w0)} Z`;
+  };
+  const wob = Array.from({ length: 4 }, () => rng() * 1.8);
+  // The mud inside the snow: the rim is thin, and a little thicker here and thinner there.
+  const inner = Array.from({ length: 4 }, () => rng() * 1.6);
+  // Two ruts lying across the patch, one way or the other, each with a small wobble, well inside the mud.
+  const across = rng() < 0.5, gap = 12 + rng() * 3;
+  const rut = (k: number) => {
+    const c = 50 + k * gap, w = () => r1(c + rng() * 3 - 1.5);
+    return across ? `M22 ${w()} Q36 ${w()} 50 ${w()} T78 ${w()}` : `M${w()} 22 Q${w()} 36 ${w()} 50 T${w()} 78`;
+  };
+  const ruts = [rut(-1), rut(1)];
+  const clods = Array.from({ length: 4 }, () => ({ x: 24 + rng() * 52, y: 24 + rng() * 52, r: 1.4 + rng() * 1.3 }));
   return (
     `<svg class="floor-art soft-art" viewBox="0 0 100 100" aria-hidden="true">` +
-    `<path d="${path(1)}" fill="#6b563a" stroke="${O}" stroke-width="2.4" stroke-linejoin="round"/>` +
-    `<path d="${path(0.9)}" fill="#4a3a26"/>` +
-    `<path d="${path(0.74)}" fill="#3d2f1e" opacity="0.85"/>` +
-    `<g transform="rotate(${tilt} 50 50)">` +
-    ruts.map((d) => `<path d="${d}" fill="none" stroke="#231a10" stroke-width="9" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#6f7d86" stroke-width="4.6" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#b9c8d2" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="9 13" opacity="0.9"/>`).join('') +
-    `</g>` +
+    // The snow rim (the whole patch's outline), its shaded foot, then the mud inside it.
+    `<path d="${shape(0, wob)}" fill="#f2f6f9" stroke="${O}" stroke-width="2.2" stroke-linejoin="round"/>` +
+    `<path d="${shape(3.4, inner)}" fill="#b4c2d0"/>` +
+    `<path d="${shape(5, inner)}" fill="#4a3a26" stroke="${O}" stroke-width="1.4" stroke-opacity="0.55" stroke-linejoin="round"/>` +
+    `<path d="${shape(12, wob)}" fill="#3d2f1e" opacity="0.85"/>` +
+    ruts.map((d) => `<path d="${d}" fill="none" stroke="#231a10" stroke-width="8" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#6f7d86" stroke-width="4" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#b9c8d2" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="8 12" opacity="0.9"/>`).join('') +
     clods.map((c) => `<circle cx="${r1(c.x)}" cy="${r1(c.y)}" r="${r1(c.r)}" fill="#7d6748"/>`).join('') +
-    drifts.map((d) => `<g transform="rotate(${r1(d.t)} ${r1(d.x)} ${r1(d.y)})"><ellipse cx="${r1(d.x)}" cy="${r1(d.y + 1.6)}" rx="${r1(d.rx)}" ry="${r1(d.ry)}" fill="#b4c2d0" stroke="${O}" stroke-width="1.6" stroke-opacity="0.55"/><ellipse cx="${r1(d.x)}" cy="${r1(d.y)}" rx="${r1(d.rx * 0.9)}" ry="${r1(d.ry * 0.78)}" fill="#f2f6f9"/></g>`).join('') +
     `</svg>`
   );
 }
