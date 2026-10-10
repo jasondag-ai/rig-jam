@@ -1314,6 +1314,20 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
+## The march starts at the crew photo (job U9c; Oct 10; shipped as 1.0.1)
+- THE GRADUATION MARCH STARTS AS THE CREW PHOTO STARTS, not at the credits (Jay, Oct 10), and plays on through the
+  credits: about 22 s of its 26 (`sound.finaleMarch(part)`, called by finale.ts as the photo and then the credits
+  begin; it never starts twice). It is fetched as the ending opens (`sound.finaleWarm` > `audio.warmMusic`), so it
+  is there on the photo's first frame. Still once, still following the Music switch, still fading out as the
+  credits lift or are skipped (and when the ending is left); Still Here stays quiet; the menu loop returns with
+  the cover. (Where the U9b notes below say it plays "under the credits", read "from the photo through the credits".)
+- UNDER THE PHOTO IT IS HELD DOWN (pack.ts `FINALE_DUCK` 0.55 of its level: about where in-play music sits), because
+  at its full level it was nearly as loud as the self-timer's beep and Moe's footsteps; a unit test holds every one
+  of the photo's effects at least twice as loud as the march there. As the credits begin it rises to its full
+  level over `FINALE_RISE` 1.2 s (`audio.setOverrideLevel`). To retune: those two numbers.
+- `ONLY=finale npm run test:e2e:gagsounds` holds the start (within half a second of the photo's), the two levels,
+  one continuous play into the credits, the fade and the quiet after.
+
 ## 1.0.0: the October upgrade is live (job U8; Oct 10, 2026)
 - WHAT SHIPPED, all of it built on `next` and described in its own section: Daily Pads forever (U2), Sunday
   Turnaround (U3), fling (U4), Baldonnel, region 7, with road ban patches and its seven sightings (U6, U6b, U6c),
