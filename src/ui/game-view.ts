@@ -25,9 +25,10 @@ import { defaultKind } from './vehicles.ts';
 import { applyCamo, loadLog, record, saveLog, sightingToast, type Sighting } from './wildlife-log.ts';
 import { bearAlways, bearNever, eggOff, gagTest, lunchAlways, lunchNever, rollPinned, magpieOn, mooseOn, workerOn } from './flags.ts';
 import { MooseGag, WorkerGag, workerClearing, type EggHost } from './egg-gags.ts';
-import { BackAndForth, CHANCES, GAG_TRIGGERS, Wiggle, bermBump, mustWait, wrongGateBump, type GagId } from './gag-triggers.ts';
+import { BackAndForth, CHANCES, drivesOnSoft, GAG_TRIGGERS, Wiggle, bermBump, mustWait, wrongGateBump, type GagId } from './gag-triggers.ts';
 import { BaldProp, baldStripWanted, BakkenProp, ClearProp, MANN_SCENE, SCENE, SCENE_MIN, clearStripWanted, sceneStripWanted, MANN_SIGN_X, MannProp, auroraDef, sceneDef } from './scene-stage.ts';
-import { BALE_LINE, BELL_LINES, FORE_LINE, PEA_LINES } from './lines.ts';
+import { BALD_LINES, BALE_LINE, BELL_LINES, FORE_LINE, PEA_LINES } from './lines.ts';
+import { BALD } from './bald-gags.ts';
 import { WAVE3 } from './wave3.ts';
 import { setSignX, stageBox, stripWanted, WINTER_SIGN_X, BiffyProp, TimelineGag, biffyADef, biffyBDef, biffyBox, biffyLane, SignProp, deerDef, signLane, surveyorDef, touristsDef, BUSH_X, BushProp, CowProp, PORC_BUSH_X, RiserProp, bushBox, lunchDef, moundSpot, porcupineDef, riserBox, samDef, tongueDef, bearBox, bearDef, bullDef, cowBox, geeseDef, landownerDef, marshmallowDef, nearMissDef } from './strip-gags.ts';
 import type { EggResult } from './egg-gags.ts';
@@ -187,6 +188,10 @@ export class GameView {
   private prairieTaps: { x: number; y: number; n: number } | null = null;
   private skyTaps = 0;
   private puddleTaps = 0;
+  /** Baldonnel's counts for this level: a rig pushed at a patch, a pickup driven over one, taps on the snowbank. */
+  private patchPushes = 0;
+  private patchDrives = 0;
+  private snowTaps = 0;
   private aspenTaps = 0;
   /** The convoy truck 1 that drove out on the last move (its colour), for the Cat Train. */
   private convoyOut: string | null = null;
@@ -318,7 +323,7 @@ export class GameView {
       setSignX(inMann ? MANN_SIGN_X : theme.season === 'winter' ? WINTER_SIGN_X : undefined);
       if (inClear) this.clear = new ClearProp(egg, theme.season);
       // Baldonnel: its own standard scene. No sightings of its own yet: a tap on one of its props gives a knock.
-      const inBald = this.regionId === BALDONNEL;
+      const inBald = this.regionId === BALDONNEL || BALD_GAGS.includes(this.eggForced as GagId);
       if (inBald) this.bald = new BaldProp(egg, theme.season);
       if (inMann) this.mann = new MannProp(egg, theme.season);
       // Bakken: the round bale, in the same spot of every level's bottom strip, and its four gags.
@@ -377,6 +382,14 @@ export class GameView {
         const bakken = this.bakken;
         for (const id of ['tumbleweed', 'pdogs', 'cloud'] as GagId[]) if (!eggOff(id)) this.strips[id] = new TimelineGag(egg, sceneDef(id, id, () => bakken.geom(), { overLease: id === 'cloud' }));
         if (!eggOff('bale')) this.strips.bale = new TimelineGag(egg, sceneDef('bale', 'bale', () => bakken.geom(), { prop: bakken, line: BALE_LINE }));
+      }
+      if (this.bald) {
+        // Baldonnel's seven (bald-gags.ts). Overweight swings the scenery's own needle; three of them say a line.
+        const bald = this.bald, geom = () => bald.geom();
+        const needle = (BALD as unknown as { overweight: { needle: (t: number) => number } }).overweight.needle;
+        if (!eggOff('overweight')) this.strips.overweight = new TimelineGag(egg, sceneDef('overweight', 'overweight', geom, { frame: (t) => bald.needle(needle(t)), reset: () => bald.needle(null) }));
+        for (const id of ['cranes', 'hare', 'frogs'] as GagId[]) if (!eggOff(id)) this.strips[id] = new TimelineGag(egg, sceneDef(id, id, geom));
+        for (const id of ['bison', 'ice', 'mosquito'] as GagId[]) if (!eggOff(id)) this.strips[id] = new TimelineGag(egg, sceneDef(id, id, geom, { lines: BALD_LINES }));
       }
       if (this.clear) {
         const clear = this.clear;
@@ -485,8 +498,23 @@ export class GameView {
             if (within(biffy) && !this.eggsOn.has('biffyA') && !this.eggsOn.has('biffyB')) this.knock(biffy!);
             const mound = this.el.querySelector('[data-anchor="mound"]');
             if (within(mound) && !this.eggsOn.has('nearMiss') && !this.eggsOn.has('gopherLunch')) this.knock(mound!);
-            // Baldonnel's props (no sightings yet): the bison sign, the snowbank, the truck scale, the pond, the puddle.
-            if (this.bald && !(e.target as Element | null)?.closest?.('button, .truck, .board') && !within(biffy)) this.knock(this.bald.propAt(e.clientX, e.clientY));
+            // BALDONNEL: a tap on the bison sign (Right of Way), three on the snowbank (Half Dressed), one on the pond and its
+            // ice (Last Ice), one on the puddle (Late Croak); three on the sky above the lease (Two Left Feet). A prop whose
+            // sighting has been, or is on, or wants more taps, answers with a knock: no dead props. So does the scale.
+            if (this.bald && !(e.target as Element | null)?.closest?.('button, .truck, .board') && !within(biffy)) {
+              const prop = this.bald.propAt(e.clientX, e.clientY), is = (cls: string) => !!prop?.classList.contains(cls);
+              const ready = (id: GagId) => !!this.strips[id] && !this.eggDone.has(id) && !this.eggsOn.has(id) && !this.eggQueue.includes(id);
+              if (is('bd-sign') && ready('bison')) this.fire('bison');
+              else if (is('bd-snowbank') && ready('hare') && ++this.snowTaps >= GAG_TRIGGERS.hare.snowbankTaps) this.fire('hare');
+              else if (is('bd-pond') && ready('ice')) this.fire('ice');
+              else if (is('bd-puddle') && ready('frogs')) this.fire('frogs');
+              else if (prop && !(is('bd-scale') && this.eggsOn.has('overweight')) && !(is('bd-snowbank') && this.eggsOn.has('hare'))) this.knock(prop);
+              else if (!prop) {
+                const screen = this.el.getBoundingClientRect(), y = e.clientY - screen.top;
+                const hud = this.el.querySelector('.hud')!.getBoundingClientRect().bottom - screen.top, boardTop = board.el.getBoundingClientRect().top - screen.top;
+                if (y > hud && y < boardTop && ready('cranes') && ++this.skyTaps >= GAG_TRIGGERS.cranes.skyTaps) { this.skyTaps = 0; this.fire('cranes'); }
+              }
+            }
             const bale = this.bakken?.layer.querySelector('svg > *') ?? null;
             if (within(bale) && !this.eggsOn.has('bale')) this.knock(this.bakken!.layer.querySelector('svg')!);
           }
@@ -710,6 +738,8 @@ export class GameView {
       this.convoyOut = result.exited && mover?.convoy === 1 ? mover.color : null;
     }
     // Clearwater: trucks driven out one move after another (Dinner Bell; once that is in the log, One Pea).
+    // Baldonnel, Lunch to Go: a pickup driven across or onto a road ban patch, three times in the level (a fling counts).
+    if (this.strips.mosquito && mover && drivesOnSoft(this.level.soft, mover, result.delta ?? delta) && ++this.patchDrives >= GAG_TRIGGERS.mosquito.patchDrives) { this.patchDrives = 0; this.fire('mosquito'); }
     this.exitRun = result.exited ? this.exitRun + 1 : 0;
     if (this.clear && this.exitRun >= GAG_TRIGGERS.bell.exitsInARow) {
       const next: GagId = loadLog(loadProgress().demo).found.includes('bell') ? 'pea' : 'bell';
@@ -865,6 +895,9 @@ export class GameView {
     this.puddleTaps = 0;
     this.aspenTaps = 0;
     this.prairieTaps = null;
+    this.patchPushes = 0;
+    this.patchDrives = 0;
+    this.snowTaps = 0;
     this.skyTaps = 0;
     this.convoyOut = null;
     this.lastExitAt = -Infinity;
@@ -1028,7 +1061,10 @@ export class GameView {
     const berm = bumped ? bermBump(bumped.orient, direction, hit) : null;
     // Safety Sam: blocked moves piling up, or a push at a wrong-colour gate.
     const wrongGate = GAG_TRIGGERS.sam.wrongGate && !!bumped && wrongGateBump(bumped, direction, hit, this.level.gates);
-    if (++this.bumpRun >= GAG_TRIGGERS.sam.bumpsInARow || wrongGate) this.fire('sam');
+    // (A rig turned back by a road ban patch is its own thing: it does not count toward his three in a row.)
+    if ((hit !== 'soft' && ++this.bumpRun >= GAG_TRIGGERS.sam.bumpsInARow) || wrongGate) this.fire('sam');
+    // Baldonnel, Overweight: a rig pushed at a patch three times in the level.
+    if (hit === 'soft' && this.strips.overweight && ++this.patchPushes >= GAG_TRIGGERS.overweight.patchPushes) { this.patchPushes = 0; this.fire('overweight'); }
     // The sleepy worker: a truck slides into another truck, and he may come (one time in two).
     if (hit === 'truck' && this.worker?.canPlay() && !this.eggDone.has('worker') && !this.eggsOn.has('worker') && this.chance('worker', GAG_TRIGGERS.worker.chance, rollPinned('nap'))) this.fire('worker');
     if (berm === 'top' && ++this.topBumps >= GAG_TRIGGERS.moose.topBermBumps) this.fire('moose');
@@ -1376,5 +1412,6 @@ const SKY_WANT: Record<ThemeId, number> = { summer: 30, spring: 30, winter: 40, 
 /** The gags a Big Pad (Clearwater) plays. */
 /** Baldonnel, region 7 (its standard scene: scene-stage.ts `BaldProp`). */
 const BALDONNEL = 'baldonnel';
+const BALD_GAGS: GagId[] = ['overweight', 'cranes', 'bison', 'hare', 'ice', 'frogs', 'mosquito'];
 const BIG_PAD_GAGS: GagId[] = ['golf', 'cold', 'wash', 'bell', 'pea', 'biffyA', 'biffyB'];
-const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull', porcupine: 'porcupine', gopherLunch: 'lunch', sam: 'sam', tongue: 'tongue', surveyor: 'surveyor', deer: 'deer', tourists: 'tourists', muskeg: 'muskeg', catTrain: 'cattrain', beaver: 'beaver', aurora: 'aurora', tumbleweed: 'tumbleweed', pdogs: 'pdogs', bale: 'bale', cloud: 'cloud', golf: 'swings', cold: 'cold', wash: 'wash', bell: 'bell', pea: 'pea' };
+const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull', porcupine: 'porcupine', gopherLunch: 'lunch', sam: 'sam', tongue: 'tongue', surveyor: 'surveyor', deer: 'deer', tourists: 'tourists', muskeg: 'muskeg', catTrain: 'cattrain', beaver: 'beaver', aurora: 'aurora', tumbleweed: 'tumbleweed', pdogs: 'pdogs', bale: 'bale', cloud: 'cloud', golf: 'swings', cold: 'cold', wash: 'wash', bell: 'bell', pea: 'pea', overweight: 'overweight', cranes: 'cranes', bison: 'bison', hare: 'hare', ice: 'ice', frogs: 'frogs', mosquito: 'mosquito' };

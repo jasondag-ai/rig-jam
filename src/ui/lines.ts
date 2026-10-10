@@ -187,6 +187,8 @@ export const BALE_LINE = 'Hey!';
 export const FORE_LINE = 'Fore.';
 /** Dinner Bell and One Pea (Clearwater): the reference's own lines, by the key the gag says them under. */
 export const BELL_LINES: Record<string, string> = { supper: 'Supper!', save: 'Save me some!' };
+/** Baldonnel's lines, said in the game's own bubble (the reference page's, word for word): Right of Way, Last Ice, Lunch to Go. */
+export const BALD_LINES: Record<string, string> = { shoo: 'Shoo!', got: 'Got one!', hey: 'Hey!' };
 export const PEA_LINES: Record<string, string> = { carbs: 'Watching your carbs, Moe?' };
 export const LANDOWNER_LINES = ["Who's paying for these ruts?", "That's my hay field!", "I'm calling the land man.", 'Fix these ruts by Friday.'];
 const lastFrom = new Map<readonly string[], string>();
@@ -279,4 +281,12 @@ export const WITNESS_LINES = {
   wash: 'Missed a spot.',
   bell: 'Did somebody say supper?',
   pea: "Don't eat it all at once, Moe.",
+  // (Baldonnel: Claude's stand-ins, job U6b. Jay, write your own.)
+  overweight: "It's the boots, Moe. Has to be.",
+  cranes: 'Stick to trucking, Moe.',
+  bison: 'He was here first.',
+  hare: 'Pick a coat, buddy.',
+  ice: "That's why they call it last ice.",
+  frogs: "Somebody's off the beat.",
+  mosquito: 'First one of the year. Big one.',
 };

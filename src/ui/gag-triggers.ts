@@ -91,6 +91,22 @@ export const GAG_TRIGGERS = {
   bell: { region: 'clearwater', exitsInARow: 5 },
   pea: { region: 'clearwater', sameAs: 'bell', onceSeen: 'bell' },
   /**
+   * BALDONNEL (bald-gags.ts, on the standard Baldonnel scene), each once a level:
+   * OVERWEIGHT: a rig (3 cells) pushed at a road ban patch this many times in the level (a patch bump is a near miss
+   *   like any other, but it does not count toward Safety Sam's three in a row).
+   * TWO LEFT FEET: this many taps on the sky above the lease. RIGHT OF WAY: a tap on the bison crossing sign.
+   * HALF DRESSED: this many taps on the snowbank (the others give it a knock). LAST ICE: a tap on the pond and its ice.
+   * LATE CROAK: a tap on the meltwater puddle. LUNCH TO GO: a pickup (2 cells) driven across or onto a patch this many
+   *   times in the level (a fling is a move like any other).
+   */
+  overweight: { region: 'baldonnel', patchPushes: 3 },
+  cranes: { region: 'baldonnel', skyTaps: 3 },
+  bison: { region: 'baldonnel', signTaps: 1 },
+  hare: { region: 'baldonnel', snowbankTaps: 3 },
+  ice: { region: 'baldonnel', pondTaps: 1 },
+  frogs: { region: 'baldonnel', puddleTaps: 1 },
+  mosquito: { region: 'baldonnel', patchDrives: 3 },
+  /**
    * Not a gag. NIGHT: no level starts at night. After `idleMs` with no moves the lease fades to
    * night over `fadeInMs`; the next move brings the day back over `fadeOutMs`. Only where the
    * season is one of `themes`: Montney (spring), Duvernay (winter), Mannville (late fall) and Bakken
@@ -108,7 +124,19 @@ export const GAG_TRIGGERS = {
  * the level is won. NO GAG COMES FROM WAITING (Jay, Oct 5): every one is set off by something the
  * player does. Sitting idle only brings the night (and its nudge).
  */
-export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'muskeg' | 'catTrain' | 'beaver' | 'aurora' | 'tumbleweed' | 'pdogs' | 'bale' | 'cloud' | 'golf' | 'cold' | 'wash' | 'bell' | 'pea';
+export type GagId = 'magpie' | 'worker' | 'moose' | 'nearMiss' | 'landowner' | 'biffyA' | 'biffyB' | 'marshmallow' | 'geese' | 'bear' | 'bull' | 'porcupine' | 'gopherLunch' | 'sam' | 'tongue' | 'surveyor' | 'deer' | 'tourists' | 'muskeg' | 'catTrain' | 'beaver' | 'aurora' | 'tumbleweed' | 'pdogs' | 'bale' | 'cloud' | 'golf' | 'cold' | 'wash' | 'bell' | 'pea' | 'overweight' | 'cranes' | 'bison' | 'hare' | 'ice' | 'frogs' | 'mosquito';
+
+/**
+ * Does a move drive a PICKUP (2 cells) across or onto soft ground? `truck` is where it stood before the move and
+ * `delta` how far it really went: the cells it newly covers on the way are looked at (a patch it already stood on,
+ * and only drives off, does not count; a rig never counts).
+ */
+export const drivesOnSoft = (soft: readonly { row: number; col: number }[], truck: { orient: 'h' | 'v'; row: number; col: number; length: number }, delta: number): boolean => {
+  if (truck.length !== 2 || !delta || !soft.length) return false;
+  const pos = truck.orient === 'h' ? truck.col : truck.row;
+  const from = delta > 0 ? pos + truck.length : pos + delta, to = delta > 0 ? pos + truck.length - 1 + delta : pos - 1;
+  return soft.some((c) => (truck.orient === 'h' ? c.row === truck.row && c.col >= from && c.col <= to : c.col === truck.col && c.row >= from && c.row <= to));
+};
 
 /** Is a bump a push at a wrong-colour gate? (A truck in line with a gate that is not its own; `hit` is what it ran into.) */
 export const wrongGateBump = (
@@ -156,6 +184,13 @@ export const PREVIEWS: Record<string, { gag: GagId; region: string; level: numbe
   wash: { gag: 'wash', region: 'clearwater', level: 1 },
   bell: { gag: 'bell', region: 'clearwater', level: 1 },
   pea: { gag: 'pea', region: 'clearwater', level: 1 },
+  overweight: { gag: 'overweight', region: 'baldonnel', level: 1 },
+  cranes: { gag: 'cranes', region: 'baldonnel', level: 1 },
+  bison: { gag: 'bison', region: 'baldonnel', level: 1 },
+  hare: { gag: 'hare', region: 'baldonnel', level: 1 },
+  ice: { gag: 'ice', region: 'baldonnel', level: 1 },
+  frogs: { gag: 'frogs', region: 'baldonnel', level: 1 },
+  mosquito: { gag: 'mosquito', region: 'baldonnel', level: 1 },
 };
 
 /**
@@ -200,6 +235,14 @@ export const SHARES: Record<GagId, string[]> = {
   wash: ['moe', 'puddle'],
   bell: ['moe'],
   pea: ['moe', 'worker', 'puddle'],
+  // Baldonnel. (Slow Moe is in five; the bearded worker in red, the worker himself, strolls through the other two.)
+  overweight: ['moe', 'scale'],
+  cranes: ['moe'],
+  bison: ['moe'],
+  hare: ['worker', 'snowbank'],
+  ice: ['moe', 'pond'],
+  frogs: ['worker'],
+  mosquito: ['moe'],
 };
 /** Must this gag wait for one of those playing? */
 export const mustWait = (id: GagId, playing: Iterable<GagId>): boolean => [...playing].some((p) => p === id || SHARES[p].some((x) => SHARES[id].includes(x)));

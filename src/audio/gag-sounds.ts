@@ -113,6 +113,8 @@ export const GAG_SOUNDS: Record<GagId, Record<string, string[]>> = {
   bell: { 'cook-walks-in': ['+steps'], ding: ['-steps', 'triangle'], rumble: ['+rumble'], dizzy: ['-rumble'], follows: ['+steps@0.2'], 'empty-lane': ['-steps'], 'moe-late': ['+steps'], puffing: ['-steps'], 'save-me-some': ['+steps@0.3'] },
   // One Pea: the crew's steps, and the pea's plip into the puddle.
   pea: { 'crew-strolls': ['+steps'], carbs: ['-steps'], plip: ['blup'], 'trudges-off': ['+steps'] },
+  // Baldonnel (job U6b): NO SOUNDS YET (Jay). The sound words are drawn; the rows are here for when he picks.
+  overweight: {}, cranes: {}, bison: {}, hare: {}, ice: {}, frogs: {}, mosquito: {},
 };
 
 /** The loops a gag may run, and the sound each repeats. `every`: a one-shot repeated that often (s); none: the file itself loops. */
