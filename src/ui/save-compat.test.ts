@@ -136,25 +136,15 @@ describe('an old full log', () => {
 //     next time it saves: such a value must be listed in DEV_ADDS below, on purpose, knowing that.
 //   - A field ADDED to a key the live build saves is lost the same way: the dev build must read that key without
 //     it. (New data that must survive belongs in a NEW KEY: the live build never writes a key it does not know.)
-const contract = JSON.parse(readFileSync(new URL('../../e2e/fixtures/live-contract-24c29d5.json', import.meta.url), 'utf8')) as {
+const contract = JSON.parse(readFileSync(new URL('../../e2e/fixtures/live-contract-1.0.0.json', import.meta.url), 'utf8')) as {
   build: string; keys: string[]; progress: Record<string, string>; log: { v: number; fields: Record<string, string>; sightings: string[] };
   audio: { fields: Record<string, string>; styles: string[] }; regions: string[]; levels: Record<string, number>; dailyLevels: string[];
 };
 /** What the dev build adds that the live build does not know. Each entry is a decision: say why beside it. */
-const DEV_ADDS: { keys: string[]; sightings: string[]; styles: string[]; regions: string[] } = {
-  // Sunday Turnaround results (job U3): a key of their own, so the live build never reads, changes or drops them.
-  // The finale (job U9): that the ending has played has a key of its own. The live build never reads or writes it.
-  keys: ['rush-hour-rigs:turnaround', 'rush-hour-rigs:finale'],
-  // Baldonnel's seven (job U6b). The live build does not know them and drops them from the log the next time it saves it
-  // (they can be found again); camo pickups already earned stay earned (`camoEarned` is kept by both builds).
-  sightings: ['overweight', 'cranes', 'bison', 'hare', 'ice', 'frogs', 'mosquito'],
-  // Classic Rock (job U7). The live build does not know it and plays Country instead; if the player changes a sound
-  // setting there, the style is saved as Country. Jay, Oct 9: "if live resets my style to Country after I play dev, that's fine."
-  styles: ['classic'],
-  // Baldonnel, region 7 (job U6): its level ids (b01 to b10) are scores the live build does not know. It keeps them in
-  // `best` untouched (it never drops a score), shows no seventh tab, and counts nothing of them.
-  regions: ['baldonnel'],
-};
+// (EMPTY SINCE 1.0.0, Oct 10: the October upgrade shipped, and the contract was made again from that build
+// (`node tools/live-contract.ts 1.0.0`), so the live build now knows the Turnaround's and the finale's keys, Baldonnel
+// and its seven sightings, and Classic Rock. The next thing the dev lane adds is listed here, with its reason.)
+const DEV_ADDS: { keys: string[]; sightings: string[]; styles: string[]; regions: string[] } = { keys: [], sightings: [], styles: [], regions: [] };
 const typeOf = (v: unknown): string => (Array.isArray(v) ? 'array' : v === null ? 'null' : typeof v);
 
 /** A full save, written by THIS build's own code into an empty phone. */
