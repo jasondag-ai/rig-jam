@@ -4,7 +4,9 @@
 //    stops and its own driver says why (no line when a pickup is pushed over); a flung rig stops at the patch
 //  - the standard scene: its five layers, no lease sign, and a knock where a tap brings no sighting (the scale; the snowbank's first two)
 //  - ALL TEN LEVELS cleared at par by dragging
-// Needs the dev server (URL=, default the dev build on 5181). `ONLY=levels|rule|scene|tab`.
+//  - U6c: a patch beside the berm looks the same, by pixels, before, while and after a truck drives out (390 x 664 and
+//    375 x 635); the mountains on the list and on all ten levels, under the HUD, and a tap on them is a tap on the sky
+// Needs the dev server (URL=, default the dev build on 5181). `ONLY=levels|rule|scene|tab|steady|mountains`.
 import { webkit } from 'playwright';
 import { REGIONS } from '../src/levels/regions.ts';
 import { getMoveRange, newGame, solve, tryMove } from '../src/engine/index.ts';
@@ -174,6 +176,109 @@ for (const size of SIZES) {
     await context.close();
   }
 }
+
+// ---------- U6c: a patch beside the berm is steady while a truck drives out; the mountains ----------
+/** How many pixels differ between two PNGs (any channel by more than 18). */
+const pixelDiff = (page, a, b) => page.evaluate(async ([x, y]) => {
+  const load = async (b64) => { const img = new Image(); img.src = `data:image/png;base64,${b64}`; await img.decode(); const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0); return ctx.getImageData(0, 0, c.width, c.height); };
+  const [p, q] = [await load(x), await load(y)];
+  if (p.width !== q.width || p.height !== q.height) return -1;
+  let n = 0;
+  for (let i = 0; i < p.data.length; i += 4) if (Math.abs(p.data[i] - q.data[i]) > 18 || Math.abs(p.data[i + 1] - q.data[i + 1]) > 18 || Math.abs(p.data[i + 2] - q.data[i + 2]) > 18) n++;
+  return n;
+}, [a.toString('base64'), b.toString('base64')]);
+const SAFARI = [[390, 664], [375, 635]];
+if (!ONLY || ONLY === 'steady') {
+  for (const size of SAFARI) {
+    console.log(`\nwebkit ${size[0]} x ${size[1]}: a patch beside the berm, before, while and after a truck drives out`);
+    // A level, a moment in its best line and a patch in an edge cell such that the truck then driving out, and every
+    // truck moved before it, keeps at least a cell away from the patch (so only the patch itself could change).
+    let pick = null;
+    for (const [li, level] of region.levels.entries()) {
+      if (pick) break;
+      const steps = plan(level);
+      for (const c of level.soft.filter((c) => c.row === 0 || c.row === 5 || c.col === 0 || c.col === 5)) {
+        let s = newGame(level), ok = true;
+        const near = (t, d) => { const cells = []; const lo = Math.min(0, d), hi = Math.max(0, d); for (let k = lo; k < t.length + hi; k++) cells.push(t.orient === 'h' ? [t.row, t.col + k] : [t.row + k, t.col]); return cells.some(([r, q]) => Math.abs(r - c.row) <= 1 && Math.abs(q - c.col) <= 1); };
+        for (const [k, m] of steps.entries()) {
+          const t = s.trucks.find((x) => x.id === m.id);
+          if (near(t, m.delta + (m.out ? Math.sign(m.delta) * 3 : 0))) { ok = false; break; }
+          if (m.out) { pick = { li, level, c, k }; break; }
+          s = tryMove(s, m.id, m.delta).state;
+        }
+        if (pick || !ok) { if (pick) break; }
+      }
+    }
+    if (!pick) { check(false, 'no level offers a patch beside the berm with a truck driving out well away from it'); continue; }
+    const { context, page, errors } = await open(size, DEMO);
+    await enter(page, pick.li);
+    const steps = plan(pick.level);
+    for (const m of steps.slice(0, pick.k)) await drag(page, m.id, m.delta);
+    await wait(600);
+    const clip = await page.evaluate(([row, col]) => { const f = [...document.querySelectorAll('.pad .floor.soft')].find((e) => e.dataset.row === String(row) && e.dataset.col === String(col)).getBoundingClientRect(); return { x: Math.floor(f.left) - 6, y: Math.floor(f.top) - 6, width: Math.ceil(f.width) + 12, height: Math.ceil(f.height) + 12 }; }, [pick.c.row, pick.c.col]);
+    const inside = await page.evaluate(([row, col]) => { const f = [...document.querySelectorAll('.pad .floor.soft')].find((e) => e.dataset.row === String(row) && e.dataset.col === String(col)), cell = f.getBoundingClientRect(), art = f.querySelector('svg'); const boxes = [...art.children].map((e) => e.getBoundingClientRect()); return boxes.every((b) => b.left >= cell.left - 0.5 && b.right <= cell.right + 0.5 && b.top >= cell.top - 0.5 && b.bottom <= cell.bottom + 0.5); }, [pick.c.row, pick.c.col]);
+    check(inside, `${pick.level.name}: the patch at row ${pick.c.row + 1}, column ${pick.c.col + 1} (beside the berm) is drawn wholly inside its own cell`);
+    const before = await page.screenshot({ clip });
+    const out = steps[pick.k];
+    // The drive out, and three looks at the patch while the yard's clip is lifted for it.
+    const going = drag(page, out.id, out.delta + Math.sign(out.delta) * 0.4, 0);
+    const during = [];
+    await going;
+    for (const ms of [120, 330, 330]) { await wait(ms); during.push({ shot: await page.screenshot({ clip }), lifted: await page.evaluate(() => !!document.querySelector('.yard.letting-out')) }); }
+    await wait(2600);
+    const after = await page.screenshot({ clip });
+    const settled = await page.evaluate(() => !document.querySelector('.yard.letting-out'));
+    const d = [];
+    for (const x of during) d.push(await pixelDiff(page, before, x.shot));
+    const dAfter = await pixelDiff(page, before, after);
+    check(during.some((x) => x.lifted) && settled, `truck ${out.id} drives out: the yard's clip is lifted for it (${during.map((x) => (x.lifted ? 'lifted' : 'down')).join(', ')}) and comes back down`);
+    check(d.every((n) => n >= 0 && n <= 4) && dAfter >= 0 && dAfter <= 4, `the patch and 6 px round it look the same before, during and after, by pixels (${clip.width * 3} x ${clip.height * 3} px: ${d.join(', ')} differ during, ${dAfter} after)`);
+    check(errors.length === 0, `no errors${errors.length ? ': ' + errors[0] : ''}`);
+    await context.close();
+  }
+}
+if (!ONLY || ONLY === 'mountains') {
+  for (const size of [...SAFARI, [390, 844]]) {
+    console.log(`\nwebkit ${size[0]} x ${size[1]}: the mountains`);
+    const { context, page, errors } = await open(size, DEMO);
+    await toList(page);
+    const read = () => page.evaluate(() => {
+      const m = document.querySelector('.scenery .mountains'); if (!m) return null;
+      const r = m.getBoundingClientRect(), trees = [...document.querySelectorAll('.scenery .trees > svg.sc')];
+      const game = document.querySelector('.screen.game'), hud = document.querySelector('.hud')?.getBoundingClientRect();
+      const horizon = parseFloat(getComputedStyle(document.querySelector('.screen')).getPropertyValue('--horizon'));
+      // What is on top at a point of the HUD's own lettering, and at a point on a peak in the open sky.
+      const title = document.querySelector('.hud .name')?.getBoundingClientRect();
+      const onTitle = title ? document.elementFromPoint(title.left + title.width / 2, title.top + title.height / 2) : null;
+      return { top: r.top, bottom: r.bottom, w: r.width, h: r.height, n: document.querySelectorAll('.mountains').length, sig: [...m.querySelectorAll('path')].map((q) => q.getAttribute('d').match(/^M(-?[\d.]+)/)[1]).join(','), first: m.parentElement.querySelector('svg.sc, svg.mountains') === m || m.compareDocumentPosition(trees[0]) & Node.DOCUMENT_POSITION_FOLLOWING ? true : false, touch: getComputedStyle(m).pointerEvents === 'none' || getComputedStyle(m.closest('.scenery')).pointerEvents === 'none', horizon, hud: hud?.bottom ?? null, hudOnTop: game ? !!onTitle?.closest('.hud') : null, treesOver: trees.some((t) => { const q = t.getBoundingClientRect(); return q.top < r.bottom && q.bottom > r.bottom - 4; }), theme: document.querySelector('.screen').dataset.theme };
+    });
+    const list = await read();
+    check(!!list && list.n === 1 && list.theme === 'thaw' && list.w >= size[0] - 1 && list.h >= 20 && list.top >= 5.5 && Math.abs(list.bottom - list.horizon) <= 2 && list.first && list.touch, `on Baldonnel's level list: one range across the screen, ${Math.round(list?.h ?? 0)} px tall, its foot on the horizon, behind the tree line, taking no touches`);
+    await page.screenshot({ path: `${process.env.OUT ?? `${process.env.HOME}/Desktop/RHR Art Inbox/qc/baldonnel`}/mountains_list_${size[0]}x${size[1]}.png` }).catch(() => {});
+    const seen = [];
+    for (let li = 0; li < 10; li++) { await enter(page, li); seen.push(await read()); if (li === 0) await page.screenshot({ path: `${process.env.OUT ?? `${process.env.HOME}/Desktop/RHR Art Inbox/qc/baldonnel`}/mountains_${size[0]}x${size[1]}.png` }).catch(() => {}); }
+    const ok = seen.every((m) => m && m.n === 1 && m.w >= size[0] - 1 && m.h >= 20 && m.top >= 5.5 && Math.abs(m.bottom - m.horizon) <= 2 && m.first && m.touch && m.treesOver);
+    check(ok, `on all ten levels: one range on the horizon (its foot at the sky's foot), behind the trees, ${[...new Set(seen.map((m) => Math.round(m?.h ?? 0)))].join(' / ')} px tall, never nearer the screen's top than 6 px (${[...new Set(seen.map((m) => Math.round(m?.top ?? -1)))].join(' / ')})`);
+    // (Where a level's sky is a pixel or two shorter than the range, the range is that much squatter: its peaks stand where they stand.)
+    check(new Set(seen.map((m) => m?.sig)).size === 1 && seen[0]?.sig === list?.sig, 'the same range on every level and on the list: every peak in the same place across the screen');
+    check(seen.every((m) => m?.hudOnTop === true), "the HUD's lettering is over it wherever the range stands behind the HUD (it is scenery, under the HUD)");
+    // A tap on the mountains is a tap on the sky: three bring Two Left Feet.
+    await enter(page, 2);
+    const pt = await page.evaluate(() => { const m = document.querySelector('.scenery .mountains').getBoundingClientRect(), h = document.querySelector('.hud').getBoundingClientRect(), b = document.querySelector('.board').getBoundingClientRect(); const y = (h.bottom + b.top) / 2; return { x: innerWidth * 0.5, y, onRange: y >= m.top && y <= m.bottom }; });
+    for (let k = 0; k < 3; k++) { await page.mouse.click(pt.x, pt.y); await wait(150); }
+    const cranes = await page.waitForSelector('.strip-layer[data-gag="cranes"]', { state: 'attached', timeout: 5000 }).then(() => true, () => false);
+    check(cranes, `three taps on the sky${pt.onRange ? ', on the range itself,' : ''} bring Two Left Feet: a tap on the mountains is a tap on the sky`);
+    // No other region has them.
+    await page.evaluate(() => document.querySelector('.hud [data-act="levels"]')?.click());
+    await page.waitForSelector('.region-tab');
+    const others = [];
+    for (let r = 0; r < REGIONS.length; r++) { if (r === BI) continue; await page.locator('.region-tab').nth(r).click(); await wait(250); others.push(await page.evaluate(() => document.querySelectorAll('.mountains').length)); }
+    check(others.every((n) => n === 0), `no other region's list has mountains (${others.join(', ')})`);
+    check(errors.length === 0, `no errors${errors.length ? ': ' + errors[0] : ''}`);
+    await context.close();
+  }
+}
+
 await browser.close();
 console.log(failures ? `\nFAILED: ${failures} check(s)` : '\nPASS');
 process.exit(failures ? 1 : 0);

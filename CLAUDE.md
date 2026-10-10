@@ -1446,14 +1446,32 @@ something, give exact clicks and one command at a time.
   climbing, most of it finding out the above. WHAT THE CLIMB TAUGHT: reaching the par is easy; keeping the rules at that par is the
   work, so once at par a change that keeps fewer of the slot's rules is not taken (`soundness`).
 - A PATCH ON THE BOARD (`floor-art.ts` `softSvg`, `.floor.soft`, under the tracks and trucks like
-  muskeg): dark wet mud filling its cell and running a little past its edges, two water-filled
-  ruts, the last snow along its rim. Browner and wetter than muskeg's black peat, and no sedge.
+  muskeg): DRAWN SIMPLY AND WHOLLY INSIDE ITS OWN CELL (job U6c; `SOFT_INSET`): a rounded patch
+  of dark wet mud, two water-filled ruts, and a thin rim of the last snow just inside its edge,
+  which shows on both sides of a pickup standing on it. NEVER LET IT RUN PAST ITS CELL: the first
+  drawing did, so beside the berm the yard's clip cut it off, and it showed whole whenever the
+  clip lifted for a truck driving out (`.yard.letting-out`): it flickered. `floor-art.test.ts`
+  holds every point of it inside the cell for 400 seeds; `ONLY=steady npm run test:e2e:baldonnel`
+  compares a patch beside the berm by pixels before, while and after a truck drives out (390 x
+  664, 375 x 635).
 - A RIG PUSHED AT A PATCH: a bump like any other (near-miss tick), and ITS OWN DRIVER says why
   (`BumpHit` `soft`, `BUMP_LINES.soft`, used alone like `convoy`; escalation "Still too soft for
   me."). The lines are Claude's stand-ins: Jay, write your own in lines.ts.
 - THE REGION: after Clearwater in `REGIONS`, opens after 5 of Clearwater like the others. Blurb:
   "Spring breakup. Rigs can't cross soft ground. Pickups can." Music tier 4 (`PLAY_TIER`). No
   night, no pill in the dig. Its seven sightings: "Baldonnel's seven sightings" below.
+- THE MOUNTAINS (job U6c; `src/ui/mountains.ts`, pure and tested): foothills country, so a range
+  stands on the horizon BEHIND the farthest trees, in the thaw theme only (`sceneryHtml` option
+  `mountains: { top, base }`; the first thing in the `.trees` layer). Drawn in code, flat toy
+  style: a far ridge and a nearer, darker one, blue-grey, snow caps with a shaded side, one soft
+  outline. THE SAME EVERY VISIT: one fixed seed, laid out in shares of the screen's width, so
+  every level and the level list show the same range. As tall as `MOUNTAIN_SHARE` of the width
+  (74 px at 390), its foot on the horizon. WHERE THE SKY BAND IS SHORT (Safari with its toolbars)
+  IT STANDS BEHIND THE HUD'S LETTERING, as the treetops do there: the scenery is under the HUD,
+  so the HUD is always over it, never the other way; `MOUNTAIN_TOP` (6 px) is as near the
+  screen's top as it comes. On the list it stands behind the title and the round buttons. It
+  takes no touches: a tap on it is a tap on the sky (three bring Two Left Feet).
+  `ONLY=mountains npm run test:e2e:baldonnel`.
 - THE THAW THEME (`thaw`, themes.ts; season `thaw` in trees.ts): last year's dead khaki grass with
   the last snow lying in it (`grass-thaw.webp`, `tools/ground-tiles.py` `thaw_grass` +
   `thaw_snow`), BLACK SPRUCE (the board's own spruce drawing in dark dull tones) with aspen and
