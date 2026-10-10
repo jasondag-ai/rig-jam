@@ -48,6 +48,7 @@
     "test:e2e:quick": "node e2e/quick.e2e.mjs",
     "test:e2e:offline": "node e2e/offline.e2e.mjs",
     "test:e2e:depth": "node e2e/depth.e2e.mjs",
+    "test:e2e:finale": "node e2e/finale.e2e.mjs",
     "test:e2e:gagsounds": "node e2e/gag-sounds.e2e.mjs"
   },
   "devDependencies": {

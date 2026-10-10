@@ -4483,8 +4483,15 @@ body:has(.update-bar) .toast { margin-top: var(--bar-room, 0px); }
 .screen.finale > .finale-cover:not(.scenery):not(.overlay):not(.scene-layer):not(.vignette) { position: absolute; inset: 0; z-index: 6; opacity: 0; transition: opacity 0.7s ease; }
 .screen.finale > .finale-cover.up:not(.scenery):not(.overlay):not(.scene-layer):not(.vignette) { opacity: 1; }
 .finale-cover > .screen { position: absolute; inset: 0; height: auto; }
+/* Settings with "Watch the ending" in it: one row more, so the rows sit a little closer and the two quiet buttons are 44 px,
+   and the whole panel is still on a 390 x 844 screen without scrolling. */
+.settings .step.ask:has([data-act='ending']) { gap: 5px; }
+.settings .step.ask:has([data-act='ending']) > .btn.quiet { min-height: 44px; padding-top: 6px; padding-bottom: 6px; }
 /* The Perfect Game card: the win card, its news coming in one piece at a time (the page's times). */
 .overlay.win.finale-win { z-index: 7; }
+/* Its dimmed backdrop takes no touches, so "Levels" up in the HUD still leaves the ending. */
+.overlay.win.finale-win { pointer-events: none; }
+.overlay.win.finale-win .finale-card { pointer-events: auto; }
 .finale-card .fin-count { margin: 0; display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
 .finale-card .fin-count span { font-size: 16px; font-weight: 600; color: var(--ink); }
 .finale-card .fin-count b { font-size: 23px; font-weight: 700; color: #d0601b; }
