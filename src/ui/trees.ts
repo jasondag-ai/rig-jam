@@ -6,7 +6,8 @@
 // No photo sprites. scenery.ts places them; each drawing is a <symbol> used many times.
 
 export type Species = 'spruce' | 'aspen' | 'willow' | 'cattails' | 'sign';
-export type Season = 'summer' | 'spring' | 'winter' | 'fall';
+/** (`thaw`: Baldonnel at spring breakup. Black spruce, dark and dull; aspen and willow only just in bud.) */
+export type Season = 'summer' | 'spring' | 'winter' | 'fall' | 'thaw';
 /** 0 small, 1 medium, 2 large: three different drawings, not one drawing scaled. */
 export type TreeSize = 0 | 1 | 2;
 
@@ -30,18 +31,21 @@ const SPRUCE: Record<Season, Tones> = {
   spring: { dark: '#33924a', light: '#58c064', shade: '#226d37' },
   winter: { dark: '#2c7a55', light: '#3f9a6c', shade: '#1d5a40' },
   fall: { dark: '#2b7a4a', light: '#3f9c5e', shade: '#1c5936' },
+  thaw: { dark: '#2b4a39', light: '#3d6049', shade: '#1f3528' },
 };
 const ASPEN: Record<Season, Tones> = {
   summer: { dark: '#5fb43c', light: '#8fd957', shade: '#3f8f2a' },
   spring: { dark: '#b9d46a', light: '#dcee9c', shade: '#93b04c' },
   winter: { dark: '#ffffff', light: '#ffffff', shade: '#b9cbe6' },
   fall: { dark: '#e0a52c', light: '#f6cf55', shade: '#b97a1c' },
+  thaw: { dark: '#a3a66c', light: '#c2c48c', shade: '#80834e' },
 };
 const WILLOW: Record<Season, Tones> = {
   summer: { dark: '#6f9638', light: '#95bf4a', shade: '#4f7426' },
   spring: { dark: '#a9c25a', light: '#cfe183', shade: '#869c40' },
   winter: { dark: '#ffffff', light: '#ffffff', shade: '#b9cbe6' },
   fall: { dark: '#b8763a', light: '#d99a4e', shade: '#8a5326' },
+  thaw: { dark: '#a8674a', light: '#c98a66', shade: '#7f4733' },
 };
 const SNOW = '#ffffff';
 const SNOW_SHADE = '#b9cbe6';
