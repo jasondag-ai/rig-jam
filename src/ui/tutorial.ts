@@ -15,7 +15,7 @@ export const FINGER = `<svg class="finger-art" viewBox="0 0 40 52" aria-hidden="
 <path d="M18 7 Q20 5.5 22 7" stroke="#e8d3a6" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>`;
 
 export const TUTORIAL_CARDS = [
-  { id: 'drag', title: 'Drag a truck', text: 'Trucks slide along their length. One drag is one move.' },
+  { id: 'drag', title: 'Drag a truck', text: 'Trucks slide along their length. One drag is one move. Flick a truck to send it all the way.' },
   { id: 'gate', title: 'Match the gate', text: 'A truck drives out through the gate that matches its colour and symbol. Clear them all.' },
   { id: 'hats', title: 'Fewer moves, more hard hats', text: 'Finish in par for three hard hats. Within three moves of par earns two.' },
 ] as const;

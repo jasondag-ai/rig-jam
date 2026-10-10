@@ -1,4 +1,5 @@
 import { shiftOpen, SIZE, sizeOf, cabSide, convoyWaitingFor, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
+import { FLING_EASE, PUSH_HOLD_MS, addSample, fingerSpeed, flingDelta, flingDir, flingMs, flingOn, FLING_SPEED, type Sample } from './fling.ts';
 import { bumpTarget, pickSpeaker } from './bump.ts';
 import { placeBubble, type BubbleSide } from './bubble.ts';
 import { CLOCK, DROP, muskegSvg, rackSvg } from './floor-art.ts';
@@ -47,6 +48,10 @@ interface Drag {
   pressing: boolean;
   /** The finger's wiggle: which way it is going and how far it has got (px along the lane). */
   wig: { dir: number; ext: number };
+  /** Fling (fling.ts): the finger's last places along the lane, where it is now, and a bump held back while it is still fast. */
+  samples: Sample[];
+  raw: number;
+  held: { dir: 1 | -1; timer: number } | null;
 }
 
 /** Renders the pad, gates, obstacles and trucks, and turns drags into (truckId, delta) move requests. */
@@ -66,6 +71,9 @@ export class BoardView {
   /** Trucks on their way out right now (the yard's clip is lifted while there are any). */
   private leaving = 0;
   private drag: Drag | null = null;
+  /** A flung truck is sliding to its gate (no other truck is picked up until it has gone). */
+  private flinging = false;
+  private fling = flingOn();
   /** The dirt berm round the pad (berm.ts), repainted when the size, level or season changes. */
   private berm: HTMLCanvasElement;
   /** The level's own ground variety (lease-detail.ts), over the season's base image. */
@@ -709,7 +717,7 @@ export class BoardView {
   }
 
   private onPointerDown(e: PointerEvent, id: string, el: HTMLElement): void {
-    if (this.drag || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (this.drag || this.flinging || (e.pointerType === 'mouse' && e.button !== 0)) return;
     const truck = this.truckById(id);
     const range = truck && getMoveRange(this.getState(), id);
     if (!truck || !range) return;
@@ -720,7 +728,7 @@ export class BoardView {
       // Capture can fail (e.g. the pointer is already gone); the drag still works without it.
     }
     const horizontal = truck.orient === 'h';
-    this.drag = { id, el, pointerId: e.pointerId, start: horizontal ? e.clientX : e.clientY, range, horizontal, offset: 0, pressing: false, wig: { dir: 0, ext: 0 } };
+    this.drag = { id, el, pointerId: e.pointerId, start: horizontal ? e.clientX : e.clientY, range, horizontal, offset: 0, pressing: false, wig: { dir: 0, ext: 0 }, samples: [{ t: e.timeStamp, at: horizontal ? e.clientX : e.clientY }], raw: 0, held: null };
     el.classList.add('dragging');
     this.onGrab(id);
     sound.dragStart();
@@ -733,6 +741,8 @@ export class BoardView {
     const d = this.drag;
     if (!d || e.pointerId !== d.pointerId) return;
     const raw = (d.horizontal ? e.clientX : e.clientY) - d.start;
+    d.raw = raw;
+    d.samples = addSample(d.samples, { t: e.timeStamp, at: d.horizontal ? e.clientX : e.clientY });
     const { min, max, exitDelta } = d.range;
     const exitLo = exitDelta === min && min < 0;
     const exitHi = exitDelta === max && max > 0;
@@ -765,17 +775,85 @@ export class BoardView {
     const bumpLo = !exitLo && raw < lo - push;
     const bumpHi = !exitHi && raw > hi + push;
     if ((bumpLo || bumpHi) && !d.pressing) {
-      d.pressing = true;
-      this.bump(d, bumpHi ? 1 : -1);
+      // A FAST finger running on past the stop is a flick on its way, not a push (fling.ts): the bump is held
+      // back, and comes only if the finger is still down and still past the stop a moment later, or slows there.
+      const fast = this.fling && Math.abs(fingerSpeed(d.samples, e.timeStamp, this.cell)) >= FLING_SPEED;
+      if (fast) {
+        if (!d.held) {
+          const dir = bumpHi ? 1 : -1;
+          const timer = window.setTimeout(() => {
+            if (this.drag !== d || !d.held) return;
+            d.held = null;
+            const past = dir > 0 ? d.raw > hi + push : d.raw < lo - push;
+            if (past && !d.pressing) { d.pressing = true; this.bump(d, dir); }
+          }, PUSH_HOLD_MS);
+          d.held = { dir, timer };
+        }
+      } else {
+        this.dropHeld(d);
+        d.pressing = true;
+        this.bump(d, bumpHi ? 1 : -1);
+      }
     } else if (!bumpLo && !bumpHi && raw >= lo && raw <= hi) {
       d.pressing = false;
+      this.dropHeld(d);
     }
+  }
+
+  private dropHeld(d: Drag): void {
+    if (d.held) clearTimeout(d.held.timer);
+    d.held = null;
+  }
+
+  /**
+   * A FLING (fling.ts): the truck slides, quick and easing out, to the far end of its range that way, with the
+   * drag's own sounds and tracks; where that end is its way out it then leaves as usual. One move. No bump.
+   */
+  private flingTo(d: Drag, delta: number): void {
+    const truck = this.truckById(d.id);
+    const exits = delta === d.range.exitDelta;
+    const from = d.offset / this.cell;
+    const ms = reducedMotion() ? 0 : flingMs(delta - from);
+    const out = exits ? WAVE_MS + EXIT_MOST_MS + 80 : 0;
+    this.tracks.release(true, ms + (exits ? out : 90));
+    this.movingUntil = performance.now() + ms + (exits ? out : 90);
+    sound.reversing(false);
+    setTimeout(() => {
+      if (!this.drag) sound.dragEnd();
+    }, ms + (exits ? out : 90));
+    d.el.dataset.flung = String(delta);
+    d.el.style.transition = ms ? `transform ${ms}ms ${FLING_EASE}` : 'none';
+    const settle = () => { d.el.style.transition = ''; };
+    if (!exits || !truck) {
+      this.onMove(d.id, delta);
+      setTimeout(settle, ms + 30);
+      return;
+    }
+    // Out through its gate: first down the lane to the gate, then the move itself (the drive out, as ever).
+    this.flinging = true;
+    this.place(d.el, truck, delta * this.cell);
+    setTimeout(() => {
+      this.flinging = false;
+      settle();
+      // (Should the pad have changed under it meanwhile, an Undo or a Restart: nothing is driven anywhere.)
+      const now = this.truckById(d.id), range = now && getMoveRange(this.getState(), d.id);
+      if (now && range && now.row === truck.row && now.col === truck.col && range.exitDelta === delta) this.onMove(d.id, delta);
+      else this.sync(this.getState());
+    }, ms);
   }
 
   private onPointerUp(e: PointerEvent): void {
     const d = this.drag;
     if (!d || e.pointerId !== d.pointerId) return;
+    this.dropHeld(d);
     this.endDrag();
+    // A quick flick sends it all the way (fling.ts); anything slower is the drag it always was.
+    const flick = this.fling ? flingDir(d.samples, e.timeStamp, this.cell) : 0;
+    if (flick !== 0) {
+      const to = flingDelta(d.range, flick);
+      if (to !== 0) return this.flingTo(d, to);
+    }
+    delete d.el.dataset.flung;
     const delta = Math.max(d.range.min, Math.min(d.range.max, Math.round(d.offset / this.cell)));
     // Keep laying marks while the truck snaps into place, or all the way out through its gate.
     const settle = delta !== 0 && delta === d.range.exitDelta ? WAVE_MS + EXIT_MOST_MS + 80 : 260;
@@ -791,6 +869,7 @@ export class BoardView {
 
   private onPointerCancel(e: PointerEvent): void {
     if (!this.drag || e.pointerId !== this.drag.pointerId) return;
+    this.dropHeld(this.drag);
     this.endDrag();
     this.tracks.release(false, 260);
     this.movingUntil = performance.now() + 260;
