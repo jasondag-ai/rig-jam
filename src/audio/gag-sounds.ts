@@ -161,7 +161,7 @@ export const GAG_SOUNDS: Record<GagId, Record<string, string[]>> = {
  *   the card: the win card's usual sounds, on the card's own clock: a pop a hard hat as each pops in (0.9, 1.15, 1.4 s,
  *     each a little higher, as `sound.win` plays them) and then the ta-da;
  *   the photo: the self-timer's beep, slow (every 0.6 s from 1.65 s) then fast (every 0.18 s from 5.0 s), exactly where
- *     the page draws "beep"; the camera on the flash and the splat with it (5.86 s); the Polaroid's whirr as the photo
+ *     the page draws "beep"; Moe's footsteps as he hurries from the camera to his spot; the camera on the flash and the splat with it (5.86 s); the Polaroid's whirr as the photo
  *     drops; the magpie's chuckle ("heh heh");
  *   Still Here: the creak as the door swings open and again as it shuts; the scrub looping while he brushes (until he
  *     notices you; again when the brush goes back in, until the door is shut).
@@ -172,6 +172,7 @@ export const FINALE_SOUNDS: Record<string, Record<string, string[]>> = {
   photo: {
     'he-sets-the': ['timer_beep', 'timer_beep@0.6', 'timer_beep@1.2', 'timer_beep@1.8', 'timer_beep@2.4', 'timer_beep@3.0'],
     beepbeepbeepbeep: ['timer_beep', 'timer_beep@0.18', 'timer_beep@0.36', 'timer_beep@0.54', 'timer_beep@0.72'],
+    'hurries-to-his': ['+steps'], 'hopturn-big-grin': ['-steps'], // (Moe's run from the camera to his spot)
     'splat-flash-at': ['camera', 'splat'], 'the-photo-drops': ['polaroid'], 'heh-heh-the': ['chuckle'],
   },
   credits: {},

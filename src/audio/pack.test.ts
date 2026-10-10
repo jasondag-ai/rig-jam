@@ -411,7 +411,10 @@ describe("Baldonnel's sightings and the finale (job U10)", () => {
     const scrub = Object.values(FINALE_SOUNDS.still).flat().map(parseCue).filter((c) => c.name === 'scrub').map((c) => c.op);
     expect(scrub).toEqual(['start', 'stop', 'start', 'stop']);
     expect(Object.keys(FINALE_SOUNDS.credits)).toEqual([]);
-    expect(finaleKeys().sort()).toEqual(['camera', 'chuckle', 'creak', 'polaroid', 'scrub', 'splat', 'tada', 'tap', 'timer_beep']);
+    expect(finaleKeys().sort()).toEqual(['camera', 'chuckle', 'creak', 'polaroid', 'scrub', 'splat', 'step', 'tada', 'tap', 'timer_beep']);
+    // Moe's run from the camera to his spot: his steps from the beat he hurries off on until his hop-turn.
+    expect(cues(FINALE_SOUNDS.photo, 'hurries-to-his')[0]).toMatchObject({ op: 'start', name: 'steps' });
+    expect(cues(FINALE_SOUNDS.photo, 'hopturn-big-grin')[0]).toMatchObject({ op: 'stop', name: 'steps' });
   });
 });
 
