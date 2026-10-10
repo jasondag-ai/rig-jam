@@ -84,6 +84,7 @@ export const PLAY_TIER: Record<string, number> = {
   bakken: 4,
   clearwater: 4,
   daily: 3,
+  turnaround: 4, // (the Sunday Turnaround, job U3)
 };
 export const playTier = (regionId: string): number => PLAY_TIER[regionId] ?? 1;
 /** The loop for a style, a scene and (in play) a tier: the style's loop of that tier if it has one, else its one in-play loop. */

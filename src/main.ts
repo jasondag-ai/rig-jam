@@ -15,6 +15,7 @@ import './ui/style.css';
 import { DAILY_LEVELS, REGIONS, dailyTheme } from './levels/regions.ts';
 import { STAND_DOWN_TOAST, dayKey, newlySaved, padNumber, streak } from './ui/daily.ts';
 import { dailyLevel, dailyLevelNow, padLink, warmDaily } from './ui/daily-pads.ts';
+import { TURN_UNLOCK, levelsCleared, loadTurnResults, turnaroundLevel, turnaroundNumber, turnaroundOpen, warmTurnaround, weekLink } from './ui/turnaround.ts';
 import { showTutorial } from './ui/tutorial.ts';
 import { deerStill, surveyorStill, touristsStill } from './ui/sign-gags.ts';
 import { toast } from './ui/toast.ts';
@@ -217,6 +218,11 @@ function showLevels(requested = savedRegion()): void {
   // Today's Daily Pad and the streak sign, above the regions.
   const today = dayKey(new Date());
   const pad = padNumber(today);
+  // The Sunday Turnaround: this week's number, whether this player may play it yet, and their best on it.
+  const week = turnaroundNumber(today);
+  const turnCleared = levelsCleared(progress.best, REGIONS.flatMap((r) => r.levels.map((l) => l.id)));
+  const turnOpen = turnaroundOpen(turnCleared, progress.demo);
+  const turnBest = loadTurnResults().best[String(week)];
   // (Pads 1 to 60 are to hand; a later pad's level is fetched, and its par is written in when it comes: daily-pads.ts.)
   const daily = dailyLevelNow(pad, DAILY_LEVELS);
   const s = streak(progress.dailyCleared, today);
@@ -232,7 +238,14 @@ function showLevels(requested = savedRegion()): void {
     <button class="daily-btn${s.clearedToday ? ' done' : ''}">
       <span class="daily-title">Daily Pad #${pad}</span>
       <span class="daily-sub">${s.clearedToday ? 'Cleared today ✓ Come back tomorrow' : `Today's pad · ${daily ? `par ${daily.par} · ` : ''}same for everyone`}</span>
+    </button>
+    <button class="turn-btn${turnOpen ? (turnBest !== undefined ? ' done' : '') : ' locked'}"${turnOpen ? '' : ' aria-disabled="true"'}>
+      <span class="turn-title">Sunday Turnaround #${week}</span>
+      <span class="turn-sub">${turnOpen ? (turnBest !== undefined ? `Cleared in ${turnBest} moves ✓ A new one on Sunday` : "This week's big pad · same for everyone") : `${PADLOCK}Clear ${TURN_UNLOCK} levels to unlock (${Math.min(turnCleared, TURN_UNLOCK)} of ${TURN_UNLOCK})`}</span>
     </button>`;
+  // SUNDAY TURNAROUND (turnaround.ts): this week's big pad, under the Daily Pad. Locked until 10 levels are cleared.
+  block.querySelector<HTMLElement>('.turn-btn')!.addEventListener('click', (e) => (turnOpen ? void showTurnaround() : shake(e.currentTarget as HTMLElement)));
+  if (turnOpen) warmTurnaround(week);
   block.querySelector('.daily-btn')!.addEventListener('click', () => void showDaily());
   if (!daily && !s.clearedToday) void dailyLevel(pad, DAILY_LEVELS).then((l) => { const sub = block.querySelector('.daily-sub'); if (sub?.isConnected) sub.textContent = `Today's pad · par ${l.par} · same for everyone`; }).catch(() => {});
   // Today's pad (and tomorrow's) is fetched ahead, so a tap opens it at once and it is there offline.
@@ -564,6 +577,28 @@ async function showDaily(tryPad?: number): Promise<void> {
   game.fit();
 }
 
+/**
+ * This week's Sunday Turnaround (turnaround.ts): a hard pad of 8 x 8, on Clearwater's standard scene with its
+ * sightings. (`tryWeek`: the dev copy's `?week=N`; nothing it does is saved.)
+ */
+async function showTurnaround(tryWeek?: number): Promise<void> {
+  const week = tryWeek ?? turnaroundNumber(dayKey(new Date()));
+  let base;
+  try {
+    base = await turnaroundLevel(week);
+  } catch {
+    void toast("Couldn't load this week's Turnaround", { sub: 'Check your connection and try again', ms: 3200 });
+    if (tryWeek !== undefined) showLevels();
+    return;
+  }
+  const level = { ...base, name: `Turnaround #${week}` };
+  game?.leave();
+  rememberLevel(`Sunday Turnaround #${week}`);
+  game = new GameView(level, 'Sunday', THEMES[themeOverride(location.search) ?? 'boreal'], { onLevels: () => showLevels(), onNext: null }, null, { regionId: 'clearwater', levelIndex: 0, turnaround: week });
+  app.replaceChildren(game.el);
+  game.fit();
+}
+
 window.addEventListener('resize', () => game?.fit());
 document.fonts?.ready.then(() => game?.fit());
 
@@ -602,8 +637,9 @@ if (!forcedGag()) {
     return !p.demo && Object.keys(p.best).length === 0 && p.dailyCleared.length === 0;
   };
   // (The dev copy's `?pad=N`: straight into Daily Pad N, to try it. Nothing is saved: demo-link.ts.)
-  const tryPad = isDev() ? padLink() : null;
-  if (tryPad !== null) void showDaily(tryPad);
+  const tryPad = isDev() ? padLink() : null, tryWeek = isDev() ? weekLink() : null;
+  if (tryWeek !== null) void showTurnaround(tryWeek);
+  else if (tryPad !== null) void showDaily(tryPad);
   else if (shouldShowCover(location.search, navigator.webdriver === true)) showCover(app, () => (firstRun() ? showGame(0, 0) : showLevels()));
   else showLevels();
 }

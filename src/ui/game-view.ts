@@ -11,7 +11,8 @@ import { WITNESS_LINES } from './lines.ts';
 import { hatsHtml } from './hats.ts';
 import { copyText } from './clipboard.ts';
 import { hintOf, lineAfter, lineFrom } from './hint-line.ts';
-import { shareText, streak, zeroIncident } from './daily.ts';
+import { GAME_URL, shareText, streak, zeroIncident } from './daily.ts';
+import { loadTurnResults, recordTurnaround, saveTurnResults, turnShareText } from './turnaround.ts';
 import { hardHats, loadProgress, type Progress, recordDailyClear, recordWin, saveProgress, spendHint } from './progress.ts';
 import { streakSignHtml } from './sign.ts';
 import { audio, sound } from '../audio/engine.ts';
@@ -115,6 +116,8 @@ export class GameView {
   private scenery: HTMLElement;
   /** Which region this level is in ('daily' for the Daily Pad): the gopher's mound is Cardium's. */
   private regionId: string;
+  /** A Sunday Turnaround's number (turnaround.ts), or null for any other level. */
+  private turnaround: number | null = null;
   private bigPad = false;
 
   /** Null while gags are switched off (flags.ts). */
@@ -204,7 +207,7 @@ export class GameView {
     theme: Theme,
     handlers: GameViewHandlers,
     daily: DailyInfo | null = null,
-    where: { regionId: string; levelIndex: number; force?: GagId | null } = { regionId: 'daily', levelIndex: 0 },
+    where: { regionId: string; levelIndex: number; force?: GagId | null; turnaround?: number } = { regionId: 'daily', levelIndex: 0 },
   ) {
     this.level = level;
     this.regionId = where.regionId;
@@ -212,6 +215,7 @@ export class GameView {
     this.bigPad = sizeOf(level) > SIZE;
     this.theme = theme;
     this.daily = daily;
+    this.turnaround = where.turnaround ?? null;
     this.handlers = handlers;
     this.state = newGame(level);
     preloadSprites(level.trucks.map((t) => ({ kind: t.kind ?? defaultKind(t.length), color: t.color })));
@@ -276,7 +280,7 @@ export class GameView {
     this.stage.append(this.board.el);
     this.board.setLevel(level);
     this.board.setGround(theme.ground, theme.berm === 'sand');
-    sound.setGround(theme.ground, playTier(this.regionId));
+    sound.setGround(theme.ground, playTier(this.turnaround !== null ? 'turnaround' : this.regionId));
     // The depth strip: every prop, every bottom-strip tree and every strip gag is a child of it, drawn by its ground line. Under the night's shade.
     this.depth = document.createElement('div');
     this.depth.className = 'scene-layer puppet-layer depth-strip';
@@ -1166,6 +1170,12 @@ export class GameView {
   private recordWinOnce(): NonNullable<GameView['won']> {
     if (this.won) return this.won;
     const before = loadProgress();
+    // A SUNDAY TURNAROUND keeps its results under its own key (turnaround.ts): nothing of it goes into the progress
+    // the live build reads (no score there, no perfect-solve hint).
+    if (this.turnaround !== null) {
+      saveTurnResults(recordTurnaround(loadTurnResults(), this.turnaround, this.state.moves));
+      return (this.won = { before, progress: before, earnedHint: false });
+    }
     let { progress, earnedHint } = recordWin(before, this.level.id, this.state.moves, this.level.par);
     if (this.daily) progress = recordDailyClear(progress, this.daily.day);
     saveProgress(progress);
@@ -1190,7 +1200,12 @@ export class GameView {
       this.shareMessage = shareText({ pad: this.daily.pad, moves, par, hats, zeroIncident: clean, streak: s.days });
       daily = `${streakSignHtml(s, true)}<button class="btn primary share" data-act="share">Share result</button>`;
     }
-    const next = this.daily
+    // A Sunday Turnaround: its own result line and its own Share (no streak).
+    if (this.turnaround !== null) {
+      this.shareMessage = turnShareText({ week: this.turnaround, moves, par, hats, url: GAME_URL });
+      daily = `<p class="turn-result">Turnaround #${this.turnaround}</p><button class="btn primary share" data-act="share">Share result</button>`;
+    }
+    const next = this.daily || this.turnaround !== null
       ? ''
       : this.handlers.onNext
         ? '<button class="btn primary" data-act="next">Next level ›</button>'
