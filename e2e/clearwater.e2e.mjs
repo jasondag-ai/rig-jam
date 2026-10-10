@@ -76,7 +76,7 @@ console.log('\nwebkit: Clearwater on the level list');
 {
   const fresh = await open(null);
   const tabs = await fresh.page.$$eval('.region-tab', (ts) => ts.map((t) => ({ name: t.querySelector('.rtext').textContent, locked: t.classList.contains('locked'), text: t.textContent })));
-  check(tabs.length === 6 && tabs[5].name === 'Clearwater' && tabs[4].name === 'Bakken', `six tabs, Clearwater after Bakken (${tabs.map((t) => t.name).join(', ')})`);
+  check(tabs.length === REGIONS.length && tabs[5].name === 'Clearwater' && tabs[4].name === 'Bakken', `${tabs.length} tabs, Clearwater after Bakken (${tabs.map((t) => t.name).join(', ')})`);
   check(tabs[5].locked && /Bakken/.test(tabs[5].text), `locked on a fresh phone: "${tabs[5].text.replace(/\s+/g, ' ').trim()}"`);
   await fresh.context.close();
 

@@ -37,6 +37,9 @@ for (const [engine, name, opts] of PHONES) {
   const browser = await engine.launch();
   const context = await browser.newContext({ ...opts, hasTouch: true });
   const page = await context.newPage();
+  // (The phone's date is the day after the save's Daily Pad, Oct 9, 2026: on a later day the game rightly spends a
+  // Safety Stand-Down on the missed day and writes that down, which is not what this suite is about.)
+  await page.clock.setFixedTime(new Date(2026, 9, 9, 12, 0, 0));
   const errors = [];
   // (Music is on in this save. A music file still being fetched when the page is reloaded is cut off by the reload itself: WebKit reports that as an error of the old page. It is not one of the game's.)
   page.on('pageerror', (e) => { if (!/audio\/music\/.*access control checks/.test(e.message)) errors.push(e.message); });
@@ -61,7 +64,7 @@ for (const [engine, name, opts] of PHONES) {
   check(list.open.join() === cardium.map((_, i) => i <= 6).join(), 'the same levels are open: Cardium 1 to 7');
   const days = streak(progress.dailyCleared, dayKey(new Date())).days;
   check(list.days === `Days without incident: ${days}`, `the streak sign reads what the saved Daily Pads make it today (${list.days})`);
-  check(list.tabs.map((t) => t.name).join() === REGIONS.map((r) => r.name).join() && list.tabs.map((t) => t.locked).join() === 'false,false,true,true,true,true', `six tabs; Cardium and Montney open as before, the rest locked (${list.tabs.map((t) => `${t.name}${t.locked ? ' locked' : ''}`).join(', ')})`);
+  check(list.tabs.map((t) => t.name).join() === REGIONS.map((r) => r.name).join() && list.tabs.map((t) => t.locked).join() === ['false', 'false', ...REGIONS.slice(2).map(() => 'true')].join(), `${REGIONS.length} tabs; Cardium and Montney open as before, the rest locked (${list.tabs.map((t) => `${t.name}${t.locked ? ' locked' : ''}`).join(', ')})`);
   check(/Clear 5 more in Bakken/.test(list.tabs[5].text) && !list.banner, `Clearwater is locked like any region not yet earned ("${list.tabs[5].text}"), and no "NEW LEASE OPEN" banner shows`);
   check(!list.sideways, 'the list does not scroll sideways');
 

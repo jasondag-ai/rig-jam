@@ -1417,6 +1417,79 @@ something, give exact clicks and one command at a time.
   par inside the band, no repeats, the repeat from 61, fetching); `test:e2e:devlane` `ONLY=pads`
   (`?pad=61|200|790|791` open, play and save nothing; the phone's date set to Dec 1, 2026).
 
+## Baldonnel, region 7: road ban patches (October upgrade, job U6; Oct 9; on `next`)
+- THE RULE (engine, `Level.soft`): SOFT cells are thawed ground. A 2-cell truck drives over one like any
+  floor; A 3-CELL TRUCK (a rig) CANNOT ENTER ONE: for it the cell is a wall (`getMoveRange`; the
+  solver's `softAt`). No rig starts on one (`parseLevel`); a cell is soft, muskeg, a rack or under
+  equipment, never two of them. Both solvers, hints and fling follow from the move range
+  (`soft.test.ts`; A*'s estimate still never overshoots: patches only take moves away).
+- `src/levels/baldonnel.json`: TEN LEVELS OF 6 x 6, ids `b01` to `b10`, Jay's names in order: Spring
+  Breakup, Load Limits, Half Loads, Soft Spot, Frost Heave, Critical Sour, Gravel Haul, Scale
+  House, Overweight Permit, Ban Lifted. Par 16, 17, 18, 19, 20, 21, 22, 22, 23, 24; 8 trucks on
+  levels 1 and 2, then 9; two patches a level (level 4: three); one piece of equipment on levels
+  5 to 8; no convoys (the slots that may keep one did not). Level 1: patches only, and its tip is the rule. EVERY LEVEL'S PATCHES RAISE ITS
+  PAR (without them it solves in fewer moves); every patch lies in some rig's lane and none is
+  under a truck at the start; on level 1 a pickup is seen to drive over one in the best line.
+  Equipment is in the way of the best line.
+  `baldonnel.test.ts` holds all of it.
+- NEVER HAND-EDIT, AND NOT SEARCHED FOR TWICE: `node tools/gen-baldonnel.ts [minutes a slot]
+  [chain]` hill-climbs each slot (as tools/climb.ts does) from a hard level the game already has
+  with its own region's rules taken off, nine seeds racing, and keeps the accepted level in
+  `tools/fixed-levels/b01..b10.json`; `node tools/gen-baldonnel.ts write` writes the level file
+  from those (truck and equipment looks dealt from fixed seeds). Delete a slot's file to climb it
+  again. A slot is climbed three ways at once: from its own base, up from the nearest accepted slot
+  below it, and DOWN from the nearest one above it (the late slots came home first); `bases`
+  races nine other bases instead. Each stands at least 3 trucks apart from every other (`DIFF`; 4
+  was asked first and levels 5, 6 and 9 stuck at 3). LEVEL 6 IS KEPT MIRRORED (`flip`): it would
+  not walk further than 2 trucks from its neighbour in half an hour, and a level turned over is
+  the same puzzle on what looks like another pad. The whole region took about 80 minutes of
+  climbing, most of it finding out the above. WHAT THE CLIMB TAUGHT: reaching the par is easy; keeping the rules at that par is the
+  work, so once at par a change that keeps fewer of the slot's rules is not taken (`soundness`).
+- A PATCH ON THE BOARD (`floor-art.ts` `softSvg`, `.floor.soft`, under the tracks and trucks like
+  muskeg): dark wet mud filling its cell and running a little past its edges, two water-filled
+  ruts, the last snow along its rim. Browner and wetter than muskeg's black peat, and no sedge.
+- A RIG PUSHED AT A PATCH: a bump like any other (near-miss tick), and ITS OWN DRIVER says why
+  (`BumpHit` `soft`, `BUMP_LINES.soft`, used alone like `convoy`; escalation "Still too soft for
+  me."). The lines are Claude's stand-ins: Jay, write your own in lines.ts.
+- THE REGION: after Clearwater in `REGIONS`, opens after 5 of Clearwater like the others. Blurb:
+  "Spring breakup. Rigs can't cross soft ground. Pickups can." Music tier 4 (`PLAY_TIER`). No
+  night, no pill in the dig, no sightings of its own yet.
+- THE THAW THEME (`thaw`, themes.ts; season `thaw` in trees.ts): last year's dead khaki grass with
+  the last snow lying in it (`grass-thaw.webp`, `tools/ground-tiles.py` `thaw_grass` +
+  `thaw_snow`), BLACK SPRUCE (the board's own spruce drawing in dark dull tones) with aspen and
+  willow only in bud, a pale washed sky, and a pad of frost-firm grey gravel (ground `gravel`),
+  cold and light so the dark patches read at a glance. Montney's spring is wet mud and green.
+- THE STANDARD BALDONNEL SCENE (`BaldProp`, scene-stage.ts; drawings in `bald-art.ts`, ported as
+  written from `~/Desktop/RHR Art Inbox/baldonnel_sightings_reference.html`, saved Oct 9 17:36,
+  its `bgBald`). On every Baldonnel level; the generic scenery puts no trees below the board
+  there. FIVE LAYERS, none takes a touch, each a unit of the depth strip on its own ground line:
+  `.bald-ground` (under everything: grass bands, the muddy two-track run on to both screen edges,
+  snow patches, the THAW POND with its three ICE PANS running off the right edge, the MELTWATER
+  PUDDLE), `.bald-layer` (the back row: six black spruce, `BD_TREES`, and two red willows),
+  `.bald-sign` (the BISON CROSSING SIGN), `.bald-snowbank` (the old SNOWBANK) and `.bald-scale`
+  (the portable TRUCK SCALE and its DIAL, needle at rest in the green). `BD_SCENE` crops the
+  reference's strip to y 44 to 170 (126 units, as tight as Mannville's), so it shows bigger.
+- MOVED FROM THE REFERENCE, each for a rule: the bison sign and the left two spruce stand 56
+  further right (clear of the biffy); the snowbank 34 further right (x 72 to 132, clear of the
+  sleepy worker's spot); the puddle lies on the two-track's near rut (y 163, not 174) and the
+  three front snow patches on the lane's near edge (the tighter crop); the three tallest spruce
+  are a little shorter (inside the strip); the scale is drawn on the lane's line but STANDS 2
+  units behind it (`SCALE_FOOT`, as Clearwater's rig mats do), so everybody who walks the lane
+  passes in front of it. WHEN THE SIGHTINGS ARE PORTED, their positions follow these.
+- NO LEASE SIGN ON BALDONNEL (as on Clearwater): the pond lies where its visitors would walk, and
+  the bison sign stands in the back row. So no surveyor or deer there. The biffy, the landowner,
+  Safety Sam, the geese, the magpie and the sleepy worker play as on any pad of 6.
+- NO DEAD PROPS: a tap on the bison sign, the snowbank, the scale, the pond or the puddle gives
+  it the usual knock (`BaldProp.propAt`, `BD_PROPS`: tap targets of at least 44 px).
+- SAVES: nothing new is saved. Baldonnel's scores are ordinary `best` entries under ids the live
+  build does not know; it keeps them untouched and shows no seventh tab (`DEV_ADDS.regions`).
+- `npm run test:e2e:baldonnel` (WebKit at DPR 3, 390 and 375; `ONLY=tab|rule|scene|levels`): the
+  tab and its lock, the patches where the level says, a rig stopped at one and its driver's line,
+  a flung rig stopping there with no near miss, the scene and a knock on each prop, and ALL TEN
+  LEVELS cleared at par by dragging. `REGION=6 npm run test:e2e:depth` and `REGION=baldonnel npm
+  run test:e2e:frames` (also `VIEW=390x664`) hold the depth rule and same start, same end on the
+  new scene with the strip gags every region shares. Screenshots: `~/Desktop/RHR Art Inbox/qc/baldonnel/`.
+
 ## Fling (October upgrade, job U4; Oct 9; on `next`)
 - A QUICK FLICK SENDS A TRUCK ALL THE WAY DOWN ITS LANE, out through its gate if the rules let it
   leave; a slow drag is exactly what it was. Rules in `src/ui/fling.ts` (pure, tested); the board
@@ -1444,6 +1517,8 @@ something, give exact clicks and one command at a time.
   turns it off for anyone. The suites' scripted drags move at a steady clip and lift at once,
   which is a flick, and they mean a drag. With it off the board is exactly the old one (no held bumps).
 - The first how-to card ends "Flick a truck to send it all the way."
+- `node tools/gen-baldonnel.ts [minutes] [chain]` / `node tools/gen-baldonnel.ts write` – Baldonnel's ten levels: climbs the slots not yet in `tools/fixed-levels/`, then writes `src/levels/baldonnel.json`
+- `npm run test:e2e:baldonnel` – Baldonnel on a phone: the tab, road ban patches, the standard scene, all ten levels at par (start the dev server first)
 - `npm run test:e2e:fling` (WebKit touch at 375 and 390, Chromium as a Pixel; real-time
   gestures): a flick against a truck, into the berm and out a gate, Undo, four kinds of ordinary
   drag, both kinds of push, a level at par with ZERO INCIDENT on flung moves, hints in a row.

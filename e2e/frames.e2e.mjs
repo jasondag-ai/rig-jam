@@ -55,8 +55,12 @@ diff = async (a, b) => {
 };
 
 console.log('\nwebkit 390x844: every strip gag starts and ends on an empty stage');
-for (const [name, { gag, region, level }] of Object.entries(PREVIEWS)) {
+// (Baldonnel, region 7, has no sightings of its own yet: the strip gags every region shares are held on ITS standard scene.)
+const CASES = [...Object.entries(PREVIEWS), ...['landowner', 'biffyA', 'biffyB', 'sam', 'geese'].map((gag) => [`${gag} on Baldonnel`, { gag, region: 'baldonnel', level: 3 }])];
+for (const [name, { gag, region, level }] of CASES) {
   if (OWN_CLOCK.includes(gag)) continue;
+  // (`REGION=baldonnel` holds one region's.)
+  if (process.env.REGION && process.env.REGION !== region) continue;
   // (Aurora Howl plays at night only: its level is pinned to night; with reduced motion nothing in the night sky moves.)
   await page.goto(ROOT + `?cover=0&gagtest=1&night=${gag === 'aurora' ? 1 : 0}&magpie=0&worker=0&moose=0`, { waitUntil: 'networkidle' });
   await page.evaluate((p) => { localStorage.clear(); localStorage.setItem('rush-hour-rigs:v2', p); }, UNLOCKED);
