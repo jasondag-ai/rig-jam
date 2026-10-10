@@ -37,18 +37,24 @@ for (const [device, width, height, dpr] of SIZES) {
   await page.goto(`${BASE}?cover=0&gagtest=1&night=0`, { waitUntil: 'networkidle' });
   await page.evaluate(() => localStorage.setItem('rush-hour-rigs:v2', JSON.stringify({ best: {}, hints: 3, perfect: [], dailyCleared: [], announced: [], demo: true })));
   await page.reload({ waitUntil: 'networkidle' });
-  for (let r = 0; r < REGIONS.length; r++) {
-    if (process.env.REGION && +process.env.REGION !== r) continue;
+  // (And one place that is no region: THE FINALE'S STAGE, `REGION=finale`, where the crew photo is held like a strip gag.)
+  const PLACES = [...REGIONS, { id: 'finale', name: "the finale's stage" }];
+  for (let r = 0; r < PLACES.length; r++) {
+    if (process.env.REGION && process.env.REGION !== String(r) && process.env.REGION !== PLACES[r].id) continue;
+    const finale = PLACES[r].id === 'finale';
     // Safari's two short sizes (its toolbars showing) are held to ORDER, ONE LANE, NO TIES and NOT LOST in every region
     // (the lease moves up for the strip on every level: GameView.liftPad). NOT PARKED ON A PROP is held there on the
     // Big Pad only: in the five older regions the strip is about 84 px, the rows close up, and a 62 px character on
     // the walking lane cannot help standing in front of a small back-row prop. Those are LISTED, not failed
     // (`ALLSIZES=1` fails them too).
-    const lenient = device.startsWith('Safari') && REGIONS[r].id !== 'clearwater' && !process.env.ALLSIZES;
-    await page.locator('.region-tab').nth(r).click();
-    await page.locator('.level-btn').nth(2).click();
-    await page.waitForSelector('.board .truck.sprite-on');
-    await page.waitForTimeout(500);
+    const lenient = device.startsWith('Safari') && PLACES[r].id !== 'clearwater' && !finale && !process.env.ALLSIZES;
+    if (finale) { await page.goto(`${BASE}?cover=0&gagtest=1&night=0&finale=stage`, { waitUntil: 'networkidle' }); await page.waitForSelector('.screen.finale .board'); await page.waitForTimeout(600); }
+    else await page.locator('.region-tab').nth(r).click();
+    if (!finale) {
+      await page.locator('.level-btn').nth(2).click();
+      await page.waitForSelector('.board .truck.sprite-on');
+      await page.waitForTimeout(500);
+    }
     const out = await page.evaluate(async ([only, TIE]) => {
       const g = window.__rhrGag, strip = document.querySelector('.depth-strip'), vw = innerWidth;
       const name = (u) => (u.getAttribute('class') || '').replace(/scene-layer|puppet-layer|prop-layer|depth-tree|strip-layer|scene-prop|scene-gag|\bsc\b/g, ' ').trim().split(/\s+/)[0] || u.tagName;
@@ -116,7 +122,7 @@ for (const [device, width, height, dpr] of SIZES) {
     }, [process.env.ONLY ?? '', TIE]);
     const own = (x) => (OWN[x.id] ?? []).some((p) => x.prop.startsWith(p));
     const ties = out.ties.filter((x) => !own(x)), lost = out.lost.filter((x) => !own(x)), parked = out.parked.filter((x) => !own(x));
-    console.log(`\n${device} ${width}x${height}, ${REGIONS[r].name}: ${out.gags.join(', ')}`);
+    console.log(`\n${device} ${width}x${height}, ${PLACES[r].name}: ${out.gags.join(', ')}`);
     console.log(`   (standing there: ${out.props})`);
     check(out.unsorted.length === 0, `everything in the bottom strip has a ground line${out.unsorted.length ? ' EXCEPT ' + out.unsorted.join(', ') : ''}`);
     check(out.order.length === 0, `ORDER: whatever stands lower on the screen is drawn in front${out.order.length ? '\n        ' + out.order.join('\n        ') : ''}`);

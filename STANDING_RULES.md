@@ -31,7 +31,7 @@ Characters face the way they travel (hop-turn first), anticipation before big mo
 Finds are "sightings", never "Easter eggs" (the dinosaur egg is just an egg).
 
 ## 8. Content
-No new bathroom humour (existing gags stay). Accurate Alberta oilfield terms and equipment. Accurate geology (one real west-central Alberta column near Fox Creek).
+No new bathroom humour (existing gags stay). One exception, Jay's call (Oct 10): in the finale's crew photo the magpie's splat lands on Moe's hard hat, a callback to the magpie's own gag. Accurate Alberta oilfield terms and equipment. Accurate geology (one real west-central Alberta column near Fox Creek).
 
 ## 9. Triggers
 No time-based gag triggers. Only night dimming is idle-based.

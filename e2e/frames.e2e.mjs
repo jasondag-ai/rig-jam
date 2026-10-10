@@ -55,15 +55,24 @@ diff = async (a, b) => {
 };
 
 console.log('\nwebkit 390x844: every strip gag starts and ends on an empty stage');
-for (const [name, { gag, region, level }] of Object.entries(PREVIEWS)) {
+// (Baldonnel, region 7, has no sightings of its own yet: the strip gags every region shares are held on ITS standard scene.)
+// (THE FINALE'S CREW PHOTO, `REGION=finale`, on the finale's own stage: it is a cut, in and out, like a film, so its first
+// and last frames are the empty stage; the crew is held between.)
+const CASES = [...Object.entries(PREVIEWS), ...['landowner', 'biffyA', 'biffyB', 'sam', 'geese'].map((gag) => [`${gag} on Baldonnel`, { gag, region: 'baldonnel', level: 1 }]), ["the crew photo, on the finale's stage", { gag: 'photo', region: 'finale', level: 0 }]];
+for (const [name, { gag, region, level }] of CASES) {
   if (OWN_CLOCK.includes(gag)) continue;
+  // (`REGION=baldonnel` holds one region's.)
+  if (process.env.REGION && process.env.REGION !== region) continue;
   // (Aurora Howl plays at night only: its level is pinned to night; with reduced motion nothing in the night sky moves.)
   await page.goto(ROOT + `?cover=0&gagtest=1&night=${gag === 'aurora' ? 1 : 0}&magpie=0&worker=0&moose=0`, { waitUntil: 'networkidle' });
   await page.evaluate((p) => { localStorage.clear(); localStorage.setItem('rush-hour-rigs:v2', p); }, UNLOCKED);
   await page.reload({ waitUntil: 'networkidle' });
-  await page.locator('.region-tab').nth(REGIONS.findIndex((r) => r.id === region)).click();
-  await page.locator('.level-btn').nth(level - 1).click();
-  await page.waitForSelector('.board .truck.sprite-on');
+  if (region === 'finale') { await page.goto(ROOT + '?cover=0&gagtest=1&night=0&finale=stage', { waitUntil: 'networkidle' }); await page.waitForSelector('.screen.finale .board'); }
+  else {
+    await page.locator('.region-tab').nth(REGIONS.findIndex((r) => r.id === region)).click();
+    await page.locator('.level-btn').nth(level - 1).click();
+    await page.waitForSelector('.board .truck.sprite-on');
+  }
   // Everything on the board settled first (season coats and other images arrive after the sprites).
   await page.waitForLoadState('networkidle');
   await page.evaluate(() => Promise.all([...document.images].filter((i) => !i.complete).map((i) => new Promise((r) => { i.onload = i.onerror = r; }))));
@@ -76,7 +85,10 @@ for (const [name, { gag, region, level }] of Object.entries(PREVIEWS)) {
   const first = await shot();
   await page.evaluate(([g, t]) => window.__rhrGag.hold(g, t), [gag, end * 0.5]);
   await wait(60);
-  const middle = await shot();
+  let middle = await shot();
+  // (Half way through Half Dressed the hare is hiding, all but one eye, and the worker has not come in yet: that is the
+  // gag. Where the half-way frame shows next to nothing, a frame a third of the way in is looked at as well.)
+  if ((await diff(before, middle)).n <= 150) { await page.evaluate(([g, t]) => window.__rhrGag.hold(g, t), [gag, end * 0.3]); await wait(60); middle = await shot(); }
   await page.evaluate(([g, t]) => window.__rhrGag.hold(g, t), [gag, end]);
   await wait(60);
   const last = await shot();

@@ -5,6 +5,10 @@
 //
 // This file is the FIRST thing main.ts imports, so the copy is in place before anything reads or writes storage.
 
+import { padLink } from './daily-pads.ts';
+import { weekLink } from './turnaround.ts';
+import { isDev } from './version.ts';
+
 /** Is this page load the hidden demo link? */
 export const demoLink = (search: string = typeof location === 'undefined' ? '' : location.search): boolean => new URLSearchParams(search).get('demo') === '1';
 
@@ -35,7 +39,10 @@ export function keepInMemory(store: Storage): Map<string, string | null> {
   return mem;
 }
 
-if (typeof window !== 'undefined' && demoLink()) {
+/** The dev copy's `?pad=N` (try any Daily Pad: daily-pads.ts) saves nothing either: no streak, no hard hats, no log. */
+const tryingPad = (): boolean => isDev() && (padLink() !== null || weekLink() !== null); // (and `?week=N`, a Sunday Turnaround: turnaround.ts)
+
+if (typeof window !== 'undefined' && (demoLink() || tryingPad())) {
   try {
     keepInMemory(window.localStorage);
   } catch {

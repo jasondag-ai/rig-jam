@@ -6,8 +6,8 @@
 // session is "ambient", so the iPhone's silent switch mutes the game.
 import { haptic } from './haptics.ts';
 import { STEP_CELLS, chordLift, nextChain, winCue } from './cues.ts';
-import { GAG_LOOPS, GAG_SOUNDS, gagKeys, parseCue, type GagLoop } from './gag-sounds.ts';
-import { CORE_KEYS, LAZY_KEYS, MUSIC_FADE, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, sfxInfo, type MusicKey, type Scene, type SfxKey } from './pack.ts';
+import { FINALE_ID, FINALE_SOUNDS, GAG_LOOPS, GAG_SOUNDS, finaleKeys, gagKeys, parseCue, type GagLoop } from './gag-sounds.ts';
+import { CORE_KEYS, LAZY_KEYS, MUSIC_FADE, finaleTrack, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, sfxInfo, type MusicKey, type Scene, type SfxKey } from './pack.ts';
 import { loadAudioSettings, saveAudioSettings, type AudioSettings } from './settings.ts';
 import type { GagId } from '../ui/gag-triggers.ts';
 
@@ -39,8 +39,12 @@ class AudioEngine {
   private ringing = new Map<string, { src: AudioBufferSourceNode; gain: GainNode }[]>();
   private warmed = new Set<SfxKey>();
   private scene: Scene = 'menu';
+  /** In play: the level's music tier (pack.ts `PLAY_TIER`). Only Classic Rock has a loop for each. */
+  private tier = 1;
   private music: { key: MusicKey; src: AudioBufferSourceNode; gain: GainNode } | null = null;
   private wanted: MusicKey | null = null;
+  /** Music in place of the scene's loop: one track (the finale's credits), or 'silence' (after it, until the cover). */
+  private override: MusicKey | 'silence' | null = null;
   private installed = false;
   private meter: AnalyserNode | null = null;
 
@@ -134,10 +138,21 @@ class AudioEngine {
   }
 
   /** The menus or a level: each has its own loop of the chosen style. */
-  setScene(scene: Scene): void {
-    if (scene === this.scene) return;
+  setScene(scene: Scene, tier = 1): void {
+    if (scene === this.scene && tier === this.tier) return;
     this.scene = scene;
+    this.tier = tier;
     this.syncMusic();
+  }
+
+  /** Plays one track in place of the scene's loop (or nothing at all: 'silence'); null gives the scene its loop back. */
+  setOverride(what: MusicKey | 'silence' | null): void {
+    if (what === this.override) return;
+    this.override = what;
+    this.syncMusic();
+  }
+  overrideNow(): MusicKey | 'silence' | null {
+    return this.override;
   }
 
   private applyLevels(): void {
@@ -329,27 +344,38 @@ class AudioEngine {
   /** Plays the loop for the chosen style and the scene, if Music is on; fades between loops. Fetched only now. */
   private syncMusic(): void {
     if (!this.ctx) return;
-    const want = this.settings.music ? musicKey(this.settings.style, this.scene) : null;
+    const want = !this.settings.music || this.override === 'silence' ? null : (this.override ?? musicKey(this.settings.style, this.scene, this.tier));
     if (want === this.wanted) return;
     this.wanted = want;
     const ctx = this.ctx;
-    const old = this.music;
-    if (old) {
+    const fadeOut = (m: { src: AudioBufferSourceNode; gain: GainNode }): void => {
+      m.gain.gain.cancelScheduledValues(ctx.currentTime);
+      m.gain.gain.setTargetAtTime(0, ctx.currentTime, MUSIC_FADE / 3);
+      m.src.stop(ctx.currentTime + MUSIC_FADE + 0.1);
+    };
+    // Music off: the loop that is playing fades away at once.
+    if (!want) {
+      if (this.music) fadeOut(this.music);
       this.music = null;
-      old.gain.gain.cancelScheduledValues(ctx.currentTime);
-      old.gain.gain.setTargetAtTime(0, ctx.currentTime, MUSIC_FADE / 3);
-      old.src.stop(ctx.currentTime + MUSIC_FADE + 0.1);
+      return;
     }
-    if (!want) return;
+    // A CHANGE OF LOOP IS A CROSSFADE WITH NO GAP (job U7): the loop that is playing PLAYS ON until the next one is
+    // fetched and decoded, and only then fades out as the new one fades in. (It used to fade out at once, and the
+    // first time a loop was wanted there was silence for as long as its file took to come.)
     const formats = pickFormat(musicInfo(want).formats, (type) => (typeof Audio === 'undefined' ? '' : new Audio().canPlayType(type)));
     const mp3 = musicInfo(want).formats.find((f) => f.type === 'audio/mpeg');
     const urls = [...new Set([...formats, ...(mp3 ? [mp3] : [])].map((f) => `music/${f.file}`))];
     void this.fetchBuffer(`music:${want}`, urls).then((buffer) => {
       // Still the loop that is wanted? (The player may have moved on while it loaded.)
-      if (!buffer || this.wanted !== want || this.music?.key === want) return;
+      if (this.wanted !== want || this.music?.key === want) return;
+      const old = this.music;
+      this.music = null;
+      if (old) fadeOut(old);
+      if (!buffer) return; // (it would not come: silence, rather than the wrong loop)
       const src = ctx.createBufferSource();
       src.buffer = buffer;
-      src.loop = true;
+      // (Every entry is a loop but the finale's credits track, which plays once and ends on its own fade.)
+      src.loop = musicInfo(want).loop !== false;
       const pts = loopPoints(buffer.getChannelData(0), buffer.sampleRate);
       src.loopStart = pts.start;
       src.loopEnd = pts.end;
@@ -448,10 +474,10 @@ export const sound = {
     audio.play('streak', { delay: 0.9 });
   },
   /** A level begins (its ground no longer changes the sound): the in-play music, a fresh exit chain. */
-  setGround(_g: Ground | null): void {
+  setGround(_g: Ground | null, tier = 1): void {
     chain = 0;
     lastExitAt = null;
-    audio.setScene('play');
+    audio.setScene('play', tier);
   },
   /** A level opens with these gags in it: fetch the sounds only they use (the rest are fetched with the switch). */
   warm(ids: GagId[]): void {
@@ -476,7 +502,37 @@ export const sound = {
 
   /** A gag reached a beat: play what the table says for it (gag-sounds.ts). */
   gag(id: GagId, beat: string): void {
-    for (const cue of GAG_SOUNDS[id]?.[beat] ?? []) {
+    sound.cues(id, GAG_SOUNDS[id]?.[beat] ?? []);
+  },
+  /** THE FINALE reached a beat of one of its parts (gag-sounds.ts `FINALE_SOUNDS`). Its loops stop with `finaleEnd`. */
+  finale(part: string, beat: string): void {
+    sound.cues(FINALE_ID, FINALE_SOUNDS[part]?.[beat] ?? []);
+  },
+  /** The finale is to play: fetch the sounds only it uses. */
+  finaleWarm(): void {
+    audio.warm(finaleKeys().filter((k) => LAZY_KEYS.includes(k)));
+  },
+  /** The finale is over, or was left: whatever it had running or still to come stops. */
+  finaleEnd(): void {
+    sound.gagEnd(FINALE_ID as GagId);
+  },
+  /** The finale's credits: the menu loop of the player's music style, if Music is on. */
+  finaleCredits(): void {
+    audio.setScene('menu');
+    // The graduation music, once it is in the pack (pack.ts `finaleTrack`); until then the menu loop plays on.
+    audio.setOverride(finaleTrack());
+  },
+  /** The credits lift: the graduation music fades out, and it stays quiet for Still Here (the menu loop is back at the cover). With no track yet, the menu loop simply plays on. */
+  finaleCreditsOver(): void {
+    if (audio.overrideNow() && audio.overrideNow() !== 'silence') audio.setOverride('silence');
+  },
+  /** The finale hands over to the cover, or is left: the scene's own music again. */
+  finaleMusicOver(): void {
+    audio.setOverride(null);
+  },
+  /** Plays a list of cues for `id` (a gag, or the finale): one-shots now or after their delay, loops started and stopped. */
+  cues(id: string, list: readonly string[]): void {
+    for (const cue of list) {
       const { op, name, delay, semis } = parseCue(cue);
       const act = () => {
         if (op === 'play') return audio.play(name as SfxKey, semis ? { rate: 2 ** (semis / 12) } : {});

@@ -1,7 +1,7 @@
 {
   "name": "rig-jam",
   "private": true,
-  "version": "0.9.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,9 @@
     "test:e2e": "node e2e/taps.e2e.mjs",
     "test:e2e:gags": "node e2e/magpie.e2e.mjs && node e2e/eggs.e2e.mjs && node e2e/strip.e2e.mjs && node e2e/eggs2.e2e.mjs",
     "test:e2e:audio": "node e2e/audio.e2e.mjs",
+    "test:e2e:devlane": "node e2e/dev-lane.e2e.mjs",
+    "test:e2e:baldonnel": "node e2e/baldonnel.e2e.mjs",
+    "test:e2e:fling": "node e2e/fling.e2e.mjs",
     "test:e2e:judge": "node e2e/judge.e2e.mjs",
     "test:e2e:sightings": "node e2e/every-sighting.e2e.mjs",
     "test:e2e:save": "node e2e/save.e2e.mjs",
@@ -45,6 +48,7 @@
     "test:e2e:quick": "node e2e/quick.e2e.mjs",
     "test:e2e:offline": "node e2e/offline.e2e.mjs",
     "test:e2e:depth": "node e2e/depth.e2e.mjs",
+    "test:e2e:finale": "node e2e/finale.e2e.mjs",
     "test:e2e:gagsounds": "node e2e/gag-sounds.e2e.mjs"
   },
   "devDependencies": {

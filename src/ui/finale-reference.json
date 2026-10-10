@@ -1,0 +1,311 @@
+{
+ "card": {
+  "dur": 6.0,
+  "beats": [
+   [
+    0.0,
+    "The last truck leaves. Every level at par and every sighting found."
+   ],
+   [
+    0.3,
+    "The Perfect Game card pops up. Hard-hat confetti behind it."
+   ],
+   [
+    0.9,
+    "Three big hard hats pop in, one by one."
+   ],
+   [
+    1.5,
+    "The Zero Incident medal on the shoulder."
+   ],
+   [
+    1.8,
+    "Every sighting found: 40 of 40."
+   ],
+   [
+    2.4,
+    "The Company Man appears..."
+   ],
+   [
+    3.0,
+    "...and, for the first time ever, smiles. “Huh. Not bad.”"
+   ],
+   [
+    3.3,
+    "One button: Crew photo."
+   ],
+   [
+    5.2,
+    "Tap."
+   ]
+  ]
+ },
+ "photo": {
+  "dur": 9.2,
+  "beats": [
+   [
+    0.0,
+    "The crew is lined up on the strip, facing a camera on a tripod. Slow Moe peers through it."
+   ],
+   [
+    0.45,
+    "“Squeeze in!”"
+   ],
+   [
+    1.65,
+    "He sets the self-timer. Beep... beep..."
+   ],
+   [
+    1.9,
+    "Hurries to his spot."
+   ],
+   [
+    3.0,
+    "Hop-turn. Big grin, thumbs up."
+   ],
+   [
+    3.6,
+    "The magpie flies in..."
+   ],
+   [
+    4.5,
+    "...and lands on his hard hat."
+   ],
+   [
+    4.65,
+    "Moe’s eyes roll up. Frozen grin. Don’t move."
+   ],
+   [
+    5.0,
+    "Beep-beep-beep-beep."
+   ],
+   [
+    5.3,
+    "Tail up."
+   ],
+   [
+    5.86,
+    "SPLAT. FLASH. At the same moment."
+   ],
+   [
+    6.05,
+    "The photo drops onto the screen: the crew, smiling; Moe, eyes up, splat on his hat."
+   ],
+   [
+    6.15,
+    "Heh heh. The magpie is very pleased."
+   ],
+   [
+    6.85,
+    "It flies off."
+   ],
+   [
+    7.5,
+    "Moe glares after it. “Seriously?”"
+   ]
+  ]
+ },
+ "credits": {
+  "dur": 13.0,
+  "beats": [
+   [
+    0.0,
+    "The screen goes dark. The photo slides up to the top."
+   ],
+   [
+    0.8,
+    "The credits roll up under it."
+   ],
+   [
+    11.0,
+    "“Thanks for playing.” Holds."
+   ],
+   [
+    12.0,
+    "Fade back up: the empty lease. The crew has gone; the biffy’s light is red."
+   ]
+  ],
+  "rows": [
+   [
+    "Rig Jam",
+    "title"
+   ],
+   [
+    "Built by Jay Dagenais,",
+    "line"
+   ],
+   [
+    "directing AI (Claude)",
+    "line"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "STARRING",
+    "head"
+   ],
+   [
+    "Slow Moe as himself",
+    "line"
+   ],
+   [
+    "The bearded worker",
+    "line"
+   ],
+   [
+    "Safety Sam",
+    "line"
+   ],
+   [
+    "The camp cook",
+    "line"
+   ],
+   [
+    "The Company Man",
+    "line"
+   ],
+   [
+    "The landowner",
+    "line"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "AND",
+    "head"
+   ],
+   [
+    "The magpie (again)",
+    "line"
+   ],
+   [
+    "The bear (legendary)",
+    "line"
+   ],
+   [
+    "The bison, the bull and the cow",
+    "line"
+   ],
+   [
+    "and every other sighting",
+    "line"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "FILMED ON LOCATION",
+    "head"
+   ],
+   [
+    "Cardium, Montney, Duvernay,",
+    "line"
+   ],
+   [
+    "Mannville, Bakken,",
+    "line"
+   ],
+   [
+    "Clearwater and Baldonnel",
+    "line"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "PLAY-TESTED BY",
+    "head"
+   ],
+   [
+    "The Dagenais family",
+    "line"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "No trucks were harmed",
+    "line"
+   ],
+   [
+    "in the making of this game.",
+    "line"
+   ],
+   [
+    "(Moe was, a little.)",
+    "small"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "Thanks for playing",
+    "end"
+   ]
+  ]
+ },
+ "still": {
+  "dur": 12.0,
+  "beats": [
+   [
+    0.0,
+    "The empty lease. Quiet. Only the biffy to look at, its light red."
+   ],
+   [
+    0.6,
+    "The view closes in on the biffy."
+   ],
+   [
+    2.2,
+    "Creeeak. The door swings open."
+   ],
+   [
+    2.95,
+    "Slow Moe leans out: bathrobe, pyjamas, slippers, hard hat, brushing his teeth."
+   ],
+   [
+    4.2,
+    "Stops. Notices you."
+   ],
+   [
+    4.6,
+    "Takes the toothbrush out. “You’re still here?”"
+   ],
+   [
+    6.8,
+    "“Shift’s over. Go home.”"
+   ],
+   [
+    8.9,
+    "Brush back in. Scrub scrub. Leans back in."
+   ],
+   [
+    9.6,
+    "Creeeak. The door shuts."
+   ],
+   [
+    10.6,
+    "Fade to the game’s own opening screen, exactly as when the app opens: the cover image with the roughneck and his wrench, RIG JAM, TAP TO START."
+   ]
+  ]
+ },
+ "lines": {
+  "squeeze": "Squeeze in!",
+  "seriously": "Seriously?",
+  "still": "You're still here?",
+  "home": "Shift's over. Go home.",
+  "company": "Huh. Not bad."
+ }
+}

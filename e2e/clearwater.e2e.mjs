@@ -5,7 +5,7 @@
 //  - a drag moves a truck, Undo takes it back, Hint lights a truck and then shows where it goes
 //  - ALL 10 LEVELS are played through the solver's solution by dragging and cleared at par with three hard hats (at 390)
 //  - no gag plays on a Big Pad
-// Screenshots go to ~/Desktop/RHR Art Inbox/qc/clearwater/. Run with the dev server up: npm run test:e2e:clearwater
+// Screenshots go to qc-out/clearwater/ in the repo. Run with the dev server up: npm run test:e2e:clearwater
 import { webkit } from 'playwright';
 import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -13,9 +13,10 @@ import { join } from 'node:path';
 import { REGIONS } from '../src/levels/regions.ts';
 import { solve } from '../src/engine/index.ts';
 import { DEMO, UNLOCKED } from './progress.mjs';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'qc', 'clearwater');
+const OUT = outDir('clearwater');
 mkdirSync(OUT, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;
@@ -76,7 +77,7 @@ console.log('\nwebkit: Clearwater on the level list');
 {
   const fresh = await open(null);
   const tabs = await fresh.page.$$eval('.region-tab', (ts) => ts.map((t) => ({ name: t.querySelector('.rtext').textContent, locked: t.classList.contains('locked'), text: t.textContent })));
-  check(tabs.length === 6 && tabs[5].name === 'Clearwater' && tabs[4].name === 'Bakken', `six tabs, Clearwater after Bakken (${tabs.map((t) => t.name).join(', ')})`);
+  check(tabs.length === REGIONS.length && tabs[5].name === 'Clearwater' && tabs[4].name === 'Bakken', `${tabs.length} tabs, Clearwater after Bakken (${tabs.map((t) => t.name).join(', ')})`);
   check(tabs[5].locked && /Bakken/.test(tabs[5].text), `locked on a fresh phone: "${tabs[5].text.replace(/\s+/g, ' ').trim()}"`);
   await fresh.context.close();
 

@@ -24,6 +24,13 @@ const BUILD: string = (() => {
   }
 })();
 
+/**
+ * THE CHANNEL: 'live' (the game at /rig-jam/) or 'dev' (the dev lane's copy at /rig-jam-next/, built by the same
+ * Action in the repo rig-jam-next). `RIG_CHANNEL=dev` forces it for a local build or dev server. A dev build wears
+ * a DEV label (version.ts) and keeps its offline cache under its own name (service-worker.ts).
+ */
+const CHANNEL: 'live' | 'dev' = (process.env.RIG_CHANNEL ?? (process.env.GITHUB_REPOSITORY?.endsWith('-next') ? 'dev' : 'live')) === 'dev' ? 'dev' : 'live';
+
 /** Writes dist/sw.js listing every built file, versioned by their content, and dist/version.json (what an open copy checks to see if it is out of date: src/ui/update.ts). */
 function serviceWorker(): Plugin {
   return {
@@ -34,12 +41,12 @@ function serviceWorker(): Plugin {
       // (Music is fetched only when the player turns it on, never ahead of time: it is not precached.)
       const pub = publicFiles().filter((f) => !f.endsWith('.DS_Store') && !f.startsWith('audio/music/'));
       const fingerprint = [...built, ...pub.map((f) => `${f}:${hashOf(readFileSync(join('public', f), 'latin1'))}`)];
-      this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: VERSION, build: BUILD }) });
+      this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: VERSION, build: BUILD, ...(CHANNEL === 'dev' ? { channel: 'dev' } : {}) }) });
       this.emitFile({
         type: 'asset',
         fileName: 'sw.js',
         // (The page, its script and its styles are the core: the install waits on those; the rest fills in.)
-        source: serviceWorkerSource([...built, ...pub], hashOf(fingerprint.join('|')), [...built.filter((f) => /\.(js|css|html)$/.test(f)), 'index.html']),
+        source: serviceWorkerSource([...built, ...pub], hashOf(fingerprint.join('|')), [...built.filter((f) => /\.(js|css|html)$/.test(f)), 'index.html'], CHANNEL),
       });
     },
   };
@@ -49,7 +56,7 @@ function serviceWorker(): Plugin {
 export default defineConfig({
   base: './',
   server: { host: true },
-  define: { __APP_VERSION__: JSON.stringify(VERSION), __APP_BUILD__: JSON.stringify(BUILD) },
+  define: { __APP_VERSION__: JSON.stringify(VERSION), __APP_BUILD__: JSON.stringify(BUILD), __APP_CHANNEL__: JSON.stringify(CHANNEL) },
   plugins: [serviceWorker()],
   test: { include: ['src/**/*.test.ts', 'tools/**/*.test.ts'] },
 });

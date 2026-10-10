@@ -1,14 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PRECACHE_BATCH, PRECACHE_TRIES, serviceWorkerSource } from '../../tools/service-worker.ts';
 import { CHECK_MS, UPDATE_TEXT, fetchLive, isNewer, watchForUpdates } from './update.ts';
-import { APP, versionText } from './version.ts';
+import { APP, isDev, versionText } from './version.ts';
 
 describe('the version', () => {
   it('is set at build time and reads "Version x.y.z (build)"', () => {
     expect(APP.version).toMatch(/^\d+\.\d+\.\d+$/);
     expect(APP.build.length).toBeGreaterThan(0);
     expect(versionText({ version: '0.9.0', build: 'a1b2c3d' })).toBe('Version 0.9.0 (a1b2c3d)');
-    expect(versionText()).toBe(`Version ${APP.version} (${APP.build})`);
+    // (This test also runs in the dev repo's own Action, where the build IS the dev copy.)
+    expect(versionText()).toBe(`Version ${APP.version} (${APP.build})${isDev() ? ' DEV' : ''}`);
+    // The dev lane's copy says so; the live game never does.
+    expect(versionText({ version: '0.9.0', build: 'a1b2c3d', channel: 'dev' })).toBe('Version 0.9.0 (a1b2c3d) DEV');
+    expect(versionText({ version: '0.9.0', build: 'a1b2c3d', channel: 'live' })).toBe('Version 0.9.0 (a1b2c3d)');
+    expect(['live', 'dev']).toContain(APP.channel);
+    expect(isDev()).toBe(APP.channel === 'dev');
+    expect(isDev({ channel: 'live' })).toBe(false);
+    expect(isDev({ channel: 'dev' })).toBe(true);
   });
 });
 

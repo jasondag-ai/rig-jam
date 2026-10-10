@@ -49,9 +49,9 @@ function worker(o){
  let torso=`<rect x="-15" y="-78" width="30" height="42" rx="9" fill="${S[0]}"/>`;
  if(o.plaid)torso+=`<path d="M-6 -77V-37M5 -77V-37M-14 -64H14M-14 -50H14" stroke="#7d2219" stroke-width="2.2" opacity=".75"/>`;
  else if(o.apron)torso+=`<path d="M-3 -70 H15 V-36 H-3 z" fill="#fbfaf6" stroke="${OL}" stroke-width="1.8"/><path d="M-3 -70 L-12 -77" stroke="${OL}" stroke-width="1.6"/>`;
- else torso+=`<rect x="-14" y="-55" width="28" height="3.4" fill="${C.stripe}"/><rect x="4" y="-71" width="6" height="8" rx="1.5" fill="#f08a24" stroke="${OL}" stroke-width="1.6"/>`;
+ else if(!o.plain)torso+=`<rect x="-14" y="-55" width="28" height="3.4" fill="${C.stripe}"/><rect x="4" y="-71" width="6" height="8" rx="1.5" fill="#f08a24" stroke="${OL}" stroke-width="1.6"/>`;
  if(o.mud>0)torso+=`<path d="M-15 -49 q4 5 8 0 q4 6 8 0 q4 5 8 0 q3 4 7 0 V-36 H-15 z" fill="${C.mud}" opacity="${r2(clamp(o.mud))}"/>`;
- torso+=`<rect x="-15" y="-78" width="30" height="42" rx="9" fill="none" ${sw()}/>`;
+ torso+=(o.torsoItem||'')+`<rect x="-15" y="-78" width="30" height="42" rx="9" fill="none" ${sw()}/>`;
  const ey=1;let eye='';
  if(o.eye==='dizzy')eye=`<circle cx="7" cy="${ey}" r="6.4" fill="#fff" ${sw(2.2)}/><path d="M7 ${ey} a1.3 1.3 0 0 1 2.6 0 a2.6 2.6 0 0 1 -5.2 0 a3.9 3.9 0 0 1 7.8 0" fill="none" stroke="${OL}" stroke-width="1.5" transform="rotate(${r2(o.spinEye||0)} 7 ${ey})"/>`;
  else if(o.eye==='closed')eye=`<path d="M2 ${ey} q5 4 10 0" fill="none" ${sw(2.4)}/>`;
@@ -62,8 +62,8 @@ function worker(o){
  const glasses=(o.eye==='wide'||o.noGlasses)?'':`<rect x="-2" y="${ey-8.5}" width="18" height="15" rx="6" fill="none" stroke="${OL}" stroke-width="1.4" opacity=".85"/><path d="M-2 ${ey-3} H-13" stroke="${OL}" stroke-width="1.4"/>`;
  const M={smile:`<path d="M7 11 q5 4 10 -1" fill="none" ${sw(2.2)}/>`,grin:`<path d="M6 9 q6 9 12 -1 z" fill="#6b2a20" ${sw(2)}/>`,o:`<ellipse cx="12" cy="12" rx="2.6" ry="3" fill="#6b2a20" ${sw(1.8)}/>`,O:`<ellipse cx="12" cy="11" rx="4.2" ry="5.2" fill="#6b2a20" ${sw(2)}/>`,flat:`<path d="M8 12 h8" fill="none" ${sw(2.2)}/>`,frown:`<path d="M7 13 q5 -5 10 0" fill="none" ${sw(2.2)}/>`,grit:`<rect x="6" y="8.5" width="12" height="6" rx="2" fill="#fff" ${sw(2)}/><path d="M10 8.5 v6 M14 8.5 v6" stroke="${OL}" stroke-width="1.4"/>`,pant:`<ellipse cx="12" cy="12" rx="3.6" ry="4.4" fill="#6b2a20" ${sw(2)}/>`};
  const skin=o.flushC||C.skin;
- const hat=o.noHat?'':`<g transform="translate(0 ${r2(-11-o.hatLift)}) rotate(${r2(o.hatRot)})">${o.hat==='cowboy'?cowHat():o.hat==='toque'?toque():hardHat(o.hatC)}</g>`;
- const head=`<g transform="translate(2 -94) rotate(${r2(o.headRot)})"><circle cx="0" cy="0" r="17" fill="${skin}" ${sw()}/><circle cx="-10" cy="3" r="4" fill="${skin}" ${sw(2.2)}/>${o.beard?`<path d="M-4 4 Q-3 19 8 19.5 Q18 19 19.6 7 Q13 12.5 7 12 Q1 11.5 -4 4 z" fill="#7a4f2e" ${sw(2)}/>`:''}${o.stubble?`<path d="M-3 7 Q1 16.5 10 16.5 Q16.5 15.5 17.6 9 Q8 13 -3 7 z" fill="${o.stubbleC||'#9c7656'}" opacity=".55"/><path d="M1 12 h.1 M5 14 h.1 M9 14.6 h.1 M13 13.6 h.1 M3.5 9.6 h.1" stroke="${OL}" stroke-width="1.3" stroke-linecap="round" opacity=".6"/>`:''}${o.blush?`<ellipse cx="5" cy="9" rx="5" ry="2.8" fill="#e8786a" opacity="${r2(o.blush)}"/>`:''}${eye}${glasses}<circle cx="17" cy="4" r="3.6" fill="${C.skinD}" ${sw(2)}/>${M[o.mouth]||''}${o.tache?`<path d="M7 8 q5 -3 11 0 q2 4 -2 4 q-3 -2 -4 0 q-4 1 -5 -4 z" fill="#ddd6ca" ${sw(1.8)}/>`:''}<path d="M1 ${ey-8.5} L13 ${r2(ey-8.5+o.brow)}" fill="none" ${sw(2.2)}/>${hat}</g>`;
+ const hat=o.noHat?'':`<g transform="translate(0 ${r2(-11-o.hatLift)}) rotate(${r2(o.hatRot)})">${o.hat==='cowboy'?cowHat():o.hat==='toque'?toque():hardHat(o.hatC)}${o.hatItem||''}</g>`;
+ const head=`<g transform="translate(2 -94) rotate(${r2(o.headRot)})"><circle cx="0" cy="0" r="17" fill="${skin}" ${sw()}/><circle cx="-10" cy="3" r="4" fill="${skin}" ${sw(2.2)}/>${o.beard?`<path d="M-4 4 Q-3 19 8 19.5 Q18 19 19.6 7 Q13 12.5 7 12 Q1 11.5 -4 4 z" fill="#7a4f2e" ${sw(2)}/>`:''}${o.stubble?`<path d="M-3 7 Q1 16.5 10 16.5 Q16.5 15.5 17.6 9 Q8 13 -3 7 z" fill="${o.stubbleC||'#9c7656'}" opacity=".55"/><path d="M1 12 h.1 M5 14 h.1 M9 14.6 h.1 M13 13.6 h.1 M3.5 9.6 h.1" stroke="${OL}" stroke-width="1.3" stroke-linecap="round" opacity=".6"/>`:''}${o.blush?`<ellipse cx="5" cy="9" rx="5" ry="2.8" fill="#e8786a" opacity="${r2(o.blush)}"/>`:''}${eye}${glasses}<circle cx="17" cy="4" r="3.6" fill="${o.noseC||C.skinD}" ${sw(2)}/>${M[o.mouth]||''}${o.faceItem||''}${o.tache?`<path d="M7 8 q5 -3 11 0 q2 4 -2 4 q-3 -2 -4 0 q-4 1 -5 -4 z" fill="#ddd6ca" ${sw(1.8)}/>`:''}<path d="M1 ${ey-8.5} L13 ${r2(ey-8.5+o.brow)}" fill="none" ${sw(2.2)}/>${hat}</g>`;
  const sx=o.s*o.face*(1+o.sq),sy=o.s*(1-o.sq);
  return`<g ${o.clip?`clip-path="url(#${o.clip})"`:''}><g transform="translate(${r2(o.x)} ${r2(o.y)}) scale(${r2(sx)} ${r2(sy)})"><g transform="translate(0 ${r2(o.bob)})"><g transform="rotate(${r2(o.lean)} 0 -40)">${arm(o.armB,S[1],o.handB)}</g>${leg(o.legB,L[1],o.sockB)}${leg(o.legF,L[0],false)}<g transform="rotate(${r2(o.lean)} 0 -40)">${torso}${head}${arm(o.armF,S[0],o.hand)}</g></g></g></g>`;}
 
@@ -162,6 +162,11 @@ const MUSKEG=(()=>{let s='';[[150,152,40,8.5,4],[92,161,16,4,9],[352,147,13,3.6,
 /* The game moved ONE thing in the scenery above: the small left puddle and its cattail stand 54 px
    further right (at 92, not 38), clear of the sleepy worker's spot by the screen's left edge. */
 export { GY, OL, C, MUSKEG, bale, sfx, r2, rng, tuft, worker as w3worker, cat, beaver, coyote, pdog };
+// (For the Baldonnel sightings, bald-gags.ts: the same helpers and puppets. `worker` is the Clearwater reference's, with the
+// Baldonnel reference's two additions, a thing on the hat (`hatItem`) and a nose colour (`noseC`), and the finale reference's
+// three, a plain suit with no stripes (`plain`), a thing on the chest (`torsoItem`) and one at the mouth (`faceItem`): none
+// of them changes anything an older gag draws.)
+export { clamp, seg, io, es, inr, lerp, hop, kf, sw, mix, walk, note, hardHat, handW, blob, MOE, BEARD, puff, pickup, THUMB };
 function tuft(x,y,c){return`<path d="M${x-4} ${y} l2 -6 l2 6 l2 -5 l2 5" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`;}
 
 /* ================= gags ================= */

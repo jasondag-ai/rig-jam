@@ -83,6 +83,39 @@ for (const [name, engine, flaky] of [['chromium', chromium, false], ['chromium, 
     offline = { error: e.message.split('\n')[0] };
   }
   check(!!offline && !offline.error && offline.trucks > 0 && offline.ctrl, `with the network gone, a fresh page loads from the cache and a level opens with its truck sprites (${offline?.error ?? offline?.trucks + ' trucks'})`);
+  // DAILY PADS FOREVER (job U2): a pad after the 60th is not in the game's script but in a file beside the page, which
+  // the worker keeps. With the network still gone and the phone's date at Dec 1, 2026, that day's pad (63) opens.
+  let pad = null;
+  try {
+    const later = await context.newPage();
+    await later.clock.setFixedTime(new Date(2026, 11, 1, 12, 0, 0));
+    await later.goto(`${ROOT}?cover=0`, { waitUntil: 'load', timeout: 20000 });
+    await later.waitForSelector('.daily-btn', { timeout: 10000 });
+    const title = await later.locator('.daily-title').textContent();
+    await later.locator('.daily-btn').click();
+    await later.waitForSelector('.board .truck.sprite-on', { timeout: 10000 });
+    pad = { title, hud: (await later.evaluate(() => document.querySelector('.hud').textContent)).replace(/\s+/g, ' '), trucks: await later.locator('.board .truck').count() };
+  } catch (e) {
+    pad = { error: e.message.split('\n')[0] };
+  }
+  check(!!pad && !pad.error && pad.title === 'Daily Pad #63' && pad.hud.includes('Daily Pad #63') && pad.trucks >= 5, `still with no network, on Dec 1, 2026: "${pad?.title}" opens from the cache with its ${pad?.trucks} trucks${pad?.error ? ' (' + pad.error + ')' : ''}`);
+  // SUNDAY TURNAROUND (job U3): its pads are files beside the page too. Still with no network, on Dec 1, 2026 (week 8),
+  // with demo mode opening it: the week's big pad opens from the cache.
+  let turn = null;
+  try {
+    const later = await context.newPage();
+    await later.clock.setFixedTime(new Date(2026, 11, 1, 12, 0, 0));
+    await later.addInitScript(() => localStorage.setItem('rush-hour-rigs:v2', JSON.stringify({ best: {}, hints: 3, perfect: [], dailyCleared: [], demo: true, announced: [], standDowns: [] })));
+    await later.goto(`${ROOT}?cover=0`, { waitUntil: 'load', timeout: 20000 });
+    await later.waitForSelector('.turn-btn', { timeout: 10000 });
+    const title = await later.locator('.turn-title').textContent();
+    await later.locator('.turn-btn').click();
+    await later.waitForSelector('.board.big-pad .truck.sprite-on', { timeout: 10000 });
+    turn = { title, hud: (await later.evaluate(() => document.querySelector('.hud').textContent)).replace(/\s+/g, ' '), trucks: await later.locator('.board .truck').count() };
+  } catch (e) {
+    turn = { error: e.message.split('\n')[0] };
+  }
+  check(!!turn && !turn.error && turn.title === 'Sunday Turnaround #8' && turn.hud.includes('Turnaround #8') && turn.trucks >= 14, `still with no network: "${turn?.title}" opens from the cache with its ${turn?.trucks} trucks${turn?.error ? ' (' + turn.error + ')' : ''}`);
   await browser.close();
 }
 server.close();

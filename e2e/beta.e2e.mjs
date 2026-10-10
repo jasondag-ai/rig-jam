@@ -17,9 +17,10 @@ import { join } from 'node:path';
 import { REGIONS } from '../src/levels/regions.ts';
 import { solve } from '../src/engine/index.ts';
 import { FEEDBACK_EMAIL } from '../src/ui/feedback.ts';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const OUT = outDir('fit_check');
 mkdirSync(OUT, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;
@@ -127,7 +128,8 @@ for (const phone of PHONES) {
     await page.waitForSelector('.settings .card');
     await wait(250);
     const set = await page.evaluate(() => { const v = document.querySelector('.settings .app-version'), ask = document.querySelector('.settings .step.ask'), credits = document.querySelector('.settings .step.credits'); const vis = [...ask.children].filter((c) => c !== v && c.getBoundingClientRect().height > 0); return { version: v?.textContent, last: vis.every((c) => c.getBoundingClientRect().bottom <= v.getBoundingClientRect().top + 1), credits: getComputedStyle(credits).display, feedback: !!document.querySelector('.settings .feedback') }; });
-    check(/^Version \d+\.\d+\.\d+ \(\w+\)$/.test(set.version ?? '') && set.last, `the version number is at the bottom of Settings: "${set.version}"`);
+    check(/^Version \d+\.\d+\.\d+ \(\w+\)( DEV)?$/.test(set.version ?? '') && set.last, // (" DEV" on the dev lane's copy)
+      `the version number is at the bottom of Settings: "${set.version}"`);
     check(set.credits === 'none', 'the Credits list stays hidden until Credits is tapped');
     check(set.feedback === (FEEDBACK_EMAIL !== ''), FEEDBACK_EMAIL ? 'the Send feedback row is there' : 'no feedback address is set yet, so the Send feedback row is not shown');
     const a4 = await audit(page);

@@ -3,7 +3,7 @@ import type { Season } from './trees.ts';
 // Seasonal looks. A theme is a set of CSS variables plus a ground style for the pad.
 // To give a new region a season, add (or reuse) a theme here and set `theme` on the region.
 
-export type ThemeId = 'summer' | 'spring' | 'winter' | 'fall' | 'prairie' | 'boreal';
+export type ThemeId = 'summer' | 'spring' | 'winter' | 'fall' | 'prairie' | 'boreal' | 'thaw';
 
 /** The pad's surface: picks the base image, the ground detail (lease-detail.ts), the berm and the tracks. */
 export type Ground = 'gravel' | 'mud' | 'snow';
@@ -203,6 +203,34 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--tree-bark': '#ece6da',
       '--tree-frost': NONE,
       '--ob-ground': 'rgba(100, 80, 40, 0.22)',
+    },
+  },
+  // Baldonnel, northeast BC at spring breakup: last year's dead khaki grass with the last snow lying in it (the
+  // reference strip's #9a8c5e), black spruce and bare aspen, a pale washed sky. The pad is frost-firm grey gravel,
+  // cold and a step lighter than Montney's mud, so the dark thawed patches (floor-art.ts `soft`) read at a glance.
+  thaw: {
+    id: 'thaw',
+    name: 'Spring breakup',
+    ground: 'gravel',
+    spruceShare: 0.8,
+    season: 'thaw',
+    trees: 0.8,
+    vars: {
+      '--sky-top': '#7fa9c9',
+      '--sky-bottom': '#e6edf0',
+      '--ground': '#968f5e',
+      '--ground-dark': '#6f6942',
+      '--pad': '#b0a898',
+      '--pad-light': '#cbc4b6',
+      '--pad-dark': '#6f685c',
+      '--accent': '#ffc21a',
+      '--tree-spruce': '#2a4a38',
+      '--tree-spruce-dark': '#1c3327',
+      '--tree-aspen': '#9aa86a',
+      '--tree-aspen-dark': '#7a8850',
+      '--tree-bark': '#ece8dd',
+      '--tree-frost': NONE,
+      '--ob-ground': 'rgba(60, 54, 44, 0.24)',
     },
   },
 };

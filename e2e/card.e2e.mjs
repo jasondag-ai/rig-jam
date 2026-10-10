@@ -6,7 +6,7 @@
 //    hard hats are centered as one group
 //  - the Zero Incident medal is whole, on screen and on top
 //  - confetti: on a perfect solve only, behind the card, gone in about 1.5 s; none with reduced motion
-// Saves screenshots (card_*) to OUT (default ~/Desktop/RHR Art Inbox/fit_check).
+// Saves screenshots (card_*) to OUT (default qc-out/fit_check in the repo; see out.mjs).
 // Run: npm run dev -- --host   (in one terminal), then:  npm run test:e2e:card
 import { UNLOCKED } from './progress.mjs';
 import { chromium, webkit } from 'playwright';
@@ -17,9 +17,10 @@ import { join } from 'node:path';
 import { DAILY_LEVELS, REGIONS } from '../src/levels/regions.ts';
 import { dayKey, padLevelIndex, padNumber } from '../src/ui/daily.ts';
 import { getMoveRange, newGame, solve } from '../src/engine/index.ts';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const OUT = outDir('fit_check');
 mkdirSync(OUT, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;

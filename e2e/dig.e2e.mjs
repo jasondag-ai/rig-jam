@@ -23,11 +23,12 @@ import { BURIED, FORMATIONS } from '../src/ui/log-dig.ts';
 import { DEEP, ODDITIES } from '../src/ui/log-deep.ts';
 import { BURIED_LINES } from '../src/ui/lines.ts';
 import { LOG_ENTRIES } from '../src/ui/wildlife-log.ts';
+import { outDir } from './out.mjs';
 // (Dug Through is a hidden entry: no card until it is earned.)
 const SHOWN = LOG_ENTRIES.filter((e) => !e.hidden).length;
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const OUT = outDir('fit_check');
 mkdirSync(OUT, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;

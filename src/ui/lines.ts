@@ -12,7 +12,7 @@
 // ESCALATION: the same truck hitting the same kind of thing again in one level says the 2nd, then
 // the 3rd line of `ESCALATION` instead of a line from the pool.
 
-export type BumpHit = 'truck' | 'wall' | 'pumpjack' | 'tank' | 'wellhead' | 'flare' | 'convoy' | 'load' | 'shift';
+export type BumpHit = 'truck' | 'wall' | 'pumpjack' | 'tank' | 'wellhead' | 'flare' | 'convoy' | 'load' | 'shift' | 'soft';
 
 export const BUMP_LINES = {
   any: [
@@ -71,6 +71,8 @@ export const BUMP_LINES = {
   load: ["Can't leave empty. Rack first.", 'Load up, then the gate opens.', "I'm empty. Stop me on the rack."],
   // A truck driven at a shift-change gate on an odd move (Bakken). Its own pool only.
   shift: ['Wrong shift. Even moves only.', "Clock says no. It's open next move.", 'Shift change. Try on an even move.'],
+  // A rig (3 cells) pushed at a road ban patch, soft thawed ground (Baldonnel). Its own driver, its own pool only.
+  soft: ["Road ban. I'm too heavy for that.", 'Soft ground. Rigs stay off it.', "That patch won't hold me. Send a pickup.", "Not on that mud. I'd sink to the axles."],
   tank: [
     "That tank's full, by the way.",
     "Tank's not a bumper.",
@@ -105,15 +107,16 @@ export const ESCALATION: Record<BumpHit, [string, string]> = {
   convoy: ['Still not your turn.', '...'],
   load: ['Still empty. Rack first.', '...'],
   shift: ['Still the wrong shift.', '...'],
+  soft: ['Still too soft for me.', '...'],
   tank: ['Again?!', "I'm just gonna sit here."],
   wellhead: ['Again?!', "I'm just gonna sit here."],
   flare: ['Again?!', "I'm just gonna sit here."],
 };
 
 
-/** Lines that fit a bump: the "any" pool plus the pool for what was hit (convoy, load, shift: their own pool only, so the line explains the rule). */
+/** Lines that fit a bump: the "any" pool plus the pool for what was hit (convoy, load, shift, soft: their own pool only, so the line explains the rule). */
 export function linesFor(hit: BumpHit): string[] {
-  if (hit === 'convoy' || hit === 'load' || hit === 'shift') return [...BUMP_LINES[hit]];
+  if (hit === 'convoy' || hit === 'load' || hit === 'shift' || hit === 'soft') return [...BUMP_LINES[hit]];
   return [...BUMP_LINES.any, ...BUMP_LINES[hit]];
 }
 
@@ -137,6 +140,9 @@ export function bumpLine(hit: BumpHit, nth: number, last: string | null, random:
 //   par   – cleared at par
 //   close – one to three moves over par
 //   over  – worse than that
+/** Company Man lines that only make sense on a Daily Pad's win card (there is another one tomorrow). */
+export const DAILY_ONLY_LINES: readonly string[] = ['You can come back tomorrow.'];
+
 export const COMPANY_LINES = {
   par: [
     "Textbook. I'll tell head office.",
@@ -181,6 +187,30 @@ export const BALE_LINE = 'Hey!';
 export const FORE_LINE = 'Fore.';
 /** Dinner Bell and One Pea (Clearwater): the reference's own lines, by the key the gag says them under. */
 export const BELL_LINES: Record<string, string> = { supper: 'Supper!', save: 'Save me some!' };
+/**
+ * THE FINALE (finale.ts), the reference page's own words. Moe at the camera and after the splat; the Company Man on
+ * the Perfect Game card (the first time he has ever been pleased); Moe at the biffy door.
+ */
+export const FINALE_LINES = { squeeze: 'Squeeze in!', seriously: 'Seriously?', company: 'Huh. Not bad.', still: "You're still here?", home: "Shift's over. Go home." } as const;
+/** What the Polaroid says under the photo. */
+export const FINALE_PHOTO = { caption: 'The crew. Zero incidents.*', small: '*almost' } as const;
+/**
+ * THE CREDITS that roll under the photo: [text, kind]. JAY EDITS EVERY LINE (the page's first draft, as written).
+ * Kinds: `title`, `head` (a small gold heading), `line`, `small`, `gap` (a space), `end` (the last line, which stops and holds).
+ */
+export const FINALE_CREDITS: readonly (readonly [string, 'title' | 'head' | 'line' | 'small' | 'gap' | 'end'])[] = [
+  ['Rig Jam', 'title'], ['Built by Jay Dagenais,', 'line'], ['directing AI (Claude)', 'line'], ['', 'gap'],
+  ['STARRING', 'head'], ['Slow Moe as himself', 'line'], ['The bearded worker', 'line'], ['Safety Sam', 'line'], ['The camp cook', 'line'], ['The Company Man', 'line'], ['The landowner', 'line'], ['', 'gap'],
+  ['AND', 'head'], ['The magpie (again)', 'line'], ['The bear (legendary)', 'line'], ['The bison, the bull and the cow', 'line'], ['and every other sighting', 'line'], ['', 'gap'],
+  ['FILMED ON LOCATION', 'head'], ['Cardium, Montney, Duvernay,', 'line'], ['Mannville, Bakken,', 'line'], ['Clearwater and Baldonnel', 'line'], ['', 'gap'],
+  ['PLAY-TESTED BY', 'head'], ['The Dagenais family', 'line'], ['', 'gap'],
+  ['No trucks were harmed', 'line'], ['in the making of this game.', 'line'], ['(Moe was, a little.)', 'small'], ['', 'gap'], ['', 'gap'],
+  ['Thanks for playing', 'end'],
+];
+/** The finale's HUD: what stands where a level's number and name do. */
+export const FINALE_HUD: readonly [string, string] = ['Rig Jam', 'Perfect Game'];
+/** Baldonnel's lines, said in the game's own bubble (the reference page's, word for word): Right of Way, Last Ice, Lunch to Go. */
+export const BALD_LINES: Record<string, string> = { shoo: 'Shoo!', got: 'Got one!', hey: 'Hey!' };
 export const PEA_LINES: Record<string, string> = { carbs: 'Watching your carbs, Moe?' };
 export const LANDOWNER_LINES = ["Who's paying for these ruts?", "That's my hay field!", "I'm calling the land man.", 'Fix these ruts by Friday.'];
 const lastFrom = new Map<readonly string[], string>();
@@ -273,4 +303,12 @@ export const WITNESS_LINES = {
   wash: 'Missed a spot.',
   bell: 'Did somebody say supper?',
   pea: "Don't eat it all at once, Moe.",
+  // (Baldonnel: Claude's stand-ins, job U6b. Jay, write your own.)
+  overweight: "It's the boots, Moe. Has to be.",
+  cranes: 'Stick to trucking, Moe.',
+  bison: 'He was here first.',
+  hare: 'Pick a coat, buddy.',
+  ice: "That's why they call it last ice.",
+  frogs: "Somebody's off the beat.",
+  mosquito: 'First one of the year. Big one.',
 };

@@ -8,7 +8,7 @@ import { Worker, isMainThread, parentPort, workerData } from 'node:worker_thread
 import { assignKinds, assignTruckKinds, generate, isBetter, type Generated, type SearchOptions, type Slot } from './generator.ts';
 import type { Level } from '../src/engine/index.ts';
 
-interface SlotConfig extends Slot {
+export interface SlotConfig extends Slot {
   name: string;
   hint?: string;
   seed: number;
@@ -38,7 +38,8 @@ const HARD: Partial<SearchOptions> = { restarts: 40, iters: 3000, maxStates: 250
 // Difficulty ramps by par and truck count. `minExtra` = forced "make room" moves beyond one per truck.
 // Daily Pads: 60 medium levels with mixed obstacles, cheaper search than the hand-tuned ramps.
 const DAILY: Partial<SearchOptions> = { restarts: 15, iters: 400, maxStates: 30_000 };
-const DAILY_SLOTS: SlotConfig[] = Array.from({ length: 60 }, (_, i) => ({
+/** The slot of Daily Pad number i + 1. (`tools/gen-daily.ts` makes pads 61 and up from these same slots.) */
+export const dailySlot = (i: number, seed: number = 5000 + i): SlotConfig => ({
   name: `Daily Pad #${i + 1}`,
   trucks: i % 2 ? 6 : 5,
   pumpjacks: i % 2 ? 2 : 1,
@@ -46,9 +47,15 @@ const DAILY_SLOTS: SlotConfig[] = Array.from({ length: 60 }, (_, i) => ({
   maxPar: 8,
   minExtra: 1,
   decoys: 1,
-  seed: 5000 + i,
+  seed,
   search: DAILY,
-}));
+});
+const DAILY_SLOTS: SlotConfig[] = Array.from({ length: 60 }, (_, i) => dailySlot(i));
+/** The Daily Pads' seeds for the cosmetic looks (equipment, truck types), as in the `daily` region below. */
+export const DAILY_KIND_SEED = 6000, DAILY_TRUCK_KIND_SEED = 7000;
+export const SHARD_COUNT = 5;
+/** A Daily Pad as it is written to a file: its cosmetic looks dealt from the fixed seeds, by its place (i = pad - 1). */
+export const dressDaily = (level: Level, i: number): Level => ({ ...level, trucks: tankerKinds(assignTruckKinds(level.trucks, DAILY_TRUCK_KIND_SEED + i)), obstacles: withFlares(assignKinds(level.obstacles, DAILY_KIND_SEED + i), 'daily', i) });
 
 /**
  * The flare stack is an alternate look for some fixed obstacles: in Montney and Duvernay, every
@@ -187,7 +194,7 @@ function tankerKinds<T extends { length: number; load?: true; kind?: string }>(t
   return trucks.map((t) => (t.length !== 3 ? t : { ...t, kind: t.load ? (n++ % 2 ? 'vac' : 'water') : 'frac' }));
 }
 
-interface Job {
+export interface Job {
   id: string;
   slot: SlotConfig;
   shard: number;
@@ -224,7 +231,7 @@ function runJob({ slot, shard }: Job): Generated | null {
   return generate(slot, slot.seed * 100 + shard, { ...search, restarts });
 }
 
-function toLevel(id: string, slot: SlotConfig, g: Generated): Level {
+export function toLevel(id: string, slot: SlotConfig, g: Generated): Level {
   return {
     id,
     name: slot.name,
@@ -235,6 +242,7 @@ function toLevel(id: string, slot: SlotConfig, g: Generated): Level {
     obstacles: g.level.obstacles,
     muskeg: g.level.muskeg,
     racks: g.level.racks,
+    soft: [],
   };
 }
 
@@ -323,5 +331,7 @@ async function main() {
   process.exit(failed ? 1 : 0);
 }
 
-if (isMainThread) await main();
-else parentPort!.postMessage(runJob(workerData as Job));
+// (Run as a script it writes the level files; as a worker it does one job, for itself or for tools/gen-daily.ts;
+// imported by another tool it does nothing by itself.)
+if (!isMainThread) parentPort!.postMessage(runJob(workerData as Job));
+else if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()!)) await main();

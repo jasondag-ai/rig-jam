@@ -113,7 +113,7 @@ function parseFloor(raw: unknown, where: string, what: string, size: number): Fl
 /** Validates raw JSON and returns a Level, or throws LevelError explaining what is wrong. */
 export function parseLevel(raw: unknown): Level {
   if (!isObj(raw)) throw new LevelError('level must be an object');
-  const { id, name, par, hint, size: rawSize, trucks, gates, obstacles = [], muskeg = [], racks = [] } = raw;
+  const { id, name, par, hint, size: rawSize, trucks, gates, obstacles = [], muskeg = [], racks = [], soft = [] } = raw;
   if (typeof id !== 'string' || id === '') throw new LevelError('level id must be a string');
   const where = `level ${id}`;
   if (typeof name !== 'string') throw new LevelError(`${where}: name must be a string`);
@@ -127,6 +127,7 @@ export function parseLevel(raw: unknown): Level {
   if (!Array.isArray(obstacles)) throw new LevelError(`${where}: obstacles must be an array`);
   if (!Array.isArray(muskeg)) throw new LevelError(`${where}: muskeg must be an array`);
   if (!Array.isArray(racks)) throw new LevelError(`${where}: racks must be an array`);
+  if (!Array.isArray(soft)) throw new LevelError(`${where}: soft must be an array`);
 
   const level: Level = {
     id,
@@ -139,6 +140,7 @@ export function parseLevel(raw: unknown): Level {
     obstacles: obstacles.map((o) => parseCell(o, where, size)),
     muskeg: muskeg.map((c) => parseFloor(c, where, 'muskeg', size)),
     racks: racks.map((c) => parseFloor(c, where, 'load rack', size)),
+    soft: soft.map((c) => parseFloor(c, where, 'soft ground', size)),
   };
 
   const ids = new Set<string>();
@@ -160,13 +162,17 @@ export function parseLevel(raw: unknown): Level {
 
   // Muskeg and load racks are floor: trucks may stand on them, equipment may not, and a cell is one thing only.
   const floor = new Map<string, string>();
-  for (const [what, cells] of [['muskeg', level.muskeg], ['a load rack', level.racks]] as const) {
+  for (const [what, cells] of [['muskeg', level.muskeg], ['a load rack', level.racks], ['soft ground', level.soft]] as const) {
     for (const c of cells) {
       const at = `${c.row},${c.col}`;
       if (floor.has(at)) throw new LevelError(`${where}: ${what} at ${at} is on ${floor.get(at) === what ? 'another one' : floor.get(at)}`);
       if (level.obstacles.some((o) => o.row === c.row && o.col === c.col)) throw new LevelError(`${where}: ${what} at ${at} is under equipment`);
       floor.set(at, what);
     }
+  }
+  // Soft ground (a road ban patch) carries no rig: a 3-cell truck never starts on one.
+  for (const t of level.trucks.filter((x) => x.length === 3)) {
+    if (truckCells(t).some(([r, c]) => level.soft.some((k) => k.row === r && k.col === c))) throw new LevelError(`${where}: rig ${t.id} starts on soft ground`);
   }
   // A tanker that loads needs a rack it can reach: in its own lane, and not one it starts on (stopping there is the point).
   for (const t of level.trucks.filter((x) => x.load)) {

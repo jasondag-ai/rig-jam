@@ -1,0 +1,29 @@
+{
+ "build": "ba54c2b",
+ "version": "0.9.0",
+ "savedAt": "2026-10-10T20:38:25.758Z",
+ "day": "2026-10-10",
+ "note": "A real save, made by playing the LIVE build ba54c2b in WebKit (e2e/make-live-save.mjs) on 2026-10-10: Cardium 1 to 7 cleared (level 5 a move over par, the rest at par), sightings deer, geese, one hint spent, that day's Daily Pad (#11), sound settings {\"sfx\":true,\"music\":true,\"style\":\"chill\"}.",
+ "seen": {
+  "hats": [
+   3,
+   3,
+   3,
+   3,
+   2,
+   3,
+   3,
+   0,
+   0,
+   0
+  ],
+  "days": "Days without incident: 1"
+ },
+ "localStorage": {
+  "rush-hour-rigs-audio": "{\"sfx\":true,\"music\":true,\"style\":\"chill\"}",
+  "rush-hour-rigs:last-level": "Daily Pad #11",
+  "rush-hour-rigs:log": "{\"v\":3,\"found\":[\"deer\",\"geese\"],\"camo\":true,\"camoEarned\":false}",
+  "rush-hour-rigs:region": "cardium",
+  "rush-hour-rigs:v2": "{\"best\":{\"c01\":2,\"c02\":3,\"c03\":4,\"c04\":5,\"c05\":7,\"c06\":7,\"c07\":8,\"d11\":6},\"hints\":9,\"perfect\":[\"c01\",\"c02\",\"c03\",\"c04\",\"c06\",\"c07\",\"d11\"],\"dailyCleared\":[\"2026-10-10\"],\"demo\":false,\"announced\":[\"montney\"],\"standDowns\":[]}"
+ }
+}

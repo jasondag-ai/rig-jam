@@ -1,5 +1,5 @@
 // Screenshots of the three regions' level list screens in WebKit at 390x844, and one image with all
-// three side by side. Saved to OUT (default ~/Desktop/RHR Art Inbox/fit_check) as regions_*.png.
+// three side by side. Saved to OUT (default qc-out/fit_check in the repo; see out.mjs) as regions_*.png.
 // Also checks the three are different seasons. Run with the dev server up: node e2e/region-shots.mjs
 import { UNLOCKED } from './progress.mjs';
 import { webkit } from 'playwright';
@@ -8,9 +8,10 @@ import { execFileSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { REGIONS } from '../src/levels/regions.ts';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const OUT = outDir('fit_check');
 mkdirSync(OUT, { recursive: true });
 let failures = 0;
 const check = (ok, text) => {

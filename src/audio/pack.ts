@@ -36,13 +36,20 @@ export const VOLUME: Record<SfxKey, number> = {
   // Clearwater's sightings (Jay's five new files, levelled like the sound pass's): the hits a notch under the truck's bump,
   // the misses lighter, the triangle clear but not over the win.
   whoosh: 0.4, boing: 0.55, crack: 0.6, splash: 0.55, triangle: 0.5,
+  // Baldonnel's sightings and the finale (Manus's nine finished files, Jay's picks of the takes, Oct 10; copied as they are).
+  // Animal calls like the game's other animals; the frogs' chorus an ambience under the action; the magpie's chuckle a
+  // cartoon reaction; the self-timer a small device; the door's creak and the camera's whirr like the outhouse and the
+  // camera (the creak's file is quiet, so its place is a little lower to keep its peak in hand); the scrub well down.
+  crane_call: 0.5, frog_chorus: 0.42, frog_late: 0.45, bison_snort: 0.55, chuckle: 0.45, timer_beep: 0.4, scrub: 0.32, creak: 0.42, polaroid: 0.5,
 };
 /**
  * LAZY: the sounds only gag wave 3 uses (Mannville and Bakken). They are NOT fetched with the
  * rest when Sound effects is switched on: a level fetches the ones its own gags can play as it
  * opens (`sound.warm`), and any other is fetched the first time it is asked for.
  */
-export const LAZY_KEYS: SfxKey[] = ['squelch', 'shluck', 'blup', 'mew', 'yawn', 'pats', 'bonk', 'tailslap', 'shimmer', 'howl', 'rustle', 'whistle', 'squeak', 'aww', 'rumble', 'sigh', 'rain', 'umbrella', 'downpour', 'whoosh', 'boing', 'crack', 'splash', 'triangle'];
+export const LAZY_KEYS: SfxKey[] = ['squelch', 'shluck', 'blup', 'mew', 'yawn', 'pats', 'bonk', 'tailslap', 'shimmer', 'howl', 'rustle', 'whistle', 'squeak', 'aww', 'rumble', 'sigh', 'rain', 'umbrella', 'downpour', 'whoosh', 'boing', 'crack', 'splash', 'triangle',
+  // (Baldonnel's sightings and the finale: fetched only by a Baldonnel level or by the finale itself.)
+  'crane_call', 'frog_chorus', 'frog_late', 'bison_snort', 'chuckle', 'timer_beep', 'scrub', 'creak', 'polaroid'];
 /** Fetched as soon as Sound effects is on: everything else. */
 export const CORE_KEYS: SfxKey[] = SFX_KEYS.filter((k) => !LAZY_KEYS.includes(k));
 /** Every file is first brought to about this average level (dB), then given its place from VOLUME. */
@@ -59,17 +66,52 @@ export function gainFor(key: SfxKey): number {
 
 // ---------- Music ----------
 
-export type MusicStyle = 'country' | 'retro' | 'chill';
+export type MusicStyle = 'country' | 'retro' | 'chill' | 'classic';
 export const MUSIC_STYLES: { id: MusicStyle; name: string }[] = [
   { id: 'country', name: 'Country' },
   { id: 'retro', name: '80s Retro' },
   { id: 'chill', name: 'Chill' },
+  { id: 'classic', name: 'Classic Rock' },
 ];
 /** Where the player is: the menus (cover, level list, log) or a level. Each style has a loop for each. */
 export type Scene = 'menu' | 'play';
 export type MusicKey = keyof typeof pack.music;
-export const musicKey = (style: MusicStyle, scene: Scene): MusicKey => `${style}_${scene}` as MusicKey;
-export const musicInfo = (key: MusicKey): { seconds: number; mean: number; formats: { file: string; type: string }[]; crossfaded: boolean } => pack.music[key];
+/**
+ * CLASSIC ROCK GETS HEAVIER AS THE PLAYER MOVES UP THE REGIONS (job U7): it has four in-play loops, `classic_play1`
+ * (the calmest, 100 BPM) to `classic_play4` (the heaviest), and a level plays the one of its TIER. THE TABLE, the one
+ * place to retune it: a region's id (GameView's `regionId`; the Daily Pad's is 'daily') to its tier; anything not
+ * named is tier 1. (Sunday Turnaround, U3, and Baldonnel, U6, are to use tier 4: name them here when they come.)
+ * Country, 80s Retro and Chill have ONE in-play loop each, whatever the tier (`musicKey` falls back to it).
+ */
+export const PLAY_TIER: Record<string, number> = {
+  cardium: 1,
+  montney: 2,
+  duvernay: 3,
+  mannville: 4,
+  bakken: 4,
+  clearwater: 4, baldonnel: 4,
+  daily: 3,
+  turnaround: 4, // (the Sunday Turnaround, job U3)
+};
+export const playTier = (regionId: string): number => PLAY_TIER[regionId] ?? 1;
+/** The loop for a style, a scene and (in play) a tier: the style's loop of that tier if it has one, else its one in-play loop. */
+export const musicKey = (style: MusicStyle, scene: Scene, tier = 1): MusicKey => {
+  if (scene === 'menu') return `${style}_menu` as MusicKey;
+  const tiered = `${style}_play${tier}`;
+  return (tiered in pack.music ? tiered : `${style}_play` in pack.music ? `${style}_play` : `${style}_play1`) as MusicKey;
+};
+/** (`loop: false`: a track that plays once, the finale's credits music; every other entry is a loop.) */
+export const musicInfo = (key: MusicKey): { seconds: number; mean: number; formats: { file: string; type: string }[]; crossfaded: boolean; loop?: boolean } => pack.music[key];
+
+/**
+ * THE FINALE'S CREDITS MUSIC (job U9b): one track, `finale_credits` in pack.json's music: graduation music, the trio
+ * of Elgar's "Pomp and Circumstance" March No. 1 (Jay's pick, take A, the United States Marine Band; public domain;
+ * `python3 tools/audio-pack.py --finale-music` copies it in as delivered). It plays ONCE under the credits (26 s; it
+ * is not a loop), at a menu loop's level, follows the Music switch, and fades out as the credits lift. `finaleTrack`
+ * is null for a pack without it, and the credits then keep the menu loop of the player's style.
+ */
+export const FINALE_TRACK = 'finale_credits';
+export const finaleTrack = (music: Record<string, unknown> = pack.music): MusicKey | null => (FINALE_TRACK in music ? (FINALE_TRACK as MusicKey) : null);
 
 /**
  * Music sits WELL UNDER the effects, and the in-play loop is quieter than the menu loop (it plays
@@ -79,7 +121,8 @@ export const MUSIC_VOLUME: Record<Scene, number> = { menu: 0.3, play: 0.17 };
 /** Every loop is first brought to about this average level (dB). */
 export const MUSIC_TARGET_MEAN = -18.5;
 export function musicGain(key: MusicKey): number {
-  const scene = key.endsWith('_menu') ? 'menu' : 'play';
+  // (The finale's track plays where a menu loop would, at a menu loop's level.)
+  const scene = key.endsWith('_menu') || (key as string) === FINALE_TRACK ? 'menu' : 'play';
   return MUSIC_VOLUME[scene] * Math.max(0.6, Math.min(1.6, db(MUSIC_TARGET_MEAN - pack.music[key].mean)));
 }
 /** Changing loops (menu to level, one style to another): the old one fades out and the new one in over this long (s). */

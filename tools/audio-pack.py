@@ -20,12 +20,15 @@ Sources (not in the repo): the folders rhr_cartoon_sounds and rhr_music_styles, 
   src/audio/credits.json          the Credits screen: one row per file used, from the packs' CREDITS.md.
 
 Run: python3 tools/audio-pack.py [out_dir]   (default: the repo's public/audio)
+     python3 tools/audio-pack.py --finale-music  (only the finale's credits music: Jay's pick, copied as delivered)
+     python3 tools/audio-pack.py --finished  (only the FINISHED files, copied as they are; nothing else is rebuilt)
 """
 import json
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -115,6 +118,22 @@ SFX = {
     'downpour': ('art/downpour.wav', None, False),
 }
 ART_SRC = ROOT / 'tools' / 'sfx-art'
+# FINISHED FILES (Manus's pack for Baldonnel's sightings and the finale, Oct 10; Jay's picks of the takes): cut, faded
+# and levelled already (mean about -19 dB, peak never past -1.5 dB), so they are COPIED AS THEY ARE, byte for byte:
+# never re-cut, never re-levelled, never re-encoded. Only measured, for pack.json. Sources: the picked take's own MP3,
+# `~/Desktop/RHR Art Inbox/Sound files/baldonnel_finale/<name>_<A|B>.mp3`, copied to tools/sfx-art/<name>.mp3.
+# key: (take, loop, title, author, source page). All Pixabay Content License (no attribution needed).
+FINISHED = {
+    'crane_call': ('B', False, 'Sand Hill Cranes', 'EELLC (Freesound)', 'https://pixabay.com/sound-effects/nature-sand-hill-cranes-61016/'),
+    'frog_chorus': ('A', False, 'Frog Croaking Sound Effect', 'DRAGON-STUDIO', 'https://pixabay.com/sound-effects/nature-frog-croaking-sound-effect-322956/'),
+    'frog_late': ('B', False, 'Green Frog Single Croak Loud', 'ejah_music', 'https://pixabay.com/sound-effects/nature-green-frog-single-croak-loud-426273/'),
+    'bison_snort': ('A', False, 'Animals Buffalo Sound', 'CoffeeBagAudioLab', 'https://pixabay.com/sound-effects/nature-animals-buffalo-sound-232390/'),
+    'chuckle': ('B', False, 'Mischievous Laugh', 'Universfield', 'https://pixabay.com/sound-effects/horror-mischievous-laugh-140131/'),
+    'timer_beep': ('A', False, 'beep', 'athenspublic (Freesound)', 'https://pixabay.com/sound-effects/technology-beep-104060/'),
+    'scrub': ('B', True, 'Brushing Teeth Noise', 'Alex_Jauk', 'https://pixabay.com/sound-effects/film-special-effects-brushing-teeth-noise-447647/'),  # the only loop
+    'creak': ('A', False, 'plastic squeak', 'Reitanna (Freesound)', 'https://pixabay.com/sound-effects/film-special-effects-plastic-squeak-103382/'),
+    'polaroid': ('A', False, 'polaroid_600', 'tomschuetz (Freesound)', 'https://pixabay.com/sound-effects/technology-polaroid-600-83252/'),
+}
 # THE SOUND PASS'S FILES ARE LEVELLED as they are built: each is brought to the same average level
 # (LEVEL_MEAN, the mix's own target in src/audio/pack.ts), but never so far that its peak passes
 # LEVEL_PEAK. The mix table then only has to give each its place.
@@ -169,13 +188,96 @@ def credits_table(path: Path) -> dict:
     return rows
 
 
+# THE FINALE'S CREDITS MUSIC (job U9b): graduation music under the credits, the trio of Elgar's "Pomp and Circumstance"
+# March No. 1, from Manus's pack `~/Desktop/RHR Art Inbox/Sound files/finale_music/` (HANDOFF.md, manifest.json).
+# JAY'S PICK (JAY_PICK.txt, Oct 10 12:41): take A, the United States Marine Band (public domain: the composition by
+# age, the recording as a work of the US federal government; no attribution needed). The file is FINISHED (26 s, at
+# the game's music level, a 2 s fade at its end, no silence in front), so both formats are COPIED AS THEY ARE: never
+# re-cut, re-levelled or re-encoded. `python3 tools/audio-pack.py --finale-music` writes
+# public/audio/music/finale_credits.{ogg,mp3} and its rows; it is NOT a loop (`loop: false`). A full run keeps it.
+FINALE_MUSIC_SRC = Path.home() / 'Desktop' / 'RHR Art Inbox' / 'Sound files' / 'finale_music'
+FINALE_MUSIC = {
+    'take': 'A', 'stem': 'finale_march',
+    'title': 'Pomp and Circumstance March No. 1 (the trio)', 'author': 'Edward Elgar; United States Marine Band', 'licence': 'Public domain',
+    'url': 'https://commons.wikimedia.org/wiki/File:ELGAR_Pomp_and_Circumstance_in_D,_Opus_39,_No._1_-_United_States_Marine_Band.mp3',
+}
+
+
+def finale_music() -> None:
+    """`--finale-music`: copies the one track in, touching nothing else in the pack."""
+    m = FINALE_MUSIC
+    name = f'{m["stem"]}_{m["take"]}'
+    out = ROOT / 'public' / 'audio' / 'music'
+    for ext in ('ogg', 'mp3'):
+        src = FINALE_MUSIC_SRC / f'{name}.{ext}'
+        if not src.exists():
+            sys.exit(f'missing {src}')
+        shutil.copyfile(src, out / f'finale_credits.{ext}')
+    seconds, mean = measure(out / 'finale_credits.ogg')['seconds'], measure(out / 'finale_credits.mp3')['mean']
+    pack_path, credits_path = ROOT / 'src/audio/pack.json', ROOT / 'src/audio/credits.json'
+    pack, credits = json.loads(pack_path.read_text()), json.loads(credits_path.read_text())
+    pack['music']['finale_credits'] = {'seconds': round(seconds, 3), 'mean': mean, 'loop': False,
+                                       'formats': [{'file': 'finale_credits.ogg', 'type': 'audio/ogg; codecs=vorbis'}, {'file': 'finale_credits.mp3', 'type': 'audio/mpeg'}], 'crossfaded': False}
+    credits = [c for c in credits if c['use'] != 'finale_credits']
+    credits.append({'use': 'finale_credits', 'kind': 'music', 'file': f'finale_music/{name}.mp3', 'title': m['title'], 'author': m['author'], 'licence': m['licence'], 'url': m['url']})
+    pack_path.write_text(json.dumps(pack, indent=1) + '\n')
+    credits_path.write_text(json.dumps(credits, indent=1) + '\n')
+    print(f'finale_credits: {seconds:.1f} s, take {m["take"]}, copied as delivered')
+
+
+def finished(pack: dict, credits: list) -> None:
+    """The finished files: copied as they are, measured, and given their rows."""
+    for key, (take, loop, title, author, url) in FINISHED.items():
+        source = ART_SRC / f'{key}.mp3'
+        if not source.exists():
+            sys.exit(f'missing {source}')
+        out = OUT / 'sfx' / f'{key}.mp3'
+        shutil.copyfile(source, out)
+        m = measure(out)
+        pack['sfx'][key] = {'seconds': m['seconds'], 'mean': m['mean'], 'peak': m['peak'], 'loop': loop}
+        credits[:] = [c for c in credits if c['use'] != key]
+        credits.append({'use': key, 'kind': 'sfx', 'file': f'baldonnel_finale/{key}_{take}.mp3', 'title': title, 'author': author, 'licence': 'Pixabay Content License', 'url': url})
+
+
+def only_finished() -> None:
+    """`--finished`: adds (or refreshes) ONLY the finished files, touching nothing else in the pack. It needs no
+    Desktop sources and no rebuild of the music (a full run re-encodes the Opus loops it builds itself; it keeps
+    Classic Rock and these files too)."""
+    pack_path, credits_path = ROOT / 'src/audio/pack.json', ROOT / 'src/audio/credits.json'
+    pack, credits = json.loads(pack_path.read_text()), json.loads(credits_path.read_text())
+    finished(pack, credits)
+    # (Effects' rows stay together, before the music's.)
+    credits.sort(key=lambda c: c['kind'] != 'sfx')
+    pack_path.write_text(json.dumps(pack, indent=1) + '\n')
+    credits_path.write_text(json.dumps(credits, indent=1) + '\n')
+    print(f'{len(FINISHED)} finished effects copied; {len(pack["sfx"])} effects in the pack')
+
+
 def main() -> None:
     for d in (SFX_SRC, MUSIC_SRC):
         if not d.exists():
             sys.exit(f'missing {d}')
+    # MUSIC THIS SCRIPT DOES NOT BUILD IS KEPT (Classic Rock: tools/music-classic.py makes its five loops, and any
+    # other loop a later script adds): its files are set aside before the folder is cleared and put back after, and
+    # its rows in pack.json and credits.json are carried over as they are.
+    kept_music, kept_credits, aside = {}, [], None
+    if OUT == ROOT / 'public' / 'audio' and (ROOT / 'src/audio/pack.json').exists():
+        old_pack = json.loads((ROOT / 'src/audio/pack.json').read_text())
+        kept_music = {k: v for k, v in old_pack.get('music', {}).items() if k not in MUSIC}
+        kept_credits = [c for c in json.loads((ROOT / 'src/audio/credits.json').read_text()) if c['use'] in kept_music]
+        aside = Path(tempfile.mkdtemp(prefix='rig-jam-music-'))
+        for v in kept_music.values():
+            for f in v['formats']:
+                if not (OUT / 'music' / f['file']).exists():
+                    sys.exit(f'missing {OUT / "music" / f["file"]} (named in pack.json): restore it before a full run')
+                shutil.copy2(OUT / 'music' / f['file'], aside / f['file'])
     shutil.rmtree(OUT, ignore_errors=True)
     (OUT / 'sfx').mkdir(parents=True)
     (OUT / 'music').mkdir(parents=True)
+    if aside:
+        for f in aside.iterdir():
+            shutil.copy2(f, OUT / 'music' / f.name)
+        shutil.rmtree(aside)
     pack = {'sfx': {}, 'music': {}}
     sfx_credits = credits_table(SFX_SRC / 'CREDITS.md')
     music_credits = credits_table(MUSIC_SRC / 'CREDITS.md')
@@ -215,6 +317,8 @@ def main() -> None:
         c = sfx_credits.get(src) or {'title': '', 'author': 'Synthesized for Rig Jam', 'licence': 'Original', 'url': ''}
         credits.append({'use': key, 'kind': 'sfx', 'file': src, **c})
 
+    finished(pack, credits)
+
     for key, (folder, stem, ogg_dir, bake) in MUSIC.items():
         source = folder / f'{stem}.mp3'
         if not source.exists():
@@ -250,6 +354,8 @@ def main() -> None:
             c = {**c, 'title': ' '.join(w.capitalize() for w in re.sub(r'^(A_menu|B_inplay)_|_[abc]$', '', stem).split('_'))}
         credits.append({'use': key, 'kind': 'music', 'file': rel, **c})
 
+    pack['music'].update(kept_music)
+    credits.extend(kept_credits)
     tmp.unlink(missing_ok=True)
     if OUT == ROOT / 'public' / 'audio':
         (ROOT / 'src/audio/pack.json').write_text(json.dumps(pack, indent=1) + '\n')
@@ -262,4 +368,10 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    if '--finale-music' in sys.argv:
+        finale_music()
+    elif '--finished' in sys.argv:
+        OUT = ROOT / 'public' / 'audio'
+        only_finished()
+    else:
+        main()

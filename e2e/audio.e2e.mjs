@@ -6,7 +6,7 @@
 //  - each game event plays its picked sound: drag and motor, the beeper backing up, bump then radio,
 //    gate and whoosh on an exit, the horn chord on a chain (three pitches), win and lose, UI pops
 //  - gag sounds come from the gag's beats, and its loops stop when it ends
-//  - music: three styles, a menu loop and a quieter in-play loop, remembered; every loop file
+//  - music: four styles, a menu loop and a quieter in-play loop (Classic Rock: one a tier, by the region), remembered; every loop file
 //    decodes to exactly its loop's length (no padding left in the loop) and meets itself at the seam
 //  - the Credits screen
 // Run with the dev server up: npm run test:e2e:audio
@@ -123,7 +123,7 @@ console.log('\nchromium iPhone 13: sound is off until asked for');
 
   // The three styles switch in Settings; each has its own menu loop.
   const names = await page.$$eval('.style-pick', (bs) => bs.map((b) => b.textContent));
-  check(names.join() === 'Country,80s Retro,Chill', `Settings offers a Music style: ${names.join(', ')}`);
+  check(names.join() === 'Country,80s Retro,Chill,Classic Rock', `Settings offers a Music style: ${names.join(', ')}`);
   for (const [style, key] of [['retro', 'retro_menu'], ['chill', 'chill_menu']]) {
     await tapOn(page, cdp, `.style-pick[data-style="${style}"]`);
     await page.waitForFunction((k) => window.__rhrAudio.musicState()?.key === k, key, { timeout: 15000 }).catch(() => {});
@@ -133,7 +133,7 @@ console.log('\nchromium iPhone 13: sound is off until asked for');
   // Credits.
   await tapOn(page, cdp, '[data-act="credits"]');
   const credits = await page.evaluate(() => { const c = document.querySelector('.step.credits'); return { shown: !c.hidden, music: [...c.querySelectorAll('ul')][0].children.length, sfx: [...c.querySelectorAll('ul')][1].children.length, text: c.textContent }; });
-  check(credits.shown && credits.music === 6 && credits.sfx >= 5 && /Chill Beat/.test(credits.text) && /Pixabay Content License/.test(credits.text) && /Mixkit/.test(credits.text) && /CC0/.test(credits.text), `Credits lists the ${credits.music} music loops and the effects' ${credits.sfx} sources, with their licences`);
+  check(credits.shown && credits.music === 12 && /Vintage Rock/.test(credits.text) && /Pomp and Circumstance/.test(credits.text) && /Public domain/.test(credits.text) && credits.sfx >= 5 && /Chill Beat/.test(credits.text) && /Pixabay Content License/.test(credits.text) && /Mixkit/.test(credits.text) && /CC0/.test(credits.text), `Credits lists the ${credits.music} pieces of music (the eleven loops and the finale's march) and the effects' ${credits.sfx} sources, with their licences`);
   await tapOn(page, cdp, '.step.credits [data-act="cancel"]');
   await tapOn(page, cdp, '.settings [data-act="close"]');
   // Into a level: the same style's in-play loop, quieter than the menu's.
@@ -315,6 +315,64 @@ console.log('\nchromium iPhone 13: the pumpjack stops with the level');
   check(count(await heard(page), 'pumpjack') >= 1, 'back on the level: it pumps again');
   await context.close();
 }
+// ---------- 3b. Classic Rock: the in-play loop goes by the region, and a change of loop is a crossfade with no gap ----------
+{
+  console.log('\nClassic Rock (job U7): heavier up the regions');
+  const { context, page, cdp } = await open({ audio: { sfx: false, music: true, style: 'classic' } });
+  await page.waitForSelector('.screen.levels');
+  await tapOn(page, cdp, '.brand h1'); // (the first touch: sound may start)
+  await page.waitForFunction(() => window.__rhrAudio.musicState()?.key === 'classic_menu', null, { timeout: 20000 }).catch(() => {});
+  check((await page.evaluate(() => window.__rhrAudio.musicState()?.key)) === 'classic_menu', 'on the menus: classic_menu');
+  /** Watches a change of loop: is there always a loop playing, and sound going out, until `key` is the one? */
+  const watchChange = (key) => page.evaluate((key) => new Promise((done) => {
+    const t0 = performance.now(); let silent = 0, longest = 0, none = 0, n = 0, at = -1, last = t0;
+    const tick = () => {
+      const now = performance.now(), m = window.__rhrAudio.musicState(), peak = window.__rhrAudio.peak();
+      n++;
+      if (!m) none++;
+      if (peak < 0.0004) { silent += now - last; longest = Math.max(longest, silent); } else silent = 0;
+      last = now;
+      if (at < 0 && m?.key === key) at = now - t0;
+      // (Watched for a second past the change, so the whole fade is in it.)
+      if ((at >= 0 && now - t0 > at + 1100) || now - t0 > 25000) return done({ key: m?.key, ms: Math.round(at), none, longest: Math.round(longest), n });
+      setTimeout(tick, 25);
+    };
+    tick();
+  }), key);
+  const goTo = async (how, key, what) => {
+    const watching = watchChange(key);
+    await how();
+    const r = await watching;
+    check(r.key === key && r.none === 0 && r.longest < 120, `${what}: ${key}, a crossfade with no gap (a loop playing at every one of ${r.n} looks, sound going out throughout: the longest quiet ${r.longest} ms; the new loop in after ${r.ms} ms)`);
+  };
+  const back = () => goTo(() => page.evaluate(() => (document.querySelector('.hud [data-act="levels"]'))?.click()), 'classic_menu', 'back to the level list');
+  const level = (tab) => async () => { await page.$eval(`.region-tab:nth-child(${tab})`, (t) => t.click()); await wait(150); await page.$eval('.level-btn[data-index="1"]', (b) => b.click()); };
+  for (const [tab, name, key] of [[1, 'Cardium', 'classic_play1'], [2, 'Montney', 'classic_play2'], [3, 'Duvernay', 'classic_play3'], [4, 'Mannville', 'classic_play4'], [5, 'Bakken', 'classic_play4'], [6, 'Clearwater', 'classic_play4']]) {
+    await goTo(level(tab), key, `into a ${name} level`);
+    await back();
+  }
+  await goTo(() => page.$eval('.daily-btn', (b) => b.click()), 'classic_play3', 'into the Daily Pad');
+  // From one level straight on to the next of its region: the same loop, undisturbed.
+  await back();
+  await goTo(level(3), 'classic_play3', 'into Duvernay again');
+  const before = await page.evaluate(() => window.__rhrAudio.log.filter((l) => l.startsWith('music:')).length);
+  await enter(page, 3, 2);
+  await wait(900);
+  check((await page.evaluate(() => window.__rhrAudio.musicState()?.key)) === 'classic_play3' && (await page.evaluate(() => window.__rhrAudio.log.filter((l) => l.startsWith('music:classic_play3')).length)) >= 1 && (await page.evaluate(() => window.__rhrAudio.log.filter((l) => l.startsWith('music:')).length)) <= before + 2, 'another Duvernay level: classic_play3 again, the same tier');
+  await context.close();
+  // THE FALLBACK: Country (and so 80s Retro and Chill) plays its one in-play loop in every region, as before.
+  const c = await open({ audio: { sfx: false, music: true, style: 'country' } });
+  await c.page.waitForSelector('.screen.levels');
+  await tapOn(c.page, c.cdp, '.brand h1');
+  const keys = [];
+  for (const tab of [1, 3, 6]) {
+    await enter(c.page, tab, 1);
+    await c.page.waitForFunction(() => window.__rhrAudio.musicState()?.key === 'country_play', null, { timeout: 15000 }).catch(() => {});
+    keys.push(await c.page.evaluate(() => window.__rhrAudio.musicState()?.key));
+  }
+  check(keys.every((k) => k === 'country_play'), `Country still plays country_play in Cardium, Duvernay and Clearwater (${keys.join(', ')})`);
+  await c.context.close();
+}
 await browser.close();
 
 // ---------- 4. Every loop file decodes to exactly its loop: no gap, no click ----------
@@ -323,7 +381,8 @@ for (const [engine, type] of [['chromium', chromium], ['webkit', webkit]]) {
   const b = await type.launch();
   const page = await (await b.newContext()).newPage();
   await page.goto(BASE + '?cover=0', { waitUntil: 'networkidle' });
-  for (const [key, info] of Object.entries(pack.music)) {
+  // (Loops only: the finale's credits track plays once and fades out at its own end; gag-sounds.e2e.mjs hears it play.)
+  for (const [key, info] of Object.entries(pack.music).filter(([, i]) => i.loop !== false)) {
     const out = await page.evaluate(async ([formats, maxPad]) => {
       const ctx = new (window.AudioContext ?? window.webkitAudioContext)();
       const results = [];

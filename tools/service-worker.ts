@@ -32,13 +32,20 @@ export const PRECACHE_TRIES = 3;
  * that turns a burst away, the worker never installed, "load failed", and nothing worked offline.)
  * Now the core is fetched first; the rest in small batches, each file retried; a file that still
  * will not come is left for later (it is cached the first time the game asks for it).
+ *
+ * THE DEV COPY KEEPS ITS OWN CACHES (`channel` 'dev'; `cachePrefix`). The live game (/rig-jam/) and the dev lane's
+ * copy (/rig-jam-next/) are on ONE web origin, and an origin's caches are shared: a worker that, on taking over,
+ * deletes every cache named `rhr-*` but its own would wipe the other site's offline copy. So the dev copy's caches
+ * are named `next-rhr-*`: the live worker (which clears `rhr-*`) never sees them, and the dev worker clears only its own.
  */
-export function serviceWorkerSource(files: string[], version: string, core: string[] = files): string {
+export const cachePrefix = (channel: 'live' | 'dev' = 'live'): string => (channel === 'dev' ? 'next-rhr-' : 'rhr-');
+export function serviceWorkerSource(files: string[], version: string, core: string[] = files, channel: 'live' | 'dev' = 'live'): string {
   const all = files.filter((f) => f !== 'version.json');
   const first = ['./', ...all.filter((f) => core.includes(f))];
   const rest = all.filter((f) => !core.includes(f));
   return `// Generated at build time. Do not edit.
-const CACHE = 'rhr-${CACHE_GENERATION}-${version}';
+const PREFIX = '${cachePrefix(channel)}';
+const CACHE = PREFIX + '${CACHE_GENERATION}-${version}';
 const SCOPE = self.registration.scope;
 const at = (path) => new URL(path, SCOPE).href;
 const CORE = ${JSON.stringify(first)};
@@ -77,7 +84,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('rhr-') && k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith(PREFIX) && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });

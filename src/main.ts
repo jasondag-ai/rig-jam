@@ -13,7 +13,9 @@ import { biffyAStill, biffyBStill, landownerStill, nearMissStill } from './ui/st
 import { magpieStill } from './ui/magpie.ts';
 import './ui/style.css';
 import { DAILY_LEVELS, REGIONS, dailyTheme } from './levels/regions.ts';
-import { STAND_DOWN_TOAST, dayKey, newlySaved, padLevelIndex, padNumber, streak } from './ui/daily.ts';
+import { STAND_DOWN_TOAST, dayKey, newlySaved, padNumber, streak } from './ui/daily.ts';
+import { dailyLevel, dailyLevelNow, padLink, warmDaily } from './ui/daily-pads.ts';
+import { TURN_UNLOCK, levelsCleared, loadTurnResults, turnaroundLevel, turnaroundNumber, turnaroundOpen, warmTurnaround, weekLink } from './ui/turnaround.ts';
 import { showTutorial } from './ui/tutorial.ts';
 import { deerStill, surveyorStill, touristsStill } from './ui/sign-gags.ts';
 import { toast } from './ui/toast.ts';
@@ -26,17 +28,21 @@ import { onTap } from './ui/tap.ts';
 import { copyText } from './ui/clipboard.ts';
 import { feedbackEmail, feedbackNow, rememberLevel } from './ui/feedback.ts';
 import { showUpdateBar, watchForUpdates } from './ui/update.ts';
-import { versionText } from './ui/version.ts';
+import { isDev, versionText } from './ui/version.ts';
 import { fakeRegions, furthestOpen, runRegionBar } from './ui/region-bar.ts';
 import { shouldShowCover, showCover } from './ui/cover.ts';
+import { FinaleView } from './ui/finale.ts';
+import { FINALE_KEY, finaleCount, finaleDue, finaleLink, loadFinale, saveFinaleSeen } from './ui/finale-state.ts';
 import { applyUiArt, uiImg } from './ui/ui-art.ts';
 import { preloadSprites } from './ui/sprites.ts';
-import { LOG_ENTRIES, applyCamo, cardHint, complete, foundCount, loadLog, previewAll, recordDig, saveLog, shownEntries, sightingToast, type Sighting } from './ui/wildlife-log.ts';
+import { LOG_ENTRIES, applyCamo, cardHint, complete, foundCount, loadLog, previewAll, recordDig, saveLog, savedLog, shownEntries, sightingToast, type Sighting } from './ui/wildlife-log.ts';
 import { clockText, dugStill } from './ui/log-deep.ts';
 import { PREVIEWS, type GagId } from './ui/gag-triggers.ts';
 import { workerStill } from './ui/worker.ts';
 import { mountDig } from './ui/log-dig-view.ts';
 import { wave3Still } from './ui/scene-stage.ts';
+import { pond, puddle, scaleProp, snowbank } from './ui/bald-art.ts';
+import { BALD } from './ui/bald-gags.ts';
 import { MUSKEG, WAVE3 } from './ui/wave3.ts';
 import { mooseStill } from './ui/moose.ts';
 import { sceneryHtml } from './ui/scenery.ts';
@@ -63,6 +69,14 @@ const LOG_ART: Record<Sighting, () => string> = {
   wash: () => wave3Still('wash', 9.7, [92, 62, 196, 100]),
   bell: () => wave3Still('bell', 9.3, [150, 80, 100, 84]),
   pea: () => wave3Still('pea', 5.8, [176, 70, 132, 86]),
+  // Baldonnel (bald-gags.ts): the page's own still of each, with the prop it plays on drawn behind (the scenery is not the gag's).
+  overweight: () => wave3Still('overweight', 6.9, [96, 76, 134, 82], scaleProp((BALD as unknown as { overweight: { needle: (t: number) => number } }).overweight.needle(6.9))),
+  cranes: () => wave3Still('cranes', 7.9, [222, 78, 132, 80]),
+  bison: () => wave3Still('bison', 10.8, [230, 66, 124, 90]),
+  hare: () => wave3Still('hare', 6.6, [34, 84, 112, 70], snowbank()),
+  ice: () => wave3Still('ice', 8.4, [226, 60, 112, 76], pond()),
+  frogs: () => wave3Still('frogs', 7.8, [246, 112, 108, 62], puddle()),
+  mosquito: () => wave3Still('mosquito', 4.9, [226, 80, 104, 76]),
   muskeg: () => wave3Still('muskeg', 3.1, [72, 76, 134, 90], MUSKEG),
   cattrain: () => wave3Still('catTrain', 9.4, [204, 92, 96, 66]),
   beaver: () => wave3Still('beaver', 1.6, [68, 92, 146, 62]),
@@ -140,6 +154,8 @@ function rememberedRegion(): number {
 const savedRegion = (): number => Math.max(0, rememberedRegion());
 
 function showLevels(requested = savedRegion()): void {
+  // (A perfect game not yet celebrated, however it was completed: the ending plays before the list is shown again.)
+  if (maybeFinale()) return;
   game?.leave();
   game = null;
   sound.quiet();
@@ -164,6 +180,7 @@ function showLevels(requested = savedRegion()): void {
       <button class="binoculars" aria-label="Wildlife Log">${BINOCULARS}</button>
       <button class="gear" aria-label="Settings">${uiImg('icon_gear')}</button>
       <h1>Rig Jam</h1>
+      ${isDev() ? '<span class="dev-chip" aria-label="Dev copy">DEV</span>' : ''}
       ${Object.keys(progress.best).length ? '' : '<p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>'}
     </header>
     <div class="daily-block"></div>
@@ -215,7 +232,13 @@ function showLevels(requested = savedRegion()): void {
   // Today's Daily Pad and the streak sign, above the regions.
   const today = dayKey(new Date());
   const pad = padNumber(today);
-  const daily = DAILY_LEVELS[padLevelIndex(pad, DAILY_LEVELS.length)];
+  // The Sunday Turnaround: this week's number, whether this player may play it yet, and their best on it.
+  const week = turnaroundNumber(today);
+  const turnCleared = levelsCleared(progress.best, REGIONS.flatMap((r) => r.levels.map((l) => l.id)));
+  const turnOpen = turnaroundOpen(turnCleared, progress.demo);
+  const turnBest = loadTurnResults().best[String(week)];
+  // (Pads 1 to 60 are to hand; a later pad's level is fetched, and its par is written in when it comes: daily-pads.ts.)
+  const daily = dailyLevelNow(pad, DAILY_LEVELS);
   const s = streak(progress.dailyCleared, today);
   // The weekly Safety Stand-Down saves a streak by itself; say so once, the first time it shows.
   const saved = newlySaved(s, progress.standDowns);
@@ -228,9 +251,19 @@ function showLevels(requested = savedRegion()): void {
     ${streakSignHtml(s)}
     <button class="daily-btn${s.clearedToday ? ' done' : ''}">
       <span class="daily-title">Daily Pad #${pad}</span>
-      <span class="daily-sub">${s.clearedToday ? 'Cleared today ✓ Come back tomorrow' : `Today's pad · par ${daily.par} · same for everyone`}</span>
+      <span class="daily-sub">${s.clearedToday ? 'Cleared today ✓ Come back tomorrow' : `Today's pad · ${daily ? `par ${daily.par} · ` : ''}same for everyone`}</span>
+    </button>
+    <button class="turn-btn${turnOpen ? (turnBest !== undefined ? ' done' : '') : ' locked'}"${turnOpen ? '' : ' aria-disabled="true"'}>
+      <span class="turn-title">Sunday Turnaround #${week}</span>
+      <span class="turn-sub">${turnOpen ? (turnBest !== undefined ? `Cleared in ${turnBest} moves ✓ A new one on Sunday` : "This week's big pad · same for everyone") : `${PADLOCK}Clear ${TURN_UNLOCK} levels to unlock (${Math.min(turnCleared, TURN_UNLOCK)} of ${TURN_UNLOCK})`}</span>
     </button>`;
-  block.querySelector('.daily-btn')!.addEventListener('click', () => showDaily());
+  // SUNDAY TURNAROUND (turnaround.ts): this week's big pad, under the Daily Pad. Locked until 10 levels are cleared.
+  block.querySelector<HTMLElement>('.turn-btn')!.addEventListener('click', (e) => (turnOpen ? void showTurnaround() : shake(e.currentTarget as HTMLElement)));
+  if (turnOpen) warmTurnaround(week);
+  block.querySelector('.daily-btn')!.addEventListener('click', () => void showDaily());
+  if (!daily && !s.clearedToday) void dailyLevel(pad, DAILY_LEVELS).then((l) => { const sub = block.querySelector('.daily-sub'); if (sub?.isConnected) sub.textContent = `Today's pad · par ${l.par} · same for everyone`; }).catch(() => {});
+  // Today's pad (and tomorrow's) is fetched ahead, so a tap opens it at once and it is there offline.
+  warmDaily(pad, DAILY_LEVELS);
   onTap(screen.querySelector('.brand')!, '.gear', () => showSettings(screen));
   onTap(screen.querySelector('.brand')!, '.help', () => void showTutorial(screen));
   onTap(screen.querySelector('.brand')!, '.binoculars', () => showLog(regionIndex));
@@ -276,7 +309,8 @@ function showLevels(requested = savedRegion()): void {
     y: horizon,
     width: rect.width,
     height: 0,
-  }, { below: false, maxTree: LIST_TREES - 2, depth: 4 });
+    // (Baldonnel's list has its mountains on the horizon, behind the tree line, under the header: mountains.ts.)
+  }, { below: false, maxTree: LIST_TREES - 2, depth: 4, mountains: { top: 6, base: horizon } });
 
   // A region earned for real gets a one-time "NEW LEASE OPEN" banner.
   const fresh = newlyOpened(REGIONS, progress.best, progress.announced);
@@ -292,6 +326,50 @@ function showLevels(requested = savedRegion()): void {
   }
 }
 
+// ---------- THE FINALE (finale.ts; job U9) ----------
+let finale: FinaleView | null = null;
+/** The game's own counts, from what is really saved: levels at par, sightings found. */
+const perfectCount = () => finaleCount(loadProgress().best, savedLog().found, REGIONS.flatMap((r) => r.levels), LOG_ENTRIES);
+/**
+ * A perfect game, not yet celebrated? Then the ending plays now (once), in place of wherever the player was going.
+ * Real progress only: not demo mode, not a preview link.
+ * IT NEVER INTERRUPTS A LEVEL (Jay, Oct 10): it is asked for only when the player is going somewhere, leaving a win
+ * card (Next, the next field, All levels) or leaving the level ("Levels"). A sighting that completes the perfect game
+ * in the middle of a level waits for that.
+ */
+function maybeFinale(): boolean {
+  if (finale || demoLink() || previewAll(location.search) || !finaleDue(perfectCount(), loadProgress().demo, loadFinale())) return false;
+  showFinale(true);
+  return true;
+}
+/**
+ * Plays the ending: its four parts on its own stage (an empty Cardium 1), then the game's own opening screen, built by
+ * cover.ts itself and faded up over the close-up. `record`: remember that it has played (not for `?finale=1` or a replay).
+ */
+function showFinale(record: boolean, stageOnly = false): void {
+  game?.leave();
+  game = null;
+  finale?.leave();
+  if (record) saveFinaleSeen();
+  const c = perfectCount();
+  // (A replay or the link shows the whole game's counts even on a phone that has not earned them.)
+  const counts = c.pads === c.ofPads && c.sightings === c.ofSightings ? c : { ...c, pads: c.ofPads, sightings: c.ofSightings };
+  const done = () => { finale?.leave(); finale = null; window.removeEventListener('resize', refit); };
+  const view = (finale = new FinaleView(REGIONS[0].levels[0], THEMES[REGIONS[0].theme], {
+    counts,
+    hints: loadProgress().hints,
+    stageOnly,
+    onCover: (holder) => showCover(holder, () => showLevels()),
+    onEnd: (cover) => { done(); app.replaceChildren(cover); },
+    onLeave: () => { done(); showLevels(); },
+  }));
+  const refit = () => { if (finale === view && view.el.isConnected) view.fit(); };
+  window.addEventListener('resize', refit);
+  app.replaceChildren(view.el);
+  view.fit();
+  view.start();
+}
+
 function showGame(regionIndex: number, index: number, force: GagId | null = null): void {
   const region = REGIONS[regionIndex];
   const hasNext = index + 1 < region.levels.length;
@@ -303,13 +381,14 @@ function showGame(regionIndex: number, index: number, force: GagId | null = null
     themeFor(regionIndex),
     {
       onLevels: () => showLevels(regionIndex),
-      onNext: hasNext ? () => showGame(regionIndex, index + 1) : null,
+      // (A perfect game's last win: the ending plays after this win card, whichever way the player leaves it.)
+      onNext: hasNext ? () => { if (!maybeFinale()) showGame(regionIndex, index + 1); } : null,
       // The last level of a field: on to the next field if it is open (asked when the card is made, so this win counts).
       onNextField: hasNext
         ? null
         : () => {
             const p = loadProgress(), to = nextField(REGIONS, regionIndex, p.best, p.demo);
-            return !to ? null : to.open ? { label: to.label, go: () => showLevels(to.index) } : { note: to.text };
+            return !to ? null : to.open ? { label: to.label, go: () => { if (!maybeFinale()) showLevels(to.index); } } : { note: to.text };
           },
     },
     null,
@@ -354,6 +433,7 @@ function showSettings(screen: HTMLElement): void {
           <span class="switch-label">Unlock everything (demo mode)</span>
         </label>
         <button class="btn quiet" data-act="credits">Credits</button>
+        ${loadFinale().seen ? '<button class="btn quiet" data-act="ending">Watch the ending</button>' : ''}
         ${feedbackEmail() ? `<div class="feedback"><b>Send feedback</b><span class="feedback-mail">${esc(feedbackEmail())}</span><button class="btn quiet" data-act="copy-feedback">Copy address and details</button><small>Adds your app version, phone and level.</small></div>` : ''}
         <button class="btn danger" data-act="reset">Reset progress</button>
         <button class="btn" data-act="close">Done</button>
@@ -383,6 +463,8 @@ function showSettings(screen: HTMLElement): void {
     const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
     if (act === 'reset') [ask.hidden, confirm.hidden] = [true, false];
     if (act === 'credits') [ask.hidden, creditsStep.hidden] = [true, false];
+    // (Once the ending has been earned and seen: watch it again. Nothing is saved by a replay.)
+    if (act === 'ending') { panel.remove(); showFinale(false); return; }
     if (act === 'copy-feedback') {
       const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-act]')!;
       void copyText(feedbackNow(feedbackEmail())).then((ok) => {
@@ -397,6 +479,8 @@ function showSettings(screen: HTMLElement): void {
     }
     if (act === 'wipe') {
       resetProgress();
+      // (And the ending: a fresh start can earn it again.)
+      try { localStorage.removeItem(FINALE_KEY); } catch { /* storage blocked */ }
       applyCamo(); // the Wildlife Log went with it
       showLevels(0); // a brand-new player
     }
@@ -533,15 +617,49 @@ function showLog(regionIndex: number): void {
   screen.querySelector('.scenery')!.innerHTML = sceneryHtml(themeFor(regionIndex), rect.width, horizon + 40, { x: 0, y: horizon, width: rect.width, height: 0 }, { below: false, maxTree: 64 });
 }
 
-/** Today's Daily Pad, picked by the phone's local date. */
-function showDaily(): void {
+/**
+ * Today's Daily Pad, picked by the phone's local date. (`tryPad`: the dev copy's `?pad=N`, to try any pad; nothing
+ * it does is saved: demo-link.ts.) A pad after the 60th is fetched (daily-pads.ts): if it cannot be had, a toast
+ * says so and the screen stays where it was.
+ */
+async function showDaily(tryPad?: number): Promise<void> {
   const day = dayKey(new Date());
-  const pad = padNumber(day);
-  const level = { ...DAILY_LEVELS[padLevelIndex(pad, DAILY_LEVELS.length)], name: `Daily Pad #${pad}` };
+  const pad = tryPad ?? padNumber(day);
+  let base;
+  try {
+    base = await dailyLevel(pad, DAILY_LEVELS);
+  } catch {
+    void toast("Couldn't load today's pad", { sub: 'Check your connection and try again', ms: 3200 });
+    if (tryPad !== undefined) showLevels();
+    return;
+  }
+  const level = { ...base, name: `Daily Pad #${pad}` };
   const theme = THEMES[themeOverride(location.search) ?? dailyTheme(pad)];
   game?.leave();
   rememberLevel(level.name);
   game = new GameView(level, "Today's pad", theme, { onLevels: () => showLevels(), onNext: null }, { pad, day });
+  app.replaceChildren(game.el);
+  game.fit();
+}
+
+/**
+ * This week's Sunday Turnaround (turnaround.ts): a hard pad of 8 x 8, on Clearwater's standard scene with its
+ * sightings. (`tryWeek`: the dev copy's `?week=N`; nothing it does is saved.)
+ */
+async function showTurnaround(tryWeek?: number): Promise<void> {
+  const week = tryWeek ?? turnaroundNumber(dayKey(new Date()));
+  let base;
+  try {
+    base = await turnaroundLevel(week);
+  } catch {
+    void toast("Couldn't load this week's Turnaround", { sub: 'Check your connection and try again', ms: 3200 });
+    if (tryWeek !== undefined) showLevels();
+    return;
+  }
+  const level = { ...base, name: `Turnaround #${week}` };
+  game?.leave();
+  rememberLevel(`Sunday Turnaround #${week}`);
+  game = new GameView(level, 'Sunday', THEMES[themeOverride(location.search) ?? 'boreal'], { onLevels: () => showLevels(), onNext: null }, null, { regionId: 'clearwater', levelIndex: 0, turnaround: week });
   app.replaceChildren(game.el);
   game.fit();
 }
@@ -583,7 +701,13 @@ if (!forcedGag()) {
     const p = loadProgress();
     return !p.demo && Object.keys(p.best).length === 0 && p.dailyCleared.length === 0;
   };
-  if (shouldShowCover(location.search, navigator.webdriver === true)) showCover(app, () => (firstRun() ? showGame(0, 0) : showLevels()));
+  // (The dev copy's `?pad=N`: straight into Daily Pad N, to try it. Nothing is saved: demo-link.ts.)
+  const tryPad = isDev() ? padLink() : null, tryWeek = isDev() ? weekLink() : null;
+  // (`?finale=1`: the ending, now, on any build, saving nothing. `?finale=stage`: its empty stage, for the tests.)
+  if (finaleLink()) showFinale(false, finaleLink() === 'stage');
+  else if (tryWeek !== null) void showTurnaround(tryWeek);
+  else if (tryPad !== null) void showDaily(tryPad);
+  else if (shouldShowCover(location.search, navigator.webdriver === true)) showCover(app, () => (firstRun() ? showGame(0, 0) : showLevels()));
   else showLevels();
 }
 // Every truck sprite, quietly, once the first screen is up (each level also warms its own first).

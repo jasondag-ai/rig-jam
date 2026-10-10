@@ -16,9 +16,10 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { REGIONS } from '../src/levels/regions.ts';
 import { cabSide, getMoveRange, newGame, solve, tryMove } from '../src/engine/index.ts';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = join(homedir(), 'Desktop', 'RHR Screenshots');
+const OUT = outDir('exits');
 mkdirSync(OUT, { recursive: true });
 const QUIET = '?cover=0&night=0&bird=0&nap=0&surveyor=0&tourists=0&lunch=0&off=sam,nearmiss,landowner';
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));

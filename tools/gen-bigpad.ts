@@ -160,7 +160,7 @@ export function toLevel(ts: T[], colours: Map<string, Color>, id: string, par = 
   const trucks = ts.map((t, i) => ({ id: idOf(i), color: colours.get(`${sideOf(t)}${t.lane}`)!, row: t.orient === 'h' ? t.lane : t.pos, col: t.orient === 'h' ? t.pos : t.lane, length: t.len, orient: t.orient }));
   const gates = [...colours].map(([end, color]) => ({ color, side: end.replace(/\d+$/, '') as Side, index: Number(end.match(/\d+$/)![0]) }));
   // (Mid-scramble a truck may still stand at its gate: the game's parser would refuse that start, so the level is built by hand here.)
-  return { id, name: 'Big Pad', par, size: 8, trucks: trucks as Truck[], gates: gates as Gate[], obstacles: [], muskeg: [], racks: [] };
+  return { id, name: 'Big Pad', par, size: 8, trucks: trucks as Truck[], gates: gates as Gate[], obstacles: [], muskeg: [], racks: [], soft: [] };
 }
 
 // ---------- 1 and 2: lanes, gates, the interlock seed ----------
@@ -316,7 +316,7 @@ export interface Grown extends Found { gains: Record<Change, number>; tried: num
  * It stops at `want` extra moves (a pad's own target inside the range), when nothing has been
  * kept for `stale` tries, or when time is up.
  */
-export function growPad(rng: Rng, until: number, want: number, target: Target = TARGET, stale = 2500): Grown | null {
+export function growPad(rng: Rng, until: number, want: number, target: Target = TARGET, stale = 2500, cap = SOLVE_CAP): Grown | null {
   const count = target.trucks[0] + int(rng, target.trucks[1] - target.trucks[0] + 1);
   const seeded = seedPad(rng, count, 3 + int(rng, 3), 0.3 + rng() * 0.7);
   if (!seeded) return null;
@@ -325,7 +325,8 @@ export function growPad(rng: Rng, until: number, want: number, target: Target = 
   if (!sound(ts)) return null;
   const solveIt = (pad: T[]): { solved: Solved; colours: Map<string, Color> } | null => {
     const colours = colourGates(pad, rng);
-    const solved = colours && forward(toLevel(pad, colours, 'pad'), pad);
+    // (`cap`: how many positions a solve may look at. A pad past it is passed over: a smaller cap fails faster, and keeps to pads a phone's hint solves quickly.)
+    const solved = colours && forward(toLevel(pad, colours, 'pad'), pad, cap);
     return solved ? { solved, colours: colours! } : null;
   };
   let now = solveIt(ts);
@@ -366,7 +367,7 @@ export function growPad(rng: Rng, until: number, want: number, target: Target = 
 
 // ---------- a run ----------
 
-function candidate(f: Grown, id: string): Candidate {
+export function candidate(f: Grown, id: string): Candidate {
   const colours = new Map(f.colours);
   const built = toLevel(f.ts, colours, id, f.par);
   // Through the game's own parser (it refuses an overlap, a truck off the pad, a truck with no gate or two, a truck touching its gate).
@@ -500,4 +501,4 @@ function work() {
 
 if (isMainThread) {
   if (process.argv[1]?.endsWith('gen-bigpad.ts')) await main();
-} else work();
+} else if ((workerData as { ms?: number } | null)?.ms !== undefined) work(); // (its own worker; another tool's worker that imports this file does nothing here)

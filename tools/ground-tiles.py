@@ -32,13 +32,15 @@ TILES = {
     'grass-prairie': 'grass_border_prairie_v1',
     # Region 6, Clearwater (the Big Pad): boreal lichen ground, made from the summer grass.
     'grass-boreal': 'grass_border_boreal_v1',
+    # Region 7, Baldonnel: spring breakup, last year's dead grass with the last of the snow lying in it.
+    'grass-thaw': 'grass_border_thaw_v1',
 }
 SNOW_SRC = 'ground_winter_snow_v1'
 # Grass field: image size, and how many pixels of it one source square spans (must divide the size so
 # the field wraps). On screen the field is drawn at half its size (GRASS_CSS in themes.ts), so the
 # sources repeat every 96px (they were 180px: blades about half the size), the same in every season.
 GRASS = 768
-GRASS_TILE = {'grass-summer': 192, 'grass-spring': 192, 'grass-winter': 384, 'grass-fall': 192, 'grass-prairie': 192, 'grass-boreal': 192}
+GRASS_TILE = {'grass-summer': 192, 'grass-spring': 192, 'grass-winter': 384, 'grass-fall': 192, 'grass-prairie': 192, 'grass-boreal': 192, 'grass-thaw': 192}
 
 
 def smooth_snow(im: Image.Image) -> Image.Image:
@@ -95,6 +97,25 @@ def boreal_lichen(summer: Image.Image) -> Image.Image:
     grey = ImageEnhance.Color(summer).enhance(0.2)
     sage = ImageChops.multiply(grey, Image.new('RGB', summer.size, (246, 248, 180)))
     return ImageEnhance.Contrast(ImageEnhance.Brightness(sage).enhance(1.86)).enhance(0.62)
+
+
+def thaw_grass(summer: Image.Image) -> Image.Image:
+    """Baldonnel at spring breakup: last year's grass, dead and flattened, a dull khaki (the reference
+    strip's #9a8c5e). (The snow that still lies in it is laid on the finished field by `thaw_snow`.)"""
+    grey = ImageEnhance.Color(summer).enhance(0.14)
+    khaki = ImageChops.multiply(grey, Image.new('RGB', summer.size, (255, 226, 150)))
+    return ImageEnhance.Contrast(ImageEnhance.Brightness(khaki).enhance(1.5)).enhance(0.8)
+
+
+def thaw_snow(im: Image.Image, seed: int) -> Image.Image:
+    """The last of the snow: a few soft-edged patches lying in the grass, blue-grey at their rims. Wraps."""
+    rng = random.Random(seed)
+    size = im.width
+    mask = blobs(rng, size, 13, 1.0).filter(ImageFilter.GaussianBlur(5))
+    rim = mask.point(lambda v: max(0, min(255, (v - 186) * 14)))
+    core = mask.point(lambda v: max(0, min(255, (v - 194) * 18)))
+    out = Image.composite(Image.new('RGB', im.size, (196, 208, 220)), im, rim)
+    return Image.composite(Image.new('RGB', im.size, (236, 241, 246)), out, core)
 
 
 def prairie_stubble(summer: Image.Image) -> Image.Image:
@@ -187,6 +208,8 @@ def main() -> None:
             im = prairie_stubble(Image.open(os.path.join(SRC, f'{TILES["grass-summer"]}.png')).convert('RGB'))
         elif name == 'grass-boreal':
             im = boreal_lichen(Image.open(os.path.join(SRC, f'{TILES["grass-summer"]}.png')).convert('RGB'))
+        elif name == 'grass-thaw':
+            im = thaw_grass(Image.open(os.path.join(SRC, f'{TILES["grass-summer"]}.png')).convert('RGB'))
         else:
             raise SystemExit(f'missing {path}')
         big = field(im, GRASS, GRASS_TILE[name], len(manifest) + 34)
@@ -194,8 +217,12 @@ def main() -> None:
             big = drifts(big, 5)
         if name == 'grass-prairie':
             big = stubble_rows(big)
+        if name == 'grass-thaw':
+            # (Its tones are the GRASS's own, measured before the snow goes on: the theme's --ground is the grass.)
+            manifest[name] = tones(big)
+            big = thaw_snow(big, 9)
         big.save(os.path.join(OUT, f'{name}.webp'), 'WEBP', quality=62, method=6)
-        manifest[name] = tones(big)
+        manifest.setdefault(name, tones(big))
     with open(MANIFEST, 'w') as f:
         json.dump(manifest, f, indent=2)
         f.write('\n')

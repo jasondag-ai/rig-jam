@@ -23,9 +23,10 @@ import { REGIONS } from '../src/levels/regions.ts';
 import { getMoveRange, newGame, solve, tryMove } from '../src/engine/index.ts';
 import { LOG_ENTRIES } from '../src/ui/wildlife-log.ts';
 import { WAVE3 } from '../src/ui/wave3.ts';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const OUT = outDir('fit_check');
 mkdirSync(OUT, { recursive: true });
 const ONLY = process.env.ONLY ?? '';
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));

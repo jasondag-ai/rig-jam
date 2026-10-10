@@ -28,5 +28,10 @@
     "mean": "#adb58a",
     "dark": "#a2aa81",
     "light": "#b7be92"
+  },
+  "grass-thaw": {
+    "mean": "#968f5e",
+    "dark": "#8a8357",
+    "light": "#a39a66"
   }
 }

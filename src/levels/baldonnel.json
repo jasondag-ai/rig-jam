@@ -1,0 +1,295 @@
+[
+  {
+    "id": "b01", "name": "Spring Breakup", "par": 16, "hint": "Rigs can't cross soft ground. Pickups can.",
+    "trucks": [
+      { "id": "A", "color": "blue", "row": 1, "col": 3, "length": 3, "orient": "v", "kind": "vac" },
+      { "id": "B", "color": "yellow", "row": 4, "col": 4, "length": 2, "orient": "v", "kind": "picker" },
+      { "id": "C", "color": "green", "row": 3, "col": 4, "length": 2, "orient": "h", "kind": "pickup" },
+      { "id": "D", "color": "orange", "row": 1, "col": 1, "length": 3, "orient": "v", "kind": "frac" },
+      { "id": "E", "color": "purple", "row": 5, "col": 1, "length": 3, "orient": "h", "kind": "water" },
+      { "id": "F", "color": "blue", "row": 2, "col": 4, "length": 2, "orient": "h", "kind": "picker" },
+      { "id": "G", "color": "red", "row": 2, "col": 0, "length": 2, "orient": "v", "kind": "pickup" },
+      { "id": "H", "color": "red", "row": 4, "col": 1, "length": 3, "orient": "h", "kind": "vac" }
+    ],
+    "gates": [
+      { "color": "blue", "side": "bottom", "index": 3 },
+      { "color": "yellow", "side": "top", "index": 4 },
+      { "color": "green", "side": "left", "index": 3 },
+      { "color": "orange", "side": "bottom", "index": 1 },
+      { "color": "purple", "side": "right", "index": 5 },
+      { "color": "blue", "side": "left", "index": 2 },
+      { "color": "red", "side": "bottom", "index": 0 },
+      { "color": "red", "side": "right", "index": 4 },
+      { "color": "yellow", "side": "top", "index": 2 },
+      { "color": "blue", "side": "right", "index": 1 }
+    ],
+    "obstacles": [],
+    "soft": [{"row":0,"col":1}, {"row":5,"col":0}]
+  },
+  {
+    "id": "b02", "name": "Load Limits", "par": 17,
+    "trucks": [
+      { "id": "A", "color": "blue", "row": 4, "col": 2, "length": 2, "orient": "h", "kind": "picker" },
+      { "id": "B", "color": "yellow", "row": 0, "col": 1, "length": 3, "orient": "h", "kind": "frac" },
+      { "id": "C", "color": "red", "row": 1, "col": 0, "length": 3, "orient": "h", "kind": "vac" },
+      { "id": "D", "color": "green", "row": 2, "col": 1, "length": 3, "orient": "v", "kind": "water" },
+      { "id": "E", "color": "red", "row": 2, "col": 4, "length": 2, "orient": "h", "kind": "pickup" },
+      { "id": "F", "color": "orange", "row": 1, "col": 3, "length": 3, "orient": "v", "kind": "frac" },
+      { "id": "G", "color": "purple", "row": 3, "col": 4, "length": 2, "orient": "h", "kind": "picker" },
+      { "id": "H", "color": "blue", "row": 0, "col": 4, "length": 2, "orient": "v", "kind": "pickup" }
+    ],
+    "gates": [
+      { "color": "blue", "side": "left", "index": 4 },
+      { "color": "yellow", "side": "right", "index": 0 },
+      { "color": "red", "side": "right", "index": 1 },
+      { "color": "green", "side": "top", "index": 1 },
+      { "color": "red", "side": "left", "index": 2 },
+      { "color": "orange", "side": "top", "index": 3 },
+      { "color": "purple", "side": "left", "index": 3 },
+      { "color": "blue", "side": "bottom", "index": 4 },
+      { "color": "blue", "side": "right", "index": 3 }
+    ],
+    "obstacles": [],
+    "soft": [{"row":0,"col":0}, {"row":5,"col":1}]
+  },
+  {
+    "id": "b03", "name": "Half Loads", "par": 18,
+    "trucks": [
+      { "id": "A", "color": "blue", "row": 3, "col": 4, "length": 2, "orient": "h", "kind": "picker" },
+      { "id": "B", "color": "red", "row": 2, "col": 2, "length": 3, "orient": "h", "kind": "water" },
+      { "id": "C", "color": "yellow", "row": 1, "col": 2, "length": 3, "orient": "h", "kind": "vac" },
+      { "id": "D", "color": "green", "row": 0, "col": 1, "length": 3, "orient": "v", "kind": "frac" },
+      { "id": "E", "color": "red", "row": 3, "col": 3, "length": 2, "orient": "v", "kind": "pickup" },
+      { "id": "F", "color": "orange", "row": 1, "col": 0, "length": 3, "orient": "v", "kind": "water" },
+      { "id": "G", "color": "purple", "row": 5, "col": 0, "length": 3, "orient": "h", "kind": "vac" },
+      { "id": "H", "color": "blue", "row": 3, "col": 2, "length": 2, "orient": "v", "kind": "picker" },
+      { "id": "I", "color": "red", "row": 4, "col": 4, "length": 2, "orient": "v", "kind": "pickup" }
+    ],
+    "gates": [
+      { "color": "blue", "side": "left", "index": 3 },
+      { "color": "red", "side": "left", "index": 2 },
+      { "color": "yellow", "side": "left", "index": 1 },
+      { "color": "green", "side": "bottom", "index": 1 },
+      { "color": "red", "side": "top", "index": 3 },
+      { "color": "orange", "side": "bottom", "index": 0 },
+      { "color": "purple", "side": "right", "index": 5 },
+      { "color": "blue", "side": "bottom", "index": 2 },
+      { "color": "yellow", "side": "right", "index": 3 },
+      { "color": "yellow", "side": "right", "index": 0 },
+      { "color": "red", "side": "top", "index": 4 }
+    ],
+    "obstacles": [],
+    "soft": [{"row":1,"col":5}, {"row":0,"col":0}]
+  },
+  {
+    "id": "b04", "name": "Soft Spot", "par": 19,
+    "trucks": [
+      { "id": "A", "color": "blue", "row": 4, "col": 2, "length": 3, "orient": "h", "kind": "vac" },
+      { "id": "B", "color": "yellow", "row": 1, "col": 2, "length": 3, "orient": "v", "kind": "frac" },
+      { "id": "C", "color": "red", "row": 0, "col": 4, "length": 2, "orient": "v", "kind": "picker" },
+      { "id": "D", "color": "green", "row": 2, "col": 3, "length": 2, "orient": "v", "kind": "pickup" },
+      { "id": "E", "color": "red", "row": 4, "col": 5, "length": 2, "orient": "v", "kind": "picker" },
+      { "id": "F", "color": "orange", "row": 3, "col": 4, "length": 2, "orient": "h", "kind": "pickup" },
+      { "id": "G", "color": "purple", "row": 2, "col": 4, "length": 2, "orient": "h", "kind": "picker" },
+      { "id": "H", "color": "blue", "row": 0, "col": 1, "length": 3, "orient": "h", "kind": "water" },
+      { "id": "I", "color": "purple", "row": 5, "col": 2, "length": 3, "orient": "h", "kind": "vac" }
+    ],
+    "gates": [
+      { "color": "blue", "side": "right", "index": 4 },
+      { "color": "yellow", "side": "top", "index": 2 },
+      { "color": "red", "side": "bottom", "index": 4 },
+      { "color": "green", "side": "bottom", "index": 3 },
+      { "color": "red", "side": "top", "index": 5 },
+      { "color": "orange", "side": "left", "index": 3 },
+      { "color": "purple", "side": "left", "index": 2 },
+      { "color": "blue", "side": "right", "index": 0 },
+      { "color": "blue", "side": "bottom", "index": 0 },
+      { "color": "yellow", "side": "left", "index": 4 },
+      { "color": "purple", "side": "right", "index": 5 }
+    ],
+    "obstacles": [],
+    "soft": [{"row":5,"col":1}, {"row":5,"col":0}, {"row":0,"col":0}]
+  },
+  {
+    "id": "b05", "name": "Frost Heave", "par": 20,
+    "trucks": [
+      { "id": "A", "color": "red", "row": 1, "col": 5, "length": 2, "orient": "v", "kind": "pickup" },
+      { "id": "B", "color": "blue", "row": 3, "col": 3, "length": 2, "orient": "v", "kind": "picker" },
+      { "id": "C", "color": "yellow", "row": 4, "col": 4, "length": 2, "orient": "h", "kind": "pickup" },
+      { "id": "D", "color": "red", "row": 3, "col": 1, "length": 3, "orient": "v", "kind": "vac" },
+      { "id": "E", "color": "green", "row": 5, "col": 2, "length": 3, "orient": "h", "kind": "water" },
+      { "id": "F", "color": "orange", "row": 1, "col": 1, "length": 3, "orient": "h", "kind": "frac" },
+      { "id": "G", "color": "purple", "row": 0, "col": 4, "length": 2, "orient": "v", "kind": "picker" },
+      { "id": "H", "color": "blue", "row": 3, "col": 4, "length": 2, "orient": "h", "kind": "pickup" },
+      { "id": "I", "color": "yellow", "row": 2, "col": 1, "length": 3, "orient": "h", "kind": "vac" }
+    ],
+    "gates": [
+      { "color": "red", "side": "bottom", "index": 5 },
+      { "color": "blue", "side": "top", "index": 3 },
+      { "color": "yellow", "side": "left", "index": 4 },
+      { "color": "red", "side": "top", "index": 1 },
+      { "color": "green", "side": "left", "index": 5 },
+      { "color": "orange", "side": "right", "index": 1 },
+      { "color": "purple", "side": "bottom", "index": 4 },
+      { "color": "blue", "side": "left", "index": 3 },
+      { "color": "yellow", "side": "right", "index": 2 },
+      { "color": "blue", "side": "top", "index": 0 },
+      { "color": "blue", "side": "top", "index": 4 }
+    ],
+    "obstacles": [
+      { "row": 0, "col": 5, "kind": "pumpjack" }
+    ],
+    "soft": [{"row":5,"col":5}, {"row":1,"col":0}]
+  },
+  {
+    "id": "b06", "name": "Critical Sour", "par": 21,
+    "trucks": [
+      { "id": "A", "color": "red", "row": 1, "col": 0, "length": 2, "orient": "v", "kind": "picker" },
+      { "id": "B", "color": "blue", "row": 3, "col": 2, "length": 2, "orient": "v", "kind": "pickup" },
+      { "id": "C", "color": "yellow", "row": 4, "col": 0, "length": 2, "orient": "h", "kind": "picker" },
+      { "id": "D", "color": "red", "row": 3, "col": 4, "length": 3, "orient": "v", "kind": "vac" },
+      { "id": "E", "color": "green", "row": 5, "col": 1, "length": 3, "orient": "h", "kind": "water" },
+      { "id": "F", "color": "orange", "row": 1, "col": 2, "length": 3, "orient": "h", "kind": "frac" },
+      { "id": "G", "color": "purple", "row": 1, "col": 1, "length": 2, "orient": "v", "kind": "pickup" },
+      { "id": "H", "color": "blue", "row": 3, "col": 0, "length": 2, "orient": "h", "kind": "picker" },
+      { "id": "I", "color": "yellow", "row": 2, "col": 3, "length": 3, "orient": "h", "kind": "vac" }
+    ],
+    "gates": [
+      { "color": "red", "side": "bottom", "index": 0 },
+      { "color": "blue", "side": "top", "index": 2 },
+      { "color": "yellow", "side": "right", "index": 4 },
+      { "color": "red", "side": "top", "index": 4 },
+      { "color": "green", "side": "right", "index": 5 },
+      { "color": "orange", "side": "left", "index": 1 },
+      { "color": "purple", "side": "bottom", "index": 1 },
+      { "color": "blue", "side": "right", "index": 3 },
+      { "color": "yellow", "side": "left", "index": 2 },
+      { "color": "blue", "side": "top", "index": 5 },
+      { "color": "blue", "side": "top", "index": 1 }
+    ],
+    "obstacles": [
+      { "row": 0, "col": 0, "kind": "tank" }
+    ],
+    "soft": [{"row":5,"col":0}, {"row":1,"col":5}]
+  },
+  {
+    "id": "b07", "name": "Gravel Haul", "par": 22,
+    "trucks": [
+      { "id": "A", "color": "red", "row": 1, "col": 5, "length": 2, "orient": "v", "kind": "pickup" },
+      { "id": "B", "color": "blue", "row": 2, "col": 3, "length": 2, "orient": "v", "kind": "picker" },
+      { "id": "C", "color": "yellow", "row": 4, "col": 2, "length": 2, "orient": "h", "kind": "pickup" },
+      { "id": "D", "color": "red", "row": 3, "col": 1, "length": 3, "orient": "v", "kind": "vac" },
+      { "id": "E", "color": "green", "row": 5, "col": 2, "length": 3, "orient": "h", "kind": "frac" },
+      { "id": "F", "color": "orange", "row": 1, "col": 1, "length": 3, "orient": "h", "kind": "water" },
+      { "id": "G", "color": "purple", "row": 0, "col": 4, "length": 2, "orient": "v", "kind": "picker" },
+      { "id": "H", "color": "blue", "row": 3, "col": 4, "length": 2, "orient": "h", "kind": "pickup" },
+      { "id": "I", "color": "yellow", "row": 2, "col": 0, "length": 3, "orient": "h", "kind": "vac" }
+    ],
+    "gates": [
+      { "color": "red", "side": "bottom", "index": 5 },
+      { "color": "blue", "side": "top", "index": 3 },
+      { "color": "yellow", "side": "left", "index": 4 },
+      { "color": "red", "side": "top", "index": 1 },
+      { "color": "green", "side": "left", "index": 5 },
+      { "color": "orange", "side": "right", "index": 1 },
+      { "color": "purple", "side": "bottom", "index": 4 },
+      { "color": "blue", "side": "left", "index": 3 },
+      { "color": "yellow", "side": "right", "index": 2 },
+      { "color": "blue", "side": "top", "index": 0 },
+      { "color": "blue", "side": "top", "index": 4 }
+    ],
+    "obstacles": [
+      { "row": 0, "col": 5, "kind": "wellhead" }
+    ],
+    "soft": [{"row":5,"col":5}, {"row":1,"col":0}]
+  },
+  {
+    "id": "b08", "name": "Scale House", "par": 22,
+    "trucks": [
+      { "id": "A", "color": "yellow", "row": 0, "col": 2, "length": 2, "orient": "v", "kind": "picker" },
+      { "id": "B", "color": "blue", "row": 3, "col": 3, "length": 3, "orient": "v", "kind": "frac" },
+      { "id": "C", "color": "green", "row": 1, "col": 4, "length": 2, "orient": "h", "kind": "pickup" },
+      { "id": "D", "color": "orange", "row": 1, "col": 1, "length": 2, "orient": "v", "kind": "picker" },
+      { "id": "E", "color": "red", "row": 4, "col": 0, "length": 3, "orient": "h", "kind": "water" },
+      { "id": "F", "color": "blue", "row": 1, "col": 0, "length": 3, "orient": "v", "kind": "vac" },
+      { "id": "G", "color": "purple", "row": 2, "col": 2, "length": 2, "orient": "h", "kind": "pickup" },
+      { "id": "H", "color": "red", "row": 0, "col": 3, "length": 2, "orient": "h", "kind": "picker" },
+      { "id": "I", "color": "yellow", "row": 2, "col": 4, "length": 3, "orient": "v", "kind": "frac" }
+    ],
+    "gates": [
+      { "color": "yellow", "side": "bottom", "index": 2 },
+      { "color": "blue", "side": "top", "index": 3 },
+      { "color": "green", "side": "left", "index": 1 },
+      { "color": "orange", "side": "bottom", "index": 1 },
+      { "color": "red", "side": "right", "index": 4 },
+      { "color": "blue", "side": "bottom", "index": 0 },
+      { "color": "purple", "side": "right", "index": 2 },
+      { "color": "red", "side": "left", "index": 0 },
+      { "color": "yellow", "side": "top", "index": 4 },
+      { "color": "yellow", "side": "left", "index": 4 },
+      { "color": "yellow", "side": "top", "index": 1 }
+    ],
+    "obstacles": [
+      { "row": 0, "col": 5, "kind": "tank" }
+    ],
+    "soft": [{"row":0,"col":0}, {"row":5,"col":4}]
+  },
+  {
+    "id": "b09", "name": "Overweight Permit", "par": 23,
+    "trucks": [
+      { "id": "A", "color": "blue", "row": 2, "col": 1, "length": 2, "orient": "h", "kind": "pickup" },
+      { "id": "B", "color": "blue", "row": 0, "col": 2, "length": 2, "orient": "v", "kind": "picker" },
+      { "id": "C", "color": "red", "row": 1, "col": 0, "length": 2, "orient": "h", "kind": "pickup" },
+      { "id": "D", "color": "red", "row": 0, "col": 4, "length": 2, "orient": "h", "kind": "picker" },
+      { "id": "E", "color": "yellow", "row": 2, "col": 0, "length": 3, "orient": "v", "kind": "frac" },
+      { "id": "F", "color": "green", "row": 3, "col": 1, "length": 3, "orient": "h", "kind": "vac" },
+      { "id": "G", "color": "orange", "row": 1, "col": 4, "length": 3, "orient": "v", "kind": "water" },
+      { "id": "H", "color": "purple", "row": 1, "col": 5, "length": 3, "orient": "v", "kind": "frac" },
+      { "id": "I", "color": "yellow", "row": 0, "col": 3, "length": 2, "orient": "v", "kind": "pickup" }
+    ],
+    "gates": [
+      { "color": "blue", "side": "left", "index": 2 },
+      { "color": "blue", "side": "bottom", "index": 2 },
+      { "color": "red", "side": "right", "index": 1 },
+      { "color": "red", "side": "left", "index": 0 },
+      { "color": "yellow", "side": "top", "index": 0 },
+      { "color": "green", "side": "left", "index": 3 },
+      { "color": "orange", "side": "top", "index": 4 },
+      { "color": "purple", "side": "top", "index": 5 },
+      { "color": "yellow", "side": "bottom", "index": 3 },
+      { "color": "yellow", "side": "top", "index": 2 },
+      { "color": "yellow", "side": "bottom", "index": 5 }
+    ],
+    "obstacles": [],
+    "soft": [{"row":5,"col":5}, {"row":5,"col":0}]
+  },
+  {
+    "id": "b10", "name": "Ban Lifted", "par": 24,
+    "trucks": [
+      { "id": "A", "color": "blue", "row": 2, "col": 2, "length": 2, "orient": "h", "kind": "picker" },
+      { "id": "B", "color": "blue", "row": 0, "col": 2, "length": 2, "orient": "v", "kind": "pickup" },
+      { "id": "C", "color": "red", "row": 1, "col": 0, "length": 2, "orient": "h", "kind": "picker" },
+      { "id": "D", "color": "red", "row": 0, "col": 4, "length": 2, "orient": "h", "kind": "pickup" },
+      { "id": "E", "color": "yellow", "row": 2, "col": 0, "length": 3, "orient": "v", "kind": "frac" },
+      { "id": "F", "color": "green", "row": 3, "col": 1, "length": 3, "orient": "h", "kind": "water" },
+      { "id": "G", "color": "orange", "row": 2, "col": 4, "length": 3, "orient": "v", "kind": "vac" },
+      { "id": "H", "color": "purple", "row": 2, "col": 5, "length": 3, "orient": "v", "kind": "frac" },
+      { "id": "I", "color": "yellow", "row": 0, "col": 3, "length": 2, "orient": "v", "kind": "picker" }
+    ],
+    "gates": [
+      { "color": "blue", "side": "left", "index": 2 },
+      { "color": "blue", "side": "bottom", "index": 2 },
+      { "color": "red", "side": "right", "index": 1 },
+      { "color": "red", "side": "left", "index": 0 },
+      { "color": "yellow", "side": "top", "index": 0 },
+      { "color": "green", "side": "left", "index": 3 },
+      { "color": "orange", "side": "top", "index": 4 },
+      { "color": "purple", "side": "top", "index": 5 },
+      { "color": "yellow", "side": "bottom", "index": 3 },
+      { "color": "yellow", "side": "top", "index": 2 },
+      { "color": "yellow", "side": "bottom", "index": 5 }
+    ],
+    "obstacles": [],
+    "soft": [{"row":5,"col":5}, {"row":5,"col":0}]
+  }
+]

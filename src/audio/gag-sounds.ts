@@ -113,7 +113,73 @@ export const GAG_SOUNDS: Record<GagId, Record<string, string[]>> = {
   bell: { 'cook-walks-in': ['+steps'], ding: ['-steps', 'triangle'], rumble: ['+rumble'], dizzy: ['-rumble'], follows: ['+steps@0.2'], 'empty-lane': ['-steps'], 'moe-late': ['+steps'], puffing: ['-steps'], 'save-me-some': ['+steps@0.3'] },
   // One Pea: the crew's steps, and the pea's plip into the puddle.
   pea: { 'crew-strolls': ['+steps'], carbs: ['-steps'], plip: ['blup'], 'trudges-off': ['+steps'] },
+  // BALDONNEL'S SEVEN (job U10; Jay, Oct 10): each cue on the moment its reference page draws the sound word, the pack's
+  // own sounds first and Manus's new files where they fit (crane_call, frog_chorus, frog_late, bison_snort, chuckle).
+  // Overweight: his steps in; CLANK as he lands on the scale (the wooden clack); the hat's thud (the knock, low; 0.4 s
+  // into its beat) and a clonk a boot (0.4 and 0.8 s in); the green light's ding (the twinkle); the smug magpie's call;
+  // his stomp off.
+  overweight: {
+    'moe-walks-in': ['+steps'], 'spots-the-truck': ['-steps'], 'the-needle-swings': ['clack'], 'takes-off-his': ['knock@0.4^-5'], 'kicks-off-one': ['knock@0.4', 'knock@0.8^3'],
+    'ding-green-light': ['twinkle@0.08'], 'moe-whips-round': ['magpie@0.15'], 'stomps-off-in': ['+steps'],
+  },
+  // Two Left Feet: the cranes' rolling call as they glide in ("garooo", 0.1 s in) and again as the dance starts
+  // ("garoo", a little higher); Moe's steps in and off; the feather's twinkle, as for the lost goose's.
+  cranes: { 'a-rattling-call': ['crane_call@0.1'], 'the-dance-leaps': ['crane_call^2'], 'slow-moe-walks': ['+steps'], 'he-copies-them': ['-steps'], 'a-grey-feather': ['twinkle'], 'hopturn-one-last': ['+steps@0.5'] },
+  // Right of Way: the bison's hooves in, its snort as it settles and again (lower) for the yawn that answers the horn;
+  // BEEP BEEP is the toy horn twice; the door's clunk (the clack) out and in; his steps round the truck and back; two
+  // claps; the backup beeper as he backs away; "heh heh heh" is the chuckle; hooves off.
+  bison: {
+    'a-bison-ambles': ['+steps'], 'stops-in-the': ['-steps'], 'lies-down-chews': ['bison_snort@0.2'], 'beep-beep': ['horn', 'horn@0.28'], 'the-bison-yawns': ['bison_snort@0.1^-2'],
+    'clunk-moe-gets': ['clack'], 'walks-round-the': ['+steps'], 'waves-his-arms': ['-steps'], 'claps-clap-clap': ['slap@0.08', 'slap@0.3'], 'hopturn-stomps-back': ['+steps@0.2'],
+    'clunk-back-in': ['-steps', 'clack'], 'backs-up-the': ['reverse'], 'and-giggles-heh': ['chuckle'], 'ambles-off': ['+steps'],
+  },
+  // Half Dressed: two far footsteps ("crunch crunch"); a rustle each time he dives for cover or hops; the steps come
+  // close and pass right over him; a twinkle when he reappears, proud.
+  hare: {
+    'crunch-crunch-footsteps': ['step', 'step@0.3'], 'hides-against-the': ['rustle'], 'hops-onto-the': ['rustle@0.1'], 'hopturn-down-into': ['rustle@0.1'], 'the-footsteps-are': ['+steps'],
+    'the-hare-reappears': ['-steps', 'twinkle'], 'hops-off': ['rustle'],
+  },
+  // Last Ice: the pan's bump on the ice (the knock); plunk (the blup); SPLASH as he sits back down hard (0.05 s in);
+  // the fish's flip flop (two taps); bubbles; CHOMP; the pike's SPLASH back down.
+  ice: {
+    'the-pan-bumps': ['knock'], 'the-bobber-dips': ['blup'], 'sits-back-down': ['splash@0.05'], 'and-lands-on': ['tap@0.05', 'tap@0.3^3'], bubbles: ['blup^4'], 'chomp-gone': ['chomp'],
+    'and-back-down': ['splash@0.02'],
+  },
+  // Late Croak: a blup a frog as each pops up (0.4 s apart, each higher); the chorus for their round (its 2.5 s end
+  // before the silence); the bearded worker's steps past; the little one's one late CREEK, alone; three blups down.
+  frogs: {
+    'blup-blup-blup': ['blup', 'blup@0.4^2', 'blup@0.8^4'], 'they-sing-in': ['frog_chorus'], 'the-bearded-worker': ['+steps'], 'he-stops-looks': ['-steps'], 'shrugs-walks-on': ['+steps@0.3'],
+    'the-little-one': ['-steps', 'frog_late'], 'all-three-sink': ['blup', 'blup@0.2', 'blup@0.4'],
+  },
+  // Lunch to Go: his steps in; BZZZ from the moment the mosquito flies in until it is gone with his lunch (the loop
+  // stops with the gag); his steps after it.
+  mosquito: { 'slow-moe-walks': ['+steps'], 'sets-it-down': ['-steps'], 'bzzz-a-big': ['+mosquito'], 'moe-chases-after': ['+steps'] },
 };
+
+/**
+ * THE FINALE'S SOUNDS (job U10), by part and beat (finale.ts marks them; the beat names are `FINALE_BEATS`' own):
+ *   the card: the win card's usual sounds, on the card's own clock: a pop a hard hat as each pops in (0.9, 1.15, 1.4 s,
+ *     each a little higher, as `sound.win` plays them) and then the ta-da;
+ *   the photo: the self-timer's beep, slow (every 0.6 s from 1.65 s) then fast (every 0.18 s from 5.0 s), exactly where
+ *     the page draws "beep"; Moe's footsteps as he hurries from the camera to his spot; the camera on the flash and the splat with it (5.86 s); the Polaroid's whirr as the photo
+ *     drops; the magpie's chuckle ("heh heh");
+ *   Still Here: the creak as the door swings open and again as it shuts; the scrub looping while he brushes (until he
+ *     notices you; again when the brush goes back in, until the door is shut).
+ * The credits have no effects: the menu loop of the player's music style plays under them, if Music is on.
+ */
+export const FINALE_SOUNDS: Record<string, Record<string, string[]>> = {
+  card: { 'the-last-truck': ['tap@0.9', 'tap@1.15^2', 'tap@1.4^4', 'tada@1.7'] },
+  photo: {
+    'he-sets-the': ['timer_beep', 'timer_beep@0.6', 'timer_beep@1.2', 'timer_beep@1.8', 'timer_beep@2.4', 'timer_beep@3.0'],
+    beepbeepbeepbeep: ['timer_beep', 'timer_beep@0.18', 'timer_beep@0.36', 'timer_beep@0.54', 'timer_beep@0.72'],
+    'hurries-to-his': ['+steps'], 'hopturn-big-grin': ['-steps'], // (Moe's run from the camera to his spot)
+    'splat-flash-at': ['camera', 'splat'], 'the-photo-drops': ['polaroid'], 'heh-heh-the': ['chuckle'],
+  },
+  credits: {},
+  still: { 'creeeak-the-door': ['creak'], 'slow-moe-leans': ['+scrub'], 'stops-notices-you': ['-scrub'], 'brush-back-in': ['+scrub'], 'creeeak-the-door-2': ['creak', '-scrub@0.6'] },
+};
+/** The name the finale's loops and timers are kept under (`sound.gagEnd(FINALE_ID)` stops them). */
+export const FINALE_ID = 'finale';
 
 /** The loops a gag may run, and the sound each repeats. `every`: a one-shot repeated that often (s); none: the file itself loops. */
 export const GAG_LOOPS = {
@@ -122,6 +188,7 @@ export const GAG_LOOPS = {
   mosquito: { key: 'mosquito' },
   quad_idle: { key: 'quad_idle' },
   quad_rev: { key: 'quad_rev' },
+  scrub: { key: 'scrub' }, // (the finale: his toothbrush)
   // Wave 3. A sound that runs on is its file played again before the last one has died away (each
   // file fades in and out, so they blend); stopping it fades whatever is still sounding.
   squelch: { key: 'squelch', every: 0.42 },
@@ -141,10 +208,10 @@ export function parseCue(cue: string): { op: 'play' | 'start' | 'stop'; name: st
   return { op, name: op === 'play' ? head : head.slice(1), delay: at ? Number(at) : 0, semis: up ? Number(up) : 0 };
 }
 
-/** The sounds a gag can play: its one-shots and what its loops repeat. */
-export function gagKeys(id: GagId): SfxKey[] {
+/** The sounds a table of beats can play: its one-shots and what its loops repeat. */
+export function cueKeys(table: Record<string, string[]>): SfxKey[] {
   const out = new Set<SfxKey>();
-  for (const cues of Object.values(GAG_SOUNDS[id] ?? {})) {
+  for (const cues of Object.values(table)) {
     for (const cue of cues) {
       const { op, name } = parseCue(cue);
       out.add((op === 'play' ? name : GAG_LOOPS[name as GagLoop].key) as SfxKey);
@@ -152,3 +219,7 @@ export function gagKeys(id: GagId): SfxKey[] {
   }
   return [...out];
 }
+/** The sounds a gag can play. */
+export const gagKeys = (id: GagId): SfxKey[] => cueKeys(GAG_SOUNDS[id] ?? {});
+/** The sounds the finale can play, all its parts together. */
+export const finaleKeys = (): SfxKey[] => [...new Set(Object.values(FINALE_SOUNDS).flatMap(cueKeys))];

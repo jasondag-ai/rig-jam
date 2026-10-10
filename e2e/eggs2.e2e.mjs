@@ -11,10 +11,11 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { REGIONS } from '../src/levels/regions.ts';
 import { getMoveRange, newGame, solve, tryMove } from '../src/engine/index.ts';
+import { outDir } from './out.mjs';
 const riddleOf = (id) => RIDDLE_ENTRIES.find((e) => e.id === id)?.riddle;
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const OUT = outDir('fit_check');
 const ONLY = process.env.ONLY ?? '';
 mkdirSync(OUT, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));

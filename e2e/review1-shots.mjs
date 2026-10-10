@@ -1,5 +1,5 @@
 // Before/after screenshots for Manus review #1's shell fixes (WebKit, 390x844), saved to OUT
-// (default ~/Desktop/RHR Art Inbox/fit_check) as review1_<TAG>_*.png. Run it with TAG=before on the
+// (default qc-out/fit_check in the repo; see out.mjs) as review1_<TAG>_*.png. Run it with TAG=before on the
 // old build and TAG=after on the new one. Dev server up: TAG=after node e2e/review1-shots.mjs
 import { UNLOCKED } from './progress.mjs';
 import { webkit } from 'playwright';
@@ -9,9 +9,10 @@ import { join } from 'node:path';
 import { DAILY_LEVELS, REGIONS } from '../src/levels/regions.ts';
 import { dayKey, padLevelIndex, padNumber } from '../src/ui/daily.ts';
 import { solve } from '../src/engine/index.ts';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const OUT = outDir('fit_check');
 const TAG = process.env.TAG ?? 'after';
 mkdirSync(OUT, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));

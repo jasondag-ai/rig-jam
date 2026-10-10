@@ -14,8 +14,9 @@ import { dayKey, streak } from '../src/ui/daily.ts';
 import { LOG_ENTRIES } from '../src/ui/wildlife-log.ts';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const fixture = JSON.parse(readFileSync(new URL('./fixtures/live-save-de534ad.json', import.meta.url), 'utf8'));
-const save = fixture.localStorage, progress = JSON.parse(save['rush-hour-rigs:v2']), log = JSON.parse(save['rush-hour-rigs:log']);
+// EVERY REAL SAVE WE HAVE, each made on a live build just before something shipped (make-live-save.mjs): the one from
+// before Clearwater (de534ad, Oct 8) and the one from before 1.0.0, the October upgrade (ba54c2b, Oct 10). `ONLY=ba54c2b` runs one.
+const FIXTURES = ['de534ad', 'ba54c2b'].filter((b) => !process.env.ONLY || process.env.ONLY === b);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;
 const check = (ok, text) => {
@@ -30,13 +31,20 @@ const PHONES = [
 ];
 const stored = (page) => page.evaluate(() => Object.fromEntries(Object.keys(localStorage).sort().map((k) => [k, localStorage.getItem(k)])));
 // (All but the note of which level was last opened, kept for the feedback text: this test opens a level, so that one moves on.)
-const changed = (now) => Object.keys(save).filter((k) => k !== 'rush-hour-rigs:last-level' && now[k] !== save[k]);
 
+for (const build of FIXTURES) {
+const fixture = JSON.parse(readFileSync(new URL(`./fixtures/live-save-${build}.json`, import.meta.url), 'utf8'));
+const save = fixture.localStorage, progress = JSON.parse(save['rush-hour-rigs:v2']), log = JSON.parse(save['rush-hour-rigs:log']), audio = JSON.parse(save['rush-hour-rigs-audio']);
+// (The phone's date is the day after the save's Daily Pad: on a later day the game rightly spends a Safety Stand-Down on
+// the missed day and writes that down, which is not what this suite is about.)
+const [Y, M, D] = progress.dailyCleared.at(-1).split('-').map(Number);
+const changed = (now) => Object.keys(save).filter((k) => k !== 'rush-hour-rigs:last-level' && now[k] !== save[k]);
 for (const [engine, name, opts] of PHONES) {
   console.log(`\n${name}: a save from live build ${fixture.build}`);
   const browser = await engine.launch();
   const context = await browser.newContext({ ...opts, hasTouch: true });
   const page = await context.newPage();
+  await page.clock.setFixedTime(new Date(Y, M - 1, D + 1, 12, 0, 0));
   const errors = [];
   // (Music is on in this save. A music file still being fetched when the page is reloaded is cut off by the reload itself: WebKit reports that as an error of the old page. It is not one of the game's.)
   page.on('pageerror', (e) => { if (!/audio\/music\/.*access control checks/.test(e.message)) errors.push(e.message); });
@@ -58,10 +66,11 @@ for (const [engine, name, opts] of PHONES) {
   const cardium = REGIONS[0].levels;
   const wantHats = cardium.map((l) => (progress.best[l.id] === undefined ? 0 : progress.best[l.id] <= l.par ? 3 : progress.best[l.id] <= l.par + 3 ? 2 : 1));
   check(list.hats.join() === wantHats.join(), `hard hats on Cardium's rows as earned (${list.hats.join(' ')})`);
-  check(list.open.join() === cardium.map((_, i) => i <= 6).join(), 'the same levels are open: Cardium 1 to 7');
+  const cleared = cardium.filter((l) => progress.best[l.id] !== undefined).length;
+  check(list.open.join() === cardium.map((_, i) => i <= cleared).join(), `the same levels are open: Cardium 1 to ${cleared + 1}`);
   const days = streak(progress.dailyCleared, dayKey(new Date())).days;
   check(list.days === `Days without incident: ${days}`, `the streak sign reads what the saved Daily Pads make it today (${list.days})`);
-  check(list.tabs.map((t) => t.name).join() === REGIONS.map((r) => r.name).join() && list.tabs.map((t) => t.locked).join() === 'false,false,true,true,true,true', `six tabs; Cardium and Montney open as before, the rest locked (${list.tabs.map((t) => `${t.name}${t.locked ? ' locked' : ''}`).join(', ')})`);
+  check(list.tabs.map((t) => t.name).join() === REGIONS.map((r) => r.name).join() && list.tabs.map((t) => t.locked).join() === ['false', 'false', ...REGIONS.slice(2).map(() => 'true')].join(), `${REGIONS.length} tabs; Cardium and Montney open as before, the rest locked (${list.tabs.map((t) => `${t.name}${t.locked ? ' locked' : ''}`).join(', ')})`);
   check(/Clear 5 more in Bakken/.test(list.tabs[5].text) && !list.banner, `Clearwater is locked like any region not yet earned ("${list.tabs[5].text}"), and no "NEW LEASE OPEN" banner shows`);
   check(!list.sideways, 'the list does not scroll sideways');
 
@@ -80,7 +89,7 @@ for (const [engine, name, opts] of PHONES) {
   await wait(400);
   const book = await page.evaluate(() => ({ count: document.querySelector('.log-count').textContent, found: [...document.querySelectorAll('.log-card.found')].map((c) => c.dataset.id), cards: document.querySelectorAll('.log-card').length }));
   check(book.count === `${log.found.length}/${LOG_ENTRIES.length}` && book.found.slice().sort().join() === log.found.slice().sort().join(), `the Wildlife Log has the same sightings found, out of more now (${book.count}: ${book.found.join(', ')})`);
-  check(book.cards === LOG_ENTRIES.filter((e) => !e.hidden).length, `and a card for every entry, the five new ones included (${book.cards})`);
+  check(book.cards === LOG_ENTRIES.filter((e) => !e.hidden).length, `and a card for every entry, the newer ones included (${book.cards})`);
   await page.locator('.log-head .back').click();
   await page.waitForSelector('.screen.levels .level-btn');
 
@@ -88,7 +97,7 @@ for (const [engine, name, opts] of PHONES) {
   await page.locator('.brand .gear').click();
   await wait(400);
   const set = await page.evaluate(() => ({ sfx: document.querySelector('.settings [data-act="sfx"]').checked, music: document.querySelector('.settings [data-act="music"]').checked, style: document.querySelector('.settings [role="radio"][aria-checked="true"]')?.dataset.style, demo: document.querySelector('.settings [data-act="demo"]').checked, version: [...document.querySelectorAll('.settings *')].map((e) => e.textContent.trim()).find((t) => /^Version \d/.test(t)) }));
-  check(set.sfx && set.music && set.style === 'retro' && !set.demo, `Settings as saved: Sound effects on, Music on, 80s Retro, demo off (${JSON.stringify(set)})`);
+  check(set.sfx === audio.sfx && set.music === audio.music && set.style === audio.style && !set.demo, `Settings as saved: Sound effects ${audio.sfx ? 'on' : 'off'}, Music ${audio.music ? 'on' : 'off'}, the ${audio.style} style, demo off (${JSON.stringify(set).slice(0, 80)})`);
   await page.locator('.settings [data-act="close"]').click();
   await wait(300);
 
@@ -109,6 +118,7 @@ for (const [engine, name, opts] of PHONES) {
   check(changed(now).length === 0 && hats.join() === wantHats.join(), 'a tap on it reloads the page, and the save is still whole: the same storage, the same hard hats');
   check(errors.length === 0, `no script errors (${errors[0] ?? 'none'})`);
   await browser.close();
+}
 }
 console.log(failures ? `\nFAILED: ${failures} check(s)` : '\nPASS');
 process.exit(failures ? 1 : 0);

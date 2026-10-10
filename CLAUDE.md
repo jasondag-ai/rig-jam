@@ -2,6 +2,16 @@
 
 Renamed from Rush Hour Rigs on Oct 9, 2026 (trademark).
 
+VERSION 1.0.0 IS LIVE (Oct 10, 2026, job U8): the October upgrade (`next`) was merged into `main` and shipped. See
+"1.0.0: the October upgrade is live" below for what it holds and how a ship is done.
+
+THE DEV LANE STAYS (job U1): NEW WORK GOES TO BRANCH `next`, in its own folder `~/Rig-Jam-next` (a git worktree
+with its own `npm ci`: never link `node_modules`), published as the DEV COPY at
+https://jasondag-ai.github.io/rig-jam-next/ by `sh tools/push-dev.sh` (it pushes `next` to the repo
+`jasondag-ai/rig-jam-next` as its main, where the same Action builds it, and waits for the dev build id). The
+live game (/rig-jam/, this repo's `main`, `sh tools/check-live.sh`) is not touched by it: `main` gets bug fixes
+and merges of `next` that Jay asks for. See "The dev lane" below for the DEV label, the shared saves and the caches.
+
 STANDING RULE, BEFORE EVERY JOB: read `GAME_BIBLE.md`, `ART_BIBLE.md` and `STANDING_RULES.md` from
 `~/Desktop/RHR Art Inbox/` (those are the latest versions). If any differs from the copy in the
 repo root, copy it over the repo copy and commit that change before starting the job.
@@ -89,6 +99,7 @@ something, give exact clicks and one command at a time.
 ## Regions
 - Cardium: 10 levels, trucks and gates only. Theme: summer.
 - Clearwater: 10 levels on a pad of 8 x 8 (the Big Pad), trucks and gates only. Theme: `boreal`. Opens after 5 of Bakken. See "Clearwater, region 6".
+- Baldonnel: 10 levels of 6 x 6, par 16 to 24, adds ROAD BAN PATCHES (soft cells a 3-cell truck cannot enter). Theme: `thaw`. Opens after 5 of Clearwater. See "Baldonnel, region 7".
 - Montney: 10 levels, adds obstacles (pumpjacks, 400 bbl tanks, wellheads). Theme: spring mud.
 - Duvernay: 10 levels, adds convoys. Theme: winter. Preview any theme with `?theme=winter` etc.
 - Mannville: 10 levels, adds MUSKEG (with obstacles and convoys). EVERY level is par 14 to 20, the
@@ -683,10 +694,10 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (0.9.0) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 since Oct 10) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
-  `versionText`). Shown at the very bottom of Settings ("Version 0.9.0 (a1b2c3d)") and copied into
+  `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
   feedback. The build also writes `version.json`.
 - UPDATES (`src/ui/update.ts`, tested): an open or installed copy asks the server for
   `version.json` (never from a cache: the service worker lets that file through) when it opens,
@@ -1184,7 +1195,7 @@ something, give exact clicks and one command at a time.
   `~/Desktop/RHR Art Inbox/qc/clearwater/`.
 - `npm run test:e2e:clearwater` (WebKit at iPhone DPR 3, 390 and 375 wide): the tab and its
   locks, the 8 x 8 board whole on the screen, drag, Undo, Hint, and ALL TEN LEVELS cleared at par
-  by dragging; screenshots in `~/Desktop/RHR Art Inbox/qc/clearwater/`.
+  by dragging; screenshots in `qc-out/clearwater/`.
 - THE WORKTREE NEEDS ITS OWN `npm ci` (`~/Rush-Hour-Rigs-bigpad`): with `node_modules` linked to
   the main checkout, Vite refuses the bundled fonts (403: outside its root) and the game shows in
   a fallback font.
@@ -1301,7 +1312,477 @@ something, give exact clicks and one command at a time.
   Chrome's engine, desktop and phone; Safari's engine lets no script read the clipboard, so
   there only the button's "Copied!" is checked).
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
-  sizes in both engines to `~/Desktop/RHR Art Inbox/qc/judge/` (`OUT=` another folder).
+  sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
+
+## 1.0.0: the October upgrade is live (job U8; Oct 10, 2026)
+- WHAT SHIPPED, all of it built on `next` and described in its own section: Daily Pads forever (U2), Sunday
+  Turnaround (U3), fling (U4), Baldonnel, region 7, with road ban patches and its seven sightings (U6, U6b, U6c),
+  Classic Rock (U7), the finale for a perfect game (U9, U9b) and sound for Baldonnel and the finale (U10). Skins
+  (U5) were cut. Where a section's heading says "on `next`", it is on `main` too now. 70 levels, 40 sightings.
+- HOW IT WAS SHIPPED, and how the next merge is done:
+  1. A NEW REAL SAVE from the live build as it then was: `node e2e/make-live-save.mjs <out.json>`, run from a
+     checkout of the live build's own commit (it plays the live site in WebKit: levels, sightings, a hint, the
+     Daily Pad, the sound settings) > `e2e/fixtures/live-save-<build>.json`, added BESIDE the older ones in
+     `FIXTURES` (`save-compat.test.ts`) and in `e2e/save.e2e.mjs`. Now two: `de534ad` (before Clearwater) and
+     `ba54c2b` (before 1.0.0). Both must load whole.
+  2. The version (`package.json`), then `git merge --no-ff next` in the main checkout (a merge commit, never a
+     squash), `npm test`, `npm run build` and the key browser suites against main's own dev server (save,
+     sightings, finale, baldonnel, fling, offline, judge).
+  3. `git push origin main`, then `sh tools/check-live.sh` until the live `version.json` shows the merged build id.
+  4. `next` brought level with main (`git merge --ff-only main` in `~/Rig-Jam-next`) and `sh tools/push-dev.sh`.
+- THE LIVE CONTRACT WAS MADE AGAIN from the shipped code: `node tools/live-contract.ts 1.0.0` >
+  `e2e/fixtures/live-contract-1.0.0.json` (the older `live-contract-24c29d5.json` is kept beside it), and
+  `DEV_ADDS` in `save-compat.test.ts` is EMPTY again: the live build now knows the Turnaround's and the finale's
+  keys, Baldonnel and its sightings, and Classic Rock. The next thing the dev lane adds to saved data is declared
+  there, as before. After a later ship, run the tool again with the new version's name.
+- A PLAYER'S PHONE: the service worker's new cache and the "New version, tap to update" bar bring 1.0.0 in; the
+  save is read as it is (nothing is migrated, renamed or reset), the two new keys appear only when there is
+  something to put in them.
+
+## The dev lane (October upgrade, job U1; Oct 9)
+- TWO SITES, ONE WEB ORIGIN: the live game https://jasondag-ai.github.io/rig-jam/ (repo `rig-jam`,
+  branch `main`) and the dev copy https://jasondag-ai.github.io/rig-jam-next/ (repo `rig-jam-next`,
+  whose main is this repo's branch `next`). The same Action builds both; `base: './'` serves either
+  path. `sh tools/push-dev.sh` (from `~/Rig-Jam-next`, branch `next` only) pushes and waits for the
+  dev build id; `sh tools/check-live.sh` is for main. NO COMMITS TO MAIN FROM UPGRADE WORK.
+- THE CHANNEL (vite.config.ts `CHANNEL`; `APP.channel`, `isDev()` in version.ts): 'dev' when the
+  build runs in a repo whose name ends in `-next` (or `RIG_CHANNEL=dev`, e.g. `RIG_CHANNEL=dev npx
+  vite --port 5181` in `~/Rig-Jam-next`), else 'live'. A dev build's `version.json` carries
+  `"channel":"dev"`. Unit tests also run in the dev repo's Action, where the channel IS dev: a
+  test must hold on either.
+- THE DEV LABEL, dev builds only: "DEV" after Settings' version line (`versionText`) and a small
+  chip in the home page's top left corner (`.dev-chip`). The live build says it nowhere.
+- THE DEV COPY KEEPS ITS OWN OFFLINE CACHES (service-worker.ts `cachePrefix`): an origin's caches
+  are shared, and a worker taking over deletes every cache with its prefix but its own. Live's
+  are `rhr-*`, dev's `next-rhr-*`, so neither wipes the other's offline copy.
+- ONE SAVE FOR BOTH (they share `localStorage` on a phone that has opened both), SO THE DEV BUILD
+  MAY ONLY ADD. `e2e/fixtures/live-contract-<build>.json` is what the live build reads (keys,
+  fields, types, the sightings, styles, regions and levels it knows), made from main's own
+  modules; `save-compat.test.ts` holds everything this build writes to it, and a round trip
+  through the live build. WHAT THE LIVE BUILD DOES WITH WHAT IT DOES NOT KNOW: a sighting id it
+  does not know is dropped when it next saves the log; an unknown music style falls back to its
+  default; a field added to `rush-hour-rigs:v2` is lost when it saves progress. So: new data that
+  must survive goes in a NEW KEY (declare it in the test's `DEV_ADDS.keys`); a new sighting, style
+  or region must be declared in `DEV_ADDS`, on purpose. (Reset progress on either build clears
+  every `rush-hour-rigs:` key.) WHEN MAIN CHANGES WHAT IT SAVES, make a new contract file from it.
+- `npm run test:e2e:devlane` (WebKit, DPR 3, 375 and 390; `DEV=` the dev build, default the dev
+  server on 5181; `LIVE=` the live build, default the live site): the label on dev and not on
+  live; a save written by the dev build shown whole by the live build, byte for byte untouched,
+  played on there and read back by the dev build; the two polish items below.
+- POLISH: "You can come back tomorrow." is a Daily Pad line only (`DAILY_ONLY_LINES` in lines.ts,
+  `companyLine(..., daily)`). THE DEPTH GAUGE BESIDE THE CARDS IS A SLIM TAB (`.dig-gauge.slim`,
+  set in log-dig-view.ts from the first card's top to the last card's foot): flush with the
+  screen's right edge, in the page's margin, its reading turned on its side, so it covers no
+  card's picture and no caption (there is no place over two columns of cards where the full pill
+  covers neither). Below the cards it is the pill again.
+
+## Classic Rock music (October upgrade, job U7; Oct 9; on `next`)
+- A FOURTH MUSIC STYLE, "Classic Rock" (`MUSIC_STYLES`, id `classic`; Country stays the default),
+  whose in-play loop GETS HEAVIER AS THE PLAYER MOVES UP THE REGIONS: `classic_menu` and four
+  in-play loops, `classic_play1` (the calmest, 100 BPM) to `classic_play4` (the heaviest).
+- THE TABLE, ONE PLACE: `PLAY_TIER` in `src/audio/pack.ts` (a region's id to its tier; `playTier`
+  gives 1 for anything not named): Cardium 1, Montney 2, Duvernay 3, Mannville, Bakken and
+  Clearwater 4, the Daily Pad (`daily`) 3. **SUNDAY TURNAROUND (U3) AND BALDONNEL (U6) USE TIER
+  4: add their ids to the table when they come.** `GameView` passes `playTier(regionId)` with
+  `sound.setGround`; the engine keeps it with the scene (`setScene(scene, tier)`) and
+  `musicKey(style, scene, tier)` picks the loop. Country, 80s Retro and Chill have ONE in-play
+  loop each and play it whatever the tier (the fallback; tested), exactly as before.
+- THE FILES are Manus's pack (`~/Desktop/RHR Art Inbox/Sound files/classic_rock/`, notes in its
+  `RIGJAM_MUSIC_HANDOFF.md`): five finished loops, seamless, at -16 LUFS. They are NOT re-cut and
+  NOT re-levelled, and `tools/audio-pack.py` is NOT run over them; but they came two to three
+  times the size of the other music, so `python3 tools/music-classic.py` encodes each again as
+  the others are (decoded once, then Ogg Opus 112 kb/s first and MP3 128 kb/s behind: 1.4 to 2
+  MB each, 18 MB for the ten files), measures `seconds` (from the decoded loop) and `mean` (from
+  the MP3 that ships) into pack.json, and adds the five Credits rows (Pixabay Content License;
+  no attribution needed). `masters/` is never shipped. Like all music they are fetched only when
+  wanted and are not in the service worker's precache.
+- A CHANGE OF LOOP IS A CROSSFADE WITH NO GAP (engine.ts `syncMusic`, every style): the loop that
+  is playing plays on until the next one is fetched and decoded, and only then fades out as the
+  new one fades in (`MUSIC_FADE`). It used to fade out at once, so the first time a loop was
+  wanted there was silence while its file came. Another level of the same tier does not disturb
+  the loop.
+- SETTINGS: the four style buttons are on ONE row (`.music-styles`, four columns): a second row
+  would push the panel past a phone's screen.
+- SAVES: nothing new. The live build does not know `classic`: it plays Country, and saves Country
+  if a sound setting is changed there (Jay: fine; `DEV_ADDS.styles` in save-compat.test.ts).
+- Tests: pack.test.ts (the table, the keys, the fallback, the files' sizes and levels, no
+  masters); `test:e2e:audio` (each region's loop, the Daily Pad's, every change a crossfade with
+  sound going out throughout, Country still `country_play`, and every loop's join in Chromium
+  and WebKit). NOBODY HAS LISTENED: the levels and joins are measured, not heard.
+
+## Daily Pads forever (October upgrade, job U2; Oct 9; on `next`)
+- A FRESH DAILY PAD EVERY DAY UNTIL NOV 27, 2028, THE SAME FOR EVERYONE. Pads 1 to 60 (Sep 30 to
+  Nov 28, 2026) are `src/levels/daily.json`, in the game's script, EXACTLY AS THEY WERE (a test
+  pins the file's hash). Pads 61 to 790 (Nov 29, 2026 to Nov 27, 2028; 730 pads) are made once
+  and fixed: `public/daily/pads-<from>-<to>.json`, blocks of `DAILY_BLOCK` (30) pads, 25 files,
+  about 26 KB each, NOT in the game's script (the main bundle grew 2 KB).
+- **REGENERATE BEFORE NOV 2028.** After pad 790 the pads repeat from pad 61 (`padSlot`; never from
+  pad 1). To add years: raise `DAILY_LAST` in `src/ui/daily-pads.ts`, run `node
+  tools/gen-daily.ts` (about 12 minutes for 730; finished pads come from `tools/.gen-cache/daily/`
+  or are made again the same), commit the new files. Never regenerate a pad that has been live.
+- `tools/gen-daily.ts` MAKES THEM BY THE SAME ROAD AS PADS 1 TO 60: `dailySlot(i)` of gen-levels.ts
+  (odd pads 5 trucks and 1 piece of equipment, even pads 6 and 2; par 6 to 8), the same search in
+  the same shards run by gen-levels.ts's own worker, the looks dealt from the same seeds
+  (`dressDaily`), the seed the pad's place (5000 + pad - 1). `--check 6` makes pads 1 to 6 again
+  and compares them with daily.json (they come out the same). NO PAD REPEATS (`layoutKey`: the
+  layout whatever the paint): a pad whose seed gave no level in the band, or the layout of a
+  region's level or an earlier pad, is made from its next seed (`SEED_STEP`), in pad order. Each
+  is parsed and solved before it is written. Pars: 102 at 6, 336 at 7, 292 at 8.
+- THE GAME (`src/ui/daily-pads.ts`, pure and tested; main.ts `showDaily`): `dailyLevel(pad)` gives
+  pads 1 to 60 at once and fetches the one block a later pad lies in (kept for the visit; a failed
+  fetch is asked for again). The home page fetches today's and tomorrow's ahead (`warmDaily`) and
+  writes the par in when it comes; if a block cannot be had, a toast says so. THE SERVICE WORKER
+  KEEPS EVERY BLOCK (they are public files), so any day's pad plays offline once the game has
+  been opened (`test:e2e:offline` opens Dec 1, 2026's with the network gone). The theme rule is
+  the old one (`dailyTheme`: odd summer, even spring). The live build until the merge still
+  wraps after pad 60, so from Nov 29 dev and live show different pads.
+- `?pad=N`, THE DEV COPY ONLY (`isDev()`; `padLink`): opens Daily Pad N to try it, AND SAVES
+  NOTHING (no streak, hard hats or log: the page's storage is the in-memory copy of demo-link.ts).
+  The live build does not read it.
+- NOTHING NEW IS SAVED. (A new pad's best score is saved under its id, `d61`...: the live build
+  keeps ids it does not know.)
+- Tests: `daily-pads.test.ts` (pads 1 to 60 unchanged, the calendar, every new pad solved at its
+  par inside the band, no repeats, the repeat from 61, fetching); `test:e2e:devlane` `ONLY=pads`
+  (`?pad=61|200|790|791` open, play and save nothing; the phone's date set to Dec 1, 2026).
+
+## Baldonnel, region 7: road ban patches (October upgrade, job U6; Oct 9; on `next`)
+- THE RULE (engine, `Level.soft`): SOFT cells are thawed ground. A 2-cell truck drives over one like any
+  floor; A 3-CELL TRUCK (a rig) CANNOT ENTER ONE: for it the cell is a wall (`getMoveRange`; the
+  solver's `softAt`). No rig starts on one (`parseLevel`); a cell is soft, muskeg, a rack or under
+  equipment, never two of them. Both solvers, hints and fling follow from the move range
+  (`soft.test.ts`; A*'s estimate still never overshoots: patches only take moves away).
+- `src/levels/baldonnel.json`: TEN LEVELS OF 6 x 6, ids `b01` to `b10`, Jay's names in order: Spring
+  Breakup, Load Limits, Half Loads, Soft Spot, Frost Heave, Critical Sour, Gravel Haul, Scale
+  House, Overweight Permit, Ban Lifted. Par 16, 17, 18, 19, 20, 21, 22, 22, 23, 24; 8 trucks on
+  levels 1 and 2, then 9; two patches a level (level 4: three); one piece of equipment on levels
+  5 to 8; no convoys (the slots that may keep one did not). Level 1: patches only, and its tip is the rule. EVERY LEVEL'S PATCHES RAISE ITS
+  PAR (without them it solves in fewer moves); every patch lies in some rig's lane and none is
+  under a truck at the start; on level 1 a pickup is seen to drive over one in the best line.
+  Equipment is in the way of the best line.
+  `baldonnel.test.ts` holds all of it.
+- NEVER HAND-EDIT, AND NOT SEARCHED FOR TWICE: `node tools/gen-baldonnel.ts [minutes a slot]
+  [chain]` hill-climbs each slot (as tools/climb.ts does) from a hard level the game already has
+  with its own region's rules taken off, nine seeds racing, and keeps the accepted level in
+  `tools/fixed-levels/b01..b10.json`; `node tools/gen-baldonnel.ts write` writes the level file
+  from those (truck and equipment looks dealt from fixed seeds). Delete a slot's file to climb it
+  again. A slot is climbed three ways at once: from its own base, up from the nearest accepted slot
+  below it, and DOWN from the nearest one above it (the late slots came home first); `bases`
+  races nine other bases instead. Each stands at least 3 trucks apart from every other (`DIFF`; 4
+  was asked first and levels 5, 6 and 9 stuck at 3). LEVEL 6 IS KEPT MIRRORED (`flip`): it would
+  not walk further than 2 trucks from its neighbour in half an hour, and a level turned over is
+  the same puzzle on what looks like another pad. The whole region took about 80 minutes of
+  climbing, most of it finding out the above. WHAT THE CLIMB TAUGHT: reaching the par is easy; keeping the rules at that par is the
+  work, so once at par a change that keeps fewer of the slot's rules is not taken (`soundness`).
+- A PATCH ON THE BOARD (`floor-art.ts` `softSvg`, `.floor.soft`, under the tracks and trucks like
+  muskeg): DRAWN SIMPLY AND WHOLLY INSIDE ITS OWN CELL (job U6c; `SOFT_INSET`): a rounded patch
+  of dark wet mud, two water-filled ruts, and a thin rim of the last snow just inside its edge,
+  which shows on both sides of a pickup standing on it. NEVER LET IT RUN PAST ITS CELL: the first
+  drawing did, so beside the berm the yard's clip cut it off, and it showed whole whenever the
+  clip lifted for a truck driving out (`.yard.letting-out`): it flickered. `floor-art.test.ts`
+  holds every point of it inside the cell for 400 seeds; `ONLY=steady npm run test:e2e:baldonnel`
+  compares a patch beside the berm by pixels before, while and after a truck drives out (390 x
+  664, 375 x 635).
+- A RIG PUSHED AT A PATCH: a bump like any other (near-miss tick), and ITS OWN DRIVER says why
+  (`BumpHit` `soft`, `BUMP_LINES.soft`, used alone like `convoy`; escalation "Still too soft for
+  me."). The lines are Claude's stand-ins: Jay, write your own in lines.ts.
+- THE REGION: after Clearwater in `REGIONS`, opens after 5 of Clearwater like the others. Blurb:
+  "Spring breakup. Rigs can't cross soft ground. Pickups can." Music tier 4 (`PLAY_TIER`). No
+  night, no pill in the dig. Its seven sightings: "Baldonnel's seven sightings" below.
+- THE MOUNTAINS (job U6c; `src/ui/mountains.ts`, pure and tested): foothills country, so a range
+  stands on the horizon BEHIND the farthest trees, in the thaw theme only (`sceneryHtml` option
+  `mountains: { top, base }`; the first thing in the `.trees` layer). Drawn in code, flat toy
+  style: a far ridge and a nearer, darker one, blue-grey, snow caps with a shaded side, one soft
+  outline. THE SAME EVERY VISIT: one fixed seed, laid out in shares of the screen's width, so
+  every level and the level list show the same range. As tall as `MOUNTAIN_SHARE` of the width
+  (74 px at 390), its foot on the horizon. WHERE THE SKY BAND IS SHORT (Safari with its toolbars)
+  IT STANDS BEHIND THE HUD'S LETTERING, as the treetops do there: the scenery is under the HUD,
+  so the HUD is always over it, never the other way; `MOUNTAIN_TOP` (6 px) is as near the
+  screen's top as it comes. On the list it stands behind the title and the round buttons. It
+  takes no touches: a tap on it is a tap on the sky (three bring Two Left Feet).
+  `ONLY=mountains npm run test:e2e:baldonnel`.
+- THE THAW THEME (`thaw`, themes.ts; season `thaw` in trees.ts): last year's dead khaki grass with
+  the last snow lying in it (`grass-thaw.webp`, `tools/ground-tiles.py` `thaw_grass` +
+  `thaw_snow`), BLACK SPRUCE (the board's own spruce drawing in dark dull tones) with aspen and
+  willow only in bud, a pale washed sky, and a pad of frost-firm grey gravel (ground `gravel`),
+  cold and light so the dark patches read at a glance. Montney's spring is wet mud and green.
+- THE STANDARD BALDONNEL SCENE (`BaldProp`, scene-stage.ts; drawings in `bald-art.ts`, ported as
+  written from `~/Desktop/RHR Art Inbox/baldonnel_sightings_reference.html`, saved Oct 9 17:36,
+  its `bgBald`). On every Baldonnel level; the generic scenery puts no trees below the board
+  there. FIVE LAYERS, none takes a touch, each a unit of the depth strip on its own ground line:
+  `.bald-ground` (under everything: grass bands, the muddy two-track run on to both screen edges,
+  snow patches, the THAW POND with its three ICE PANS running off the right edge, the MELTWATER
+  PUDDLE), `.bald-layer` (the back row: six black spruce, `BD_TREES`, and two red willows),
+  `.bald-sign` (the BISON CROSSING SIGN), `.bald-snowbank` (the old SNOWBANK) and `.bald-scale`
+  (the portable TRUCK SCALE and its DIAL, needle at rest in the green). `BD_SCENE` crops the
+  reference's strip to y 44 to 170 (126 units, as tight as Mannville's), so it shows bigger.
+- MOVED FROM THE REFERENCE, each for a rule: the bison sign stands 56 further right (clear of the
+  biffy), and the two spruce that stood beside it stand at the right, on the pond's far bank
+  (at the left Right of Way would park Moe's pickup in front of them); the puddle lies on the two-track's near rut (y 163, not 174)
+  and the three front snow patches on the lane's near edge (the tighter crop); the three tallest
+  spruce are a little shorter (inside the strip); the scale is drawn on the lane's line but STANDS
+  2 units behind it (`SCALE_FOOT`, as Clearwater's rig mats do), so everybody who walks the lane
+  passes in front of it. THE SNOWBANK IS WHERE THE REFERENCE HAS IT (x 38 to 98): U6 stood it 34
+  further right for the sleepy worker's spot and U6b put it back, because Half Dressed and
+  Overweight play on the ground between the snowbank and the scale. `BD_SCENE` is y 47 to 170:
+  123 units, exactly Clearwater's, so its characters stand at Clearwater's in-game size.
+- NO LEASE SIGN ON BALDONNEL (as on Clearwater): the pond lies where its visitors would walk, and
+  the bison sign stands in the back row. So no surveyor or deer there. The biffy, the landowner,
+  Safety Sam, the geese, the magpie and the sleepy worker play as on any pad of 6.
+- NO DEAD PROPS (`BaldProp.propAt`, `BD_PROPS`: tap targets of at least 44 px; the pond's runs to
+  the screen's right edge): the sign, the snowbank, the pond and the puddle bring their sightings
+  (below); the scale, and any of them whose sighting has been or is on, answer with the usual knock.
+- SAVES: nothing new is saved. Baldonnel's scores are ordinary `best` entries under ids the live
+  build does not know; it keeps them untouched and shows no seventh tab (`DEV_ADDS.regions`).
+- `npm run test:e2e:baldonnel` (WebKit at DPR 3, 390 and 375; `ONLY=tab|rule|scene|levels`): the
+  tab and its lock, the patches where the level says, a rig stopped at one and its driver's line,
+  a flung rig stopping there with no near miss, the scene and a knock on each prop, and ALL TEN
+  LEVELS cleared at par by dragging. `REGION=6 npm run test:e2e:depth` and `REGION=baldonnel npm
+  run test:e2e:frames` (also `VIEW=390x664`) hold the depth rule and same start, same end on the
+  new scene with the strip gags every region shares. Screenshots: `qc-out/baldonnel/`.
+
+## Finale and sound fixes from Jay's review (October upgrade, job U9b; Oct 10; on `next`)
+- THE ENDING NEVER INTERRUPTS A LEVEL: `maybeFinale` (main.ts) is asked only when the player is going somewhere
+  (leaving a win card by Next, the next field or All levels; leaving a level by "Levels"). The old trigger 2.4 s
+  after the completing sighting's toast is gone (`onSighting`, `SIGHTING_TOAST_MS` deleted).
+- ITS HUD READS AS THE ENDING: "Rig Jam" over "Perfect Game" (`FINALE_HUD` in lines.ts), in the middle of the
+  screen, with no moves, par or near misses (`.screen.finale .hud`).
+- MOE'S FOOTSTEPS from the camera to his spot (`FINALE_SOUNDS.photo`: `+steps` at "hurries-to-his", off at his
+  hop-turn).
+- EVERY BEAT REACHED PLAYS ITS SOUNDS (finale.ts `beat`): a slow frame may pass two beats at once (the photo drops
+  0.1 s before the magpie's chuckle), and the passed one used to lose its sound. (The older gags' runner,
+  `markBeat`, still marks only the latest beat: not changed here.)
+- A FULL `python3 tools/audio-pack.py` RUN KEEPS WHAT IT DOES NOT BUILD: music in pack.json that is not in its own
+  `MUSIC` table (Classic Rock, the finale's track) is set aside before `public/audio` is cleared and put back,
+  with its pack.json and credits.json rows; the nine finished files are copied in again by `finished()`. After a
+  full run only the Opus loops it re-encodes differ (`git checkout public/audio/music` as before).
+- TEST OUTPUT STAYS IN THE REPO: every suite saves its screenshots and clips under `qc-out/<name>/` (gitignored;
+  `e2e/out.mjs` `outDir`; `OUT=` sends a run elsewhere), never on the Desktop. Only what Jay is asked to look at
+  is copied to `~/Desktop/RHR Art Inbox/qc/`, by hand, and named in the job's summary. (Where older notes above
+  say a suite saves to `~/Desktop/RHR Art Inbox/fit_check` or `.../qc/...`, read `qc-out/`. The `tools/qc-*.mjs`
+  sheets still go to the folder they are given.)
+- THE CREDITS' MUSIC IS GRADUATION MUSIC: the trio of Elgar's "Pomp and Circumstance" March No. 1, from Manus's
+  pack `~/Desktop/RHR Art Inbox/Sound files/finale_music/` (it arrived at 12:42 on Oct 10, mid-job). JAY'S PICK
+  (JAY_PICK.txt): TAKE A, the United States Marine Band (public domain: no attribution needed; it has its row on
+  the Credits screen all the same). The file is FINISHED (26 s, at the game's music level, a 2 s fade at its end),
+  so `python3 tools/audio-pack.py --finale-music` COPIES both formats as delivered to
+  `public/audio/music/finale_credits.{ogg,mp3}` (`FINALE_MUSIC`; never re-cut or re-levelled) and writes its rows
+  (`loop: false`: it plays once). In the game (pack.ts `FINALE_TRACK`, `finaleTrack()`; engine `setOverride`):
+  it REPLACES the menu loop under the credits (`sound.finaleCredits`), follows the Music switch, FADES OUT AS THE
+  CREDITS LIFT or are skipped (`sound.finaleCreditsOver`; then it is quiet through Still Here), and the menu loop
+  returns with the cover (`sound.finaleMusicOver`). A pack without the track keeps the menu loop there
+  (`finaleTrack()` null: that path was run too). Fetched only when the credits play with Music on.
+- `npm run test:e2e:finale` also holds the HUD and the mid-level case (the last sighting found on Cardium 2: 4 s
+  on, still the level; the ending on leaving by "Levels" at 390, after the win card at 375).
+
+## Sound for Baldonnel's sightings and the finale (October upgrade, job U10; Oct 10; on `next`)
+- NINE NEW FILES, FINISHED BY MANUS (`~/Desktop/RHR Art Inbox/Sound files/baldonnel_finale/`, HANDOFF.md): cut, faded
+  and levelled already, so the game takes each AS DELIVERED, byte for byte: never re-cut, re-levelled or re-encoded
+  (a unit test compares the bytes). JAY'S PICKS OF THE TAKES (they override the handoff's own column): crane_call B,
+  frog_chorus A, frog_late B, bison_snort A, chuckle B, timer_beep A, scrub B (the only loop), creak A, polaroid A.
+  The picked take's MP3 is `tools/sfx-art/<key>.mp3`; `audio-pack.py`'s `FINISHED` table names the take and its
+  Credits row (all Pixabay Content License). `python3 tools/audio-pack.py --finished` copies ONLY these into
+  `public/audio/sfx/` and adds their rows to `pack.json` and `credits.json`, touching nothing else. (A full run of
+  audio-pack.py keeps them, and Classic Rock too: job U9b, below.) 74 effects.
+- THE MIX (`VOLUME`): each of the nine has its place (the creak a little under the outhouse door, since its file is
+  quiet and the mix lifts it; the scrub well down). LAZY (`LAZY_KEYS`): fetched only by a Baldonnel level
+  (`sound.warm`) or by the finale as it starts (`sound.finaleWarm`, `finaleKeys`).
+- THE SEVEN SIGHTINGS (`GAG_SOUNDS`, the reasons beside each row): each cue on the moment its reference page draws
+  the sound word, the pack's own sounds first. Overweight: steps, CLANK (`clack`), the hat's thud and the boots'
+  clonks (`knock`), the ding (`twinkle`), the magpie's call. Two Left Feet: `crane_call` for "garooo" and "garoo",
+  the feather's twinkle. Right of Way: `bison_snort` as it settles and for the yawn, BEEP BEEP (`horn` twice), the
+  door's clunks (`clack`), two claps (`slap`), the backup beeper (`reverse`), "heh heh heh" (`chuckle`). Half
+  Dressed: far footsteps, a `rustle` each time he hides or hops, a twinkle. Last Ice: bump (`knock`), plunk and
+  bubbles (`blup`), SPLASH twice, flip flop (`tap`), CHOMP. Late Croak: blups up and down, `frog_chorus` on the round
+  (over before the silence), `frog_late` for the one late CREEK. Lunch to Go: steps, the `mosquito` loop from BZZZ to
+  the end.
+- THE FINALE (`FINALE_SOUNDS` by part and beat; finale.ts `beat()` plays a beat's cues once through `sound.finale`;
+  never for a frame a test holds, nor under reduced motion): the card's usual win sounds on the card's own clock (a
+  pop a hard hat at 0.9, 1.15 and 1.4 s, the ta-da at 1.7); `timer_beep` slow (every 0.6 s from 1.65 s) then fast
+  (every 0.18 s from 5.0 s), where the page draws "beep"; `camera` and `splat` together on the flash; `polaroid` as
+  the photo drops; `chuckle` for the magpie; UNDER THE CREDITS the menu loop of the player's music style, if Music
+  is on (`sound.finaleCredits`), and no effects; `creak` as the door opens and as it shuts; `scrub` looping while he
+  brushes (`GAG_LOOPS.scrub`). `sound.finaleEnd` (each change of part but card to photo, and leaving) stops what is
+  running or still to come. SOUND STAYS OFF BY DEFAULT: with the switch off nothing is fetched or played.
+- `npm run test:e2e:gagsounds` now plays all 38 previews and the finale (`ONLY=baldonnel` the seven, `ONLY=finale`
+  the finale, replayed from Settings with sound and music on, at 390 x 664): cues on their beats, files loaded, the
+  output never clipping, loops stopped at the end, nothing following the player out, and the whole finale silent
+  with sound off. NOBODY HAS LISTENED: Jay's ear on a phone is the real check.
+
+## The finale (October upgrade, job U9; Oct 10; on `next`)
+- A PERFECT GAME EARNS THE ENDING: every region level at 3 hard hats (`best` at par or under) and every Wildlife
+  Log entry found, on real progress (never Settings' demo mode, `?demo=1` or `?log=all`). Rules in
+  `src/ui/finale-state.ts` (pure, tested): `finaleEarned`, `finaleDue`, `finaleLink`. It plays ONCE, straight
+  after whatever completes it (`maybeFinale` in main.ts): after the last level's own win card, when the player
+  leaves it by Next, the next field or All levels, or leaves the level by "Levels" (it is asked for before the
+  level list). IT NEVER INTERRUPTS A LEVEL: a sighting that completes it mid-level waits (job U9b, below). Remembered under ITS OWN KEY,
+  `rush-hour-rigs:finale` (`{v:1, seen:true}`; in `DEV_ADDS.keys`; Reset progress clears it).
+- REPLAY: once earned, Settings has "Watch the ending" right under Credits (`data-act="ending"`; with it in,
+  the rows sit closer and the two quiet buttons are 44 px, so the panel still fits 390 x 844). `?finale=1` plays
+  it on any build and saves nothing; `?finale=stage` shows the stage alone (tests).
+- PORTED FROM `~/Desktop/RHR Art Inbox/finale_reference.html` BY SCRIPT: `python3 tools/port-finale.py` writes
+  `src/ui/finale-art.ts` (the front-view puppets, the crew, the Polaroid, Still Here: the page's drawings, beats
+  and times as written, each edit asserted by exact text) and `src/ui/finale-reference.json` (beats, lengths,
+  credits rows and lines, which the unit tests read: tests run on CI, where the Desktop is not). Never
+  hand-edit either. The crew are the game's own puppets (wave3.ts's worker, the bear, the magpie...).
+- `src/ui/finale.ts` `FinaleView`: ITS OWN STAGE, built like a level's screen: the HUD, Cardium 1's pad with no
+  trucks (a real `BoardView`), the three buttons (inert), a summer strip with ONLY THE BIFFY (drawn by the
+  finale itself, not `BiffyProp`, so the close-up is the same drawing; back trees are the board's own). Four
+  parts on one clock (`FINALE_PARTS`, `FINALE_DUR`, `FINALE_BEATS`; `data-part`, `data-beat` on the screen):
+  1. THE PERFECT GAME CARD: the win card's own frame and classes ("Perfect Game!", "Every pad at par N of N",
+     "Every sighting found N of N" from the game's own counts, three hard hats, the Zero Incident medal, the
+     mascot, the Company Man's first smile and "Huh. Not bad." at 3 s, hard-hat confetti, ONE button "Crew
+     photo"). Its dimmed backdrop takes no touches, so "‹ Levels" still leaves.
+  2. THE CREW PHOTO: three rows on the strip's depth lines (`ROWS`; layers `finale-back/mid/front/over`,
+     `data-gag="photo"`), Moe at the tripod, "Squeeze in!", the self-timer, his run and hop-turn, the magpie,
+     SPLAT on his hard hat (STANDING_RULES 8's one exception), FLASH, "Seriously?", and the POLAROID (a
+     front-view still, `polaroidSvg`) drops onto the lease. The flash and the Polaroid lie UNDER the HUD and
+     the buttons. Treated as a cut: the crew is there when the card goes and gone when the credits lift, so
+     the frames check holds an empty first and last frame.
+  3. THE CREDITS (`FINALE_CREDITS` in lines.ts: Jay edits every line): the screen goes dark, the photo slides
+     to the top, the rows roll under it and stop on "Thanks for playing". A TAP SKIPS THEM. The dark does lie
+     over the HUD and the buttons, as on the page. Underneath, the crew has gone and the biffy's light is red.
+  4. STILL HERE: the view closes in on the biffy (`.finale-close` grows from the strip to the whole screen,
+     `ZOOM_AT`), creeeak, Moe in his bathrobe brushing his teeth, "You're still here?", "Shift's over. Go
+     home.", the door shuts.
+  THEN THE GAME'S OWN OPENING SCREEN: `toCover` calls cover.ts's `showCover` itself (never a copy), fades to
+  it, and leaves it alone on the page; a tap opens the level list as on any app open.
+- Lines: `FINALE_LINES` (lines.ts), the page's, word for word. SOUND: job U10, below.
+  Reduced motion: each part is a still, held (`STILL_AT`, `STILL_HOLD`).
+- Tests: `finale-state.test.ts`, `finale-art.test.ts`; `npm run test:e2e:finale` (WebKit DPR 3, 390 x 664 and
+  375 x 635: all four parts, what covers what, the cover, nothing saved; a save one par short; once only;
+  Watch the ending; not a sighting short, not in demo mode; stills in `qc-out/finale/`);
+  `REGION=finale` in `test:e2e:frames` and `test:e2e:depth` holds the photo (`?gagtest=1`:
+  `window.__rhrFinale.hold(part, t)`).
+
+## Baldonnel's seven sightings (October upgrade, job U6b; Oct 10; on `next`)
+- `src/ui/bald-gags.ts` (@ts-nocheck): PORTED BY A SCRIPT from
+  `~/Desktop/RHR Art Inbox/baldonnel_sightings_reference.html` (saved Oct 9 17:36), as the
+  Clearwater ones were: the page's new puppets (sandhill crane, bison, snowshoe hare in its spring
+  coat, wood frog, mosquito, pike, the magpie, Moe's hat, kit, boots and sandwich) and its seven
+  gags copied as written, each as `BALD.<key>` in wave3's shape (`beats` [time, id, text], `dur`,
+  `still`, `lead(E)`, `tail(E)`, `render`, `back`, `front`, `over`). The worker, the pickup, Moe,
+  the bearded worker and every helper are wave3.ts's own (the same drawings, character for
+  character; `worker` gained the page's two additions, `hatItem` and `noseC`). `sceneDef`
+  (scene-stage.ts `gagOf`) plays either module's. `bald-gags.test.ts` holds every beat to the
+  page's own time and text.
+- CHANGED FROM THE PAGE, each for a rule (the file's header says the same):
+  - A WIDER SCREEN: whoever walks or drives in starts `E` further out and goes `E` further at the
+    page's own speed at its edge (`OW_IN`, `BI_OUT`...); the flyers cover the extra way in the same time.
+  - NOTHING OVER THE LEASE: the strip's layers lie under the board, so the page's flyers, which
+    come down out of the sky above its picture, GLIDE IN LOW from the screen's edge inside the
+    strip and leave the same way (`CRANE_IN_Y`, `BIRD_IN_Y`...). The feather starts its fall inside
+    the strip; "garooo" is written a little lower.
+  - LANES: Right of Way: Moe walks BEHIND his truck (`back`, GY-8) and round its front to the
+    bison (`front`, GY+12); truck and bison on the walking lane. Last Ice: all of it on the pond's
+    line, behind the lane (`onPond`). Late Croak: the frogs in the puddle, in front of the lane.
+  - SOUND WORDS and whistled notes are drawn on the layer over everything (`over`). "Shoo!", "Got
+    one!" and "Hey!" are said in the game's own bubble (`lines`, `BALD_LINES`).
+  - THE SCALE'S NEEDLE is the scenery's own: Overweight says where it points
+    (`BALD.overweight.needle`, `BaldProp.needle`), and it is back at rest when the gag ends.
+- AS THE PAGE HAS IT, AND WORTH KNOWING: Right of Way parks Moe's pickup in front of the snowbank
+  (the lane has no other room: snowbank, scale, bison). The pickup faces right and no near door
+  opens (rule 12). Any worker in trouble is Slow Moe (rule 11); the bearded worker strolls
+  through Half Dressed and Late Croak.
+- TRIGGERS (`GAG_TRIGGERS`, Baldonnel only, each once a level; `GameView`): OVERWEIGHT = a rig
+  pushed at a road ban patch 3 times in the level (`patchPushes`; `onBump` hit `soft`, WHICH DOES
+  NOT COUNT toward Safety Sam's three in a row). TWO LEFT FEET = 3 taps on the sky above the lease.
+  RIGHT OF WAY = a tap on the bison sign. HALF DRESSED = 3 taps on the snowbank. LAST ICE = a tap
+  on the pond. LATE CROAK = a tap on the puddle. LUNCH TO GO = a pickup driven across or onto a
+  patch, ONCE (`patchDrives` 1; `drivesOnSoft`: the cells it newly covers; a fling is a move).
+  `?gag=overweight|cranes|bison|hare|ice|frogs|mosquito`.
+- LUNCH TO GO AND THE LEVELS AS THEY STAND (Jay, Oct 10: the trigger is ONE drive, the levels are
+  not changed, and its plain hint is his: "In Baldonnel, drive a pickup over a road ban patch."):
+  on levels 1, 5, 6, 7 and 8 one pickup has a patch in its lane, in that pickup's own gate cell,
+  so it crosses the patch on its way OUT. On levels 2, 3, 4, 9 and 10 no pickup can reach a patch
+  at all, so Lunch to Go does not come there.
+- LOG: `overweight`, `cranes` "Two Left Feet", `bison` "Right of Way", `hare` "Half Dressed", `ice`
+  "Last Ice", `frogs` "Late Croak", `mosquito` "Lunch to Go", after One Pea (40 entries). Captions,
+  riddles and plain hints are the page's own, word for word (a test holds them to it), Lunch to
+  Go's plain hint aside.
+  Camo earned before them stays earned (`camoEarned` is saved); a new player needs all 40. Cards:
+  the page's own still of each, with its prop drawn behind (`LOG_ART`). Declared in
+  `DEV_ADDS.sightings`: the live build drops them from a log it saves, until the merge.
+- WITNESS LINES for the seven are Claude's stand-ins (lines.ts; Jay, Oct 10: keep them). SOUND: job U10.
+- `test:e2e:sightings` has the seven on their real actions on a fresh log (`VIEW=390x664`, the
+  default, and `VIEW=375x635`) and Baldonnel's props; `REGION=baldonnel npm run test:e2e:frames`
+  (also `VIEW=390x664`, `VIEW=375x635`) and `REGION=6 npm run test:e2e:depth` hold them.
+  Filmstrips: `node tools/qc-filmstrip.mjs <gag> safari <folder> 6 1`.
+
+## Fling (October upgrade, job U4; Oct 9; on `next`)
+- A QUICK FLICK SENDS A TRUCK ALL THE WAY DOWN ITS LANE, out through its gate if the rules let it
+  leave; a slow drag is exactly what it was. Rules in `src/ui/fling.ts` (pure, tested); the board
+  (`BoardView.onPointerUp`, `flingTo`) feeds it the finger's places along the lane.
+- THE ONE NUMBER TO TUNE: `FLING_SPEED` (11 cells a second), measured over the last
+  `FLING_WINDOW_MS` (90 ms) before the finger lifts. Higher = harder to fling. A release is a
+  fling only if the finger was STILL MOVING when it lifted (its last movement no older than
+  `FLING_STALE_MS` 45 ms) and covered `FLING_TRAVEL` (0.4 cell) in that window: a drag that slows
+  or rests before lifting never flings, however fast it began.
+- WHERE IT ENDS (`flingDelta`): the far end of the engine's own `getMoveRange` that way: against
+  whatever is there, or out through the gate where that end is the truck's `exitDelta` (so a
+  convoy gate still waiting, a tanker not loaded and a clock gate on the wrong move stop it at
+  the gate). One move; Undo takes it back. Blocked that way already: no move.
+- THE SLIDE (`flingMs`, `FLING_EASE`): 130 ms plus 42 a cell (380 at most), easing out, with the
+  drag's own sounds and tire tracks. Out through a gate: it slides to the gate first
+  (`BoardView.flinging`: no other truck can be picked up for that moment), then the move is made
+  and it drives out as ever. Reduced motion: no slide.
+- NOT A BUMP: a fling that stops against something makes no near-miss tick and no line. And a
+  fast finger running on past the truck's stop is not pushing yet: the board holds that bump back
+  (`Drag.held`, `PUSH_HOLD_MS` 130) and it comes only if the finger is still down and still past
+  the stop by then, or slows down there. Slow pushing bumps at once, as before.
+- A FLING IS A MOVE LIKE ANY OTHER for gags, hints and the score. Flinging the hinted move carries
+  the hint line on when it ends where the hint said; if it runs further the next hint solves afresh.
+- OFF IN AN AUTOMATED BROWSER (`flingOn`: `navigator.webdriver`) unless `?fling=1`; `?fling=0`
+  turns it off for anyone. The suites' scripted drags move at a steady clip and lift at once,
+  which is a flick, and they mean a drag. With it off the board is exactly the old one (no held bumps).
+- The first how-to card ends "Flick a truck to send it all the way."
+- `node tools/gen-baldonnel.ts [minutes] [chain]` / `node tools/gen-baldonnel.ts write` – Baldonnel's ten levels: climbs the slots not yet in `tools/fixed-levels/`, then writes `src/levels/baldonnel.json`
+- `npm run test:e2e:finale` – the finale: `?finale=1` through all four parts to the cover, a save one par short, Watch the ending (start the dev server first)
+- `python3 tools/port-finale.py` – writes `src/ui/finale-art.ts` and `finale-reference.json` from the finale's reference page
+- `npm run test:e2e:baldonnel` – Baldonnel on a phone: the tab, road ban patches, the standard scene, all ten levels at par (start the dev server first)
+- `npm run test:e2e:fling` (WebKit touch at 375 and 390, Chromium as a Pixel; real-time
+  gestures): a flick against a truck, into the berm and out a gate, Undo, four kinds of ordinary
+  drag, both kinds of push, a level at par with ZERO INCIDENT on flung moves, hints in a row.
+  NOBODY HAS FLICKED A REAL PHONE YET: the speed wants Jay's thumb.
+
+## Sunday Turnaround (October upgrade, job U3; Oct 9; on `next`)
+- EVERY SUNDAY A NEW HARD PAD OF 8 x 8, the same for everyone, playable all week. Rules in
+  `src/ui/turnaround.ts` (pure, tested). Turnaround #1 is the week of Sunday Oct 11, 2026
+  (`TURN_EPOCH`, the phone's local date; `turnaroundNumber`); before that Sunday the button shows
+  #1 too. `TURN_LAST` 112 are made: the last is Sunday Nov 26, 2028. AFTER THE LAST THEY COME
+  ROUND AGAIN FROM #1 (`turnSlot`). REGENERATE BEFORE DEC 2028: raise `TURN_LAST` and run `node
+  tools/gen-turnaround.ts` (earlier ones come from `tools/.gen-cache/turnaround/` or are made the
+  same again: each week's seeds are its own, `turnSeed`).
+- `tools/gen-turnaround.ts` makes them on the Big Pad generator's own road (`growPad`, `candidate`
+  of gen-bigpad.ts): 14 to 16 trucks, 12 to 14 EXTRA MOVES (the target turns with the week), trucks
+  and gates only. A week walks its seeds until one gives a pad in the band; weeks run side by side
+  on the machine's cores. While it grows a pad its solver is capped at 40,000 positions
+  (`GROW_CAP`: without it one pad took about 12 core-minutes; the finished pad is proven again in
+  full). All 112 took 11 minutes. No pad is the layout of a Clearwater level or of an earlier week
+  (`layoutKey`). They lie in `public/turnaround/weeks-<from>-<to>.json`, 8 to a file
+  (`TURN_BLOCK`), NOT in the game's script (the main script grew 3.2 KB); the one file a week needs
+  is fetched when needed (`turnaroundLevel`, warmed from the home page), and the service worker
+  keeps them all, so it plays offline.
+- THE BUTTON (`.turn-btn`, main.ts, under the Daily Pad): "Sunday Turnaround #N". It opens once
+  the player has cleared 10 levels in all (`TURN_UNLOCK`, `levelsCleared`: the regions' levels; a
+  Daily Pad is not one); demo mode opens it. Locked: grey, a padlock and "Clear 10 levels to
+  unlock (x of 10)"; a tap only shakes it. Cleared this week: green, "Cleared in M moves".
+  It is kept slim (56 px), and it still moves the level list down: all 10 rows now need about 260
+  to 280 px of scroll at 390x844 (`test:e2e:menus` allows 285; it was 220).
+- IT PLAYS AS A CLEARWATER LEVEL (`GameView` `where.turnaround`; region `clearwater`, theme
+  `boreal`): the standard Clearwater scene and its five sightings, hints (A*), music tier 4
+  (`PLAY_TIER.turnaround`). HUD: "Sunday" over "Turnaround #N".
+- ITS WIN CARD: the result line "Turnaround #N" (`.turn-result`), the hard hats against par,
+  Share, Play again and All levels. No Next, no streak, no "come back tomorrow". Share copies
+  `turnShareText`: "Rig Jam 🚛 Sunday Turnaround #N", the hats with moves and par, the link.
+- RESULTS ARE SAVED UNDER THEIR OWN KEY, `rush-hour-rigs:turnaround` (`{ v: 1, best: { week:
+  moves } }`), declared in save-compat's `DEV_ADDS.keys`. NOTHING of a Turnaround goes into
+  `rush-hour-rigs:v2`: no score there, and no hint for a par clear (that would be a change to
+  the progress the live build reads).
+- `?week=N` (the dev copy only) opens Turnaround N, locked or not, and saves nothing
+  (demo-link.ts). The live build does not read it.
+- `ONLY=turnaround node e2e/dev-lane.e2e.mjs` (WebKit at DPR 3, 375 and 390): the button locked
+  and open, the pad on Clearwater's scene, a sighting, Hint, tier 4, the card, the share line, the
+  key, the next Sunday, `?week=1`, `60` and `113`, and the live build untouched.
 
 ## Sighting fixes (Job Y, Oct 9)
 - NEAR MISS: THE GOPHER COMES UP IN FRONT OF THE MOUND. His layer ends at the hole line, and a
@@ -1550,9 +2031,17 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:tabs` – the region bar: full-size text, the peek, the fades, the active tab in view, swipes never tap, 5 tabs and a made-up 8 (start the dev server first)
 - `npm run test:e2e:beta` – beta readiness: first run, small phones (iPhone SE, 360x800 Android), Settings version and feedback, the update bar (start the dev server first)
 - `npm run test:e2e:depth` – the depth rule on every region's standard scene at three phone sizes: order, one lane, no ties, nobody lost behind a prop (`ONLY=surveyor`, `REGION=1`, `SIZE=iPhone` narrow it; start the dev server first)
-- `npm run test:e2e:gagsounds` – every gag (all 26) with sound on in WebKit: cues, timing, output level, lazy loading (`ONLY=beaver` runs one; start the dev server first)
+- `python3 tools/audio-pack.py --finale-music` – builds the finale's credits music from Jay's pick, once it is named in `FINALE_MUSIC`
+- `python3 tools/audio-pack.py --finished` – copies the finished sound files (Baldonnel and the finale) into the pack as delivered, nothing else rebuilt
+- `npm run test:e2e:gagsounds` – every gag and the finale with sound on in WebKit: cues, timing, output level, lazy loading (`ONLY=beaver` runs one, `ONLY=baldonnel` the seven, `ONLY=finale` the finale; start the dev server first)
 - `npm run test:e2e:offline` – the built site under the Pages base path: the service worker registers, fills its cache through 503s, and the game plays with the network gone (builds first; needs no dev server)
 - `npm run test:e2e:click` – the buttons' one click and the haptic tick: every kind of button, never on a drag, a tick per truck out, nothing with the switch off (start the dev server first)
+- `npm run test:e2e:devlane` – the dev lane: the DEV label on dev and not on live, one save read by both builds, the Daily-only line, the depth gauge clear of the cards (`DEV=`, `LIVE=`, `ONLY=label|saves|line|pill`)
+- `python3 tools/music-classic.py [folder]` – encodes Manus's five Classic Rock loops like the game's other music and writes their pack.json and Credits entries (needs ffmpeg)
+- `npm run test:e2e:fling` – fling: flicks, ordinary drags, pushes, Zero Incident, hints, at three phone sizes (start the dev server first)
+- `node tools/gen-turnaround.ts` – the 112 Sunday Turnarounds into `public/turnaround/` (REGENERATE BEFORE DEC 2028; about 11 minutes from nothing)
+- `node tools/gen-daily.ts [--check n]` – Daily Pads 61 to 790 into `public/daily/` (REGENERATE BEFORE NOV 2028); `--check` remakes pads 1..n and compares them with daily.json
+- `sh tools/push-dev.sh` – push branch `next` to the dev repo and wait for the dev site's build id
 - `npm run test:e2e:judge` – judge-proofing: a fresh visitor with a mouse at 1440 x 900 and 1280 x 720 in both engines, Share, the credit line, `?demo=1`, the load-error page; screenshots (start the dev server first)
 - `npm run test:e2e:sightings` – every sighting on its real trigger at Safari's visible size, and every tappable prop answers a tap (`VIEW=375x635`, `ONLY=beaver`, `URL=` the live site; start the dev server first)
 - `npm run test:e2e:save` – a real save from the live build before Clearwater, loaded into this build at four phone sizes: everything kept, the update bar (start the dev server first)

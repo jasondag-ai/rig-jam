@@ -1,0 +1,458 @@
+{
+ "overweight": {
+  "name": "Overweight",
+  "beats": [
+   [
+    0.0,
+    "Moe walks in with his lunch kit."
+   ],
+   [
+    2.0,
+    "Spots the truck scale. Curious."
+   ],
+   [
+    2.5,
+    "Hops on. CLANK."
+   ],
+   [
+    2.75,
+    "The needle swings deep into the red."
+   ],
+   [
+    3.3,
+    "Glares at the dial."
+   ],
+   [
+    3.8,
+    "Takes off his hard hat. Drops it. Still red."
+   ],
+   [
+    4.7,
+    "Sets down his lunch kit. Still red."
+   ],
+   [
+    5.6,
+    "Kicks off one boot. Then the other. Still red."
+   ],
+   [
+    6.8,
+    "Sucks in his gut. Holds it. Still red."
+   ],
+   [
+    7.6,
+    "Gives up. Turns and steps off in his socks."
+   ],
+   [
+    8.1,
+    "Behind him, a magpie flies in and lands on the scale."
+   ],
+   [
+    8.9,
+    "Ding. Green light."
+   ],
+   [
+    9.0,
+    "Moe whips round. The magpie puffs up, smug."
+   ],
+   [
+    9.9,
+    "Moe glares at the magpie. Then at you."
+   ],
+   [
+    10.5,
+    "Turns and gathers his hat, kit and boots."
+   ],
+   [
+    11.35,
+    "Stomps off in his socks."
+   ],
+   [
+    11.4,
+    "The magpie hops round and flies off."
+   ]
+  ],
+  "card": "Overweight. Again.",
+  "riddle": "Spring roads can't take the weight. Neither can the scale.",
+  "hint": "In Baldonnel, push a 3-cell rig into a road ban patch 3 times."
+ },
+ "cranes": {
+  "name": "Two Left Feet",
+  "beats": [
+   [
+    0.0,
+    "A rattling call from above. Garooo."
+   ],
+   [
+    0.2,
+    "Two sandhill cranes glide in, legs down."
+   ],
+   [
+    1.8,
+    "They land. The second hop-turns to face the first."
+   ],
+   [
+    2.1,
+    "They bow to each other."
+   ],
+   [
+    2.7,
+    "The dance: leaps, half-open wings, more bows."
+   ],
+   [
+    4.4,
+    "Slow Moe walks in from the far side and stops to watch."
+   ],
+   [
+    5.9,
+    "He copies them. A bow. A flap. A little hop."
+   ],
+   [
+    6.4,
+    "The cranes stop and stare at him."
+   ],
+   [
+    6.9,
+    "He tries the one-leg pose, arms out like wings. Wobbles."
+   ],
+   [
+    7.6,
+    "He notices them staring. Freezes. Sheepish grin."
+   ],
+   [
+    7.9,
+    "Both cranes slowly shake their heads."
+   ],
+   [
+    8.7,
+    "Crouch, leap, and they fly off."
+   ],
+   [
+    9.5,
+    "A grey feather floats down onto his hat."
+   ],
+   [
+    10.3,
+    "He puts his leg down. Looks at you. Shrugs."
+   ],
+   [
+    10.9,
+    "Hop-turn. One last little flap. Walks off."
+   ]
+  ],
+  "card": "Not his best move.",
+  "riddle": "Something tall is dancing up there. Ask it down.",
+  "hint": "In Baldonnel, tap the sky 3 times."
+ },
+ "bison": {
+  "name": "Right of Way",
+  "beats": [
+   [
+    0.0,
+    "A bison ambles in from the left."
+   ],
+   [
+    1.7,
+    "Stops in the middle of the lane."
+   ],
+   [
+    1.8,
+    "Lies down. Chews."
+   ],
+   [
+    2.2,
+    "Slow Moe drives in and stops."
+   ],
+   [
+    3.8,
+    "BEEP BEEP."
+   ],
+   [
+    4.2,
+    "The bison yawns. Does not move."
+   ],
+   [
+    5.0,
+    "Clunk. Moe gets out on the far side."
+   ],
+   [
+    5.1,
+    "Walks round the front of the truck to the bison."
+   ],
+   [
+    6.0,
+    "Waves his arms. “Shoo!” The bison flicks its tail."
+   ],
+   [
+    6.8,
+    "Claps. Clap clap. The bison keeps chewing."
+   ],
+   [
+    7.3,
+    "He gives up. Arms drop."
+   ],
+   [
+    7.7,
+    "Hop-turn. Stomps back round the front of the truck."
+   ],
+   [
+    8.7,
+    "Clunk. Back in."
+   ],
+   [
+    9.0,
+    "Backs up the way he came. Beep... beep... Grr."
+   ],
+   [
+    10.4,
+    "The bison looks back..."
+   ],
+   [
+    10.6,
+    "...and giggles. Heh heh heh."
+   ],
+   [
+    11.3,
+    "Gets up, in its own time."
+   ],
+   [
+    11.9,
+    "Ambles off."
+   ]
+  ],
+  "card": "Bison always win.",
+  "riddle": "That sign is not a suggestion.",
+  "hint": "In Baldonnel, tap the bison sign."
+ },
+ "hare": {
+  "name": "Half Dressed",
+  "beats": [
+   [
+    0.0,
+    "A snowshoe hare hops in. Half brown, half white."
+   ],
+   [
+    1.2,
+    "Sits by the snowbank. Nibbles."
+   ],
+   [
+    1.4,
+    "Crunch crunch. Footsteps. Ears up."
+   ],
+   [
+    1.9,
+    "Hides against the snow. His brown half sticks out. So does his white half."
+   ],
+   [
+    2.4,
+    "Looks back at himself."
+   ],
+   [
+    2.9,
+    "Hops onto the snowbank. The white half vanishes. The brown half does not."
+   ],
+   [
+    3.9,
+    "Hop-turn down into the mud. Now the white half glows."
+   ],
+   [
+    4.8,
+    "The footsteps are close."
+   ],
+   [
+    5.0,
+    "Backs up to the line where snow meets mud. Gone. Just one eye."
+   ],
+   [
+    5.6,
+    "The bearded worker strolls in, whistling."
+   ],
+   [
+    6.95,
+    "Steps right over him."
+   ],
+   [
+    7.6,
+    "The eye follows him out."
+   ],
+   [
+    8.4,
+    "The hare reappears. Proud."
+   ],
+   [
+    9.3,
+    "Hops off."
+   ]
+  ],
+  "card": "Half ready for spring.",
+  "riddle": "Someone is changing behind the snowbank.",
+  "hint": "In Baldonnel, tap the snowbank 3 times."
+ },
+ "ice": {
+  "name": "Last Ice",
+  "beats": [
+   [
+    0.0,
+    "Slow Moe drifts in on an ice pan, sitting on a pail, rod out."
+   ],
+   [
+    2.6,
+    "The pan bumps into a chunk of ice and stops. Bump."
+   ],
+   [
+    3.4,
+    "The bobber dips. Plunk."
+   ],
+   [
+    3.8,
+    "He yanks. Up comes one tiny fish."
+   ],
+   [
+    4.4,
+    "Holds it up. “Got one!”"
+   ],
+   [
+    5.2,
+    "Jumps up to celebrate."
+   ],
+   [
+    5.5,
+    "The pan tips. Windmill arms."
+   ],
+   [
+    6.8,
+    "Sits back down hard. SPLASH."
+   ],
+   [
+    7.1,
+    "The fish flips out of his hand..."
+   ],
+   [
+    7.45,
+    "...and lands on the edge of the ice. Flip flop."
+   ],
+   [
+    7.6,
+    "He leans out for it. Slowly. Carefully."
+   ],
+   [
+    8.2,
+    "Bubbles."
+   ],
+   [
+    8.3,
+    "A big pike bursts up out of the water..."
+   ],
+   [
+    8.5,
+    "...CHOMP. Gone."
+   ],
+   [
+    8.7,
+    "And back down. SPLASH."
+   ],
+   [
+    9.2,
+    "Moe, still reaching, looks at you."
+   ],
+   [
+    9.8,
+    "The pan drifts back out the way it came."
+   ]
+  ],
+  "card": "Always a bigger fish.",
+  "riddle": "One more cast before breakup.",
+  "hint": "In Baldonnel, tap the ice on the pond."
+ },
+ "frogs": {
+  "name": "Late Croak",
+  "beats": [
+   [
+    0.0,
+    "The puddle ripples."
+   ],
+   [
+    0.4,
+    "Blup. Blup. Blup. Three wood frogs pop up."
+   ],
+   [
+    1.8,
+    "They sing in a round. Crick, crick, creek."
+   ],
+   [
+    4.4,
+    "The bearded worker walks in."
+   ],
+   [
+    4.9,
+    "Silence. Three frogs, frozen."
+   ],
+   [
+    5.5,
+    "He stops. Looks down at the puddle. Hmm."
+   ],
+   [
+    6.3,
+    "Shrugs. Walks on."
+   ],
+   [
+    7.6,
+    "The little one lets out one late CREEK."
+   ],
+   [
+    8.0,
+    "The other two turn and glare at him."
+   ],
+   [
+    8.7,
+    "All three sink out of sight. Blup blup blup."
+   ]
+  ],
+  "card": "Missed the cue.",
+  "riddle": "The puddle has a choir. One member is late.",
+  "hint": "In Baldonnel, tap the puddle."
+ },
+ "mosquito": {
+  "name": "Lunch to Go",
+  "beats": [
+   [
+    0.0,
+    "Slow Moe walks in with his lunch kit."
+   ],
+   [
+    1.8,
+    "Sets it down. Rubs his hands. Lunch time."
+   ],
+   [
+    2.8,
+    "BZZZ. A big mosquito flies in..."
+   ],
+   [
+    3.5,
+    "...and lands on the lunch kit. Moe smirks."
+   ],
+   [
+    3.9,
+    "It grabs the handle. Strains. bzzZZZ."
+   ],
+   [
+    4.5,
+    "The lunch kit lifts off the ground."
+   ],
+   [
+    4.7,
+    "Moe’s smirk drops."
+   ],
+   [
+    5.1,
+    "It flies off with his lunch. “Hey!”"
+   ],
+   [
+    5.6,
+    "Moe chases after it."
+   ]
+  ],
+  "card": "Takeout.",
+  "riddle": "Soft ground, wet ground, hungry ground.",
+  "hint": "In Baldonnel, drive a pickup over a road ban patch 3 times."
+ }
+}
