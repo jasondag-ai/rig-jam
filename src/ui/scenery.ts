@@ -2,6 +2,7 @@
 // aspen and willow standing in scattered groves round the bermed pad, in the season's dress, with
 // the odd cattail clump and a blank lease sign as accents. Seeded (per level in the game), so a
 // level always looks the same.
+import { mountainsSvg } from './mountains.ts';
 import { mulberry32 } from '../engine/rng.ts';
 import type { Theme } from './themes.ts';
 import { aspect, seasonSymbols, sizeFor, symbolId, type Season, type Species } from './trees.ts';
@@ -65,6 +66,11 @@ export interface SceneryOptions {
   moundAt?: { baseY: number; w: number };
   /** Patches kept clear of trees (the sleepy worker's spot, the biffy). */
   clearings?: Box[];
+  /**
+   * Baldonnel's thaw theme only (mountains.ts): a range on the horizon behind the farthest trees. `top`: nothing of it
+   * above this line (the HUD's foot; the header's on the level list). `base`: where the sky meets the ground.
+   */
+  mountains?: { top: number; base: number };
 }
 
 /** Clear grass kept between the berm and any tree, px. */
@@ -258,5 +264,5 @@ export function sceneryHtml(theme: Theme, width: number, height: number, box: Bo
   const isAnchor = (it: Item) => it.art === 'willow' && anchors.some((a) => a.kind === 'bush' && a.x === it.x && a.y === it.y);
   const html = items.map((it) => piece(season, it, isAnchor(it) ? ' data-anchor="bush"' : '')).join('');
   const mounds = anchors.filter((a) => a.kind === 'mound').map((a) => mound(a, season)).join('');
-  return `<div class="trees" style="width:${r1(width)}px;height:${r1(height)}px" aria-hidden="true"><svg class="tree-defs" width="0" height="0" aria-hidden="true"><defs>${seasonSymbols(season)}</defs></svg>${stalks}${html}${mounds}</div>`;
+  return `<div class="trees" style="width:${r1(width)}px;height:${r1(height)}px" aria-hidden="true"><svg class="tree-defs" width="0" height="0" aria-hidden="true"><defs>${seasonSymbols(season)}</defs></svg>${theme.id === 'thaw' && options.mountains ? mountainsSvg(width, options.mountains.top, options.mountains.base) : ''}${stalks}${html}${mounds}</div>`;
 }

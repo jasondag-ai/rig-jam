@@ -305,7 +305,8 @@ function showLevels(requested = savedRegion()): void {
     y: horizon,
     width: rect.width,
     height: 0,
-  }, { below: false, maxTree: LIST_TREES - 2, depth: 4 });
+    // (Baldonnel's list has its mountains on the horizon, behind the tree line, under the header: mountains.ts.)
+  }, { below: false, maxTree: LIST_TREES - 2, depth: 4, mountains: { top: 6, base: horizon } });
 
   // A region earned for real gets a one-time "NEW LEASE OPEN" banner.
   const fresh = newlyOpened(REGIONS, progress.best, progress.announced);

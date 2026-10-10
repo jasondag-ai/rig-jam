@@ -696,7 +696,7 @@ export class GameView {
     // Kept clear of trees: the sleepy worker's spot by the left edge, and the biffy's.
     const strip = { top: box.y + box.height, bottom: controlsTop };
     const clearings = [this.bakken ? this.bakken.box() : null, this.bakken ? this.bakken.lane() : null, this.worker ? workerClearing(screen.width, strip) : null, this.biffy ? biffyBox(screen.width, strip) : null, this.biffy ? biffyLane(screen.width, strip) : null, this.sign ? signLane(screen.width, strip) : null, this.bush ? (this.bush.x === BUSH_X ? bearBox(screen.width, strip) : bushBox(this.bush.x, screen.width, strip)) : null, this.cow ? cowBox(screen.width, strip) : null, this.riser ? riserBox(screen.width, strip) : null, stageBox(screen.width, strip)].filter((c) => c !== null);
-    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, below: !this.mann && !this.clear && !this.bald, anchors: { bush: !this.bush && !this.mann && !this.clear && !this.bald, mound: this.regionId === 'cardium' }, moundAt: this.strips.gopherLunch || this.strips.nearMiss ? moundSpot(screen.width, strip) : undefined, clearings });
+    this.scenery.innerHTML = sceneryHtml(this.theme, screen.width, controlsTop, box, { seed: seedFrom(this.level.id), depth, mountains: { top: MOUNTAIN_TOP, base: box.y - 4 - depth }, below: !this.mann && !this.clear && !this.bald, anchors: { bush: !this.bush && !this.mann && !this.clear && !this.bald, mound: this.regionId === 'cardium' }, moundAt: this.strips.gopherLunch || this.strips.nearMiss ? moundSpot(screen.width, strip) : undefined, clearings });
     this.depthTrees(box.y + box.height);
     this.mann?.layout();
     this.clear?.layout();
@@ -1412,6 +1412,8 @@ const SKY_WANT: Record<ThemeId, number> = { summer: 30, spring: 30, winter: 40, 
 /** The gags a Big Pad (Clearwater) plays. */
 /** Baldonnel, region 7 (its standard scene: scene-stage.ts `BaldProp`). */
 const BALDONNEL = 'baldonnel';
+/** Baldonnel's mountains stand BEHIND the HUD's lettering where the sky band is short, as the treetops do (the scenery is under the HUD); never nearer the screen's top than this (px). */
+const MOUNTAIN_TOP = 6;
 const BALD_GAGS: GagId[] = ['overweight', 'cranes', 'bison', 'hare', 'ice', 'frogs', 'mosquito'];
 const BIG_PAD_GAGS: GagId[] = ['golf', 'cold', 'wash', 'bell', 'pea', 'biffyA', 'biffyB'];
 const EGG_SIGHTING: Record<GagId, Sighting> = { magpie: 'magpie', worker: 'spotter', moose: 'moose', nearMiss: 'nearmiss', landowner: 'landowner', biffyA: 'biffy', biffyB: 'biffyB', marshmallow: 'marshmallow', geese: 'geese', bear: 'bear', bull: 'bull', porcupine: 'porcupine', gopherLunch: 'lunch', sam: 'sam', tongue: 'tongue', surveyor: 'surveyor', deer: 'deer', tourists: 'tourists', muskeg: 'muskeg', catTrain: 'cattrain', beaver: 'beaver', aurora: 'aurora', tumbleweed: 'tumbleweed', pdogs: 'pdogs', bale: 'bale', cloud: 'cloud', golf: 'swings', cold: 'cold', wash: 'wash', bell: 'bell', pea: 'pea', overweight: 'overweight', cranes: 'cranes', bison: 'bison', hare: 'hare', ice: 'ice', frogs: 'frogs', mosquito: 'mosquito' };
