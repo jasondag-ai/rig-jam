@@ -56,7 +56,9 @@ diff = async (a, b) => {
 
 console.log('\nwebkit 390x844: every strip gag starts and ends on an empty stage');
 // (Baldonnel, region 7, has no sightings of its own yet: the strip gags every region shares are held on ITS standard scene.)
-const CASES = [...Object.entries(PREVIEWS), ...['landowner', 'biffyA', 'biffyB', 'sam', 'geese'].map((gag) => [`${gag} on Baldonnel`, { gag, region: 'baldonnel', level: 1 }])];
+// (THE FINALE'S CREW PHOTO, `REGION=finale`, on the finale's own stage: it is a cut, in and out, like a film, so its first
+// and last frames are the empty stage; the crew is held between.)
+const CASES = [...Object.entries(PREVIEWS), ...['landowner', 'biffyA', 'biffyB', 'sam', 'geese'].map((gag) => [`${gag} on Baldonnel`, { gag, region: 'baldonnel', level: 1 }]), ["the crew photo, on the finale's stage", { gag: 'photo', region: 'finale', level: 0 }]];
 for (const [name, { gag, region, level }] of CASES) {
   if (OWN_CLOCK.includes(gag)) continue;
   // (`REGION=baldonnel` holds one region's.)
@@ -65,9 +67,12 @@ for (const [name, { gag, region, level }] of CASES) {
   await page.goto(ROOT + `?cover=0&gagtest=1&night=${gag === 'aurora' ? 1 : 0}&magpie=0&worker=0&moose=0`, { waitUntil: 'networkidle' });
   await page.evaluate((p) => { localStorage.clear(); localStorage.setItem('rush-hour-rigs:v2', p); }, UNLOCKED);
   await page.reload({ waitUntil: 'networkidle' });
-  await page.locator('.region-tab').nth(REGIONS.findIndex((r) => r.id === region)).click();
-  await page.locator('.level-btn').nth(level - 1).click();
-  await page.waitForSelector('.board .truck.sprite-on');
+  if (region === 'finale') { await page.goto(ROOT + '?cover=0&gagtest=1&night=0&finale=stage', { waitUntil: 'networkidle' }); await page.waitForSelector('.screen.finale .board'); }
+  else {
+    await page.locator('.region-tab').nth(REGIONS.findIndex((r) => r.id === region)).click();
+    await page.locator('.level-btn').nth(level - 1).click();
+    await page.waitForSelector('.board .truck.sprite-on');
+  }
   // Everything on the board settled first (season coats and other images arrive after the sprites).
   await page.waitForLoadState('networkidle');
   await page.evaluate(() => Promise.all([...document.images].filter((i) => !i.complete).map((i) => new Promise((r) => { i.onload = i.onerror = r; }))));
