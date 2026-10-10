@@ -6,6 +6,7 @@ import duvernay from './duvernay.json' with { type: 'json' };
 import mannville from './mannville.json' with { type: 'json' };
 import bakken from './bakken.json' with { type: 'json' };
 import clearwater from './clearwater.json' with { type: 'json' };
+import baldonnel from './baldonnel.json' with { type: 'json' };
 import daily from './daily.json' with { type: 'json' };
 
 export interface Region {
@@ -26,6 +27,8 @@ export const REGIONS: Region[] = [
   { id: 'bakken', name: 'Bakken', blurb: 'Tankers load at a rack first. Clock gates open on even moves.', theme: 'prairie', levels: parseLevels(bakken) },
   // THE BIG PAD: 8 x 8, trucks and gates only (tools/pick-clearwater.ts). Boreal fall: lichen ground, gold aspen, spruce.
   { id: 'clearwater', name: 'Clearwater', blurb: 'The big pad: 8 by 8. Trucks and gates only, and a lot of them.', theme: 'boreal', levels: parseLevels(clearwater) },
+  // ROAD BAN PATCHES (tools/gen-baldonnel.ts): northeast BC at spring breakup. Soft ground carries a pickup, never a rig.
+  { id: 'baldonnel', name: 'Baldonnel', blurb: "Spring breakup. Rigs can't cross soft ground. Pickups can.", theme: 'thaw', levels: parseLevels(baldonnel) },
 ];
 
 /** 60 pre-generated Daily Pads (medium, mixed obstacles and vehicles). Pad N uses level (N-1) % 60. */

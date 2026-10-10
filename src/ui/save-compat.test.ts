@@ -60,7 +60,7 @@ describe('a save from the live build before Clearwater', () => {
   it('the same regions and levels are open, and the new region is simply locked: no banner, nothing taken away', async () => {
     const p = await withStorage(async () => (await import('./progress.ts')).loadProgress());
     // Cardium and Montney (five of Cardium cleared), as before; Cardium's seventh level open, as before.
-    expect(REGIONS.map((_, i) => regionOpen(REGIONS, i, p.best, false))).toEqual([true, true, false, false, false, false]);
+    expect(REGIONS.map((_, i) => regionOpen(REGIONS, i, p.best, false))).toEqual([true, true, false, false, false, false, false]);
     expect(levelOpen(REGIONS, 0, 6, p.best, false)).toBe(true);
     expect(levelOpen(REGIONS, 0, 7, p.best, false)).toBe(false);
     expect(levelOpen(REGIONS, 1, 0, p.best, false)).toBe(true);
@@ -121,7 +121,9 @@ const DEV_ADDS: { keys: string[]; sightings: string[]; styles: string[]; regions
   // Classic Rock (job U7). The live build does not know it and plays Country instead; if the player changes a sound
   // setting there, the style is saved as Country. Jay, Oct 9: "if live resets my style to Country after I play dev, that's fine."
   styles: ['classic'],
-  regions: [],
+  // Baldonnel, region 7 (job U6): its level ids (b01 to b10) are scores the live build does not know. It keeps them in
+  // `best` untouched (it never drops a score), shows no seventh tab, and counts nothing of them.
+  regions: ['baldonnel'],
 };
 const typeOf = (v: unknown): string => (Array.isArray(v) ? 'array' : v === null ? 'null' : typeof v);
 

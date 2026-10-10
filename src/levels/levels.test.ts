@@ -6,7 +6,7 @@ import { convoyRaisesPar, everyPumpjackInTheWay, slidesIn, withoutConvoys, witho
 import { DAILY_LEVELS, REGIONS } from './regions.ts';
 
 describe('shipped levels', () => {
-  it('has six regions of 10 levels with unique ids', () => {
+  it('has seven regions of 10 levels with unique ids', () => {
     expect(REGIONS.map((r) => [r.id, r.levels.length])).toEqual([
       ['cardium', 10],
       ['montney', 10],
@@ -14,6 +14,7 @@ describe('shipped levels', () => {
       ['mannville', 10],
       ['bakken', 10],
       ['clearwater', 10],
+      ['baldonnel', 10],
     ]);
     const ids = REGIONS.flatMap((r) => r.levels.map((l) => l.id));
     expect(new Set(ids).size).toBe(ids.length);

@@ -21,8 +21,8 @@ describe('night levels', () => {
   it('night comes when the player goes idle: 30 s, a 4 s fade in, a 2 s fade back at the next move', () => {
     expect(GAG_TRIGGERS.night).toEqual({ idleMs: 30_000, fadeInMs: 4000, fadeOutMs: 2000, themes: ['spring', 'winter', 'fall', 'prairie'] });
     // Montney, Duvernay and Mannville go dark (and Bakken's prairie will). Cardium never does.
-    // (Nor does Clearwater: its boreal fall is not on the night's list.)
-    for (const r of REGIONS) expect(nightComes(r.theme), r.id).toBe(r.theme !== 'summer' && r.theme !== 'boreal');
+    // (Nor does Clearwater: its boreal fall is not on the night's list. Nor Baldonnel's thaw.)
+    for (const r of REGIONS) expect(nightComes(r.theme), r.id).toBe(r.theme !== 'summer' && r.theme !== 'boreal' && r.theme !== 'thaw');
     // ?night=1 pins it on and ?night=0 keeps it away (previews, screenshots, tests).
     expect(nightForced('')).toBeNull();
     expect(nightForced('?night=1')).toBe(true);

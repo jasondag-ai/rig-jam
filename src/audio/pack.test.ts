@@ -117,8 +117,8 @@ describe('music loops', () => {
   });
 
   it('Classic Rock gets heavier up the regions: one table of tiers, and the older styles keep their one in-play loop', () => {
-    // The table (pack.ts `PLAY_TIER`): Cardium 1, Montney 2, Duvernay 3, Mannville, Bakken and Clearwater 4, the Daily Pad 3, the Sunday Turnaround 4, anything else 1.
-    expect(PLAY_TIER).toEqual({ cardium: 1, montney: 2, duvernay: 3, mannville: 4, bakken: 4, clearwater: 4, daily: 3, turnaround: 4 });
+    // The table (pack.ts `PLAY_TIER`): Cardium 1, Montney 2, Duvernay 3, Mannville, Bakken and Clearwater and Baldonnel 4, the Daily Pad 3, the Sunday Turnaround 4, anything else 1.
+    expect(PLAY_TIER).toEqual({ cardium: 1, montney: 2, duvernay: 3, mannville: 4, bakken: 4, clearwater: 4, baldonnel: 4, daily: 3, turnaround: 4 });
     expect(['cardium', 'montney', 'duvernay', 'mannville', 'bakken', 'clearwater', 'daily', 'somewhere-new'].map(playTier)).toEqual([1, 2, 3, 4, 4, 4, 3, 1]);
     expect([1, 2, 3, 4].map((tier) => musicKey('classic', 'play', tier))).toEqual(['classic_play1', 'classic_play2', 'classic_play3', 'classic_play4']);
     expect(musicKey('classic', 'play')).toBe('classic_play1');

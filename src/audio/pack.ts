@@ -82,7 +82,7 @@ export const PLAY_TIER: Record<string, number> = {
   duvernay: 3,
   mannville: 4,
   bakken: 4,
-  clearwater: 4,
+  clearwater: 4, baldonnel: 4,
   daily: 3,
   turnaround: 4, // (the Sunday Turnaround, job U3)
 };
