@@ -389,6 +389,60 @@
    "mean": -19.4,
    "peak": -5.4,
    "loop": false
+  },
+  "crane_call": {
+   "seconds": 1.1,
+   "mean": -22.1,
+   "peak": -1.9,
+   "loop": false
+  },
+  "frog_chorus": {
+   "seconds": 2.53,
+   "mean": -19.4,
+   "peak": -2.3,
+   "loop": false
+  },
+  "frog_late": {
+   "seconds": 0.42,
+   "mean": -19.4,
+   "peak": -2.9,
+   "loop": false
+  },
+  "bison_snort": {
+   "seconds": 0.9,
+   "mean": -19.4,
+   "peak": -8.4,
+   "loop": false
+  },
+  "chuckle": {
+   "seconds": 1.29,
+   "mean": -22.8,
+   "peak": -2.0,
+   "loop": false
+  },
+  "timer_beep": {
+   "seconds": 0.17,
+   "mean": -19.5,
+   "peak": -9.5,
+   "loop": false
+  },
+  "scrub": {
+   "seconds": 0.95,
+   "mean": -24.5,
+   "peak": -2.0,
+   "loop": true
+  },
+  "creak": {
+   "seconds": 1.17,
+   "mean": -25.8,
+   "peak": -2.0,
+   "loop": false
+  },
+  "polaroid": {
+   "seconds": 1.1,
+   "mean": -22.6,
+   "peak": -1.9,
+   "loop": false
   }
  },
  "music": {

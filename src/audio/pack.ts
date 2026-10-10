@@ -36,13 +36,20 @@ export const VOLUME: Record<SfxKey, number> = {
   // Clearwater's sightings (Jay's five new files, levelled like the sound pass's): the hits a notch under the truck's bump,
   // the misses lighter, the triangle clear but not over the win.
   whoosh: 0.4, boing: 0.55, crack: 0.6, splash: 0.55, triangle: 0.5,
+  // Baldonnel's sightings and the finale (Manus's nine finished files, Jay's picks of the takes, Oct 10; copied as they are).
+  // Animal calls like the game's other animals; the frogs' chorus an ambience under the action; the magpie's chuckle a
+  // cartoon reaction; the self-timer a small device; the door's creak and the camera's whirr like the outhouse and the
+  // camera (the creak's file is quiet, so its place is a little lower to keep its peak in hand); the scrub well down.
+  crane_call: 0.5, frog_chorus: 0.42, frog_late: 0.45, bison_snort: 0.55, chuckle: 0.45, timer_beep: 0.4, scrub: 0.32, creak: 0.42, polaroid: 0.5,
 };
 /**
  * LAZY: the sounds only gag wave 3 uses (Mannville and Bakken). They are NOT fetched with the
  * rest when Sound effects is switched on: a level fetches the ones its own gags can play as it
  * opens (`sound.warm`), and any other is fetched the first time it is asked for.
  */
-export const LAZY_KEYS: SfxKey[] = ['squelch', 'shluck', 'blup', 'mew', 'yawn', 'pats', 'bonk', 'tailslap', 'shimmer', 'howl', 'rustle', 'whistle', 'squeak', 'aww', 'rumble', 'sigh', 'rain', 'umbrella', 'downpour', 'whoosh', 'boing', 'crack', 'splash', 'triangle'];
+export const LAZY_KEYS: SfxKey[] = ['squelch', 'shluck', 'blup', 'mew', 'yawn', 'pats', 'bonk', 'tailslap', 'shimmer', 'howl', 'rustle', 'whistle', 'squeak', 'aww', 'rumble', 'sigh', 'rain', 'umbrella', 'downpour', 'whoosh', 'boing', 'crack', 'splash', 'triangle',
+  // (Baldonnel's sightings and the finale: fetched only by a Baldonnel level or by the finale itself.)
+  'crane_call', 'frog_chorus', 'frog_late', 'bison_snort', 'chuckle', 'timer_beep', 'scrub', 'creak', 'polaroid'];
 /** Fetched as soon as Sound effects is on: everything else. */
 export const CORE_KEYS: SfxKey[] = SFX_KEYS.filter((k) => !LAZY_KEYS.includes(k));
 /** Every file is first brought to about this average level (dB), then given its place from VOLUME. */

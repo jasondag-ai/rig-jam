@@ -585,6 +585,87 @@
   "url": ""
  },
  {
+  "use": "crane_call",
+  "kind": "sfx",
+  "file": "baldonnel_finale/crane_call_B.mp3",
+  "title": "Sand Hill Cranes",
+  "author": "EELLC (Freesound)",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/sound-effects/nature-sand-hill-cranes-61016/"
+ },
+ {
+  "use": "frog_chorus",
+  "kind": "sfx",
+  "file": "baldonnel_finale/frog_chorus_A.mp3",
+  "title": "Frog Croaking Sound Effect",
+  "author": "DRAGON-STUDIO",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/sound-effects/nature-frog-croaking-sound-effect-322956/"
+ },
+ {
+  "use": "frog_late",
+  "kind": "sfx",
+  "file": "baldonnel_finale/frog_late_B.mp3",
+  "title": "Green Frog Single Croak Loud",
+  "author": "ejah_music",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/sound-effects/nature-green-frog-single-croak-loud-426273/"
+ },
+ {
+  "use": "bison_snort",
+  "kind": "sfx",
+  "file": "baldonnel_finale/bison_snort_A.mp3",
+  "title": "Animals Buffalo Sound",
+  "author": "CoffeeBagAudioLab",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/sound-effects/nature-animals-buffalo-sound-232390/"
+ },
+ {
+  "use": "chuckle",
+  "kind": "sfx",
+  "file": "baldonnel_finale/chuckle_B.mp3",
+  "title": "Mischievous Laugh",
+  "author": "Universfield",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/sound-effects/horror-mischievous-laugh-140131/"
+ },
+ {
+  "use": "timer_beep",
+  "kind": "sfx",
+  "file": "baldonnel_finale/timer_beep_A.mp3",
+  "title": "beep",
+  "author": "athenspublic (Freesound)",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/sound-effects/technology-beep-104060/"
+ },
+ {
+  "use": "scrub",
+  "kind": "sfx",
+  "file": "baldonnel_finale/scrub_B.mp3",
+  "title": "Brushing Teeth Noise",
+  "author": "Alex_Jauk",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/sound-effects/film-special-effects-brushing-teeth-noise-447647/"
+ },
+ {
+  "use": "creak",
+  "kind": "sfx",
+  "file": "baldonnel_finale/creak_A.mp3",
+  "title": "plastic squeak",
+  "author": "Reitanna (Freesound)",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/sound-effects/film-special-effects-plastic-squeak-103382/"
+ },
+ {
+  "use": "polaroid",
+  "kind": "sfx",
+  "file": "baldonnel_finale/polaroid_A.mp3",
+  "title": "polaroid_600",
+  "author": "tomschuetz (Freesound)",
+  "licence": "Pixabay Content License",
+  "url": "https://pixabay.com/sound-effects/technology-polaroid-600-83252/"
+ },
+ {
   "use": "country_menu",
   "kind": "music",
   "file": "music/A_menu_fun_on_the_farm_b.mp3",

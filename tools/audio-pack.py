@@ -20,6 +20,7 @@ Sources (not in the repo): the folders rhr_cartoon_sounds and rhr_music_styles, 
   src/audio/credits.json          the Credits screen: one row per file used, from the packs' CREDITS.md.
 
 Run: python3 tools/audio-pack.py [out_dir]   (default: the repo's public/audio)
+     python3 tools/audio-pack.py --finished  (only the FINISHED files, copied as they are; nothing else is rebuilt)
 """
 import json
 import re
@@ -115,6 +116,22 @@ SFX = {
     'downpour': ('art/downpour.wav', None, False),
 }
 ART_SRC = ROOT / 'tools' / 'sfx-art'
+# FINISHED FILES (Manus's pack for Baldonnel's sightings and the finale, Oct 10; Jay's picks of the takes): cut, faded
+# and levelled already (mean about -19 dB, peak never past -1.5 dB), so they are COPIED AS THEY ARE, byte for byte:
+# never re-cut, never re-levelled, never re-encoded. Only measured, for pack.json. Sources: the picked take's own MP3,
+# `~/Desktop/RHR Art Inbox/Sound files/baldonnel_finale/<name>_<A|B>.mp3`, copied to tools/sfx-art/<name>.mp3.
+# key: (take, loop, title, author, source page). All Pixabay Content License (no attribution needed).
+FINISHED = {
+    'crane_call': ('B', False, 'Sand Hill Cranes', 'EELLC (Freesound)', 'https://pixabay.com/sound-effects/nature-sand-hill-cranes-61016/'),
+    'frog_chorus': ('A', False, 'Frog Croaking Sound Effect', 'DRAGON-STUDIO', 'https://pixabay.com/sound-effects/nature-frog-croaking-sound-effect-322956/'),
+    'frog_late': ('B', False, 'Green Frog Single Croak Loud', 'ejah_music', 'https://pixabay.com/sound-effects/nature-green-frog-single-croak-loud-426273/'),
+    'bison_snort': ('A', False, 'Animals Buffalo Sound', 'CoffeeBagAudioLab', 'https://pixabay.com/sound-effects/nature-animals-buffalo-sound-232390/'),
+    'chuckle': ('B', False, 'Mischievous Laugh', 'Universfield', 'https://pixabay.com/sound-effects/horror-mischievous-laugh-140131/'),
+    'timer_beep': ('A', False, 'beep', 'athenspublic (Freesound)', 'https://pixabay.com/sound-effects/technology-beep-104060/'),
+    'scrub': ('B', True, 'Brushing Teeth Noise', 'Alex_Jauk', 'https://pixabay.com/sound-effects/film-special-effects-brushing-teeth-noise-447647/'),  # the only loop
+    'creak': ('A', False, 'plastic squeak', 'Reitanna (Freesound)', 'https://pixabay.com/sound-effects/film-special-effects-plastic-squeak-103382/'),
+    'polaroid': ('A', False, 'polaroid_600', 'tomschuetz (Freesound)', 'https://pixabay.com/sound-effects/technology-polaroid-600-83252/'),
+}
 # THE SOUND PASS'S FILES ARE LEVELLED as they are built: each is brought to the same average level
 # (LEVEL_MEAN, the mix's own target in src/audio/pack.ts), but never so far that its peak passes
 # LEVEL_PEAK. The mix table then only has to give each its place.
@@ -169,6 +186,34 @@ def credits_table(path: Path) -> dict:
     return rows
 
 
+def finished(pack: dict, credits: list) -> None:
+    """The finished files: copied as they are, measured, and given their rows."""
+    for key, (take, loop, title, author, url) in FINISHED.items():
+        source = ART_SRC / f'{key}.mp3'
+        if not source.exists():
+            sys.exit(f'missing {source}')
+        out = OUT / 'sfx' / f'{key}.mp3'
+        shutil.copyfile(source, out)
+        m = measure(out)
+        pack['sfx'][key] = {'seconds': m['seconds'], 'mean': m['mean'], 'peak': m['peak'], 'loop': loop}
+        credits[:] = [c for c in credits if c['use'] != key]
+        credits.append({'use': key, 'kind': 'sfx', 'file': f'baldonnel_finale/{key}_{take}.mp3', 'title': title, 'author': author, 'licence': 'Pixabay Content License', 'url': url})
+
+
+def only_finished() -> None:
+    """`--finished`: adds (or refreshes) ONLY the finished files, touching nothing else in the pack. It needs no
+    Desktop sources and no rebuild of the music (a full run re-encodes the Opus loops and leaves Classic Rock to
+    tools/music-classic.py)."""
+    pack_path, credits_path = ROOT / 'src/audio/pack.json', ROOT / 'src/audio/credits.json'
+    pack, credits = json.loads(pack_path.read_text()), json.loads(credits_path.read_text())
+    finished(pack, credits)
+    # (Effects' rows stay together, before the music's.)
+    credits.sort(key=lambda c: c['kind'] != 'sfx')
+    pack_path.write_text(json.dumps(pack, indent=1) + '\n')
+    credits_path.write_text(json.dumps(credits, indent=1) + '\n')
+    print(f'{len(FINISHED)} finished effects copied; {len(pack["sfx"])} effects in the pack')
+
+
 def main() -> None:
     for d in (SFX_SRC, MUSIC_SRC):
         if not d.exists():
@@ -214,6 +259,8 @@ def main() -> None:
         pack['sfx'][key] = {'seconds': m['seconds'], 'mean': m['mean'], 'peak': m['peak'], 'loop': loop}
         c = sfx_credits.get(src) or {'title': '', 'author': 'Synthesized for Rig Jam', 'licence': 'Original', 'url': ''}
         credits.append({'use': key, 'kind': 'sfx', 'file': src, **c})
+
+    finished(pack, credits)
 
     for key, (folder, stem, ogg_dir, bake) in MUSIC.items():
         source = folder / f'{stem}.mp3'
@@ -262,4 +309,8 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    if '--finished' in sys.argv:
+        OUT = ROOT / 'public' / 'audio'
+        only_finished()
+    else:
+        main()
