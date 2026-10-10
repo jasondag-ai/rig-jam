@@ -187,9 +187,8 @@ const CASES = [
   ['hare', 'Half Dressed', 'baldonnel', 2, 'three taps on the snowbank', async (page) => { await tapOn(page, '.bald-snowbank .bd-snowbank', 3); }],
   ['ice', 'Last Ice', 'baldonnel', 2, 'a tap on the ice on the pond', async (page) => { await tapOn(page, '.bald-ground .bd-pond path[fill="#eef3f7"]'); }],
   ['frogs', 'Late Croak', 'baldonnel', 2, 'a tap on the puddle', async (page) => { await tapOn(page, '.bald-ground .bd-puddle'); }],
-  // (On the ten levels as they stand a patch a pickup can reach lies in its gate's own cell, so a pickup only crosses one on its
-  // way OUT: once a level. Three times in a level therefore means driving it out, taking that back with Undo, and again.)
-  ['mosquito', 'Lunch to Go', 'baldonnel', 0, 'a pickup driven out across a road ban patch three times (Undo between)', async (page, lv) => { let s = newGame(lv); for (const step of plan(lv)) { const t = s.trucks.find((x) => x.id === step.id); if (t.length === 2 && crossesPatch(lv, t, step.delta)) { for (let k = 0; k < 3; k++) { await play(page, step, 1100); if (k < 2) { await page.locator('[data-act="undo"]').click(); await wait(450); } } return; } await play(page, step); s = tryMove(s, step.id, step.delta).state; } }],
+  // (On the ten levels as they stand a patch a pickup can reach lies in its gate's own cell: it crosses one on its way OUT.)
+  ['mosquito', 'Lunch to Go', 'baldonnel', 0, 'a pickup driven out across a road ban patch', async (page, lv) => { let s = newGame(lv); for (const step of plan(lv)) { const t = s.trucks.find((x) => x.id === step.id); await play(page, step, 1100); if (t.length === 2 && crossesPatch(lv, t, step.delta)) return; s = tryMove(s, step.id, step.delta).state; } }],
 ];
 
 console.log(`\nwebkit ${VW} x ${VH} at ${ROOT}: every sighting, on its real trigger`);

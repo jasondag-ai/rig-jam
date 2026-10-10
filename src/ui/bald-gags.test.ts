@@ -144,7 +144,7 @@ describe("Baldonnel's seven sightings (job U6b)", () => {
     const T = GAG_TRIGGERS;
     expect([T.overweight, T.cranes, T.bison, T.hare, T.ice, T.frogs, T.mosquito]).toEqual([
       { region: 'baldonnel', patchPushes: 3 }, { region: 'baldonnel', skyTaps: 3 }, { region: 'baldonnel', signTaps: 1 }, { region: 'baldonnel', snowbankTaps: 3 },
-      { region: 'baldonnel', pondTaps: 1 }, { region: 'baldonnel', puddleTaps: 1 }, { region: 'baldonnel', patchDrives: 3 },
+      { region: 'baldonnel', pondTaps: 1 }, { region: 'baldonnel', puddleTaps: 1 }, { region: 'baldonnel', patchDrives: 1 },
     ]);
     for (const id of IDS) {
       expect(PREVIEWS[id]).toEqual({ gag: id, region: 'baldonnel', level: 1 });
@@ -153,7 +153,7 @@ describe("Baldonnel's seven sightings (job U6b)", () => {
     }
   });
 
-  it('Lunch to Go counts a pickup driven across or onto a patch: never a rig, never one that only drives off', () => {
+  it('Lunch to Go: a pickup driven across or onto a patch, once; never a rig, never one that only drives off', () => {
     const soft = [{ row: 2, col: 3 }];
     const pickup = { orient: 'h' as const, row: 2, col: 0, length: 2 };
     expect(drivesOnSoft(soft, pickup, 1)).toBe(false);
@@ -169,9 +169,8 @@ describe("Baldonnel's seven sightings (job U6b)", () => {
     expect(drivesOnSoft(soft, { ...pickup, length: 3 }, 1)).toBe(false);
     expect(drivesOnSoft([], pickup, 4)).toBe(false);
     // WHERE IT CAN BE DONE, on the ten levels as job U6 left them: on levels 1, 5, 6, 7 and 8 one pickup has a patch in its
-    // lane, and that patch lies in its gate's own cell, so it crosses the patch only on its way OUT (once; three times
-    // means driving out, Undo, and again). On 2, 3, 4, 9 and 10 no pickup can reach a patch at all. (The levels are not
-    // this job's to change: Jay has been told.)
+    // lane, and that patch lies in its gate's own cell, so it crosses the patch only on its way OUT: once, which is why
+    // the trigger is one drive (Jay, Oct 10). On 2, 3, 4, 9 and 10 no pickup can reach a patch at all: no Lunch to Go there.
     const can = REGIONS.find((r) => r.id === 'baldonnel')!.levels.map((l) => l.trucks.some((t) => t.length === 2 && l.soft.some((c) => (t.orient === 'h' ? c.row === t.row : c.col === t.col))));
     expect(can).toEqual([true, false, false, false, true, true, true, true, false, false]);
   });
@@ -184,13 +183,14 @@ describe("Baldonnel's seven sightings (job U6b)", () => {
       hare: ['Half Dressed', 'Half ready for spring.', 'Someone is changing behind the snowbank.', 'In Baldonnel, tap the snowbank 3 times.'],
       ice: ['Last Ice', 'Always a bigger fish.', 'One more cast before breakup.', 'In Baldonnel, tap the ice on the pond.'],
       frogs: ['Late Croak', 'Missed the cue.', 'The puddle has a choir. One member is late.', 'In Baldonnel, tap the puddle.'],
-      mosquito: ['Lunch to Go', 'Takeout.', 'Soft ground, wet ground, hungry ground.', 'In Baldonnel, drive a pickup over a road ban patch 3 times.'],
+      mosquito: ['Lunch to Go', 'Takeout.', 'Soft ground, wet ground, hungry ground.', 'In Baldonnel, drive a pickup over a road ban patch.'],
     };
     for (const id of IDS) {
       const e = LOG_ENTRIES.find((x) => x.id === id)!;
       expect([e.name, e.caption, e.riddle, e.hint], id).toEqual(want[id]);
       // Word for word the page's (its typographic apostrophes aside).
-      expect([PAGE[id].name, PAGE[id].card, PAGE[id].riddle, PAGE[id].hint], id).toEqual(want[id]);
+      // (Lunch to Go's plain hint is Jay's own, Oct 10: one drive over a patch. The page says three times.)
+      expect([PAGE[id].name, PAGE[id].card, PAGE[id].riddle, id === 'mosquito' ? PAGE[id].hint.replace(' 3 times.', '.') : PAGE[id].hint], id).toEqual(want[id]);
     }
     expect(LOG_ENTRIES).toHaveLength(40);
     // A log that had every sighting before Baldonnel, with its camo earned: still earned, though seven are now unfound.

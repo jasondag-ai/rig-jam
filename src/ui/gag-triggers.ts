@@ -96,8 +96,8 @@ export const GAG_TRIGGERS = {
    *   like any other, but it does not count toward Safety Sam's three in a row).
    * TWO LEFT FEET: this many taps on the sky above the lease. RIGHT OF WAY: a tap on the bison crossing sign.
    * HALF DRESSED: this many taps on the snowbank (the others give it a knock). LAST ICE: a tap on the pond and its ice.
-   * LATE CROAK: a tap on the meltwater puddle. LUNCH TO GO: a pickup (2 cells) driven across or onto a patch this many
-   *   times in the level (a fling is a move like any other).
+   * LATE CROAK: a tap on the meltwater puddle. LUNCH TO GO: a pickup (2 cells) driven across or onto a patch, ONCE
+   *   (Jay, Oct 10: on the levels as they stand a pickup only crosses a patch on its way out; a fling is a move like any other).
    */
   overweight: { region: 'baldonnel', patchPushes: 3 },
   cranes: { region: 'baldonnel', skyTaps: 3 },
@@ -105,7 +105,7 @@ export const GAG_TRIGGERS = {
   hare: { region: 'baldonnel', snowbankTaps: 3 },
   ice: { region: 'baldonnel', pondTaps: 1 },
   frogs: { region: 'baldonnel', puddleTaps: 1 },
-  mosquito: { region: 'baldonnel', patchDrives: 3 },
+  mosquito: { region: 'baldonnel', patchDrives: 1 },
   /**
    * Not a gag. NIGHT: no level starts at night. After `idleMs` with no moves the lease fades to
    * night over `fadeInMs`; the next move brings the day back over `fadeOutMs`. Only where the

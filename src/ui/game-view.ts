@@ -738,7 +738,7 @@ export class GameView {
       this.convoyOut = result.exited && mover?.convoy === 1 ? mover.color : null;
     }
     // Clearwater: trucks driven out one move after another (Dinner Bell; once that is in the log, One Pea).
-    // Baldonnel, Lunch to Go: a pickup driven across or onto a road ban patch, three times in the level (a fling counts).
+    // Baldonnel, Lunch to Go: a pickup driven across or onto a road ban patch (once: Jay, Oct 10; a fling counts).
     if (this.strips.mosquito && mover && drivesOnSoft(this.level.soft, mover, result.delta ?? delta) && ++this.patchDrives >= GAG_TRIGGERS.mosquito.patchDrives) { this.patchDrives = 0; this.fire('mosquito'); }
     this.exitRun = result.exited ? this.exitRun + 1 : 0;
     if (this.clear && this.exitRun >= GAG_TRIGGERS.bell.exitsInARow) {

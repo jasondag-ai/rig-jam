@@ -56,14 +56,15 @@ export const LOG_ENTRIES: LogEntry[] = [
   // The other stacked pair: One Pea shares Dinner Bell's trigger and plays only once Dinner Bell is in this log.
   { id: 'bell', name: 'Dinner Bell', caption: 'Moe was nearly on time.', hint: "Clear 5 trucks in a row without Undo.", riddle: "Work hard, eat first." },
   { id: 'pea', name: 'One Pea', caption: 'Watching his carbs.', hint: "After Dinner Bell, clear 5 in a row again.", riddle: "Somebody always misses supper." },
-  // Baldonnel (job U6b). Log lines, riddles and plain hints are the reference page's own, word for word.
+  // Baldonnel (job U6b). Log lines, riddles and plain hints are the reference page's own, word for word (Lunch to Go's
+  // plain hint is Jay's of Oct 10: its trigger is one drive over a patch, not the page's three).
   { id: 'overweight', name: 'Overweight', caption: 'Overweight. Again.', hint: "In Baldonnel, push a 3-cell rig into a road ban patch 3 times.", riddle: "Spring roads can't take the weight. Neither can the scale." },
   { id: 'cranes', name: 'Two Left Feet', caption: 'Not his best move.', hint: "In Baldonnel, tap the sky 3 times.", riddle: "Something tall is dancing up there. Ask it down." },
   { id: 'bison', name: 'Right of Way', caption: 'Bison always win.', hint: "In Baldonnel, tap the bison sign.", riddle: "That sign is not a suggestion." },
   { id: 'hare', name: 'Half Dressed', caption: 'Half ready for spring.', hint: "In Baldonnel, tap the snowbank 3 times.", riddle: "Someone is changing behind the snowbank." },
   { id: 'ice', name: 'Last Ice', caption: 'Always a bigger fish.', hint: "In Baldonnel, tap the ice on the pond.", riddle: "One more cast before breakup." },
   { id: 'frogs', name: 'Late Croak', caption: 'Missed the cue.', hint: "In Baldonnel, tap the puddle.", riddle: "The puddle has a choir. One member is late." },
-  { id: 'mosquito', name: 'Lunch to Go', caption: 'Takeout.', hint: "In Baldonnel, drive a pickup over a road ban patch 3 times.", riddle: "Soft ground, wet ground, hungry ground." },
+  { id: 'mosquito', name: 'Lunch to Go', caption: 'Takeout.', hint: "In Baldonnel, drive a pickup over a road ban patch.", riddle: "Soft ground, wet ground, hungry ground." },
   { id: 'night', name: 'Night Shift', caption: 'Lights out on the lease.', hint: "Leave any lease alone until it goes dark.", riddle: "Do nothing at all, somewhere the sun goes down." },
   { id: 'bull', name: 'Bull and Cow', caption: 'Spring in the Montney.', hint: "In Montney, tap the cow.", riddle: "She is only grazing in the Montney. Say hello." },
   // Not a gag: found by scrolling the log's own dig right through the Earth (log-deep.ts). Its card shows the player's best time.

@@ -1528,16 +1528,17 @@ something, give exact clicks and one command at a time.
   NOT COUNT toward Safety Sam's three in a row). TWO LEFT FEET = 3 taps on the sky above the lease.
   RIGHT OF WAY = a tap on the bison sign. HALF DRESSED = 3 taps on the snowbank. LAST ICE = a tap
   on the pond. LATE CROAK = a tap on the puddle. LUNCH TO GO = a pickup driven across or onto a
-  patch 3 times in the level (`drivesOnSoft`: the cells it newly covers; a fling is a move).
+  patch, ONCE (`patchDrives` 1; `drivesOnSoft`: the cells it newly covers; a fling is a move).
   `?gag=overweight|cranes|bison|hare|ice|frogs|mosquito`.
-- LUNCH TO GO AND THE LEVELS AS THEY STAND (told to Jay): on levels 1, 5, 6, 7 and 8 one pickup
-  has a patch in its lane, and it lies in that pickup's own gate cell, so the pickup crosses it
-  only on its way OUT: once. Three times in a level means driving it out, Undo, and again. On
-  levels 2, 3, 4, 9 and 10 no pickup can reach a patch at all. Fix it in the levels (a slot rule
-  in gen-baldonnel.ts: a pickup can STOP on a patch) or in the trigger's count, when Jay says which.
+- LUNCH TO GO AND THE LEVELS AS THEY STAND (Jay, Oct 10: the trigger is ONE drive, the levels are
+  not changed, and its plain hint is his: "In Baldonnel, drive a pickup over a road ban patch."):
+  on levels 1, 5, 6, 7 and 8 one pickup has a patch in its lane, in that pickup's own gate cell,
+  so it crosses the patch on its way OUT. On levels 2, 3, 4, 9 and 10 no pickup can reach a patch
+  at all, so Lunch to Go does not come there.
 - LOG: `overweight`, `cranes` "Two Left Feet", `bison` "Right of Way", `hare` "Half Dressed", `ice`
   "Last Ice", `frogs` "Late Croak", `mosquito` "Lunch to Go", after One Pea (40 entries). Captions,
-  riddles and plain hints are the page's own, word for word (a test reads them off the page).
+  riddles and plain hints are the page's own, word for word (a test holds them to it), Lunch to
+  Go's plain hint aside.
   Camo earned before them stays earned (`camoEarned` is saved); a new player needs all 40. Cards:
   the page's own still of each, with its prop drawn behind (`LOG_ART`). Declared in
   `DEV_ADDS.sightings`: the live build drops them from a log it saves, until the merge.
