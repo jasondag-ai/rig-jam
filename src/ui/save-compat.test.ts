@@ -116,7 +116,8 @@ const contract = JSON.parse(readFileSync(new URL('../../e2e/fixtures/live-contra
 /** What the dev build adds that the live build does not know. Each entry is a decision: say why beside it. */
 const DEV_ADDS: { keys: string[]; sightings: string[]; styles: string[]; regions: string[] } = {
   // Sunday Turnaround results (job U3): a key of their own, so the live build never reads, changes or drops them.
-  keys: ['rush-hour-rigs:turnaround'],
+  // The finale (job U9): that the ending has played has a key of its own. The live build never reads or writes it.
+  keys: ['rush-hour-rigs:turnaround', 'rush-hour-rigs:finale'],
   // Baldonnel's seven (job U6b). The live build does not know them and drops them from the log the next time it saves it
   // (they can be found again); camo pickups already earned stay earned (`camoEarned` is kept by both builds).
   sightings: ['overweight', 'cranes', 'bison', 'hare', 'ice', 'frogs', 'mosquito'],
@@ -157,6 +158,7 @@ async function devSave(): Promise<Map<string, string>> {
     fake.setItem('rush-hour-rigs:region', REGIONS.at(-1)!.id);
     const T = await import('./turnaround.ts');
     T.saveTurnResults(T.recordTurnaround(T.loadTurnResults(), 3, 31));
+    (await import('./finale-state.ts')).saveFinaleSeen();
     return map;
   } finally { g.localStorage = before; g.location = where; }
 }

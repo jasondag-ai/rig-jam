@@ -31,9 +31,11 @@ import { showUpdateBar, watchForUpdates } from './ui/update.ts';
 import { isDev, versionText } from './ui/version.ts';
 import { fakeRegions, furthestOpen, runRegionBar } from './ui/region-bar.ts';
 import { shouldShowCover, showCover } from './ui/cover.ts';
+import { FinaleView } from './ui/finale.ts';
+import { FINALE_KEY, finaleCount, finaleDue, finaleLink, loadFinale, saveFinaleSeen } from './ui/finale-state.ts';
 import { applyUiArt, uiImg } from './ui/ui-art.ts';
 import { preloadSprites } from './ui/sprites.ts';
-import { LOG_ENTRIES, applyCamo, cardHint, complete, foundCount, loadLog, previewAll, recordDig, saveLog, shownEntries, sightingToast, type Sighting } from './ui/wildlife-log.ts';
+import { LOG_ENTRIES, applyCamo, cardHint, complete, foundCount, loadLog, previewAll, recordDig, saveLog, savedLog, shownEntries, sightingToast, type Sighting } from './ui/wildlife-log.ts';
 import { clockText, dugStill } from './ui/log-deep.ts';
 import { PREVIEWS, type GagId } from './ui/gag-triggers.ts';
 import { workerStill } from './ui/worker.ts';
@@ -152,6 +154,8 @@ function rememberedRegion(): number {
 const savedRegion = (): number => Math.max(0, rememberedRegion());
 
 function showLevels(requested = savedRegion()): void {
+  // (A perfect game not yet celebrated, however it was completed: the ending plays before the list is shown again.)
+  if (maybeFinale()) return;
   game?.leave();
   game = null;
   sound.quiet();
@@ -322,6 +326,49 @@ function showLevels(requested = savedRegion()): void {
   }
 }
 
+// ---------- THE FINALE (finale.ts; job U9) ----------
+let finale: FinaleView | null = null;
+/** How long a new sighting's toast is given before the ending may take the screen (ms). */
+const SIGHTING_TOAST_MS = 2400;
+/** The game's own counts, from what is really saved: levels at par, sightings found. */
+const perfectCount = () => finaleCount(loadProgress().best, savedLog().found, REGIONS.flatMap((r) => r.levels), LOG_ENTRIES);
+/**
+ * A perfect game, not yet celebrated? Then the ending plays now (once), in place of wherever the player was going.
+ * Real progress only: not demo mode, not a preview link.
+ */
+function maybeFinale(): boolean {
+  if (finale || demoLink() || previewAll(location.search) || !finaleDue(perfectCount(), loadProgress().demo, loadFinale())) return false;
+  showFinale(true);
+  return true;
+}
+/**
+ * Plays the ending: its four parts on its own stage (an empty Cardium 1), then the game's own opening screen, built by
+ * cover.ts itself and faded up over the close-up. `record`: remember that it has played (not for `?finale=1` or a replay).
+ */
+function showFinale(record: boolean, stageOnly = false): void {
+  game?.leave();
+  game = null;
+  finale?.leave();
+  if (record) saveFinaleSeen();
+  const c = perfectCount();
+  // (A replay or the link shows the whole game's counts even on a phone that has not earned them.)
+  const counts = c.pads === c.ofPads && c.sightings === c.ofSightings ? c : { ...c, pads: c.ofPads, sightings: c.ofSightings };
+  const done = () => { finale?.leave(); finale = null; window.removeEventListener('resize', refit); };
+  const view = (finale = new FinaleView(REGIONS[0].levels[0], `${REGIONS[0].name} 1`, THEMES[REGIONS[0].theme], {
+    counts,
+    hints: loadProgress().hints,
+    stageOnly,
+    onCover: (holder) => showCover(holder, () => showLevels()),
+    onEnd: (cover) => { done(); app.replaceChildren(cover); },
+    onLeave: () => { done(); showLevels(); },
+  }));
+  const refit = () => { if (finale === view && view.el.isConnected) view.fit(); };
+  window.addEventListener('resize', refit);
+  app.replaceChildren(view.el);
+  view.fit();
+  view.start();
+}
+
 function showGame(regionIndex: number, index: number, force: GagId | null = null): void {
   const region = REGIONS[regionIndex];
   const hasNext = index + 1 < region.levels.length;
@@ -333,13 +380,15 @@ function showGame(regionIndex: number, index: number, force: GagId | null = null
     themeFor(regionIndex),
     {
       onLevels: () => showLevels(regionIndex),
-      onNext: hasNext ? () => showGame(regionIndex, index + 1) : null,
+      // (A perfect game's last win: the ending plays after this win card, whichever way the player leaves it.)
+      onNext: hasNext ? () => { if (!maybeFinale()) showGame(regionIndex, index + 1); } : null,
+      onSighting: () => window.setTimeout(() => { if (game?.el.isConnected) maybeFinale(); }, SIGHTING_TOAST_MS),
       // The last level of a field: on to the next field if it is open (asked when the card is made, so this win counts).
       onNextField: hasNext
         ? null
         : () => {
             const p = loadProgress(), to = nextField(REGIONS, regionIndex, p.best, p.demo);
-            return !to ? null : to.open ? { label: to.label, go: () => showLevels(to.index) } : { note: to.text };
+            return !to ? null : to.open ? { label: to.label, go: () => { if (!maybeFinale()) showLevels(to.index); } } : { note: to.text };
           },
     },
     null,
@@ -384,6 +433,7 @@ function showSettings(screen: HTMLElement): void {
           <span class="switch-label">Unlock everything (demo mode)</span>
         </label>
         <button class="btn quiet" data-act="credits">Credits</button>
+        ${loadFinale().seen ? '<button class="btn quiet" data-act="ending">Watch the ending</button>' : ''}
         ${feedbackEmail() ? `<div class="feedback"><b>Send feedback</b><span class="feedback-mail">${esc(feedbackEmail())}</span><button class="btn quiet" data-act="copy-feedback">Copy address and details</button><small>Adds your app version, phone and level.</small></div>` : ''}
         <button class="btn danger" data-act="reset">Reset progress</button>
         <button class="btn" data-act="close">Done</button>
@@ -413,6 +463,8 @@ function showSettings(screen: HTMLElement): void {
     const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
     if (act === 'reset') [ask.hidden, confirm.hidden] = [true, false];
     if (act === 'credits') [ask.hidden, creditsStep.hidden] = [true, false];
+    // (Once the ending has been earned and seen: watch it again. Nothing is saved by a replay.)
+    if (act === 'ending') { panel.remove(); showFinale(false); return; }
     if (act === 'copy-feedback') {
       const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-act]')!;
       void copyText(feedbackNow(feedbackEmail())).then((ok) => {
@@ -427,6 +479,8 @@ function showSettings(screen: HTMLElement): void {
     }
     if (act === 'wipe') {
       resetProgress();
+      // (And the ending: a fresh start can earn it again.)
+      try { localStorage.removeItem(FINALE_KEY); } catch { /* storage blocked */ }
       applyCamo(); // the Wildlife Log went with it
       showLevels(0); // a brand-new player
     }
@@ -649,7 +703,9 @@ if (!forcedGag()) {
   };
   // (The dev copy's `?pad=N`: straight into Daily Pad N, to try it. Nothing is saved: demo-link.ts.)
   const tryPad = isDev() ? padLink() : null, tryWeek = isDev() ? weekLink() : null;
-  if (tryWeek !== null) void showTurnaround(tryWeek);
+  // (`?finale=1`: the ending, now, on any build, saving nothing. `?finale=stage`: its empty stage, for the tests.)
+  if (finaleLink()) showFinale(false, finaleLink() === 'stage');
+  else if (tryWeek !== null) void showTurnaround(tryWeek);
   else if (tryPad !== null) void showDaily(tryPad);
   else if (shouldShowCover(location.search, navigator.webdriver === true)) showCover(app, () => (firstRun() ? showGame(0, 0) : showLevels()));
   else showLevels();

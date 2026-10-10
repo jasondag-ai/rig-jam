@@ -114,6 +114,9 @@ export function parseLog(raw: string | null): WildlifeLog {
 /** `?log=all` shows a full log (for previewing the page and the camo skin) without saving it. */
 export const previewAll = (search: string) => new URLSearchParams(search).get('log') === 'all';
 
+/** The log as it is SAVED on this phone (no preview link's make-believe): what the finale is earned by (finale-state.ts). */
+export const savedLog = (): WildlifeLog => { try { return parseLog(localStorage.getItem(keyFor(false))); } catch { return parseLog(null); } };
+
 /** The real log, or (with `demo`) the separate demo-mode log. */
 export function loadLog(demo = false): WildlifeLog {
   let log: WildlifeLog;

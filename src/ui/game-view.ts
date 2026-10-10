@@ -53,10 +53,11 @@ const NOTE_MS = 2600;
  * "Pad cleared!" as SVG text on a shallow arc, so it follows the curve of the win card's banner.
  * Two copies: a dark one a little lower (the lettering's bottom lip) and the yellow one on top.
  */
-const BANNER_TEXT =
+export const bannerSvg = (words: string): string =>
   '<svg viewBox="0 0 220 44" aria-hidden="true"><defs><path id="banner-arc" d="M8 31.5 Q110 21.5 212 31.5"/></defs>' +
-  ['lip', 'ink'].map((c) => `<text class="${c}"${c === 'lip' ? ' transform="translate(0 3)"' : ''}><textPath href="#banner-arc" startOffset="50%" text-anchor="middle">Pad cleared!</textPath></text>`).join('') +
+  ['lip', 'ink'].map((c) => `<text class="${c}"${c === 'lip' ? ' transform="translate(0 3)"' : ''}><textPath href="#banner-arc" startOffset="50%" text-anchor="middle">${words}</textPath></text>`).join('') +
   '</svg>';
+const BANNER_TEXT = bannerSvg('Pad cleared!');
 /** Night sky: about how far the tree tops rise above the horizon line, and the open sky the moon needs (px). */
 const TREE_RISE = 70;
 const MOON_ROOM = 40;
@@ -75,6 +76,8 @@ export interface GameViewHandlers {
   onNext: (() => void) | null;
   /** Only on the last level of a field: where the win card points next (a button to the next field, or what would open it). */
   onNextField?: (() => { label: string; go: () => void } | { note: string } | null) | null;
+  /** A sighting has just gone into the real Wildlife Log (the last of them, with every level at par, earns the finale). */
+  onSighting?: () => void;
 }
 
 /** Set when this game is today's Daily Pad. */
@@ -839,6 +842,7 @@ export class GameView {
     if (!r.isNew) return;
     saveLog(r.log, demo);
     void toast(sightingToast(id, r.count, demo));
+    if (!demo) this.handlers.onSighting?.();
     if (demo) {
       if (r.completed) void toast('Demo log complete!', { sub: 'Your real log is unchanged', big: true, ms: 3200 });
     } else if (r.completed) {
@@ -1360,7 +1364,7 @@ function idleScale(): number {
  * from the font itself, so the letters can be centred on the ribbon by their own metrics in any
  * browser. Measured again once the font has loaded; the CSS fallback stands in until then.
  */
-function setBannerCap(h2: HTMLElement): void {
+export function setBannerCap(h2: HTMLElement): void {
   const font = `700 ${BANNER_FONT_PX}px ${getComputedStyle(h2).fontFamily}`;
   const measure = () => {
     const ctx = document.createElement('canvas').getContext('2d');
@@ -1380,7 +1384,7 @@ const BANNER_FONT_PX = 21;
  * field (which already keeps 4px clear each side), so no letter is ever cut off. Fitted again once
  * the font has loaded.
  */
-function fitRibbon(span: HTMLElement | null): void {
+export function fitRibbon(span: HTMLElement | null): void {
   if (!span) return;
   const fit = () => {
     span.style.fontSize = '';

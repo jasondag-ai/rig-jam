@@ -4453,3 +4453,55 @@ body:has(.update-bar) .toast { margin-top: var(--bar-room, 0px); }
     text-align: center;
   }
 }
+
+/* ---------- THE FINALE (finale.ts; job U9) ----------
+   The game's own screen standing still, with the ending's own layers. Under the HUD and the buttons (z 2): the
+   camera's flash and the Polaroid as it drops. Over them: the Perfect Game card (the win card's own overlay), the
+   dark the credits roll on with the Polaroid and the credits on it, the close-up on the biffy, and the cover. */
+.screen.finale .controls .btn { pointer-events: none; }
+.screen.finale .depth-strip .scene-svg { overflow: visible; }
+.screen.finale > .finale-flash:not(.scenery):not(.overlay):not(.scene-layer):not(.vignette) { position: absolute; inset: 0; z-index: 1; background: #fff; opacity: 0; pointer-events: none; }
+.screen.finale > .finale-polaroid:not(.scenery):not(.overlay):not(.scene-layer):not(.vignette) { position: absolute; z-index: 1; pointer-events: none; transform-origin: 50% 50%; }
+.finale-polaroid svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.screen.finale > .finale-polaroid.lifted:not(.scenery):not(.overlay):not(.scene-layer):not(.vignette) { z-index: 4; }
+.screen.finale > .finale-dim:not(.scenery):not(.overlay):not(.scene-layer):not(.vignette) { position: absolute; inset: 0; z-index: 3; background: #140f0b; opacity: 0; pointer-events: none; }
+.screen.finale > .finale-credits:not(.scenery):not(.overlay):not(.scene-layer):not(.vignette) { position: absolute; left: 0; right: 0; z-index: 4; overflow: hidden; pointer-events: none; }
+.finale-credits .roll { position: absolute; left: 0; right: 0; top: 0; }
+.finale-credits p {
+  position: absolute; left: 0; right: 0; margin: 0; text-align: center; line-height: 1; white-space: nowrap; font-weight: 600; color: #fff;
+  text-shadow: -1.5px -1.5px 0 var(--outline), 1.5px -1.5px 0 var(--outline), -1.5px 1.5px 0 var(--outline), 1.5px 1.5px 0 var(--outline), 0 2px 0 var(--outline);
+  transform: translateY(-100%);
+}
+.finale-credits .cr-title { font-weight: 700; color: #f4c430; }
+.finale-credits .cr-head { font-weight: 700; color: #f4c430; letter-spacing: 2px; }
+.finale-credits .cr-small { color: #d8d2c4; }
+.finale-credits .cr-end { font-weight: 700; color: #f58a2a; }
+.screen.finale > .finale-close:not(.scenery):not(.overlay):not(.scene-layer):not(.vignette) { position: absolute; left: 0; right: 0; z-index: 5; overflow: hidden; pointer-events: none; }
+.finale-close .fc-art { position: absolute; inset: 0; }
+.finale-close svg { position: absolute; left: 0; display: block; }
+.finale-close .bubble { animation: none; }
+.screen.finale > .finale-cover:not(.scenery):not(.overlay):not(.scene-layer):not(.vignette) { position: absolute; inset: 0; z-index: 6; opacity: 0; transition: opacity 0.7s ease; }
+.screen.finale > .finale-cover.up:not(.scenery):not(.overlay):not(.scene-layer):not(.vignette) { opacity: 1; }
+.finale-cover > .screen { position: absolute; inset: 0; height: auto; }
+/* The Perfect Game card: the win card, its news coming in one piece at a time (the page's times). */
+.overlay.win.finale-win { z-index: 7; }
+.finale-card .fin-count { margin: 0; display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.finale-card .fin-count span { font-size: 16px; font-weight: 600; color: var(--ink); }
+.finale-card .fin-count b { font-size: 23px; font-weight: 700; color: #d0601b; }
+.finale-card { animation: fin-pop 0.45s 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; transition: transform 0.5s ease-in, opacity 0.5s ease-in; }
+.finale-win.leaving { background: transparent; transition: background 0.5s; }
+.finale-win.leaving .finale-card { transform: translateY(60%); opacity: 0; }
+.finale-card .hats > * { animation: fin-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; }
+.finale-card .hats > *:nth-child(1) { animation-delay: 0.9s; }
+.finale-card .hats > *:nth-child(2) { animation-delay: 1.15s; }
+.finale-card .hats > *:nth-child(3) { animation-delay: 1.4s; }
+.finale-card .zero-incident { animation: fin-pop 0.4s 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; }
+.finale-card .fin-sightings { animation: fin-in 0.4s 1.8s ease-out backwards; }
+.finale-card .company { animation: fin-in 0.3s 2.4s ease-out backwards; }
+.finale-card .btn.primary { animation: fin-in 0.3s 3.3s ease-out backwards; }
+@keyframes fin-pop { from { transform: scale(0.6); opacity: 0; } }
+@keyframes fin-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .finale-card, .finale-card .hats > *, .finale-card .zero-incident, .finale-card .fin-sightings, .finale-card .company, .finale-card .btn.primary { animation: none; transition: none; }
+  .finale-cover { transition: none; }
+}
