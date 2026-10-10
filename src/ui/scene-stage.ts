@@ -15,6 +15,7 @@ import { BOX, sizeFor, treeArt, type Species } from './trees.ts';
 import type { TimelineDef } from './strip-gags.ts';
 import { BALE_AT, CW, MUSKEG, WAVE3, baleAtRest, cardMode, rng, tuft } from './wave3.ts';
 import * as BD from './bald-art.ts';
+import { BALD } from './bald-gags.ts';
 
 /** The reference's strip, in its own units. */
 export const SCENE = { w: 390, top: 30, floor: 168, ground: 150 } as const;
@@ -32,10 +33,10 @@ export const MANN_SCENE = { w: 390, top: 44, floor: 168, ground: 150 } as const;
 export const CW_SCENE = { w: 390, top: 47, floor: 170, ground: 150 } as const;
 /** Below this scale the strip is too short for these gags: they do not play there. */
 /**
- * Baldonnel's strip (bald-art.ts): cropped as tight as Mannville's and Clearwater's (the reference's is 154 units), so
- * everything on it shows bigger. Its trees and props are stood inside it (see `BD_TREES`, bald-art.ts).
+ * Baldonnel's strip (bald-art.ts): cropped exactly as tight as Clearwater's (123 units; the reference's is 154), so its
+ * characters stand at Clearwater's in-game size. Its trees and props are stood inside it (see `BD_TREES`, bald-art.ts).
  */
-export const BD_SCENE = { w: 390, top: 44, floor: 170, ground: 150 } as const;
+export const BD_SCENE = { w: 390, top: 47, floor: 170, ground: 150 } as const;
 export const SCENE_MIN = 0.45;
 
 export interface SceneGeom {
@@ -400,12 +401,12 @@ export class ClearProp {
  * reference, clear of the biffy; the three tallest are a little shorter, so their tips stay inside the strip.
  */
 export const BD_TREES: { species: Species; x: number; base: number; h: number }[] = [
-  { species: 'spruce', x: 66, base: 98, h: 52 },
+  { species: 'spruce', x: 66, base: 98, h: 50 },
   { species: 'spruce', x: 82, base: 102, h: 44 },
   { species: 'spruce', x: 150, base: 96, h: 46 },
-  { species: 'spruce', x: 166, base: 100, h: 54 },
+  { species: 'spruce', x: 166, base: 100, h: 52 },
   { species: 'spruce', x: 186, base: 96, h: 40 },
-  { species: 'spruce', x: 378, base: 94, h: 48 },
+  { species: 'spruce', x: 378, base: 94, h: 46 },
 ];
 /** How much strip Baldonnel's scene wants on a screen `screenW` wide to stand at its full size (px). */
 export const baldStripWanted = (screenW: number): number => Math.ceil((BD_SCENE.floor - BD_SCENE.top) * Math.min(1, screenW / BD_SCENE.w));
@@ -436,6 +437,7 @@ export class BaldProp {
   private host: EggHost;
   private season: Season;
   private drawn = '';
+  private needleAt: number = BD.NEEDLE_REST;
   private g: SceneGeom | null = null;
 
   constructor(host: EggHost, season: Season) {
@@ -484,7 +486,15 @@ export class BaldProp {
     this.layer.firstElementChild!.innerHTML = back.map((t) => t.svg).join('');
     this.sign.firstElementChild!.innerHTML = `<g class="bd-sign">${BD.bisonSign()}</g>`;
     this.snowbank.firstElementChild!.innerHTML = `<g class="bd-snowbank">${BD.snowbank()}</g>`;
-    this.scale.firstElementChild!.innerHTML = `<g class="bd-scale">${BD.scaleProp()}</g>`;
+    this.scale.firstElementChild!.innerHTML = `<g class="bd-scale">${BD.scaleProp(this.needleAt)}</g>`;
+  }
+
+  /** The scale's needle (degrees; Overweight swings it), or null to put it back at rest. Only the scale is drawn again. */
+  needle(ang: number | null): void {
+    const a = Math.round((ang ?? BD.NEEDLE_REST) * 10) / 10;
+    if (a === this.needleAt) return;
+    this.needleAt = a;
+    this.scale.firstElementChild!.innerHTML = `<g class="bd-scale">${BD.scaleProp(a)}</g>`;
   }
 
   /** The prop a tap at (x, y) lands on (a tap target of at least 44 px; the first of `BD_PROPS` that holds it), or null. */
@@ -515,7 +525,8 @@ type Wave3 = {
   /** Lines said in the game's own bubble: when, and where the speaker's mouth is. */
   lines?: { key: string; from: number; to: number; mouth: (t: number) => { x: number; y: number } }[];
 };
-const gagOf = (key: string) => (WAVE3 as Record<string, Wave3>)[key];
+// (Baldonnel's seven are in a module of their own, bald-gags.ts, in the same shape.)
+const gagOf = (key: string) => (WAVE3 as Record<string, Wave3>)[key] ?? (BALD as Record<string, Wave3>)[key];
 
 /**
  * A strip gag of wave 3 as a timeline: one layer with the moving part of the scene (behind the

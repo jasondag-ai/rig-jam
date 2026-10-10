@@ -6,26 +6,23 @@
 // muddy two-track. (The trees are the board's own drawings: scene-stage.ts `BD_TREES`.) Pure strings.
 //
 // MOVED FROM THE REFERENCE, each for a rule (scene-stage.ts says where everything stands):
-//   - the left group (the sign, two spruce) stands 56 further right, clear of the biffy in the strip's corner;
-//   - the snowbank stands 34 further right (x 72 to 132), clear of the sleepy worker's spot by the left edge;
+//   - the bison sign and the left two spruce stand 56 further right, clear of the biffy in the strip's corner;
 //   - the meltwater puddle lies on the two-track's near rut (y 163, not 174) and the three front snow patches on
 //     the lane's near edge (not y 180 to 185), so the scene can be cropped tighter and everything in it shows
 //     bigger on the same strip (Clearwater's lesson);
 //   - the two snow patches nearest the berm lie a little lower (y 52 and 54), inside that crop.
-import { GY, OL, r2, rng, tuft } from './wave3.ts';
+// THE SNOWBANK IS WHERE THE REFERENCE PUTS IT (x 38 to 98). Job U6 stood it 34 further right for the sleepy worker's
+// spot; job U6b put it back: Half Dressed plays on the ground between the snowbank and the truck scale (the hare
+// hides at the snow's edge, hops down into the mud beside it), and Overweight drops Moe's hat, kit and boots there.
+// Moved, that ground is gone. So the sleepy worker, when he comes, sits in front of the snowbank's near end.
+import { GY, OL, blob, r2, rng, tuft } from './wave3.ts';
+export { blob };
 
 const sw = (w = 3) => `stroke="${OL}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
-export function blob(cx: number, cy: number, rx: number, ry: number, seed: number): string {
-  const R = rng(seed), n = 12, pts: [number, number][] = [];
-  for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2, k = 0.82 + R() * 0.3; pts.push([cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k]); }
-  let d = '';
-  for (let i = 0; i < n; i++) { const p0 = pts[i], p1 = pts[(i + 1) % n], mx = (p0[0] + p1[0]) / 2, my = (p0[1] + p1[1]) / 2; d += (i ? '' : `M${r2((pts[n - 1][0] + p0[0]) / 2)} ${r2((pts[n - 1][1] + p0[1]) / 2)} `) + `Q${r2(p0[0])} ${r2(p0[1])} ${r2(mx)} ${r2(my)} `; }
-  return d + 'z';
-}
 
 const LANE = '#7a6142', LANE_D = '#5f4b33', SNOW = '#e8edf1', SNOW_D = '#c9d3dc';
 /** Where the props stand (the reference's names). */
-export const SB = { x0: 72, x1: 132, top: 118, base: GY - 3 };
+export const SB = { x0: 38, x1: 98, top: 118, base: GY - 3 };
 export const SCX = 175, PAD = { x0: 150, x1: 200, y: GY - 5 }, DIAL = { x: 210, y: GY - 46, r: 9 };
 export const POND = { x0: 226, near: 128, far: 98, surf: 118 };
 export const PANS: [number, number, number, number][] = [[246, 110, 13, 0], [302, 104, 15, 1], [356, 106, 18, 2]];
