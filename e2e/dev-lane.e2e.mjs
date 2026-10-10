@@ -7,7 +7,7 @@
 //  3. "You can come back tomorrow." is said only on a Daily Pad's win card.
 //  4. The Wildlife Log's depth gauge never lies over a card's picture or its words.
 // DEV = the dev build (default the dev server of ~/Rig-Jam-next on 5181, started with RIG_CHANNEL=dev; or the dev
-// site), LIVE = the live build (default the live site). `ONLY=label|saves|line|pill|pads`.
+// site), LIVE = the live build (default the live site). `ONLY=label|saves|line|pill|pads|turnaround`.
 import { webkit } from 'playwright';
 import { DAILY_LEVELS, REGIONS } from '../src/levels/regions.ts';
 import { newGame, solve, tryMove } from '../src/engine/index.ts';
@@ -233,6 +233,122 @@ if (!ONLY || ONLY === 'pads') {
     const won = (await page.locator('button:has-text("Play again")').count()) === 1;
     const saved = await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('rush-hour-rigs:v2') ?? '{}'); return { best: p.best ?? {}, days: p.dailyCleared ?? [] }; });
     check(btn.title === 'Daily Pad #63' && btn.sub.includes(`par ${level.par}`) && hud.includes('Daily Pad #63') && won && saved.best.d63 === level.par && saved.days.includes('2026-12-01'), `webkit ${w} wide, the phone's date Dec 1, 2026: the home page says "${btn.title}" and "${btn.sub}", it opens and is cleared at par ${level.par}, and that day counts (${JSON.stringify(saved.days)})`);
+    await context.close();
+  }
+}
+
+// ---------- 6. Sunday Turnaround (job U3) ----------
+if (!ONLY || ONLY === 'turnaround') {
+  const { readFileSync } = await import('node:fs');
+  const { parseLevel } = await import('../src/engine/index.ts');
+  const { turnBlock, turnSlot, turnShareText } = await import('../src/ui/turnaround.ts');
+  const { GAME_URL } = await import('../src/ui/daily.ts');
+  const { mkdirSync } = await import('node:fs');
+  const SHOTS = process.env.OUT ?? `${process.env.HOME}/Desktop/RHR Art Inbox/qc/turnaround`;
+  mkdirSync(SHOTS, { recursive: true });
+  const weekFromDisk = (week) => { const b = turnBlock(turnSlot(week)); return parseLevel(JSON.parse(readFileSync(new URL(`../public/${b.file}`, import.meta.url), 'utf8'))[turnSlot(week) - b.from]); };
+  const tenCleared = { best: Object.fromEntries(REGIONS[0].levels.map((l) => [l.id, l.par + 1])), hints: 3, perfect: [], dailyCleared: [], demo: false, announced: [], standDowns: [] };
+  const button = (page) => page.evaluate(() => {
+    const b = document.querySelector('.turn-btn'), d = document.querySelector('.daily-btn');
+    if (!b || !d) return null;
+    const r = b.getBoundingClientRect(), dr = d.getBoundingClientRect();
+    return { cls: b.className, title: b.querySelector('.turn-title').textContent, sub: b.querySelector('.turn-sub').textContent.trim(), lock: !!b.querySelector('.turn-sub img, .turn-sub svg'), under: r.top >= dr.bottom - 1, inside: r.left >= 15 && r.right <= innerWidth - 15, tall: r.height, sideways: document.scrollingElement.scrollWidth > innerWidth || document.querySelector('.screen.levels').scrollWidth > innerWidth };
+  });
+  for (const w of [375, 390]) {
+    // A new player, Tuesday Oct 13, 2026 (week 1): locked, with the padlock and the rule; a tap only shakes it.
+    {
+      console.log(`\nwebkit ${w} wide: the Sunday Turnaround button, locked`);
+      const context = await phone(w), page = await context.newPage();
+      await page.clock.setFixedTime(new Date(2026, 9, 13, 12, 0, 0));
+      await page.goto(`${DEV}?${QUIET}`, { waitUntil: 'networkidle' });
+      await page.waitForSelector('.turn-btn');
+      const b = await button(page);
+      await page.locator('.turn-btn').click({ force: true });
+      await wait(500);
+      check(b.cls.includes('locked') && b.title === 'Sunday Turnaround #1' && b.sub === 'Clear 10 levels to unlock (0 of 10)' && b.lock && b.under && b.inside && b.tall >= 44 && !b.sideways && !(await page.$('.board')), `a new player on Oct 13, 2026: "${b.title}" under the Daily Pad, a padlock and "${b.sub}", ${Math.round(b.tall)} px tall, inside the margins; a tap opens nothing`);
+      await context.close();
+    }
+    // Ten levels cleared, Tuesday Oct 20, 2026 (week 2): open; it plays on Clearwater's scene; the card; the share line.
+    {
+      console.log(`\nwebkit ${w} wide: Turnaround #2 with ten levels cleared (Oct 20, 2026)`);
+      const context = await phone(w), page = await context.newPage();
+      const errors = []; page.on('pageerror', (e) => errors.push(e.message));
+      await page.clock.setFixedTime(new Date(2026, 9, 20, 12, 0, 0));
+      await page.addInitScript(([p]) => { if (!localStorage.getItem('rush-hour-rigs:v2')) { localStorage.setItem('rush-hour-rigs:v2', p); localStorage.setItem('rush-hour-rigs-audio', JSON.stringify({ sfx: false, music: true, style: 'classic' })); } }, [JSON.stringify(tenCleared)]);
+      await page.goto(`${DEV}?${QUIET}&audiolog`, { waitUntil: 'networkidle' });
+      await page.waitForSelector('.turn-btn');
+      const b = await button(page);
+      check(!b.cls.includes('locked') && !b.cls.includes('done') && b.title === 'Sunday Turnaround #2' && !b.lock && b.under && b.inside && b.tall >= 44 && !b.sideways, `open: "${b.title}", "${b.sub}", ${Math.round(b.tall)} px tall`);
+      const level = weekFromDisk(2);
+      await page.locator('.turn-btn').click();
+      await page.waitForSelector('.board .truck.sprite-on', { timeout: 10000 }).catch(() => {});
+      await wait(500);
+      const on = await page.evaluate(() => { const r = document.querySelector('.board').getBoundingClientRect(); return { hud: document.querySelector('.hud').textContent.replace(/\s+/g, ' '), big: document.querySelector('.board').classList.contains('big-pad'), trucks: document.querySelectorAll('.board .truck').length, theme: document.querySelector('.screen.game').dataset.theme ?? document.querySelector('.screen.game').className, scene: ['clear-ground', 'clear-layer', 'clear-mats'].every((c) => document.querySelector(`.${c}`)), mats: !!document.querySelector('.clear-mats .cw-mats'), whole: r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight }; });
+      check(on.hud.includes('Sunday') && on.hud.includes('Turnaround #2') && on.big && on.trucks === level.trucks.length && on.whole, `it opens: the 8 x 8 pad whole on the screen, ${on.trucks} trucks, "${on.hud.trim().slice(0, 70)}"`);
+      check(on.scene && on.mats && /boreal/.test(on.theme), 'on Clearwater\'s standard scene (lichen ground, the trees, the rig mat stack), theme boreal');
+      // Its sightings: three taps on the rig mat stack bring Slow Moe (Three Swings).
+      const m = await page.evaluate(() => { const r = document.querySelector('.clear-mats .cw-mats').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+      for (let i = 0; i < 3; i++) { await page.touchscreen.tap(m.x, m.y); await wait(160); }
+      const gag = await page.waitForSelector('[data-gag="golf"]', { timeout: 4000 }).then(() => true).catch(() => false);
+      check(gag, 'its sightings play: three taps on the rig mat stack bring Three Swings');
+      // Hints: the first press marks a truck.
+      await page.locator('button:has-text("Hint")').click();
+      const hinted = await page.waitForSelector('.board .truck.hinted', { timeout: 8000 }).then(() => true).catch(() => false);
+      const first = solve(level)[0];
+      const which = await page.evaluate(() => document.querySelector('.board .truck.hinted')?.dataset.id);
+      check(hinted && typeof which === 'string', `Hint works on it: truck ${which} is marked (the solver's first move is ${first.id})`);
+      await clear(page, level).catch(() => {});
+      const music = await page.evaluate(() => window.__rhrAudio?.log.filter((e) => /classic_play/.test(JSON.stringify(e))).map((e) => JSON.stringify(e).match(/classic_play\d?/)[0]));
+      check(music?.includes('classic_play4') && !music.some((k) => k !== 'classic_play4'), `music tier 4: Classic Rock plays ${[...new Set(music ?? [])].join(', ') || 'nothing'}`);
+      await page.evaluate(() => { window.__copied = null; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (t) => { window.__copied = t; } } }); });
+      const card = await page.evaluate(() => { const c = document.querySelector('.win .card'), r = c.getBoundingClientRect(); const txt = (q) => c.querySelector(q)?.textContent.trim() ?? null; return { result: txt('.turn-result'), hats: c.querySelectorAll('.hats img.full, .hats .full').length, share: [...c.querySelectorAll('button')].some((x) => /^Share/.test(x.textContent.trim())), next: [...c.querySelectorAll('button')].some((x) => /Next/.test(x.textContent)), text: c.innerText.replace(/\s+/g, ' '), fits: r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth, scroll: document.scrollingElement.scrollHeight > innerHeight + 1, small: [...c.querySelectorAll('button')].filter((x) => x.getBoundingClientRect().height < 44).length }; });
+      check(card.result === 'Turnaround #2' && card.share && !card.next && card.fits && !card.scroll && card.small === 0 && !/days without|streak|tomorrow/i.test(card.text), `the win card: "${card.result}", hard hats, Share, Play again and All levels; no Next, no streak; it fits with no scroll ("${card.text.slice(0, 90)}")`);
+      await page.screenshot({ path: `${SHOTS}/turnaround_card_${w}.png` }).catch(() => {});
+      await page.locator('.win .card button:has-text("Share")').click();
+      await wait(300);
+      const copied = await page.evaluate(() => window.__copied);
+      check(copied === turnShareText({ week: 2, moves: level.par, par: level.par, hats: 3, url: GAME_URL }), `Share copies ${JSON.stringify(copied)}`);
+      const stored = await page.evaluate(() => ({ turn: localStorage.getItem('rush-hour-rigs:turnaround'), p: JSON.parse(localStorage.getItem('rush-hour-rigs:v2')) }));
+      check(stored.turn === JSON.stringify({ v: 1, best: { 2: level.par } }) && Object.keys(stored.p.best).length === 10 && stored.p.hints === 2 && stored.p.dailyCleared.length === 0 && stored.p.perfect.length === 0, `saved under its own key only (${stored.turn}); the progress the live build reads has the same ten levels, no Daily Pad, no streak`);
+      await page.locator('.win .card button:has-text("All levels")').click();
+      await page.waitForSelector('.turn-btn');
+      const after = await button(page);
+      check(after.cls.includes('done') && after.sub.includes(`Cleared in ${level.par} moves`) && after.inside && !after.sideways && errors.length === 0, `back on the home page it is marked done: "${after.sub}"${errors.length ? ' ERR ' + errors[0] : ''}`);
+      await page.screenshot({ path: `${SHOTS}/turnaround_home_${w}.png` }).catch(() => {});
+      // The next Sunday (Oct 25) it is #3, not done.
+      await page.clock.setFixedTime(new Date(2026, 9, 25, 9, 0, 0));
+      await page.reload({ waitUntil: 'networkidle' });
+      await page.waitForSelector('.turn-btn');
+      const sunday = await button(page);
+      check(sunday.title === 'Sunday Turnaround #3' && !sunday.cls.includes('done') && !sunday.cls.includes('locked'), `on Sunday Oct 25 the button says "${sunday.title}", to be played`);
+      await context.close();
+    }
+    // ?week=N on the dev copy: that Turnaround opens and plays (locked or not), and nothing is saved.
+    console.log(`\nwebkit ${w} wide: the dev copy's ?week=N`);
+    for (const week of [1, 60, 113]) {
+      const context = await phone(w), page = await context.newPage();
+      const errors = []; page.on('pageerror', (e) => errors.push(e.message));
+      await page.goto(`${DEV}?${QUIET}&week=${week}`, { waitUntil: 'networkidle' });
+      await page.waitForSelector('.board .truck.sprite-on', { timeout: 10000 }).catch(() => {});
+      await wait(400);
+      const level = weekFromDisk(week);
+      const hud = ((await page.evaluate(() => document.querySelector('.hud')?.textContent)) ?? '').replace(/\s+/g, ' ');
+      const onPad = await page.evaluate(() => [...document.querySelectorAll('.board .truck')].map((t) => t.dataset.id).sort().join(''));
+      await clear(page, level).catch(() => {});
+      const result = await page.evaluate(() => document.querySelector('.win .card .turn-result')?.textContent ?? null);
+      const other = await context.newPage();
+      await other.goto(`${DEV}?${QUIET}`, { waitUntil: 'networkidle' });
+      const real = await other.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('rush-hour-rigs') && k !== 'rush-hour-rigs:region'));
+      check(hud.includes('Sunday') && hud.includes(`Turnaround #${week}`) && onPad === level.trucks.map((t) => t.id).sort().join('') && result === `Turnaround #${week}` && real.length === 0 && errors.length === 0, `?week=${week}: it opens${week > 112 ? ` (the pad of #${turnSlot(week)}, round again)` : ''}, its ${level.trucks.length} trucks are cleared at par ${level.par}, the card says "${result}", and nothing is saved (${real.length} keys)${errors.length ? ' ERR ' + errors[0] : ''}`);
+      await context.close();
+    }
+  }
+  // The live build knows nothing of it yet: no button, and the link is not read.
+  {
+    const context = await phone(390), page = await context.newPage();
+    await page.goto(`${LIVE}?${QUIET}&week=3`, { waitUntil: 'networkidle' });
+    await wait(600);
+    check(!!(await page.$('.screen.levels')) && !(await page.$('.board')) && !(await page.$('.turn-btn')), 'the live build ignores ?week=3 and has no Turnaround button: its level list opens as ever');
     await context.close();
   }
 }

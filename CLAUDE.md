@@ -1417,6 +1417,46 @@ something, give exact clicks and one command at a time.
   par inside the band, no repeats, the repeat from 61, fetching); `test:e2e:devlane` `ONLY=pads`
   (`?pad=61|200|790|791` open, play and save nothing; the phone's date set to Dec 1, 2026).
 
+## Sunday Turnaround (October upgrade, job U3; Oct 9; on `next`)
+- EVERY SUNDAY A NEW HARD PAD OF 8 x 8, the same for everyone, playable all week. Rules in
+  `src/ui/turnaround.ts` (pure, tested). Turnaround #1 is the week of Sunday Oct 11, 2026
+  (`TURN_EPOCH`, the phone's local date; `turnaroundNumber`); before that Sunday the button shows
+  #1 too. `TURN_LAST` 112 are made: the last is Sunday Nov 26, 2028. AFTER THE LAST THEY COME
+  ROUND AGAIN FROM #1 (`turnSlot`). REGENERATE BEFORE DEC 2028: raise `TURN_LAST` and run `node
+  tools/gen-turnaround.ts` (earlier ones come from `tools/.gen-cache/turnaround/` or are made the
+  same again: each week's seeds are its own, `turnSeed`).
+- `tools/gen-turnaround.ts` makes them on the Big Pad generator's own road (`growPad`, `candidate`
+  of gen-bigpad.ts): 14 to 16 trucks, 12 to 14 EXTRA MOVES (the target turns with the week), trucks
+  and gates only. A week walks its seeds until one gives a pad in the band; weeks run side by side
+  on the machine's cores. While it grows a pad its solver is capped at 40,000 positions
+  (`GROW_CAP`: without it one pad took about 12 core-minutes; the finished pad is proven again in
+  full). All 112 took 11 minutes. No pad is the layout of a Clearwater level or of an earlier week
+  (`layoutKey`). They lie in `public/turnaround/weeks-<from>-<to>.json`, 8 to a file
+  (`TURN_BLOCK`), NOT in the game's script (the main script grew 3.2 KB); the one file a week needs
+  is fetched when needed (`turnaroundLevel`, warmed from the home page), and the service worker
+  keeps them all, so it plays offline.
+- THE BUTTON (`.turn-btn`, main.ts, under the Daily Pad): "Sunday Turnaround #N". It opens once
+  the player has cleared 10 levels in all (`TURN_UNLOCK`, `levelsCleared`: the regions' levels; a
+  Daily Pad is not one); demo mode opens it. Locked: grey, a padlock and "Clear 10 levels to
+  unlock (x of 10)"; a tap only shakes it. Cleared this week: green, "Cleared in M moves".
+  It is kept slim (56 px), and it still moves the level list down: all 10 rows now need about 260
+  to 280 px of scroll at 390x844 (`test:e2e:menus` allows 285; it was 220).
+- IT PLAYS AS A CLEARWATER LEVEL (`GameView` `where.turnaround`; region `clearwater`, theme
+  `boreal`): the standard Clearwater scene and its five sightings, hints (A*), music tier 4
+  (`PLAY_TIER.turnaround`). HUD: "Sunday" over "Turnaround #N".
+- ITS WIN CARD: the result line "Turnaround #N" (`.turn-result`), the hard hats against par,
+  Share, Play again and All levels. No Next, no streak, no "come back tomorrow". Share copies
+  `turnShareText`: "Rig Jam 🚛 Sunday Turnaround #N", the hats with moves and par, the link.
+- RESULTS ARE SAVED UNDER THEIR OWN KEY, `rush-hour-rigs:turnaround` (`{ v: 1, best: { week:
+  moves } }`), declared in save-compat's `DEV_ADDS.keys`. NOTHING of a Turnaround goes into
+  `rush-hour-rigs:v2`: no score there, and no hint for a par clear (that would be a change to
+  the progress the live build reads).
+- `?week=N` (the dev copy only) opens Turnaround N, locked or not, and saves nothing
+  (demo-link.ts). The live build does not read it.
+- `ONLY=turnaround node e2e/dev-lane.e2e.mjs` (WebKit at DPR 3, 375 and 390): the button locked
+  and open, the pad on Clearwater's scene, a sighting, Hint, tier 4, the card, the share line, the
+  key, the next Sunday, `?week=1`, `60` and `113`, and the live build untouched.
+
 ## Sighting fixes (Job Y, Oct 9)
 - NEAR MISS: THE GOPHER COMES UP IN FRONT OF THE MOUND. His layer ends at the hole line, and a
   ground line worked out from that stood above the mound's own, so the mound was drawn over him
@@ -1669,6 +1709,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:click` – the buttons' one click and the haptic tick: every kind of button, never on a drag, a tick per truck out, nothing with the switch off (start the dev server first)
 - `npm run test:e2e:devlane` – the dev lane: the DEV label on dev and not on live, one save read by both builds, the Daily-only line, the depth gauge clear of the cards (`DEV=`, `LIVE=`, `ONLY=label|saves|line|pill`)
 - `python3 tools/music-classic.py [folder]` – encodes Manus's five Classic Rock loops like the game's other music and writes their pack.json and Credits entries (needs ffmpeg)
+- `node tools/gen-turnaround.ts` – the 112 Sunday Turnarounds into `public/turnaround/` (REGENERATE BEFORE DEC 2028; about 11 minutes from nothing)
 - `node tools/gen-daily.ts [--check n]` – Daily Pads 61 to 790 into `public/daily/` (REGENERATE BEFORE NOV 2028); `--check` remakes pads 1..n and compares them with daily.json
 - `sh tools/push-dev.sh` – push branch `next` to the dev repo and wait for the dev site's build id
 - `npm run test:e2e:judge` – judge-proofing: a fresh visitor with a mouse at 1440 x 900 and 1280 x 720 in both engines, Share, the credit line, `?demo=1`, the load-error page; screenshots (start the dev server first)
