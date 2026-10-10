@@ -76,8 +76,6 @@ export interface GameViewHandlers {
   onNext: (() => void) | null;
   /** Only on the last level of a field: where the win card points next (a button to the next field, or what would open it). */
   onNextField?: (() => { label: string; go: () => void } | { note: string } | null) | null;
-  /** A sighting has just gone into the real Wildlife Log (the last of them, with every level at par, earns the finale). */
-  onSighting?: () => void;
 }
 
 /** Set when this game is today's Daily Pad. */
@@ -842,7 +840,6 @@ export class GameView {
     if (!r.isNew) return;
     saveLog(r.log, demo);
     void toast(sightingToast(id, r.count, demo));
-    if (!demo) this.handlers.onSighting?.();
     if (demo) {
       if (r.completed) void toast('Demo log complete!', { sub: 'Your real log is unchanged', big: true, ms: 3200 });
     } else if (r.completed) {

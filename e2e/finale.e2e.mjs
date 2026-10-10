@@ -53,7 +53,9 @@ for (const [W, H] of SIZES) {
     await page.goto(`${ROOT}?finale=1`, { waitUntil: 'networkidle' });
     check((await part(page)) === 'card', 'it opens straight on the Perfect Game card');
     const stage = await page.evaluate(() => ({ trucks: document.querySelectorAll('.screen.finale .board .truck').length, gates: document.querySelectorAll('.screen.finale .board .gate').length, open: document.querySelectorAll('.screen.finale .board .gate.open').length, theme: document.querySelector('.screen.finale').dataset.theme, hud: document.querySelector('.hud').textContent.replace(/\s+/g, ' ').trim(), props: [...document.querySelectorAll('.screen.finale .depth-strip > .scene-prop')].map((e) => e.className.match(/finale-\w+/)[0]), others: document.querySelectorAll('.sign-layer, .bush-layer, .biffy-layer, [data-anchor]').length, biffy: !!document.querySelector('.finale-biffy .fin-biffy'), buttons: [...document.querySelectorAll('.controls .btn')].map((b) => b.textContent.trim().replace(/\s+/g, ' ')) }));
-    check(stage.trucks === 0 && stage.gates === REGIONS[0].levels[0].gates.length && stage.open === 0 && stage.theme === 'summer' && stage.hud.includes('Cardium 1') && stage.hud.includes(REGIONS[0].levels[0].name), `its own stage: Cardium 1's pad, empty, its ${stage.gates} gates shut, summer ("${stage.hud.slice(0, 50)}")`);
+    check(stage.trucks === 0 && stage.gates === REGIONS[0].levels[0].gates.length && stage.open === 0 && stage.theme === 'summer' && true, `its own stage: Cardium 1's pad, empty, its ${stage.gates} gates shut, summer`);
+    const hud = await page.evaluate(() => ({ num: document.querySelector('.hud .num').textContent, name: document.querySelector('.hud .name').textContent, text: document.querySelector('.hud').innerText.replace(/\s+/g, ' ').trim(), score: document.querySelectorAll('.hud .score, .hud .moves, .hud .par, .hud .misses').length, mid: (() => { const r = document.querySelector('.hud .title').getBoundingClientRect(); return Math.round(r.left + r.width / 2 - innerWidth / 2); })(), wide: document.querySelector('.hud .title').scrollWidth <= document.querySelector('.hud .title').clientWidth + 1 }));
+    check(hud.num === 'Rig Jam' && hud.name === 'Perfect Game' && hud.score === 0 && !/moves|par \d|near/i.test(hud.text) && Math.abs(hud.mid) <= 2 && hud.wide, `the HUD reads as the ending: "${hud.num}" over "${hud.name}", in the middle (${hud.mid} px off), no moves, par or near misses ("${hud.text}")`);
     check(stage.biffy && stage.others === 0 && stage.props.join() === 'finale-ground,finale-trees,finale-biffy' && stage.buttons.length === 3, `a strip with only the biffy (${stage.props.join(', ')}); the three buttons standing (${stage.buttons.join(', ')})`);
     await wait(3600);
     const card = await page.evaluate(() => { const c = document.querySelector('.finale-card'), r = c.getBoundingClientRect(), btn = c.querySelector('[data-act="photo"]').getBoundingClientRect(); return { banner: c.querySelector('h2').getAttribute('aria-label'), pads: c.querySelector('.fin-pads').textContent.replace(/\s+/g, ' ').trim(), sightings: c.querySelector('.fin-sightings').textContent.replace(/\s+/g, ' ').trim(), says: c.querySelector('.company-says').textContent, hats: c.querySelectorAll('.hats img').length, medal: !!c.querySelector('.zero-incident'), mascot: !!c.querySelector('.mascot svg'), boss: !!c.querySelector('.company-man svg'), btn: Math.round(btn.height), buttons: c.querySelectorAll('button').length, w: Math.round(r.width) }; });
@@ -196,6 +198,45 @@ for (const [W, H] of SIZES) {
     check(await waitPart(page, 'card', 4000), 'and it plays the ending again');
     check(errors.length === 0, `no errors${errors.length ? ': ' + errors[0] : ''}`);
     await context.close();
+    // A SIGHTING THAT COMPLETES THE PERFECT GAME IN THE MIDDLE OF A LEVEL WAITS (Jay, Oct 10): every level at par, one
+    // sighting short (the Back Scratcher); on Cardium 2 a tap on the lease sign brings the deer; the ending does not
+    // take the screen. It plays when the level is left: by "Levels" (at 390), or after its win card (at 375).
+    {
+      const par = JSON.stringify({ ...JSON.parse(progress()), best: Object.fromEntries(levels.map((x) => [x.id, x.par])), perfect: levels.map((x) => x.id) });
+      const o = await open(par, log(all.filter((id) => id !== 'deer')));
+      const pg = o.page;
+      await pg.waitForSelector('.screen.levels');
+      await pg.locator('.region-tab').nth(0).click();
+      await pg.locator('.level-btn').nth(1).click();
+      await pg.waitForSelector('.board .truck.sprite-on');
+      await wait(600);
+      const pt = await pg.evaluate(() => { const r = document.querySelector('.sign-layer svg .pup, .sign-layer svg g, .sign-layer svg').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+      await pg.mouse.click(pt.x, pt.y);
+      const found = await pg.waitForFunction(() => JSON.parse(localStorage.getItem('rush-hour-rigs:log') ?? '{}').found?.includes('deer'), null, { timeout: 30000 }).then(() => true, () => false);
+      await wait(4000);
+      const mid = await pg.evaluate(() => ({ game: !!document.querySelector('.screen.game:not(.finale) .board'), finale: !!document.querySelector('.screen.finale'), key: localStorage.getItem('rush-hour-rigs:finale'), found: JSON.parse(localStorage.getItem('rush-hour-rigs:log')).found.length }));
+      check(found && mid.found === LOG_ENTRIES.length && mid.game && !mid.finale && !mid.key, `the last sighting found in the middle of a level (${mid.found} of ${LOG_ENTRIES.length}): 4 s on, the level is still the player's, no ending`);
+      if (W === 390) {
+        await pg.locator('.hud [data-act="levels"]').click();
+        check(await waitPart(pg, 'card', 4000), 'the player leaves the level by "Levels": the ending plays');
+      } else {
+        const lvl = REGIONS[0].levels[1];
+        let st = newGame(lvl);
+        for (const m of solve(lvl)) {
+          const r = tryMove(st, m.id, m.delta); st = r.state;
+          await pg.evaluate(async ([id, n, ms]) => { const el = document.querySelector(`.truck[data-id="${id}"]:not(.exiting)`), q = el.getBoundingClientRect(), h = el.classList.contains('horiz'), cell = parseFloat(document.querySelector('.board').style.getPropertyValue('--cell')); let x = q.x + q.width / 2, y = q.y + q.height / 2; const ev = (t) => el.dispatchEvent(new PointerEvent(t, { pointerId: 9, pointerType: 'touch', isPrimary: true, clientX: x, clientY: y, bubbles: true, cancelable: true, buttons: 1 })); ev('pointerdown'); for (let k = 0; k < 8; k++) { if (h) x += (n * cell) / 8; else y += (n * cell) / 8; ev('pointermove'); await new Promise((r) => setTimeout(r, 17)); } await new Promise((r) => setTimeout(r, 70)); ev('pointerup'); await new Promise((r) => setTimeout(r, ms)); }, [m.id, m.delta + (r.exited ? Math.sign(m.delta) * 0.4 : 0), r.exited ? 950 : 400]);
+        }
+        await pg.waitForSelector('.win:not([hidden]) .card', { timeout: 8000 }).catch(() => {});
+        await wait(600);
+        const w = await pg.evaluate(() => ({ card: !!document.querySelector('.win:not([hidden]) .card'), finale: !!document.querySelector('.screen.finale') }));
+        check(w.card && !w.finale, 'the level cleared: its own win card first, still no ending');
+        await pg.locator('.win .card [data-act="next"]').click();
+        check(await waitPart(pg, 'card', 4000), 'the win card is left: the ending plays');
+      }
+      const k = await pg.evaluate(() => localStorage.getItem('rush-hour-rigs:finale'));
+      check(k === '{"v":1,"seen":true}' && o.errors.length === 0, `and it is remembered (${k})${o.errors.length ? ' ERR ' + o.errors[0] : ''}`);
+      await o.context.close();
+    }
     // Not earned: a sighting short; demo mode; and a fresh player sees no such button.
     for (const [name, p, l] of [['every level at par, one sighting short', JSON.stringify({ ...JSON.parse(progress()), best: Object.fromEntries(levels.map((x) => [x.id, x.par])) }), log(all.filter((id) => id !== 'bear'))], ['a perfect save with demo mode on', JSON.stringify({ ...JSON.parse(progress({ demo: true })), best: Object.fromEntries(levels.map((x) => [x.id, x.par])) }), log(all)]]) {
       const o = await open(p, l);

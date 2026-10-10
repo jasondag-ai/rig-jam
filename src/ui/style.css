@@ -4487,6 +4487,8 @@ body:has(.update-bar) .toast { margin-top: var(--bar-room, 0px); }
    and the whole panel is still on a 390 x 844 screen without scrolling. */
 .settings .step.ask:has([data-act='ending']) { gap: 5px; }
 .settings .step.ask:has([data-act='ending']) > .btn.quiet { min-height: 44px; padding-top: 6px; padding-bottom: 6px; }
+/* Its HUD has no score: "Levels", the title in the middle of the screen, and nothing on the right. */
+.screen.finale .hud { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
 /* The Perfect Game card: the win card, its news coming in one piece at a time (the page's times). */
 .overlay.win.finale-win { z-index: 7; }
 /* Its dimmed backdrop takes no touches, so "Levels" up in the HUD still leaves the ending. */

@@ -25,7 +25,7 @@ import { FINALE_PARTS, type FinaleCount, type FinalePart } from './finale-state.
 import page from './finale-reference.json' with { type: 'json' };
 import { bannerSvg, fitRibbon, hintCountText, setBannerCap } from './game-view.ts';
 import { hatsHtml } from './hats.ts';
-import { FINALE_CREDITS, FINALE_LINES } from './lines.ts';
+import { FINALE_CREDITS, FINALE_HUD, FINALE_LINES } from './lines.ts';
 import { setGround } from './puppet-stage.ts';
 import { sceneGeom, toScreen, tree, type SceneGeom } from './scene-stage.ts';
 import { sceneryHtml } from './scenery.ts';
@@ -101,7 +101,7 @@ export class FinaleView {
   private bubble: { el: HTMLElement; key: string } | null = null;
   private over: Partial<Record<'flash' | 'polaroid' | 'dim' | 'credits' | 'close' | 'cover' | 'card', HTMLElement>> = {};
 
-  constructor(level: Level, label: string, theme: Theme, opts: FinaleOptions) {
+  constructor(level: Level, theme: Theme, opts: FinaleOptions) {
     this.theme = theme;
     this.opts = opts;
     this.el = document.createElement('div');
@@ -114,10 +114,7 @@ export class FinaleView {
       <header class="hud">
         <button class="link" data-act="levels" aria-label="Back to levels">${uiImg('icon_back', 'back-icon')}Levels</button>
         <div class="title"><span class="num"></span><span class="name"></span></div>
-        <div class="score">
-          <span class="score-row"><span class="moves">${level.par} moves</span><span class="par">par ${level.par}</span></span>
-          <span class="misses" aria-label="0 near misses"><svg class="hazard" viewBox="0 0 24 22" aria-hidden="true"><path d="M12 2 L22.5 20 H1.5 Z"/><rect x="11" y="8" width="2" height="6.5" rx="1"/><circle cx="12" cy="17" r="1.3"/></svg><b>0</b><span class="lbl">near misses</span></span>
-        </div>
+        <span class="hud-spare" aria-hidden="true"></span>
       </header>
       <main class="stage"></main>
       <p class="note" aria-live="polite"></p>
@@ -126,8 +123,9 @@ export class FinaleView {
         <button class="btn hint-btn" data-act="hint" tabindex="-1">Hint <span class="count">${hintCountText(opts.hints)}</span></button>
         <button class="btn" data-act="restart" tabindex="-1">Restart</button>
       </footer>`;
-    this.el.querySelector('.num')!.textContent = label;
-    this.el.querySelector('.name')!.textContent = level.name;
+    // THE HUD READS AS THE ENDING (Jay, Oct 10): the game's name over "Perfect Game", and no moves, par or near misses.
+    this.el.querySelector('.num')!.textContent = FINALE_HUD[0];
+    this.el.querySelector('.name')!.textContent = FINALE_HUD[1];
     this.scenery = this.el.querySelector('.scenery')!;
     this.stage = this.el.querySelector('.stage')!;
     // The pad as the last truck left it: every truck gone, every gate shut.

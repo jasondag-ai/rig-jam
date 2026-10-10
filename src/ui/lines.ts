@@ -207,6 +207,8 @@ export const FINALE_CREDITS: readonly (readonly [string, 'title' | 'head' | 'lin
   ['No trucks were harmed', 'line'], ['in the making of this game.', 'line'], ['(Moe was, a little.)', 'small'], ['', 'gap'], ['', 'gap'],
   ['Thanks for playing', 'end'],
 ];
+/** The finale's HUD: what stands where a level's number and name do. */
+export const FINALE_HUD: readonly [string, string] = ['Rig Jam', 'Perfect Game'];
 /** Baldonnel's lines, said in the game's own bubble (the reference page's, word for word): Right of Way, Last Ice, Lunch to Go. */
 export const BALD_LINES: Record<string, string> = { shoo: 'Shoo!', got: 'Got one!', hey: 'Hey!' };
 export const PEA_LINES: Record<string, string> = { carbs: 'Watching your carbs, Moe?' };
