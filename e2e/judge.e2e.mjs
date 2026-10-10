@@ -2,7 +2,7 @@
 //  1. DESKTOP, Chrome's and Safari's engines at 1440 x 900 and 1280 x 720, with a MOUSE: a fresh visitor sees the
 //     cover (never a blank page), one click and level 1 is up with the ghost finger, inside 10 s; the lease is
 //     centred, square, whole on the screen; trucks follow the mouse and the level is cleared by dragging; one click
-//     on each button does its job. Screenshots of every step go to ~/Desktop/RHR Art Inbox/qc/judge/.
+//     on each button does its job. Screenshots of every step go to qc-out/judge/ in the repo.
 //  2. SHARE: the Daily Pad's result is copied and pastes cleanly (the exact text, read back and pasted into a box),
 //     on a desktop and on a phone.
 //  3. SETTINGS carries the credit line, and still fits a phone with no scrolling.
@@ -16,9 +16,10 @@ import { join } from 'node:path';
 import { DAILY_LEVELS, REGIONS } from '../src/levels/regions.ts';
 import { newGame, solve, tryMove } from '../src/engine/index.ts';
 import { dayKey, padLevelIndex, padNumber, shareText } from '../src/ui/daily.ts';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'qc', 'judge');
+const OUT = outDir('judge');
 mkdirSync(OUT, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;

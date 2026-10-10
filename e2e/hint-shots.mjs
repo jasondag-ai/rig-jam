@@ -1,6 +1,6 @@
 // Screenshots for judging gates and hints: one level per region at 390x844, showing the gates, hint
 // step 1 (which truck) and hint step 2 (where it goes), plus one level whose hint is a move out
-// through the gate. Saved to OUT (default ~/Desktop/RHR Art Inbox/fit_check) as gates_<name>.png.
+// through the gate. Saved to OUT (default qc-out/fit_check in the repo; see out.mjs) as gates_<name>.png.
 // Also checks what it shows. Run: npm run dev -- --host (in one terminal), then: npm run test:e2e:hints
 import { UNLOCKED } from './progress.mjs';
 import { webkit } from 'playwright';
@@ -9,9 +9,10 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { REGIONS } from '../src/levels/regions.ts';
 import { getMoveRange, newGame, nextMove } from '../src/engine/index.ts';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const OUT = outDir('fit_check');
 mkdirSync(OUT, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;

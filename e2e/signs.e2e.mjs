@@ -13,10 +13,11 @@ import { REGIONS } from '../src/levels/regions.ts';
 import { getMoveRange, newGame } from '../src/engine/index.ts';
 import { DEER_BEATS, SURVEY_BEATS, TOUR_BEATS, T_PICKUP, T_PLANT } from '../src/ui/sign-gags.ts';
 import { LOG_ENTRIES } from '../src/ui/wildlife-log.ts';
+import { outDir } from './out.mjs';
 const riddleOf = (id) => LOG_ENTRIES.find((e) => e.id === id)?.riddle;
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const OUT = outDir('fit_check');
 mkdirSync(OUT, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;

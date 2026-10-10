@@ -1,16 +1,17 @@
 // Fit check (Playwright, WebKit + Chromium): on every iPhone size, in Safari with its toolbars showing
 // (about 100px less height) and as a home-screen app (full height, notch and home-bar insets), the
 // whole game screen is visible with no scrolling: HUD, lease, Undo/Hint/Restart. The lease is square
-// and as large as the screen allows. Saves screenshots to OUT (default ~/Desktop/RHR Art Inbox/fit_check).
+// and as large as the screen allows. Saves screenshots to OUT (default qc-out/fit_check in the repo; see out.mjs).
 // Run: npm run dev -- --host   (in one terminal), then:  npm run test:e2e:fit
 import { UNLOCKED } from './progress.mjs';
 import { chromium, webkit } from 'playwright';
 import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const OUT = outDir('fit_check');
 const TAG = process.env.TAG ? `${process.env.TAG}_` : '';
 mkdirSync(OUT, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));

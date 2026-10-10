@@ -1,15 +1,16 @@
 // Equipment screenshots and a clip (WebKit, 390x844): levels showing every equipment kind (tank,
 // pumpjack, wellhead, flare stack) in mud and snow, close-ups of each kind, and a 4-second clip of a
-// pumpjack pumping and a flare flickering. Saved to OUT (default ~/Desktop/RHR Art Inbox/fit_check)
+// pumpjack pumping and a flare flickering. Saved to OUT (default qc-out/fit_check in the repo; see out.mjs)
 // as equip_*. Run with the dev server up: node e2e/equip-shots.mjs
 import { UNLOCKED } from './progress.mjs';
 import { webkit } from 'playwright';
 import { mkdirSync, renameSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const OUT = outDir('fit_check');
 mkdirSync(OUT, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const open = async (context, region, index) => {

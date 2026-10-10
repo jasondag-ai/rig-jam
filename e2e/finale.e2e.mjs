@@ -13,6 +13,7 @@ import { REGIONS } from '../src/levels/regions.ts';
 import { newGame, solve, tryMove } from '../src/engine/index.ts';
 import { LOG_ENTRIES } from '../src/ui/wildlife-log.ts';
 import { FINALE_LINES, FINALE_CREDITS } from '../src/ui/lines.ts';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5181/';
 const ONLY = process.env.ONLY;
@@ -22,7 +23,7 @@ const check = (ok, text) => { if (!ok) failures++; console.log(`   ${ok ? 'ok  '
 const SIZES = process.env.VIEW ? [process.env.VIEW.split('x').map(Number)] : [[390, 664], [375, 635]];
 const levels = REGIONS.flatMap((r) => r.levels);
 const browser = await webkit.launch();
-const OUT = process.env.OUT ?? `${process.env.HOME}/Desktop/RHR Art Inbox/qc/finale`;
+const OUT = outDir('finale');
 const { mkdirSync } = await import('node:fs');
 mkdirSync(OUT, { recursive: true });
 const part = (page) => page.evaluate(() => document.querySelector('.screen.finale')?.dataset.part ?? (document.querySelector('#app > .screen.cover') ? 'COVER' : document.querySelector('.screen.levels') ? 'LIST' : null));

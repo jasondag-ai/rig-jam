@@ -1,4 +1,4 @@
-// Base-game screenshots in WebKit at 390x844, saved to OUT (default ~/Desktop/RHR Art Inbox/fit_check)
+// Base-game screenshots in WebKit at 390x844, saved to OUT (default qc-out/fit_check in the repo; see out.mjs)
 // as base_*: one level and the level list per region, the main page (a new player's), a win card, a
 // truck parked beside a flare stack, and a flare stack next to the berm in Duvernay.
 // Run with the dev server up: node e2e/base-shots.mjs
@@ -9,9 +9,10 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { REGIONS } from '../src/levels/regions.ts';
 import { solve } from '../src/engine/index.ts';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const OUT = outDir('fit_check');
 mkdirSync(OUT, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const browser = await webkit.launch();

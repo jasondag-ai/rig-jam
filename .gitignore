@@ -8,3 +8,6 @@ tools/.gen-cache/
 art-inbox/*
 !art-inbox/REJECTS.md
 !art-inbox/.gitkeep
+
+# Test screenshots and clips (e2e/out.mjs)
+qc-out/

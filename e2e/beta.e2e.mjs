@@ -17,9 +17,10 @@ import { join } from 'node:path';
 import { REGIONS } from '../src/levels/regions.ts';
 import { solve } from '../src/engine/index.ts';
 import { FEEDBACK_EMAIL } from '../src/ui/feedback.ts';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const OUT = outDir('fit_check');
 mkdirSync(OUT, { recursive: true });
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;

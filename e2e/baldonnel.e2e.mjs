@@ -11,6 +11,7 @@ import { webkit } from 'playwright';
 import { REGIONS } from '../src/levels/regions.ts';
 import { getMoveRange, newGame, solve, tryMove } from '../src/engine/index.ts';
 import { BUMP_LINES } from '../src/ui/lines.ts';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5181/';
 const ONLY = process.env.ONLY;
@@ -67,7 +68,7 @@ for (const size of SIZES) {
     await toList(demo.page);
     const list = await demo.page.evaluate(() => ({ theme: document.querySelector('.screen.levels').dataset.theme, blurb: document.querySelector('.screen.levels').innerText, rows: [...document.querySelectorAll('.level-btn')].map((b) => b.innerText.replace(/\s+/g, ' ').trim()), sideways: document.querySelector('.screen.levels').scrollWidth > innerWidth }));
     check(list.theme === 'thaw' && list.blurb.includes("Spring breakup. Rigs can't cross soft ground. Pickups can.") && list.rows.length === 10 && region.levels.every((l, i) => list.rows[i].includes(l.name)) && !list.sideways, `its list wears the thaw theme, says "Spring breakup. Rigs can't cross soft ground. Pickups can.", and names its ten levels (${list.rows[0]} ... ${list.rows[9]})`);
-    await demo.page.screenshot({ path: `${process.env.OUT ?? `${process.env.HOME}/Desktop/RHR Art Inbox/qc/baldonnel`}/list_${w}.png` }).catch(() => {});
+    await demo.page.screenshot({ path: `${outDir('baldonnel')}/list_${w}.png` }).catch(() => {});
     await demo.context.close();
   }
 
@@ -101,7 +102,7 @@ for (const size of SIZES) {
     check((rig.t.orient === 'h' ? stood.col : stood.row) === wantPos && after.misses === before.misses + 1 && BUMP_LINES.soft.includes(after.bubble), `rig ${rig.t.id} pushed at a patch stops at its edge (a near miss) and its driver says "${after.bubble}"`);
     const speaker = await page.evaluate((id) => { const b = document.querySelector('.bubble'), cab = document.querySelector(`.truck[data-id="${id}"] .cab`).getBoundingClientRect(); if (!b) return null; const [tx, ty] = (b.dataset.tip ?? '').split(',').map(Number); return Number.isFinite(tx) ? tx >= cab.left - 3 && tx <= cab.right + 3 && ty >= cab.top - 3 && ty <= cab.bottom + 3 : null; }, rig.t.id);
     check(speaker !== false, 'the bubble is his own (its tail on that rig\'s cab)');
-    await page.screenshot({ path: `${process.env.OUT ?? `${process.env.HOME}/Desktop/RHR Art Inbox/qc/baldonnel`}/patch_line_${w}.png` }).catch(() => {});
+    await page.screenshot({ path: `${outDir('baldonnel')}/patch_line_${w}.png` }).catch(() => {});
     check(errors.length === 0, `no errors${errors.length ? ': ' + errors[0] : ''}`);
     await context.close();
 
@@ -153,7 +154,7 @@ for (const size of SIZES) {
     await wait(150);
     const stray = await page.evaluate(() => ['.bd-sign', '.bd-snowbank', '.bd-scale', '.bd-pond', '.bd-puddle'].map((q) => Number(document.querySelector(q).dataset.knocked ?? 0)).join(','));
     check(stray === '0,2,1,0,0', 'a tap on the bare ground knocks nothing');
-    await page.screenshot({ path: `${process.env.OUT ?? `${process.env.HOME}/Desktop/RHR Art Inbox/qc/baldonnel`}/scene_${w}.png` }).catch(() => {});
+    await page.screenshot({ path: `${outDir('baldonnel')}/scene_${w}.png` }).catch(() => {});
     check(errors.length === 0, `no errors${errors.length ? ': ' + errors[0] : ''}`);
     await context.close();
   }
@@ -170,7 +171,7 @@ for (const size of SIZES) {
       const card = await page.evaluate(() => document.querySelector('.win .card')?.innerText.replace(/\s+/g, ' ') ?? '');
       const hats = await page.evaluate(() => document.querySelectorAll('.win .card .hats img[src*="hat_full"], .win .card .hats .full').length);
       check(won && card.includes(`${level.par} moves · par ${level.par}`), `${li + 1} ${level.name}: ${level.trucks.length} trucks, ${level.soft.length} patches, cleared in ${level.par} (par ${level.par})${hats ? `, ${hats} hard hats` : ''}`);
-      if (li === 0 || li === 9) await page.screenshot({ path: `${process.env.OUT ?? `${process.env.HOME}/Desktop/RHR Art Inbox/qc/baldonnel`}/level${li + 1}_won_${w}.png` }).catch(() => {});
+      if (li === 0 || li === 9) await page.screenshot({ path: `${outDir('baldonnel')}/level${li + 1}_won_${w}.png` }).catch(() => {});
     }
     check(errors.length === 0, `no errors${errors.length ? ': ' + errors[0] : ''}`);
     await context.close();
@@ -254,9 +255,9 @@ if (!ONLY || ONLY === 'mountains') {
     });
     const list = await read();
     check(!!list && list.n === 1 && list.theme === 'thaw' && list.w >= size[0] - 1 && list.h >= 20 && list.top >= 5.5 && Math.abs(list.bottom - list.horizon) <= 2 && list.first && list.touch, `on Baldonnel's level list: one range across the screen, ${Math.round(list?.h ?? 0)} px tall, its foot on the horizon, behind the tree line, taking no touches`);
-    await page.screenshot({ path: `${process.env.OUT ?? `${process.env.HOME}/Desktop/RHR Art Inbox/qc/baldonnel`}/mountains_list_${size[0]}x${size[1]}.png` }).catch(() => {});
+    await page.screenshot({ path: `${outDir('baldonnel')}/mountains_list_${size[0]}x${size[1]}.png` }).catch(() => {});
     const seen = [];
-    for (let li = 0; li < 10; li++) { await enter(page, li); seen.push(await read()); if (li === 0) await page.screenshot({ path: `${process.env.OUT ?? `${process.env.HOME}/Desktop/RHR Art Inbox/qc/baldonnel`}/mountains_${size[0]}x${size[1]}.png` }).catch(() => {}); }
+    for (let li = 0; li < 10; li++) { await enter(page, li); seen.push(await read()); if (li === 0) await page.screenshot({ path: `${outDir('baldonnel')}/mountains_${size[0]}x${size[1]}.png` }).catch(() => {}); }
     const ok = seen.every((m) => m && m.n === 1 && m.w >= size[0] - 1 && m.h >= 20 && m.top >= 5.5 && Math.abs(m.bottom - m.horizon) <= 2 && m.first && m.touch && m.treesOver);
     check(ok, `on all ten levels: one range on the horizon (its foot at the sky's foot), behind the trees, ${[...new Set(seen.map((m) => Math.round(m?.h ?? 0)))].join(' / ')} px tall, never nearer the screen's top than 6 px (${[...new Set(seen.map((m) => Math.round(m?.top ?? -1)))].join(' / ')})`);
     // (Where a level's sky is a pixel or two shorter than the range, the range is that much squatter: its peaks stand where they stand.)

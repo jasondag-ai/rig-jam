@@ -12,6 +12,7 @@ import { webkit } from 'playwright';
 import { DAILY_LEVELS, REGIONS } from '../src/levels/regions.ts';
 import { newGame, solve, tryMove } from '../src/engine/index.ts';
 import { dayKey, padLevelIndex, padNumber } from '../src/ui/daily.ts';
+import { outDir } from './out.mjs';
 
 const DEV = process.env.DEV ?? 'http://localhost:5181/';
 const LIVE = process.env.LIVE ?? 'https://jasondag-ai.github.io/rig-jam/';
@@ -244,7 +245,7 @@ if (!ONLY || ONLY === 'turnaround') {
   const { turnBlock, turnSlot, turnShareText } = await import('../src/ui/turnaround.ts');
   const { GAME_URL } = await import('../src/ui/daily.ts');
   const { mkdirSync } = await import('node:fs');
-  const SHOTS = process.env.OUT ?? `${process.env.HOME}/Desktop/RHR Art Inbox/qc/turnaround`;
+  const SHOTS = outDir('turnaround');
   mkdirSync(SHOTS, { recursive: true });
   const weekFromDisk = (week) => { const b = turnBlock(turnSlot(week)); return parseLevel(JSON.parse(readFileSync(new URL(`../public/${b.file}`, import.meta.url), 'utf8'))[turnSlot(week) - b.from]); };
   const tenCleared = { best: Object.fromEntries(REGIONS[0].levels.map((l) => [l.id, l.par + 1])), hints: 3, perfect: [], dailyCleared: [], demo: false, announced: [], standDowns: [] };

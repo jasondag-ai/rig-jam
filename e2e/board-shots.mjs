@@ -1,15 +1,16 @@
 // Screenshots for judging the board's look: two levels per region at 390x844 (full screen and a
 // lease close-up).
-// Saved to OUT (default ~/Desktop/RHR Art Inbox/fit_check) as <PREFIX><name>.png (PREFIX default ground_).
+// Saved to OUT (default qc-out/fit_check in the repo; see out.mjs) as <PREFIX><name>.png (PREFIX default ground_).
 // Run: npm run dev -- --host   (in one terminal), then:  node e2e/board-shots.mjs
 import { UNLOCKED } from './progress.mjs';
 import { webkit } from 'playwright';
 import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { outDir } from './out.mjs';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
-const OUT = process.env.OUT ?? join(homedir(), 'Desktop', 'RHR Art Inbox', 'fit_check');
+const OUT = outDir('fit_check');
 const PREFIX = process.env.PREFIX ?? 'ground_';
 mkdirSync(OUT, { recursive: true });
 const SHOTS = [
