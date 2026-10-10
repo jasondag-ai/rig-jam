@@ -133,7 +133,7 @@ console.log('\nchromium iPhone 13: sound is off until asked for');
   // Credits.
   await tapOn(page, cdp, '[data-act="credits"]');
   const credits = await page.evaluate(() => { const c = document.querySelector('.step.credits'); return { shown: !c.hidden, music: [...c.querySelectorAll('ul')][0].children.length, sfx: [...c.querySelectorAll('ul')][1].children.length, text: c.textContent }; });
-  check(credits.shown && credits.music === 11 && /Vintage Rock/.test(credits.text) && credits.sfx >= 5 && /Chill Beat/.test(credits.text) && /Pixabay Content License/.test(credits.text) && /Mixkit/.test(credits.text) && /CC0/.test(credits.text), `Credits lists the ${credits.music} music loops and the effects' ${credits.sfx} sources, with their licences`);
+  check(credits.shown && credits.music === 12 && /Vintage Rock/.test(credits.text) && /Pomp and Circumstance/.test(credits.text) && /Public domain/.test(credits.text) && credits.sfx >= 5 && /Chill Beat/.test(credits.text) && /Pixabay Content License/.test(credits.text) && /Mixkit/.test(credits.text) && /CC0/.test(credits.text), `Credits lists the ${credits.music} pieces of music (the eleven loops and the finale's march) and the effects' ${credits.sfx} sources, with their licences`);
   await tapOn(page, cdp, '.step.credits [data-act="cancel"]');
   await tapOn(page, cdp, '.settings [data-act="close"]');
   // Into a level: the same style's in-play loop, quieter than the menu's.
@@ -381,7 +381,8 @@ for (const [engine, type] of [['chromium', chromium], ['webkit', webkit]]) {
   const b = await type.launch();
   const page = await (await b.newContext()).newPage();
   await page.goto(BASE + '?cover=0', { waitUntil: 'networkidle' });
-  for (const [key, info] of Object.entries(pack.music)) {
+  // (Loops only: the finale's credits track plays once and fades out at its own end; gag-sounds.e2e.mjs hears it play.)
+  for (const [key, info] of Object.entries(pack.music).filter(([, i]) => i.loop !== false)) {
     const out = await page.evaluate(async ([formats, maxPad]) => {
       const ctx = new (window.AudioContext ?? window.webkitAudioContext)();
       const results = [];

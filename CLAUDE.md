@@ -1192,7 +1192,7 @@ something, give exact clicks and one command at a time.
   `~/Desktop/RHR Art Inbox/qc/clearwater/`.
 - `npm run test:e2e:clearwater` (WebKit at iPhone DPR 3, 390 and 375 wide): the tab and its
   locks, the 8 x 8 board whole on the screen, drag, Undo, Hint, and ALL TEN LEVELS cleared at par
-  by dragging; screenshots in `~/Desktop/RHR Art Inbox/qc/clearwater/`.
+  by dragging; screenshots in `qc-out/clearwater/`.
 - THE WORKTREE NEEDS ITS OWN `npm ci` (`~/Rush-Hour-Rigs-bigpad`): with `node_modules` linked to
   the main checkout, Vite refuses the bundled fonts (403: outside its root) and the game shows in
   a fallback font.
@@ -1309,7 +1309,7 @@ something, give exact clicks and one command at a time.
   Chrome's engine, desktop and phone; Safari's engine lets no script read the clipboard, so
   there only the button's "Copied!" is checked).
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
-  sizes in both engines to `~/Desktop/RHR Art Inbox/qc/judge/` (`OUT=` another folder).
+  sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
 ## The dev lane (October upgrade, job U1; Oct 9)
 - TWO SITES, ONE WEB ORIGIN: the live game https://jasondag-ai.github.io/rig-jam/ (repo `rig-jam`,
@@ -1510,7 +1510,41 @@ something, give exact clicks and one command at a time.
   a flung rig stopping there with no near miss, the scene and a knock on each prop, and ALL TEN
   LEVELS cleared at par by dragging. `REGION=6 npm run test:e2e:depth` and `REGION=baldonnel npm
   run test:e2e:frames` (also `VIEW=390x664`) hold the depth rule and same start, same end on the
-  new scene with the strip gags every region shares. Screenshots: `~/Desktop/RHR Art Inbox/qc/baldonnel/`.
+  new scene with the strip gags every region shares. Screenshots: `qc-out/baldonnel/`.
+
+## Finale and sound fixes from Jay's review (October upgrade, job U9b; Oct 10; on `next`)
+- THE ENDING NEVER INTERRUPTS A LEVEL: `maybeFinale` (main.ts) is asked only when the player is going somewhere
+  (leaving a win card by Next, the next field or All levels; leaving a level by "Levels"). The old trigger 2.4 s
+  after the completing sighting's toast is gone (`onSighting`, `SIGHTING_TOAST_MS` deleted).
+- ITS HUD READS AS THE ENDING: "Rig Jam" over "Perfect Game" (`FINALE_HUD` in lines.ts), in the middle of the
+  screen, with no moves, par or near misses (`.screen.finale .hud`).
+- MOE'S FOOTSTEPS from the camera to his spot (`FINALE_SOUNDS.photo`: `+steps` at "hurries-to-his", off at his
+  hop-turn).
+- EVERY BEAT REACHED PLAYS ITS SOUNDS (finale.ts `beat`): a slow frame may pass two beats at once (the photo drops
+  0.1 s before the magpie's chuckle), and the passed one used to lose its sound. (The older gags' runner,
+  `markBeat`, still marks only the latest beat: not changed here.)
+- A FULL `python3 tools/audio-pack.py` RUN KEEPS WHAT IT DOES NOT BUILD: music in pack.json that is not in its own
+  `MUSIC` table (Classic Rock, the finale's track) is set aside before `public/audio` is cleared and put back,
+  with its pack.json and credits.json rows; the nine finished files are copied in again by `finished()`. After a
+  full run only the Opus loops it re-encodes differ (`git checkout public/audio/music` as before).
+- TEST OUTPUT STAYS IN THE REPO: every suite saves its screenshots and clips under `qc-out/<name>/` (gitignored;
+  `e2e/out.mjs` `outDir`; `OUT=` sends a run elsewhere), never on the Desktop. Only what Jay is asked to look at
+  is copied to `~/Desktop/RHR Art Inbox/qc/`, by hand, and named in the job's summary. (Where older notes above
+  say a suite saves to `~/Desktop/RHR Art Inbox/fit_check` or `.../qc/...`, read `qc-out/`. The `tools/qc-*.mjs`
+  sheets still go to the folder they are given.)
+- THE CREDITS' MUSIC IS GRADUATION MUSIC: the trio of Elgar's "Pomp and Circumstance" March No. 1, from Manus's
+  pack `~/Desktop/RHR Art Inbox/Sound files/finale_music/` (it arrived at 12:42 on Oct 10, mid-job). JAY'S PICK
+  (JAY_PICK.txt): TAKE A, the United States Marine Band (public domain: no attribution needed; it has its row on
+  the Credits screen all the same). The file is FINISHED (26 s, at the game's music level, a 2 s fade at its end),
+  so `python3 tools/audio-pack.py --finale-music` COPIES both formats as delivered to
+  `public/audio/music/finale_credits.{ogg,mp3}` (`FINALE_MUSIC`; never re-cut or re-levelled) and writes its rows
+  (`loop: false`: it plays once). In the game (pack.ts `FINALE_TRACK`, `finaleTrack()`; engine `setOverride`):
+  it REPLACES the menu loop under the credits (`sound.finaleCredits`), follows the Music switch, FADES OUT AS THE
+  CREDITS LIFT or are skipped (`sound.finaleCreditsOver`; then it is quiet through Still Here), and the menu loop
+  returns with the cover (`sound.finaleMusicOver`). A pack without the track keeps the menu loop there
+  (`finaleTrack()` null: that path was run too). Fetched only when the credits play with Music on.
+- `npm run test:e2e:finale` also holds the HUD and the mid-level case (the last sighting found on Cardium 2: 4 s
+  on, still the level; the ending on leaving by "Levels" at 390, after the win card at 375).
 
 ## Sound for Baldonnel's sightings and the finale (October upgrade, job U10; Oct 10; on `next`)
 - NINE NEW FILES, FINISHED BY MANUS (`~/Desktop/RHR Art Inbox/Sound files/baldonnel_finale/`, HANDOFF.md): cut, faded
@@ -1519,9 +1553,8 @@ something, give exact clicks and one command at a time.
   frog_chorus A, frog_late B, bison_snort A, chuckle B, timer_beep A, scrub B (the only loop), creak A, polaroid A.
   The picked take's MP3 is `tools/sfx-art/<key>.mp3`; `audio-pack.py`'s `FINISHED` table names the take and its
   Credits row (all Pixabay Content License). `python3 tools/audio-pack.py --finished` copies ONLY these into
-  `public/audio/sfx/` and adds their rows to `pack.json` and `credits.json`, touching nothing else. (A FULL run of
-  audio-pack.py wipes `public/audio`, Classic Rock included, and re-encodes the Opus loops: after one, restore
-  `public/audio/music` and the music rows from git, or run `tools/music-classic.py` again.) 74 effects.
+  `public/audio/sfx/` and adds their rows to `pack.json` and `credits.json`, touching nothing else. (A full run of
+  audio-pack.py keeps them, and Classic Rock too: job U9b, below.) 74 effects.
 - THE MIX (`VOLUME`): each of the nine has its place (the creak a little under the outhouse door, since its file is
   quiet and the mix lifts it; the scrub well down). LAZY (`LAZY_KEYS`): fetched only by a Baldonnel level
   (`sound.warm`) or by the finale as it starts (`sound.finaleWarm`, `finaleKeys`).
@@ -1552,8 +1585,8 @@ something, give exact clicks and one command at a time.
   Log entry found, on real progress (never Settings' demo mode, `?demo=1` or `?log=all`). Rules in
   `src/ui/finale-state.ts` (pure, tested): `finaleEarned`, `finaleDue`, `finaleLink`. It plays ONCE, straight
   after whatever completes it (`maybeFinale` in main.ts): after the last level's own win card, when the player
-  leaves it by Next, the next field or All levels; after the last sighting's toast (`SIGHTING_TOAST_MS`,
-  `GameViewHandlers.onSighting`); and, as a catch-all, before the level list. Remembered under ITS OWN KEY,
+  leaves it by Next, the next field or All levels, or leaves the level by "Levels" (it is asked for before the
+  level list). IT NEVER INTERRUPTS A LEVEL: a sighting that completes it mid-level waits (job U9b, below). Remembered under ITS OWN KEY,
   `rush-hour-rigs:finale` (`{v:1, seen:true}`; in `DEV_ADDS.keys`; Reset progress clears it).
 - REPLAY: once earned, Settings has "Watch the ending" right under Credits (`data-act="ending"`; with it in,
   the rows sit closer and the two quiet buttons are 44 px, so the panel still fits 390 x 844). `?finale=1` plays
@@ -1589,7 +1622,7 @@ something, give exact clicks and one command at a time.
   Reduced motion: each part is a still, held (`STILL_AT`, `STILL_HOLD`).
 - Tests: `finale-state.test.ts`, `finale-art.test.ts`; `npm run test:e2e:finale` (WebKit DPR 3, 390 x 664 and
   375 x 635: all four parts, what covers what, the cover, nothing saved; a save one par short; once only;
-  Watch the ending; not a sighting short, not in demo mode; stills in `~/Desktop/RHR Art Inbox/qc/finale/`);
+  Watch the ending; not a sighting short, not in demo mode; stills in `qc-out/finale/`);
   `REGION=finale` in `test:e2e:frames` and `test:e2e:depth` holds the photo (`?gagtest=1`:
   `window.__rhrFinale.hold(part, t)`).
 
@@ -1970,6 +2003,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:tabs` – the region bar: full-size text, the peek, the fades, the active tab in view, swipes never tap, 5 tabs and a made-up 8 (start the dev server first)
 - `npm run test:e2e:beta` – beta readiness: first run, small phones (iPhone SE, 360x800 Android), Settings version and feedback, the update bar (start the dev server first)
 - `npm run test:e2e:depth` – the depth rule on every region's standard scene at three phone sizes: order, one lane, no ties, nobody lost behind a prop (`ONLY=surveyor`, `REGION=1`, `SIZE=iPhone` narrow it; start the dev server first)
+- `python3 tools/audio-pack.py --finale-music` – builds the finale's credits music from Jay's pick, once it is named in `FINALE_MUSIC`
 - `python3 tools/audio-pack.py --finished` – copies the finished sound files (Baldonnel and the finale) into the pack as delivered, nothing else rebuilt
 - `npm run test:e2e:gagsounds` – every gag and the finale with sound on in WebKit: cues, timing, output level, lazy loading (`ONLY=beaver` runs one, `ONLY=baldonnel` the seven, `ONLY=finale` the finale; start the dev server first)
 - `npm run test:e2e:offline` – the built site under the Pages base path: the service worker registers, fills its cache through 503s, and the game plays with the network gone (builds first; needs no dev server)
