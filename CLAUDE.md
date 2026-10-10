@@ -1417,6 +1417,38 @@ something, give exact clicks and one command at a time.
   par inside the band, no repeats, the repeat from 61, fetching); `test:e2e:devlane` `ONLY=pads`
   (`?pad=61|200|790|791` open, play and save nothing; the phone's date set to Dec 1, 2026).
 
+## Fling (October upgrade, job U4; Oct 9; on `next`)
+- A QUICK FLICK SENDS A TRUCK ALL THE WAY DOWN ITS LANE, out through its gate if the rules let it
+  leave; a slow drag is exactly what it was. Rules in `src/ui/fling.ts` (pure, tested); the board
+  (`BoardView.onPointerUp`, `flingTo`) feeds it the finger's places along the lane.
+- THE ONE NUMBER TO TUNE: `FLING_SPEED` (11 cells a second), measured over the last
+  `FLING_WINDOW_MS` (90 ms) before the finger lifts. Higher = harder to fling. A release is a
+  fling only if the finger was STILL MOVING when it lifted (its last movement no older than
+  `FLING_STALE_MS` 45 ms) and covered `FLING_TRAVEL` (0.4 cell) in that window: a drag that slows
+  or rests before lifting never flings, however fast it began.
+- WHERE IT ENDS (`flingDelta`): the far end of the engine's own `getMoveRange` that way: against
+  whatever is there, or out through the gate where that end is the truck's `exitDelta` (so a
+  convoy gate still waiting, a tanker not loaded and a clock gate on the wrong move stop it at
+  the gate). One move; Undo takes it back. Blocked that way already: no move.
+- THE SLIDE (`flingMs`, `FLING_EASE`): 130 ms plus 42 a cell (380 at most), easing out, with the
+  drag's own sounds and tire tracks. Out through a gate: it slides to the gate first
+  (`BoardView.flinging`: no other truck can be picked up for that moment), then the move is made
+  and it drives out as ever. Reduced motion: no slide.
+- NOT A BUMP: a fling that stops against something makes no near-miss tick and no line. And a
+  fast finger running on past the truck's stop is not pushing yet: the board holds that bump back
+  (`Drag.held`, `PUSH_HOLD_MS` 130) and it comes only if the finger is still down and still past
+  the stop by then, or slows down there. Slow pushing bumps at once, as before.
+- A FLING IS A MOVE LIKE ANY OTHER for gags, hints and the score. Flinging the hinted move carries
+  the hint line on when it ends where the hint said; if it runs further the next hint solves afresh.
+- OFF IN AN AUTOMATED BROWSER (`flingOn`: `navigator.webdriver`) unless `?fling=1`; `?fling=0`
+  turns it off for anyone. The suites' scripted drags move at a steady clip and lift at once,
+  which is a flick, and they mean a drag. With it off the board is exactly the old one (no held bumps).
+- The first how-to card ends "Flick a truck to send it all the way."
+- `npm run test:e2e:fling` (WebKit touch at 375 and 390, Chromium as a Pixel; real-time
+  gestures): a flick against a truck, into the berm and out a gate, Undo, four kinds of ordinary
+  drag, both kinds of push, a level at par with ZERO INCIDENT on flung moves, hints in a row.
+  NOBODY HAS FLICKED A REAL PHONE YET: the speed wants Jay's thumb.
+
 ## Sunday Turnaround (October upgrade, job U3; Oct 9; on `next`)
 - EVERY SUNDAY A NEW HARD PAD OF 8 x 8, the same for everyone, playable all week. Rules in
   `src/ui/turnaround.ts` (pure, tested). Turnaround #1 is the week of Sunday Oct 11, 2026
@@ -1709,6 +1741,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:click` – the buttons' one click and the haptic tick: every kind of button, never on a drag, a tick per truck out, nothing with the switch off (start the dev server first)
 - `npm run test:e2e:devlane` – the dev lane: the DEV label on dev and not on live, one save read by both builds, the Daily-only line, the depth gauge clear of the cards (`DEV=`, `LIVE=`, `ONLY=label|saves|line|pill`)
 - `python3 tools/music-classic.py [folder]` – encodes Manus's five Classic Rock loops like the game's other music and writes their pack.json and Credits entries (needs ffmpeg)
+- `npm run test:e2e:fling` – fling: flicks, ordinary drags, pushes, Zero Incident, hints, at three phone sizes (start the dev server first)
 - `node tools/gen-turnaround.ts` – the 112 Sunday Turnarounds into `public/turnaround/` (REGENERATE BEFORE DEC 2028; about 11 minutes from nothing)
 - `node tools/gen-daily.ts [--check n]` – Daily Pads 61 to 790 into `public/daily/` (REGENERATE BEFORE NOV 2028); `--check` remakes pads 1..n and compares them with daily.json
 - `sh tools/push-dev.sh` – push branch `next` to the dev repo and wait for the dev site's build id
