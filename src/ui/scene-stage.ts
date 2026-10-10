@@ -14,6 +14,7 @@ import type { Season } from './trees.ts';
 import { BOX, sizeFor, treeArt, type Species } from './trees.ts';
 import type { TimelineDef } from './strip-gags.ts';
 import { BALE_AT, CW, MUSKEG, WAVE3, baleAtRest, cardMode, rng, tuft } from './wave3.ts';
+import * as BD from './bald-art.ts';
 
 /** The reference's strip, in its own units. */
 export const SCENE = { w: 390, top: 30, floor: 168, ground: 150 } as const;
@@ -30,6 +31,11 @@ export const MANN_SCENE = { w: 390, top: 44, floor: 168, ground: 150 } as const;
  */
 export const CW_SCENE = { w: 390, top: 47, floor: 170, ground: 150 } as const;
 /** Below this scale the strip is too short for these gags: they do not play there. */
+/**
+ * Baldonnel's strip (bald-art.ts): cropped as tight as Mannville's and Clearwater's (the reference's is 154 units), so
+ * everything on it shows bigger. Its trees and props are stood inside it (see `BD_TREES`, bald-art.ts).
+ */
+export const BD_SCENE = { w: 390, top: 44, floor: 170, ground: 150 } as const;
 export const SCENE_MIN = 0.45;
 
 export interface SceneGeom {
@@ -383,6 +389,112 @@ export class ClearProp {
     if (!el) return;
     if (deg) el.setAttribute('transform', `rotate(${deg.toFixed(2)} ${CW_ASPEN.x} ${CW_ASPEN.base})`);
     else el.removeAttribute('transform');
+  }
+}
+
+// ---------- The standard Baldonnel scene ----------
+
+/**
+ * Baldonnel's black spruce, from its reference (`bgBald`), in the board's own spruce drawing (ONE ART STYLE, as in
+ * Mannville and Clearwater), dark in the thaw theme's tones. The left pair stands 56 further right than in the
+ * reference, clear of the biffy; the three tallest are a little shorter, so their tips stay inside the strip.
+ */
+export const BD_TREES: { species: Species; x: number; base: number; h: number }[] = [
+  { species: 'spruce', x: 66, base: 98, h: 52 },
+  { species: 'spruce', x: 82, base: 102, h: 44 },
+  { species: 'spruce', x: 150, base: 96, h: 46 },
+  { species: 'spruce', x: 166, base: 100, h: 54 },
+  { species: 'spruce', x: 186, base: 96, h: 40 },
+  { species: 'spruce', x: 378, base: 94, h: 48 },
+];
+/** How much strip Baldonnel's scene wants on a screen `screenW` wide to stand at its full size (px). */
+export const baldStripWanted = (screenW: number): number => Math.ceil((BD_SCENE.floor - BD_SCENE.top) * Math.min(1, screenW / BD_SCENE.w));
+/** The props a tap can land on, in the world: [its class in the scene, its box]. The first that holds the tap wins. */
+export const BD_PROPS: { cls: string; box: { x: number; y: number; w: number; h: number } }[] = [
+  { cls: 'bd-scale', box: { x: BD.PAD.x0 - 7, y: BD.DIAL.y - BD.DIAL.r - 3, w: BD.DIAL.x + BD.DIAL.r + 3 - (BD.PAD.x0 - 7), h: BD.GY_FOOT - (BD.DIAL.y - BD.DIAL.r - 3) } },
+  { cls: 'bd-snowbank', box: { x: BD.SB.x0 - 6, y: BD.SB.top - 3, w: BD.SB.x1 - BD.SB.x0 + 12, h: BD.SB.base - BD.SB.top + 3 } },
+  { cls: 'bd-sign', box: { x: BD.SIGN.x - 14, y: BD.SIGN.b - 44, w: 28, h: 44 } },
+  { cls: 'bd-puddle', box: { x: BD.PUD2.x - BD.PUD2.rx, y: BD.PUD2.y - 6, w: BD.PUD2.rx * 2, h: 12 } },
+  { cls: 'bd-pond', box: { x: BD.POND.x0, y: BD.POND.far - 4, w: 390 - BD.POND.x0, h: BD.POND.near - BD.POND.far + 6 } },
+];
+
+/**
+ * THE STANDARD BALDONNEL SCENE: permanent scenery on every Baldonnel level (the generic scenery puts no trees below
+ * the board there, and there is no lease sign: the bison crossing sign stands in the back row instead, and the pond
+ * lies where the lease sign's visitors would walk). Five layers that take no touches, each on its own ground line:
+ * the flat GROUND under everything (grass bands, the muddy two-track, snow patches, the thaw POND and its ice pans,
+ * the meltwater PUDDLE on the lane's near rut); the BACK ROW (black spruce, red willow); the BISON SIGN; and, just
+ * behind the walking lane so that everybody who walks it passes in front of them, the old SNOWBANK and the portable
+ * TRUCK SCALE with its dial. No sightings yet: a tap on a prop gives it the usual small knock (`propAt`).
+ */
+export class BaldProp {
+  readonly ground: HTMLElement;
+  readonly layer: HTMLElement;
+  readonly sign: HTMLElement;
+  readonly snowbank: HTMLElement;
+  readonly scale: HTMLElement;
+  private host: EggHost;
+  private season: Season;
+  private drawn = '';
+  private g: SceneGeom | null = null;
+
+  constructor(host: EggHost, season: Season) {
+    this.host = host;
+    this.season = season;
+    const make = (cls: string) => {
+      const el = document.createElement('div');
+      el.className = `scene-layer puppet-layer scene-prop ${cls}`;
+      el.setAttribute('aria-hidden', 'true');
+      el.innerHTML = '<svg class="scene-svg" preserveAspectRatio="none"></svg>';
+      (host.mount ?? ((x: HTMLElement) => host.screen.append(x)))(el);
+      return el;
+    };
+    this.ground = make('bald-ground');
+    this.layer = make('bald-layer');
+    this.sign = make('bald-sign');
+    this.snowbank = make('bald-snowbank');
+    this.scale = make('bald-scale');
+    this.layout();
+  }
+
+  geom(): SceneGeom {
+    return (this.g ??= sceneGeom(this.host.screen.clientWidth, this.host.strip(), BD_SCENE));
+  }
+
+  /** Call when the screen changes size. */
+  layout(): void {
+    const g = (this.g = sceneGeom(this.host.screen.clientWidth, this.host.strip(), BD_SCENE));
+    const layers = [this.ground, this.layer, this.sign, this.snowbank, this.scale];
+    for (const el of layers) place(el.firstElementChild as SVGSVGElement, g);
+    // DEPTH: the ground lies under everything in the strip (the biffy up by the berm too); then, by their feet, the
+    // back row, the bison sign, the snowbank and the scale, all of them behind the walking lane.
+    setGround(this.ground, g.strip.top - 1, 'set');
+    setGround(this.layer, toScreen(g, 0, Math.max(...BD_TREES.map((t) => t.base), ...BD.WILLOWS.map((w) => w[1]))).y, 'set');
+    setGround(this.sign, toScreen(g, 0, BD.SIGN.b).y, 'set');
+    setGround(this.snowbank, toScreen(g, 0, BD.SB.base).y, 'set');
+    setGround(this.scale, toScreen(g, 0, BD.SCALE_FOOT).y, 'set');
+    const key = viewBox(g);
+    if (key === this.drawn) return;
+    this.drawn = key;
+    const x0 = Math.min(0, g.left) - 2, x1 = Math.max(BD_SCENE.w, g.left + g.worldW) + 2;
+    this.ground.firstElementChild!.innerHTML =
+      BD.ground(x0, x1, BD_SCENE.floor) + BD.tufts(g.left, g.worldW, g.top, BD_SCENE.floor) + BD.SNOW_BACK.map((p) => BD.snowPatch(...p)).join('') +
+      `<g class="bd-pond">${BD.pond(x1)}</g><g class="bd-puddle">${BD.puddle()}</g>` + BD.SNOW_FRONT.map((p) => BD.snowPatch(...p)).join('');
+    const back = [...BD_TREES.map((t) => ({ base: t.base, svg: tree(t, this.season) })), ...BD.WILLOWS.map(([x, b, s]) => ({ base: b, svg: BD.willow(x, b, s) }))].sort((a, b) => a.base - b.base);
+    this.layer.firstElementChild!.innerHTML = back.map((t) => t.svg).join('');
+    this.sign.firstElementChild!.innerHTML = `<g class="bd-sign">${BD.bisonSign()}</g>`;
+    this.snowbank.firstElementChild!.innerHTML = `<g class="bd-snowbank">${BD.snowbank()}</g>`;
+    this.scale.firstElementChild!.innerHTML = `<g class="bd-scale">${BD.scaleProp()}</g>`;
+  }
+
+  /** The prop a tap at (x, y) lands on (a tap target of at least 44 px; the first of `BD_PROPS` that holds it), or null. */
+  propAt(x: number, y: number): SVGGElement | null {
+    const screen = this.host.screen.getBoundingClientRect(), g = this.geom();
+    for (const p of BD_PROPS) {
+      const b = tapBox(g, p.box);
+      if (x - screen.left >= b.left && x - screen.left <= b.right && y - screen.top >= b.top && y - screen.top <= b.bottom) return this.host.screen.querySelector<SVGGElement>(`.${p.cls}`);
+    }
+    return null;
   }
 }
 
