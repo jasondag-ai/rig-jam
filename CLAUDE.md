@@ -2,13 +2,15 @@
 
 Renamed from Rush Hour Rigs on Oct 9, 2026 (trademark).
 
-DEV LANE (October upgrade, job U1; Oct 9): UPGRADE WORK GOES TO BRANCH `next`; `main` GETS BUG FIXES
-ONLY UNTIL THE MERGE. `next` is worked in its own folder, `~/Rig-Jam-next` (a git worktree with its own
-`npm ci`: never link `node_modules`), and is published as the DEV COPY at
+VERSION 1.0.0 IS LIVE (Oct 10, 2026, job U8): the October upgrade (`next`) was merged into `main` and shipped. See
+"1.0.0: the October upgrade is live" below for what it holds and how a ship is done.
+
+THE DEV LANE STAYS (job U1): NEW WORK GOES TO BRANCH `next`, in its own folder `~/Rig-Jam-next` (a git worktree
+with its own `npm ci`: never link `node_modules`), published as the DEV COPY at
 https://jasondag-ai.github.io/rig-jam-next/ by `sh tools/push-dev.sh` (it pushes `next` to the repo
-`jasondag-ai/rig-jam-next` as its main, where the same Action builds it, and waits for the dev build
-id). The live game (/rig-jam/, this repo's `main`, `sh tools/check-live.sh`) is not touched by it.
-See "The dev lane" below for the DEV label, the shared saves and the caches.
+`jasondag-ai/rig-jam-next` as its main, where the same Action builds it, and waits for the dev build id). The
+live game (/rig-jam/, this repo's `main`, `sh tools/check-live.sh`) is not touched by it: `main` gets bug fixes
+and merges of `next` that Jay asks for. See "The dev lane" below for the DEV label, the shared saves and the caches.
 
 STANDING RULE, BEFORE EVERY JOB: read `GAME_BIBLE.md`, `ART_BIBLE.md` and `STANDING_RULES.md` from
 `~/Desktop/RHR Art Inbox/` (those are the latest versions). If any differs from the copy in the
@@ -97,6 +99,7 @@ something, give exact clicks and one command at a time.
 ## Regions
 - Cardium: 10 levels, trucks and gates only. Theme: summer.
 - Clearwater: 10 levels on a pad of 8 x 8 (the Big Pad), trucks and gates only. Theme: `boreal`. Opens after 5 of Bakken. See "Clearwater, region 6".
+- Baldonnel: 10 levels of 6 x 6, par 16 to 24, adds ROAD BAN PATCHES (soft cells a 3-cell truck cannot enter). Theme: `thaw`. Opens after 5 of Clearwater. See "Baldonnel, region 7".
 - Montney: 10 levels, adds obstacles (pumpjacks, 400 bbl tanks, wellheads). Theme: spring mud.
 - Duvernay: 10 levels, adds convoys. Theme: winter. Preview any theme with `?theme=winter` etc.
 - Mannville: 10 levels, adds MUSKEG (with obstacles and convoys). EVERY level is par 14 to 20, the
@@ -691,10 +694,10 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (0.9.0) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 since Oct 10) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
-  `versionText`). Shown at the very bottom of Settings ("Version 0.9.0 (a1b2c3d)") and copied into
+  `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
   feedback. The build also writes `version.json`.
 - UPDATES (`src/ui/update.ts`, tested): an open or installed copy asks the server for
   `version.json` (never from a cache: the service worker lets that file through) when it opens,
@@ -1310,6 +1313,31 @@ something, give exact clicks and one command at a time.
   there only the button's "Copied!" is checked).
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
+
+## 1.0.0: the October upgrade is live (job U8; Oct 10, 2026)
+- WHAT SHIPPED, all of it built on `next` and described in its own section: Daily Pads forever (U2), Sunday
+  Turnaround (U3), fling (U4), Baldonnel, region 7, with road ban patches and its seven sightings (U6, U6b, U6c),
+  Classic Rock (U7), the finale for a perfect game (U9, U9b) and sound for Baldonnel and the finale (U10). Skins
+  (U5) were cut. Where a section's heading says "on `next`", it is on `main` too now. 70 levels, 40 sightings.
+- HOW IT WAS SHIPPED, and how the next merge is done:
+  1. A NEW REAL SAVE from the live build as it then was: `node e2e/make-live-save.mjs <out.json>`, run from a
+     checkout of the live build's own commit (it plays the live site in WebKit: levels, sightings, a hint, the
+     Daily Pad, the sound settings) > `e2e/fixtures/live-save-<build>.json`, added BESIDE the older ones in
+     `FIXTURES` (`save-compat.test.ts`) and in `e2e/save.e2e.mjs`. Now two: `de534ad` (before Clearwater) and
+     `ba54c2b` (before 1.0.0). Both must load whole.
+  2. The version (`package.json`), then `git merge --no-ff next` in the main checkout (a merge commit, never a
+     squash), `npm test`, `npm run build` and the key browser suites against main's own dev server (save,
+     sightings, finale, baldonnel, fling, offline, judge).
+  3. `git push origin main`, then `sh tools/check-live.sh` until the live `version.json` shows the merged build id.
+  4. `next` brought level with main (`git merge --ff-only main` in `~/Rig-Jam-next`) and `sh tools/push-dev.sh`.
+- THE LIVE CONTRACT WAS MADE AGAIN from the shipped code: `node tools/live-contract.ts 1.0.0` >
+  `e2e/fixtures/live-contract-1.0.0.json` (the older `live-contract-24c29d5.json` is kept beside it), and
+  `DEV_ADDS` in `save-compat.test.ts` is EMPTY again: the live build now knows the Turnaround's and the finale's
+  keys, Baldonnel and its sightings, and Classic Rock. The next thing the dev lane adds to saved data is declared
+  there, as before. After a later ship, run the tool again with the new version's name.
+- A PLAYER'S PHONE: the service worker's new cache and the "New version, tap to update" bar bring 1.0.0 in; the
+  save is read as it is (nothing is migrated, renamed or reset), the two new keys appear only when there is
+  something to put in them.
 
 ## The dev lane (October upgrade, job U1; Oct 9)
 - TWO SITES, ONE WEB ORIGIN: the live game https://jasondag-ai.github.io/rig-jam/ (repo `rig-jam`,
