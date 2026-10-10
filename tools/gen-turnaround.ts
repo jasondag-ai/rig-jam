@@ -42,7 +42,7 @@ export function tryWeek(week: number, k: number): Level | null {
   // What each truck looks like (by its length), dealt from the week's own seed.
   const kinds = mulberry32(KIND_SEED + week);
   const trucks = c.level.trucks.map((t) => ({ ...t, kind: TRUCK_KINDS[t.length][Math.floor(kinds() * TRUCK_KINDS[t.length].length)] }));
-  return { ...c.level, id: `t${week}`, name: `Turnaround #${week}`, trucks, obstacles: [], muskeg: [], racks: [] } as Level;
+  return { ...c.level, id: `t${week}`, name: `Turnaround #${week}`, trucks, obstacles: [], muskeg: [], racks: [], soft: [] } as Level;
 }
 
 async function main(): Promise<void> {

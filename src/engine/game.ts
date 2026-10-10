@@ -42,7 +42,10 @@ export function getMoveRange(state: GameState, id: string): MoveRange | null {
   const grid = occupancy(state.trucks, state.level.obstacles, SIZE);
   const h = truck.orient === 'h';
   const pos = h ? truck.col : truck.row;
-  const empty = (p: number) => grid[h ? truck.row * SIZE + p : p * SIZE + truck.col] === null;
+  // Soft ground (a road ban patch) is a wall for a rig (3 cells); a 2-cell truck drives over it.
+  const soft = truck.length === 3 ? state.level.soft : [];
+  const firm = (p: number) => !soft.length || !soft.some((c) => (h ? c.row === truck.row && c.col === p : c.col === truck.col && c.row === p));
+  const empty = (p: number) => grid[h ? truck.row * SIZE + p : p * SIZE + truck.col] === null && firm(p);
 
   let p = pos - 1;
   while (p >= 0 && empty(p)) p--;

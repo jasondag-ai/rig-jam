@@ -56,7 +56,7 @@ export interface Gate {
   shift?: true;
 }
 
-/** A cell of the pad's floor with something about it (muskeg, a load rack). Trucks drive over it. */
+/** A cell of the pad's floor with something about it (muskeg, a load rack, soft ground). Trucks drive over it (a rig not over soft ground). */
 export interface FloorCell {
   row: number;
   col: number;
@@ -97,6 +97,11 @@ export interface Level {
   muskeg: FloorCell[];
   /** LOAD RACK cells (Bakken): where a `load` truck must stop before its gate will take it. */
   racks: FloorCell[];
+  /**
+   * SOFT cells, road ban patches (Baldonnel): thawed ground. A 2-cell truck drives over one like any floor; a
+   * 3-cell truck (a rig) cannot enter one: for it the cell is a wall. No rig starts on one.
+   */
+  soft: FloorCell[];
 }
 
 export interface GameState {

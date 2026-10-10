@@ -160,7 +160,7 @@ export function toLevel(ts: T[], colours: Map<string, Color>, id: string, par = 
   const trucks = ts.map((t, i) => ({ id: idOf(i), color: colours.get(`${sideOf(t)}${t.lane}`)!, row: t.orient === 'h' ? t.lane : t.pos, col: t.orient === 'h' ? t.pos : t.lane, length: t.len, orient: t.orient }));
   const gates = [...colours].map(([end, color]) => ({ color, side: end.replace(/\d+$/, '') as Side, index: Number(end.match(/\d+$/)![0]) }));
   // (Mid-scramble a truck may still stand at its gate: the game's parser would refuse that start, so the level is built by hand here.)
-  return { id, name: 'Big Pad', par, size: 8, trucks: trucks as Truck[], gates: gates as Gate[], obstacles: [], muskeg: [], racks: [] };
+  return { id, name: 'Big Pad', par, size: 8, trucks: trucks as Truck[], gates: gates as Gate[], obstacles: [], muskeg: [], racks: [], soft: [] };
 }
 
 // ---------- 1 and 2: lanes, gates, the interlock seed ----------

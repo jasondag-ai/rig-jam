@@ -104,6 +104,9 @@ function compile(level: Level, trucks: readonly Truck[]): Model {
   const horiz = new Uint8Array(n), line = new Uint8Array(n), len = new Uint8Array(n), fwd = new Uint8Array(n);
   const shiftGate = new Uint8Array(n), convoy = new Uint8Array(n), color = new Uint8Array(n), loadBit = new Int8Array(n).fill(-1);
   const muskeg = new Uint8Array(n * SIZE), rackAt = new Uint8Array(n * SIZE);
+  // Soft ground along a rig's lane (a wall for it; 2-cell trucks have none).
+  const softAt = new Uint8Array(n * SIZE);
+  const anySoft = (level.soft ?? []).length > 0;
   const start = new Uint8Array(n);
   let startLoaded = 0, bits = 0;
   const colors: string[] = [];
@@ -119,6 +122,7 @@ function compile(level: Level, trucks: readonly Truck[]): Model {
     color[i] = colors.indexOf(t.color);
     start[i] = t.orient === 'h' ? t.col : t.row;
     for (const c of level.muskeg) if ((t.orient === 'h' ? c.row : c.col) === line[i]) muskeg[i * SIZE + (t.orient === 'h' ? c.col : c.row)] = 1;
+    if (t.length === 3) for (const c of level.soft ?? []) if ((t.orient === 'h' ? c.row : c.col) === line[i]) softAt[i * SIZE + (t.orient === 'h' ? c.col : c.row)] = 1;
     if (t.load) {
       loadBit[i] = bits++;
       if (t.loaded) startLoaded |= 1 << loadBit[i];
@@ -147,10 +151,10 @@ function compile(level: Level, trucks: readonly Truck[]): Model {
       if (pos === GONE) continue;
       const h = horiz[i], ln = line[i], length = len[i];
       let p = pos - 1;
-      while (p >= 0 && !grid[h ? ln * SIZE + p : p * SIZE + ln]) p--;
+      while (p >= 0 && !grid[h ? ln * SIZE + p : p * SIZE + ln] && !(anySoft && softAt[i * SIZE + p])) p--;
       let min = p + 1 - pos;
       p = pos + length;
-      while (p < SIZE && !grid[h ? ln * SIZE + p : p * SIZE + ln]) p++;
+      while (p < SIZE && !grid[h ? ln * SIZE + p : p * SIZE + ln] && !(anySoft && softAt[i * SIZE + p])) p++;
       let max = p - pos - length;
       // Will its gate take it on this move? (Convoy order, a tanker's load, a shift-change gate's clock.)
       let open = true;

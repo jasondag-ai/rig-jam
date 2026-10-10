@@ -242,6 +242,7 @@ export function toLevel(id: string, slot: SlotConfig, g: Generated): Level {
     obstacles: g.level.obstacles,
     muskeg: g.level.muskeg,
     racks: g.level.racks,
+    soft: [],
   };
 }
 
