@@ -1512,6 +1512,41 @@ something, give exact clicks and one command at a time.
   run test:e2e:frames` (also `VIEW=390x664`) hold the depth rule and same start, same end on the
   new scene with the strip gags every region shares. Screenshots: `~/Desktop/RHR Art Inbox/qc/baldonnel/`.
 
+## Sound for Baldonnel's sightings and the finale (October upgrade, job U10; Oct 10; on `next`)
+- NINE NEW FILES, FINISHED BY MANUS (`~/Desktop/RHR Art Inbox/Sound files/baldonnel_finale/`, HANDOFF.md): cut, faded
+  and levelled already, so the game takes each AS DELIVERED, byte for byte: never re-cut, re-levelled or re-encoded
+  (a unit test compares the bytes). JAY'S PICKS OF THE TAKES (they override the handoff's own column): crane_call B,
+  frog_chorus A, frog_late B, bison_snort A, chuckle B, timer_beep A, scrub B (the only loop), creak A, polaroid A.
+  The picked take's MP3 is `tools/sfx-art/<key>.mp3`; `audio-pack.py`'s `FINISHED` table names the take and its
+  Credits row (all Pixabay Content License). `python3 tools/audio-pack.py --finished` copies ONLY these into
+  `public/audio/sfx/` and adds their rows to `pack.json` and `credits.json`, touching nothing else. (A FULL run of
+  audio-pack.py wipes `public/audio`, Classic Rock included, and re-encodes the Opus loops: after one, restore
+  `public/audio/music` and the music rows from git, or run `tools/music-classic.py` again.) 74 effects.
+- THE MIX (`VOLUME`): each of the nine has its place (the creak a little under the outhouse door, since its file is
+  quiet and the mix lifts it; the scrub well down). LAZY (`LAZY_KEYS`): fetched only by a Baldonnel level
+  (`sound.warm`) or by the finale as it starts (`sound.finaleWarm`, `finaleKeys`).
+- THE SEVEN SIGHTINGS (`GAG_SOUNDS`, the reasons beside each row): each cue on the moment its reference page draws
+  the sound word, the pack's own sounds first. Overweight: steps, CLANK (`clack`), the hat's thud and the boots'
+  clonks (`knock`), the ding (`twinkle`), the magpie's call. Two Left Feet: `crane_call` for "garooo" and "garoo",
+  the feather's twinkle. Right of Way: `bison_snort` as it settles and for the yawn, BEEP BEEP (`horn` twice), the
+  door's clunks (`clack`), two claps (`slap`), the backup beeper (`reverse`), "heh heh heh" (`chuckle`). Half
+  Dressed: far footsteps, a `rustle` each time he hides or hops, a twinkle. Last Ice: bump (`knock`), plunk and
+  bubbles (`blup`), SPLASH twice, flip flop (`tap`), CHOMP. Late Croak: blups up and down, `frog_chorus` on the round
+  (over before the silence), `frog_late` for the one late CREEK. Lunch to Go: steps, the `mosquito` loop from BZZZ to
+  the end.
+- THE FINALE (`FINALE_SOUNDS` by part and beat; finale.ts `beat()` plays a beat's cues once through `sound.finale`;
+  never for a frame a test holds, nor under reduced motion): the card's usual win sounds on the card's own clock (a
+  pop a hard hat at 0.9, 1.15 and 1.4 s, the ta-da at 1.7); `timer_beep` slow (every 0.6 s from 1.65 s) then fast
+  (every 0.18 s from 5.0 s), where the page draws "beep"; `camera` and `splat` together on the flash; `polaroid` as
+  the photo drops; `chuckle` for the magpie; UNDER THE CREDITS the menu loop of the player's music style, if Music
+  is on (`sound.finaleCredits`), and no effects; `creak` as the door opens and as it shuts; `scrub` looping while he
+  brushes (`GAG_LOOPS.scrub`). `sound.finaleEnd` (each change of part but card to photo, and leaving) stops what is
+  running or still to come. SOUND STAYS OFF BY DEFAULT: with the switch off nothing is fetched or played.
+- `npm run test:e2e:gagsounds` now plays all 38 previews and the finale (`ONLY=baldonnel` the seven, `ONLY=finale`
+  the finale, replayed from Settings with sound and music on, at 390 x 664): cues on their beats, files loaded, the
+  output never clipping, loops stopped at the end, nothing following the player out, and the whole finale silent
+  with sound off. NOBODY HAS LISTENED: Jay's ear on a phone is the real check.
+
 ## The finale (October upgrade, job U9; Oct 10; on `next`)
 - A PERFECT GAME EARNS THE ENDING: every region level at 3 hard hats (`best` at par or under) and every Wildlife
   Log entry found, on real progress (never Settings' demo mode, `?demo=1` or `?log=all`). Rules in
@@ -1550,7 +1585,7 @@ something, give exact clicks and one command at a time.
      home.", the door shuts.
   THEN THE GAME'S OWN OPENING SCREEN: `toCover` calls cover.ts's `showCover` itself (never a copy), fades to
   it, and leaves it alone on the page; a tap opens the level list as on any app open.
-- Lines: `FINALE_LINES` (lines.ts), the page's, word for word. NO SOUNDS YET (`crewSounds` is ported and unused).
+- Lines: `FINALE_LINES` (lines.ts), the page's, word for word. SOUND: job U10, below.
   Reduced motion: each part is a still, held (`STILL_AT`, `STILL_HOLD`).
 - Tests: `finale-state.test.ts`, `finale-art.test.ts`; `npm run test:e2e:finale` (WebKit DPR 3, 390 x 664 and
   375 x 635: all four parts, what covers what, the cover, nothing saved; a save one par short; once only;
@@ -1606,8 +1641,7 @@ something, give exact clicks and one command at a time.
   Camo earned before them stays earned (`camoEarned` is saved); a new player needs all 40. Cards:
   the page's own still of each, with its prop drawn behind (`LOG_ART`). Declared in
   `DEV_ADDS.sightings`: the live build drops them from a log it saves, until the merge.
-- WITNESS LINES for the seven are Claude's stand-ins (lines.ts): Jay, write your own. NO SOUNDS
-  YET (`GAG_SOUNDS` rows are empty).
+- WITNESS LINES for the seven are Claude's stand-ins (lines.ts; Jay, Oct 10: keep them). SOUND: job U10.
 - `test:e2e:sightings` has the seven on their real actions on a fresh log (`VIEW=390x664`, the
   default, and `VIEW=375x635`) and Baldonnel's props; `REGION=baldonnel npm run test:e2e:frames`
   (also `VIEW=390x664`, `VIEW=375x635`) and `REGION=6 npm run test:e2e:depth` hold them.
@@ -1936,7 +1970,8 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:tabs` – the region bar: full-size text, the peek, the fades, the active tab in view, swipes never tap, 5 tabs and a made-up 8 (start the dev server first)
 - `npm run test:e2e:beta` – beta readiness: first run, small phones (iPhone SE, 360x800 Android), Settings version and feedback, the update bar (start the dev server first)
 - `npm run test:e2e:depth` – the depth rule on every region's standard scene at three phone sizes: order, one lane, no ties, nobody lost behind a prop (`ONLY=surveyor`, `REGION=1`, `SIZE=iPhone` narrow it; start the dev server first)
-- `npm run test:e2e:gagsounds` – every gag (all 26) with sound on in WebKit: cues, timing, output level, lazy loading (`ONLY=beaver` runs one; start the dev server first)
+- `python3 tools/audio-pack.py --finished` – copies the finished sound files (Baldonnel and the finale) into the pack as delivered, nothing else rebuilt
+- `npm run test:e2e:gagsounds` – every gag and the finale with sound on in WebKit: cues, timing, output level, lazy loading (`ONLY=beaver` runs one, `ONLY=baldonnel` the seven, `ONLY=finale` the finale; start the dev server first)
 - `npm run test:e2e:offline` – the built site under the Pages base path: the service worker registers, fills its cache through 503s, and the game plays with the network gone (builds first; needs no dev server)
 - `npm run test:e2e:click` – the buttons' one click and the haptic tick: every kind of button, never on a drag, a tick per truck out, nothing with the switch off (start the dev server first)
 - `npm run test:e2e:devlane` – the dev lane: the DEV label on dev and not on live, one save read by both builds, the Daily-only line, the depth gauge clear of the cards (`DEV=`, `LIVE=`, `ONLY=label|saves|line|pill`)
