@@ -56,7 +56,7 @@ diff = async (a, b) => {
 
 console.log('\nwebkit 390x844: every strip gag starts and ends on an empty stage');
 // (Baldonnel, region 7, has no sightings of its own yet: the strip gags every region shares are held on ITS standard scene.)
-const CASES = [...Object.entries(PREVIEWS), ...['landowner', 'biffyA', 'biffyB', 'sam', 'geese'].map((gag) => [`${gag} on Baldonnel`, { gag, region: 'baldonnel', level: 3 }])];
+const CASES = [...Object.entries(PREVIEWS), ...['landowner', 'biffyA', 'biffyB', 'sam', 'geese'].map((gag) => [`${gag} on Baldonnel`, { gag, region: 'baldonnel', level: 1 }])];
 for (const [name, { gag, region, level }] of CASES) {
   if (OWN_CLOCK.includes(gag)) continue;
   // (`REGION=baldonnel` holds one region's.)
@@ -80,7 +80,10 @@ for (const [name, { gag, region, level }] of CASES) {
   const first = await shot();
   await page.evaluate(([g, t]) => window.__rhrGag.hold(g, t), [gag, end * 0.5]);
   await wait(60);
-  const middle = await shot();
+  let middle = await shot();
+  // (Half way through Half Dressed the hare is hiding, all but one eye, and the worker has not come in yet: that is the
+  // gag. Where the half-way frame shows next to nothing, a frame a third of the way in is looked at as well.)
+  if ((await diff(before, middle)).n <= 150) { await page.evaluate(([g, t]) => window.__rhrGag.hold(g, t), [gag, end * 0.3]); await wait(60); middle = await shot(); }
   await page.evaluate(([g, t]) => window.__rhrGag.hold(g, t), [gag, end]);
   await wait(60);
   const last = await shot();

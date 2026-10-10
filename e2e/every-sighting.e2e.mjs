@@ -94,6 +94,19 @@ const rammer = (level) => {
   }
   return null;
 };
+/** Baldonnel: a rig standing where a push runs it at a road ban patch (soft ground), and the drags that push it. */
+const rigAtPatch = (level) => {
+  const s = newGame(level);
+  for (const t of s.trucks.filter((x) => x.length === 3)) for (const dir of [1, -1]) {
+    const r = getMoveRange(s, t.id), end = dir > 0 ? r.max : r.min, pos = (t.orient === 'h' ? t.col : t.row) + end, next = dir > 0 ? pos + 3 : pos - 1;
+    const patch = level.soft.some((c) => (t.orient === 'h' ? c.row === t.row && c.col === next : c.col === t.col && c.row === next));
+    const taken = s.trucks.some((o) => o.id !== t.id && Array.from({ length: o.length }, (_, k) => (o.orient === 'h' ? [o.row, o.col + k] : [o.row + k, o.col])).some(([rr, cc]) => (t.orient === 'h' ? rr === t.row && cc === next : cc === t.col && rr === next)));
+    if (patch && !taken) return { id: t.id, first: end + dir * 0.9, again: dir * 0.9 };
+  }
+  return null;
+};
+/** Baldonnel: does this move drive a pickup (standing as `t`) across or onto a patch? (gag-triggers.ts `drivesOnSoft`.) */
+const crossesPatch = (level, t, d) => { const pos = t.orient === 'h' ? t.col : t.row, from = d > 0 ? pos + 2 : pos + d, to = d > 0 ? pos + 1 + d : pos - 1; return level.soft.some((c) => (t.orient === 'h' ? c.row === t.row && c.col >= from && c.col <= to : c.col === t.col && c.row >= from && c.row <= to)); };
 const pick = (region, find) => { for (let li = 0; li < REGIONS[region].levels.length; li++) { const got = find(REGIONS[region].levels[li]); if (got) return { li, got }; } return null; };
 
 // ---------- how a sighting is known to be playing ----------
@@ -167,6 +180,16 @@ const CASES = [
   ['pea', 'One Pea', 'clearwater', 0, 'five trucks driven out in a row, Dinner Bell already in the log', async (page, lv) => { const p = plan(lv), k = p.findIndex((m, i) => p.slice(i, i + 7).every((x) => x.out) && p.slice(i, i + 7).length === 7); for (const m of p.slice(0, k + 5)) await play(page, m); }, '', ['bell']],
   ['biffyA', 'Occupied, on the Big Pad', 'clearwater', pick(R.clearwater, (l) => bumper(l, 'bottom')).li, 'one bump down into the bottom berm', async (page, lv) => { const b = bumper(lv, 'bottom'); await drag(page, b.id, b.first); }],
   ['biffyB', 'The Runaway Roll, on the Big Pad', 'clearwater', pick(R.clearwater, (l) => bumper(l, 'bottom')).li, 'two bumps down into the bottom berm, one right after the other', async (page, lv) => { const b = bumper(lv, 'bottom'); await drag(page, b.id, b.first, 200); await drag(page, b.id, b.again, 200); }],
+  // BALDONNEL (job U6b), each on a FRESH log by its real action.
+  ['overweight', 'Overweight', 'baldonnel', 0, 'a rig pushed at a road ban patch three times', async (page, lv) => { const r = rigAtPatch(lv); for (let k = 0; k < 3; k++) await drag(page, r.id, k === 0 ? r.first : r.again, 320); }],
+  ['cranes', 'Two Left Feet', 'baldonnel', 2, 'three taps on the sky', async (page) => { const pt = await page.evaluate(() => { const b = document.querySelector('.board').getBoundingClientRect(), h = document.querySelector('.hud').getBoundingClientRect(); return { x: innerWidth * 0.5, y: (h.bottom + b.top) / 2 }; }); await tapAt(page, pt, 3); }],
+  ['bison', 'Right of Way', 'baldonnel', 2, 'a tap on the bison crossing sign', async (page) => { await tapOn(page, '.bald-sign .bd-sign'); }],
+  ['hare', 'Half Dressed', 'baldonnel', 2, 'three taps on the snowbank', async (page) => { await tapOn(page, '.bald-snowbank .bd-snowbank', 3); }],
+  ['ice', 'Last Ice', 'baldonnel', 2, 'a tap on the ice on the pond', async (page) => { await tapOn(page, '.bald-ground .bd-pond path[fill="#eef3f7"]'); }],
+  ['frogs', 'Late Croak', 'baldonnel', 2, 'a tap on the puddle', async (page) => { await tapOn(page, '.bald-ground .bd-puddle'); }],
+  // (On the ten levels as they stand a patch a pickup can reach lies in its gate's own cell, so a pickup only crosses one on its
+  // way OUT: once a level. Three times in a level therefore means driving it out, taking that back with Undo, and again.)
+  ['mosquito', 'Lunch to Go', 'baldonnel', 0, 'a pickup driven out across a road ban patch three times (Undo between)', async (page, lv) => { let s = newGame(lv); for (const step of plan(lv)) { const t = s.trucks.find((x) => x.id === step.id); if (t.length === 2 && crossesPatch(lv, t, step.delta)) { for (let k = 0; k < 3; k++) { await play(page, step, 1100); if (k < 2) { await page.locator('[data-act="undo"]').click(); await wait(450); } } return; } await play(page, step); s = tryMove(s, step.id, step.delta).state; } }],
 ];
 
 console.log(`\nwebkit ${VW} x ${VH} at ${ROOT}: every sighting, on its real trigger`);
@@ -195,7 +218,7 @@ const PROPS = {
   duvernay: [['the biffy', '.biffy-layer svg', 1], ['the snowy bush', '.bush-layer svg', 3], ['the frosty riser', '.riser-layer svg g', 3], ['the lease sign', '.sign-layer svg', 1]],
   mannville: [['the biffy', '.biffy-layer svg', 1], ['the big muskeg puddle', '.mann-layer path[fill="#4f4a2c"]', 3], ['the tall aspen', '.mann-front svg svg', 3], ['the lease sign', '.sign-layer svg', 1]],
   bakken: [['the biffy', '.biffy-layer svg', 1], ['the round bale', '.bakken-layer svg > *', 1], ['the lease sign', '.sign-layer svg', 1]],
-  clearwater: [['the biffy', '.biffy-layer svg', 1], ['the rig mat stack', '.clear-mats .cw-mats', 3], ['the mud puddle', '.clear-ground path[fill="#6b5a3a"]', 1]],
+  clearwater: [['the biffy', '.biffy-layer svg', 1], ['the rig mat stack', '.clear-mats .cw-mats', 3], ['the mud puddle', '.clear-ground path[fill="#6b5a3a"]', 1]],  baldonnel: [['the biffy', '.biffy-layer svg', 1], ['the bison sign', '.bald-sign .bd-sign', 1], ['the snowbank', '.bald-snowbank .bd-snowbank', 3], ['the truck scale', '.bald-scale .bd-scale', 1], ['the pond ice', '.bald-ground .bd-pond path[fill="#eef3f7"]', 1], ['the puddle', '.bald-ground .bd-puddle', 1]],
 };
 if (!ONLY || ONLY === 'props') {
   console.log(`\nwebkit ${VW} x ${VH}: every tappable prop answers a tap`);
@@ -213,9 +236,9 @@ if (!ONLY || ONLY === 'props') {
       await context.close();
     }
     // (And no prop stands there that the list above does not tap.)
-    const known = { 'biffy-layer': 1, 'bush-layer': 1, 'sign-layer': 1, 'cow-layer': 1, 'riser-layer': 1, 'mann-layer': 1, 'mann-front': 1, 'bakken-layer': 1, 'clear-ground': 1, 'clear-layer': 1, 'clear-mats': 1 };
+    const known = { 'biffy-layer': 1, 'bush-layer': 1, 'sign-layer': 1, 'cow-layer': 1, 'riser-layer': 1, 'mann-layer': 1, 'mann-front': 1, 'bakken-layer': 1, 'clear-ground': 1, 'clear-layer': 1, 'clear-mats': 1, 'bald-ground': 1, 'bald-layer': 1, 'bald-sign': 1, 'bald-snowbank': 1, 'bald-scale': 1 };
     const odd = standing.filter((c) => !known[c.split(/\s+/)[0]]);
-    check(odd.length === 0 && (region !== 'clearwater' || !standing.some((c) => c.startsWith('sign-layer'))), `${REGIONS[R[region]].name}: every prop standing in its strip is one of those (${[...new Set(standing.map((c) => c.split(/\s+/)[0]))].join(', ')})${region === 'clearwater' ? '; no lease sign on the Big Pad' : ''}`);
+    check(odd.length === 0 && ((region !== 'clearwater' && region !== 'baldonnel') || !standing.some((c) => c.startsWith('sign-layer'))), `${REGIONS[R[region]].name}: every prop standing in its strip is one of those (${[...new Set(standing.map((c) => c.split(/\s+/)[0]))].join(', ')})${region === 'clearwater' ? '; no lease sign on the Big Pad' : ''}`);
   }
 }
 

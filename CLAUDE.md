@@ -1453,7 +1453,7 @@ something, give exact clicks and one command at a time.
   me."). The lines are Claude's stand-ins: Jay, write your own in lines.ts.
 - THE REGION: after Clearwater in `REGIONS`, opens after 5 of Clearwater like the others. Blurb:
   "Spring breakup. Rigs can't cross soft ground. Pickups can." Music tier 4 (`PLAY_TIER`). No
-  night, no pill in the dig, no sightings of its own yet.
+  night, no pill in the dig. Its seven sightings: "Baldonnel's seven sightings" below.
 - THE THAW THEME (`thaw`, themes.ts; season `thaw` in trees.ts): last year's dead khaki grass with
   the last snow lying in it (`grass-thaw.webp`, `tools/ground-tiles.py` `thaw_grass` +
   `thaw_snow`), BLACK SPRUCE (the board's own spruce drawing in dark dull tones) with aspen and
@@ -1469,18 +1469,22 @@ something, give exact clicks and one command at a time.
   `.bald-sign` (the BISON CROSSING SIGN), `.bald-snowbank` (the old SNOWBANK) and `.bald-scale`
   (the portable TRUCK SCALE and its DIAL, needle at rest in the green). `BD_SCENE` crops the
   reference's strip to y 44 to 170 (126 units, as tight as Mannville's), so it shows bigger.
-- MOVED FROM THE REFERENCE, each for a rule: the bison sign and the left two spruce stand 56
-  further right (clear of the biffy); the snowbank 34 further right (x 72 to 132, clear of the
-  sleepy worker's spot); the puddle lies on the two-track's near rut (y 163, not 174) and the
-  three front snow patches on the lane's near edge (the tighter crop); the three tallest spruce
-  are a little shorter (inside the strip); the scale is drawn on the lane's line but STANDS 2
-  units behind it (`SCALE_FOOT`, as Clearwater's rig mats do), so everybody who walks the lane
-  passes in front of it. WHEN THE SIGHTINGS ARE PORTED, their positions follow these.
+- MOVED FROM THE REFERENCE, each for a rule: the bison sign stands 56 further right (clear of the
+  biffy), and the two spruce that stood beside it stand at the right, on the pond's far bank
+  (at the left Right of Way would park Moe's pickup in front of them); the puddle lies on the two-track's near rut (y 163, not 174)
+  and the three front snow patches on the lane's near edge (the tighter crop); the three tallest
+  spruce are a little shorter (inside the strip); the scale is drawn on the lane's line but STANDS
+  2 units behind it (`SCALE_FOOT`, as Clearwater's rig mats do), so everybody who walks the lane
+  passes in front of it. THE SNOWBANK IS WHERE THE REFERENCE HAS IT (x 38 to 98): U6 stood it 34
+  further right for the sleepy worker's spot and U6b put it back, because Half Dressed and
+  Overweight play on the ground between the snowbank and the scale. `BD_SCENE` is y 47 to 170:
+  123 units, exactly Clearwater's, so its characters stand at Clearwater's in-game size.
 - NO LEASE SIGN ON BALDONNEL (as on Clearwater): the pond lies where its visitors would walk, and
   the bison sign stands in the back row. So no surveyor or deer there. The biffy, the landowner,
   Safety Sam, the geese, the magpie and the sleepy worker play as on any pad of 6.
-- NO DEAD PROPS: a tap on the bison sign, the snowbank, the scale, the pond or the puddle gives
-  it the usual knock (`BaldProp.propAt`, `BD_PROPS`: tap targets of at least 44 px).
+- NO DEAD PROPS (`BaldProp.propAt`, `BD_PROPS`: tap targets of at least 44 px; the pond's runs to
+  the screen's right edge): the sign, the snowbank, the pond and the puddle bring their sightings
+  (below); the scale, and any of them whose sighting has been or is on, answer with the usual knock.
 - SAVES: nothing new is saved. Baldonnel's scores are ordinary `best` entries under ids the live
   build does not know; it keeps them untouched and shows no seventh tab (`DEV_ADDS.regions`).
 - `npm run test:e2e:baldonnel` (WebKit at DPR 3, 390 and 375; `ONLY=tab|rule|scene|levels`): the
@@ -1489,6 +1493,60 @@ something, give exact clicks and one command at a time.
   LEVELS cleared at par by dragging. `REGION=6 npm run test:e2e:depth` and `REGION=baldonnel npm
   run test:e2e:frames` (also `VIEW=390x664`) hold the depth rule and same start, same end on the
   new scene with the strip gags every region shares. Screenshots: `~/Desktop/RHR Art Inbox/qc/baldonnel/`.
+
+## Baldonnel's seven sightings (October upgrade, job U6b; Oct 10; on `next`)
+- `src/ui/bald-gags.ts` (@ts-nocheck): PORTED BY A SCRIPT from
+  `~/Desktop/RHR Art Inbox/baldonnel_sightings_reference.html` (saved Oct 9 17:36), as the
+  Clearwater ones were: the page's new puppets (sandhill crane, bison, snowshoe hare in its spring
+  coat, wood frog, mosquito, pike, the magpie, Moe's hat, kit, boots and sandwich) and its seven
+  gags copied as written, each as `BALD.<key>` in wave3's shape (`beats` [time, id, text], `dur`,
+  `still`, `lead(E)`, `tail(E)`, `render`, `back`, `front`, `over`). The worker, the pickup, Moe,
+  the bearded worker and every helper are wave3.ts's own (the same drawings, character for
+  character; `worker` gained the page's two additions, `hatItem` and `noseC`). `sceneDef`
+  (scene-stage.ts `gagOf`) plays either module's. `bald-gags.test.ts` holds every beat to the
+  page's own time and text.
+- CHANGED FROM THE PAGE, each for a rule (the file's header says the same):
+  - A WIDER SCREEN: whoever walks or drives in starts `E` further out and goes `E` further at the
+    page's own speed at its edge (`OW_IN`, `BI_OUT`...); the flyers cover the extra way in the same time.
+  - NOTHING OVER THE LEASE: the strip's layers lie under the board, so the page's flyers, which
+    come down out of the sky above its picture, GLIDE IN LOW from the screen's edge inside the
+    strip and leave the same way (`CRANE_IN_Y`, `BIRD_IN_Y`...). The feather starts its fall inside
+    the strip; "garooo" is written a little lower.
+  - LANES: Right of Way: Moe walks BEHIND his truck (`back`, GY-8) and round its front to the
+    bison (`front`, GY+12); truck and bison on the walking lane. Last Ice: all of it on the pond's
+    line, behind the lane (`onPond`). Late Croak: the frogs in the puddle, in front of the lane.
+  - SOUND WORDS and whistled notes are drawn on the layer over everything (`over`). "Shoo!", "Got
+    one!" and "Hey!" are said in the game's own bubble (`lines`, `BALD_LINES`).
+  - THE SCALE'S NEEDLE is the scenery's own: Overweight says where it points
+    (`BALD.overweight.needle`, `BaldProp.needle`), and it is back at rest when the gag ends.
+- AS THE PAGE HAS IT, AND WORTH KNOWING: Right of Way parks Moe's pickup in front of the snowbank
+  (the lane has no other room: snowbank, scale, bison). The pickup faces right and no near door
+  opens (rule 12). Any worker in trouble is Slow Moe (rule 11); the bearded worker strolls
+  through Half Dressed and Late Croak.
+- TRIGGERS (`GAG_TRIGGERS`, Baldonnel only, each once a level; `GameView`): OVERWEIGHT = a rig
+  pushed at a road ban patch 3 times in the level (`patchPushes`; `onBump` hit `soft`, WHICH DOES
+  NOT COUNT toward Safety Sam's three in a row). TWO LEFT FEET = 3 taps on the sky above the lease.
+  RIGHT OF WAY = a tap on the bison sign. HALF DRESSED = 3 taps on the snowbank. LAST ICE = a tap
+  on the pond. LATE CROAK = a tap on the puddle. LUNCH TO GO = a pickup driven across or onto a
+  patch 3 times in the level (`drivesOnSoft`: the cells it newly covers; a fling is a move).
+  `?gag=overweight|cranes|bison|hare|ice|frogs|mosquito`.
+- LUNCH TO GO AND THE LEVELS AS THEY STAND (told to Jay): on levels 1, 5, 6, 7 and 8 one pickup
+  has a patch in its lane, and it lies in that pickup's own gate cell, so the pickup crosses it
+  only on its way OUT: once. Three times in a level means driving it out, Undo, and again. On
+  levels 2, 3, 4, 9 and 10 no pickup can reach a patch at all. Fix it in the levels (a slot rule
+  in gen-baldonnel.ts: a pickup can STOP on a patch) or in the trigger's count, when Jay says which.
+- LOG: `overweight`, `cranes` "Two Left Feet", `bison` "Right of Way", `hare` "Half Dressed", `ice`
+  "Last Ice", `frogs` "Late Croak", `mosquito` "Lunch to Go", after One Pea (40 entries). Captions,
+  riddles and plain hints are the page's own, word for word (a test reads them off the page).
+  Camo earned before them stays earned (`camoEarned` is saved); a new player needs all 40. Cards:
+  the page's own still of each, with its prop drawn behind (`LOG_ART`). Declared in
+  `DEV_ADDS.sightings`: the live build drops them from a log it saves, until the merge.
+- WITNESS LINES for the seven are Claude's stand-ins (lines.ts): Jay, write your own. NO SOUNDS
+  YET (`GAG_SOUNDS` rows are empty).
+- `test:e2e:sightings` has the seven on their real actions on a fresh log (`VIEW=390x664`, the
+  default, and `VIEW=375x635`) and Baldonnel's props; `REGION=baldonnel npm run test:e2e:frames`
+  (also `VIEW=390x664`, `VIEW=375x635`) and `REGION=6 npm run test:e2e:depth` hold them.
+  Filmstrips: `node tools/qc-filmstrip.mjs <gag> safari <folder> 6 1`.
 
 ## Fling (October upgrade, job U4; Oct 9; on `next`)
 - A QUICK FLICK SENDS A TRUCK ALL THE WAY DOWN ITS LANE, out through its gate if the rules let it

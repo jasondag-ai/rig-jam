@@ -2,7 +2,7 @@
 //  - the seventh tab: locked for a new player with its rule, open in demo mode, the thaw look on its list
 //  - road ban patches drawn where the level says, under the trucks; a pickup drives over one; a rig pushed at one
 //    stops and its own driver says why (no line when a pickup is pushed over); a flung rig stops at the patch
-//  - the standard scene: its five layers, no lease sign, and a knock for a tap on each of its props
+//  - the standard scene: its five layers, no lease sign, and a knock where a tap brings no sighting (the scale; the snowbank's first two)
 //  - ALL TEN LEVELS cleared at par by dragging
 // Needs the dev server (URL=, default the dev build on 5181). `ONLY=levels|rule|scene|tab`.
 import { webkit } from 'playwright';
@@ -135,20 +135,22 @@ for (const size of SIZES) {
     check(s.grounds.every((g, i) => i === 0 || g >= s.grounds[i - 1]), `their ground lines run from the back to the lane: ${s.grounds.map((g) => Math.round(g)).join(', ')}`);
     const inside = s.props.every((b) => b && b[2] > 4 && b[1] >= s.stripTop - 2 && b[1] + b[3] <= s.stripBottom + 2);
     check(inside, `the bison sign, snowbank, scale and dial, pond and puddle all stand inside the strip (${s.stripTop} to ${s.stripBottom}): ${JSON.stringify(s.props)}`);
-    // A tap on each prop: the usual knock.
+    // NO DEAD PROPS. The scale has no tap of its own (Overweight comes from a rig pushed at a patch): a knock. The snowbank
+    // wants three taps for Half Dressed: the first two give it a knock. (The sign, the pond and the puddle bring their
+    // sightings on one tap: `test:e2e:sightings` holds those.)
     const knocked = [];
-    for (const q of ['.bd-sign', '.bd-snowbank', '.bd-scale', '.bd-pond', '.bd-puddle']) {
-      const b = await page.evaluate((q) => { const r = document.querySelector(q).getBoundingClientRect(); return { x: Math.min(innerWidth - 8, r.left + r.width / 2), y: r.top + r.height / 2 }; }, q);
+    for (const q of ['.bd-scale', '.bd-snowbank', '.bd-snowbank']) {
+      const b = await page.evaluate((q) => { const r = document.querySelector(q).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, q);
       await page.touchscreen.tap(b.x, b.y);
       await wait(120);
-      knocked.push(await page.evaluate((q) => ({ n: Number(document.querySelector(q).dataset.knocked ?? 0), cls: document.querySelector(q).classList.contains('prop-knock') }), q));
+      knocked.push(await page.evaluate((q) => ({ n: Number(document.querySelector(q).dataset.knocked ?? 0), cls: document.querySelector(q).classList.contains('prop-knock'), gag: !!document.querySelector('.strip-layer[data-gag]') }), q));
       await wait(380);
     }
-    check(knocked.every((k) => k.n === 1 && k.cls), `a tap on each of the five props gives it a knock (${knocked.map((k) => k.n).join(', ')})`);
+    check(knocked.map((k) => k.n).join() === '1,1,2' && knocked.every((k) => k.cls && !k.gag), `a tap on the scale, and the first two on the snowbank, give a knock and bring nothing (${knocked.map((k) => k.n).join(', ')})`);
     await page.touchscreen.tap(8, s.stripBottom - 6);
     await wait(150);
     const stray = await page.evaluate(() => ['.bd-sign', '.bd-snowbank', '.bd-scale', '.bd-pond', '.bd-puddle'].map((q) => Number(document.querySelector(q).dataset.knocked ?? 0)).join(','));
-    check(stray === '1,1,1,1,1', 'a tap on the bare ground knocks nothing');
+    check(stray === '0,2,1,0,0', 'a tap on the bare ground knocks nothing');
     await page.screenshot({ path: `${process.env.OUT ?? `${process.env.HOME}/Desktop/RHR Art Inbox/qc/baldonnel`}/scene_${w}.png` }).catch(() => {});
     check(errors.length === 0, `no errors${errors.length ? ': ' + errors[0] : ''}`);
     await context.close();
