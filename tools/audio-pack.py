@@ -27,6 +27,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -202,8 +203,8 @@ def finished(pack: dict, credits: list) -> None:
 
 def only_finished() -> None:
     """`--finished`: adds (or refreshes) ONLY the finished files, touching nothing else in the pack. It needs no
-    Desktop sources and no rebuild of the music (a full run re-encodes the Opus loops and leaves Classic Rock to
-    tools/music-classic.py)."""
+    Desktop sources and no rebuild of the music (a full run re-encodes the Opus loops it builds itself; it keeps
+    Classic Rock and these files too)."""
     pack_path, credits_path = ROOT / 'src/audio/pack.json', ROOT / 'src/audio/credits.json'
     pack, credits = json.loads(pack_path.read_text()), json.loads(credits_path.read_text())
     finished(pack, credits)
@@ -218,9 +219,27 @@ def main() -> None:
     for d in (SFX_SRC, MUSIC_SRC):
         if not d.exists():
             sys.exit(f'missing {d}')
+    # MUSIC THIS SCRIPT DOES NOT BUILD IS KEPT (Classic Rock: tools/music-classic.py makes its five loops, and any
+    # other loop a later script adds): its files are set aside before the folder is cleared and put back after, and
+    # its rows in pack.json and credits.json are carried over as they are.
+    kept_music, kept_credits, aside = {}, [], None
+    if OUT == ROOT / 'public' / 'audio' and (ROOT / 'src/audio/pack.json').exists():
+        old_pack = json.loads((ROOT / 'src/audio/pack.json').read_text())
+        kept_music = {k: v for k, v in old_pack.get('music', {}).items() if k not in MUSIC}
+        kept_credits = [c for c in json.loads((ROOT / 'src/audio/credits.json').read_text()) if c['use'] in kept_music]
+        aside = Path(tempfile.mkdtemp(prefix='rig-jam-music-'))
+        for v in kept_music.values():
+            for f in v['formats']:
+                if not (OUT / 'music' / f['file']).exists():
+                    sys.exit(f'missing {OUT / "music" / f["file"]} (named in pack.json): restore it before a full run')
+                shutil.copy2(OUT / 'music' / f['file'], aside / f['file'])
     shutil.rmtree(OUT, ignore_errors=True)
     (OUT / 'sfx').mkdir(parents=True)
     (OUT / 'music').mkdir(parents=True)
+    if aside:
+        for f in aside.iterdir():
+            shutil.copy2(f, OUT / 'music' / f.name)
+        shutil.rmtree(aside)
     pack = {'sfx': {}, 'music': {}}
     sfx_credits = credits_table(SFX_SRC / 'CREDITS.md')
     music_credits = credits_table(MUSIC_SRC / 'CREDITS.md')
@@ -297,6 +316,8 @@ def main() -> None:
             c = {**c, 'title': ' '.join(w.capitalize() for w in re.sub(r'^(A_menu|B_inplay)_|_[abc]$', '', stem).split('_'))}
         credits.append({'use': key, 'kind': 'music', 'file': rel, **c})
 
+    pack['music'].update(kept_music)
+    credits.extend(kept_credits)
     tmp.unlink(missing_ok=True)
     if OUT == ROOT / 'public' / 'audio':
         (ROOT / 'src/audio/pack.json').write_text(json.dumps(pack, indent=1) + '\n')
