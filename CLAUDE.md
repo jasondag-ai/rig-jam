@@ -1314,6 +1314,34 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
+## The video kit (job U11; Oct 10): clips, stills and brand files made from the live game
+- `~/Desktop/RHR Art Inbox/video_kit/` is the kit Manus edits the two videos from (the COO's `VIDEO_BRIEF.md` names
+  every file; `CLIPS.md` in the kit lists what each one shows). JAY RECORDS NOTHING: `tools/video-kit/` makes it all
+  from the LIVE site, and changes nothing in the game. Everything temporary is under `qc-out/video-kit/`.
+- `recorder.mjs`: a headless Chromium at a 9:16 phone view (432 x 768 CSS px at 2.5 = 1080 x 1920). PICTURE: the
+  browser's own screencast (CDP `Page.startScreencast`), every painted frame with its time stamp (about 40 to 60 a
+  second), laid out at a constant 30 fps by `cut` (H.264, video range, BT.709). SOUND, WITHOUT TOUCHING THE GAME:
+  before the page's scripts run, `AudioNode.connect` is wrapped so whatever is connected to an AudioContext's
+  destination is also connected to a MediaStreamDestination and a MediaRecorder (Opus): it only listens. HOW FAR
+  THE RECORDED SOUND SITS FROM THE CLOCK DIFFERS FROM SESSION TO SESSION (65 to 390 ms), so each session plays one
+  30 ms 1 kHz beep of its own after its last clip (`calibrate`), finds it in the recording (a Goertzel filter) and
+  `cut` takes that lag out. A finger is real touch events (`Input.dispatchTouchEvent`), eased like a thumb
+  (`play.mjs` `drag`, `flick`, `tapOn`); the first tap of a session is on the HUD's title, which is no button
+  (sound may only start after a touch), and the effects are given time to load before a clip begins.
+- `record.mjs <session...>` plays a session and keeps it whole (`qc-out/video-kit/sessions/<name>/`: frames, sound,
+  marks, beats); `cut.mjs [clip...]` cuts the clips from marks (`CLIPS`); `stills.mjs evolution|shots|recut` makes
+  build 11 and the five stills at 390 x 844 at 3x; `brand.mjs` draws `title_logo.png` and `end_card.png` with the
+  game's own cover image and title styles; `assemble.py` copies everything into the kit, adds the Classic Rock menu
+  track and `credits.txt`, adds build 11's column to the contact sheet, writes `CLIPS.md` and zips the kit into
+  `~/Desktop/RHR Art Inbox/video_kit_zips/` in parts under 50 MB (they unzip into one `video_kit/`).
+- THE GAME'S OWN SWITCHES DO THE REST: `?demo=1` (every region open, nothing saved), `?gag=<name>` (a sighting, again
+  and again: one whole run is recorded between two gaps and the stretch with the joke is cut), `?fling=1` (fling is
+  off in an automated browser otherwise), `?cover=1`, and the saved sound settings (effects on, music off; the
+  finale with music on, replayed from Settings' "Watch the ending" so sound is already out when it starts).
+- FOUND ON THE WAY, NOT FIXED (no game changes in this job): the preview link `?gag=biffyb` shows Clearwater's
+  scenery in the strip behind its Cardium level on the live build. Real play is right, so the kit's Runaway Roll
+  was recorded on its real trigger (two bumps down into the bottom berm).
+
 ## The march starts at the crew photo (job U9c; Oct 10; shipped as 1.0.1)
 - THE GRADUATION MARCH STARTS AS THE CREW PHOTO STARTS, not at the credits (Jay, Oct 10), and plays on through the
   credits: about 22 s of its 26 (`sound.finaleMarch(part)`, called by finale.ts as the photo and then the credits
@@ -2055,6 +2083,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:fling` – fling: flicks, ordinary drags, pushes, Zero Incident, hints, at three phone sizes (start the dev server first)
 - `node tools/gen-turnaround.ts` – the 112 Sunday Turnarounds into `public/turnaround/` (REGENERATE BEFORE DEC 2028; about 11 minutes from nothing)
 - `node tools/gen-daily.ts [--check n]` – Daily Pads 61 to 790 into `public/daily/` (REGENERATE BEFORE NOV 2028); `--check` remakes pads 1..n and compares them with daily.json
+- `node tools/video-kit/record.mjs <session|all|list>`, then `node tools/video-kit/cut.mjs`, `node tools/video-kit/stills.mjs evolution shots`, `node tools/video-kit/brand.mjs`, `python3 tools/video-kit/assemble.py` – the video kit, from the live site (needs ffmpeg; see "The video kit")
 - `sh tools/push-dev.sh` – push branch `next` to the dev repo and wait for the dev site's build id
 - `npm run test:e2e:judge` – judge-proofing: a fresh visitor with a mouse at 1440 x 900 and 1280 x 720 in both engines, Share, the credit line, `?demo=1`, the load-error page; screenshots (start the dev server first)
 - `npm run test:e2e:sightings` – every sighting on its real trigger at Safari's visible size, and every tappable prop answers a tap (`VIEW=375x635`, `ONLY=beaver`, `URL=` the live site; start the dev server first)
