@@ -1512,6 +1512,52 @@ something, give exact clicks and one command at a time.
   run test:e2e:frames` (also `VIEW=390x664`) hold the depth rule and same start, same end on the
   new scene with the strip gags every region shares. Screenshots: `~/Desktop/RHR Art Inbox/qc/baldonnel/`.
 
+## The finale (October upgrade, job U9; Oct 10; on `next`)
+- A PERFECT GAME EARNS THE ENDING: every region level at 3 hard hats (`best` at par or under) and every Wildlife
+  Log entry found, on real progress (never Settings' demo mode, `?demo=1` or `?log=all`). Rules in
+  `src/ui/finale-state.ts` (pure, tested): `finaleEarned`, `finaleDue`, `finaleLink`. It plays ONCE, straight
+  after whatever completes it (`maybeFinale` in main.ts): after the last level's own win card, when the player
+  leaves it by Next, the next field or All levels; after the last sighting's toast (`SIGHTING_TOAST_MS`,
+  `GameViewHandlers.onSighting`); and, as a catch-all, before the level list. Remembered under ITS OWN KEY,
+  `rush-hour-rigs:finale` (`{v:1, seen:true}`; in `DEV_ADDS.keys`; Reset progress clears it).
+- REPLAY: once earned, Settings has "Watch the ending" right under Credits (`data-act="ending"`; with it in,
+  the rows sit closer and the two quiet buttons are 44 px, so the panel still fits 390 x 844). `?finale=1` plays
+  it on any build and saves nothing; `?finale=stage` shows the stage alone (tests).
+- PORTED FROM `~/Desktop/RHR Art Inbox/finale_reference.html` BY SCRIPT: `python3 tools/port-finale.py` writes
+  `src/ui/finale-art.ts` (the front-view puppets, the crew, the Polaroid, Still Here: the page's drawings, beats
+  and times as written, each edit asserted by exact text) and `src/ui/finale-reference.json` (beats, lengths,
+  credits rows and lines, which the unit tests read: tests run on CI, where the Desktop is not). Never
+  hand-edit either. The crew are the game's own puppets (wave3.ts's worker, the bear, the magpie...).
+- `src/ui/finale.ts` `FinaleView`: ITS OWN STAGE, built like a level's screen: the HUD, Cardium 1's pad with no
+  trucks (a real `BoardView`), the three buttons (inert), a summer strip with ONLY THE BIFFY (drawn by the
+  finale itself, not `BiffyProp`, so the close-up is the same drawing; back trees are the board's own). Four
+  parts on one clock (`FINALE_PARTS`, `FINALE_DUR`, `FINALE_BEATS`; `data-part`, `data-beat` on the screen):
+  1. THE PERFECT GAME CARD: the win card's own frame and classes ("Perfect Game!", "Every pad at par N of N",
+     "Every sighting found N of N" from the game's own counts, three hard hats, the Zero Incident medal, the
+     mascot, the Company Man's first smile and "Huh. Not bad." at 3 s, hard-hat confetti, ONE button "Crew
+     photo"). Its dimmed backdrop takes no touches, so "‹ Levels" still leaves.
+  2. THE CREW PHOTO: three rows on the strip's depth lines (`ROWS`; layers `finale-back/mid/front/over`,
+     `data-gag="photo"`), Moe at the tripod, "Squeeze in!", the self-timer, his run and hop-turn, the magpie,
+     SPLAT on his hard hat (STANDING_RULES 8's one exception), FLASH, "Seriously?", and the POLAROID (a
+     front-view still, `polaroidSvg`) drops onto the lease. The flash and the Polaroid lie UNDER the HUD and
+     the buttons. Treated as a cut: the crew is there when the card goes and gone when the credits lift, so
+     the frames check holds an empty first and last frame.
+  3. THE CREDITS (`FINALE_CREDITS` in lines.ts: Jay edits every line): the screen goes dark, the photo slides
+     to the top, the rows roll under it and stop on "Thanks for playing". A TAP SKIPS THEM. The dark does lie
+     over the HUD and the buttons, as on the page. Underneath, the crew has gone and the biffy's light is red.
+  4. STILL HERE: the view closes in on the biffy (`.finale-close` grows from the strip to the whole screen,
+     `ZOOM_AT`), creeeak, Moe in his bathrobe brushing his teeth, "You're still here?", "Shift's over. Go
+     home.", the door shuts.
+  THEN THE GAME'S OWN OPENING SCREEN: `toCover` calls cover.ts's `showCover` itself (never a copy), fades to
+  it, and leaves it alone on the page; a tap opens the level list as on any app open.
+- Lines: `FINALE_LINES` (lines.ts), the page's, word for word. NO SOUNDS YET (`crewSounds` is ported and unused).
+  Reduced motion: each part is a still, held (`STILL_AT`, `STILL_HOLD`).
+- Tests: `finale-state.test.ts`, `finale-art.test.ts`; `npm run test:e2e:finale` (WebKit DPR 3, 390 x 664 and
+  375 x 635: all four parts, what covers what, the cover, nothing saved; a save one par short; once only;
+  Watch the ending; not a sighting short, not in demo mode; stills in `~/Desktop/RHR Art Inbox/qc/finale/`);
+  `REGION=finale` in `test:e2e:frames` and `test:e2e:depth` holds the photo (`?gagtest=1`:
+  `window.__rhrFinale.hold(part, t)`).
+
 ## Baldonnel's seven sightings (October upgrade, job U6b; Oct 10; on `next`)
 - `src/ui/bald-gags.ts` (@ts-nocheck): PORTED BY A SCRIPT from
   `~/Desktop/RHR Art Inbox/baldonnel_sightings_reference.html` (saved Oct 9 17:36), as the
@@ -1595,6 +1641,8 @@ something, give exact clicks and one command at a time.
   which is a flick, and they mean a drag. With it off the board is exactly the old one (no held bumps).
 - The first how-to card ends "Flick a truck to send it all the way."
 - `node tools/gen-baldonnel.ts [minutes] [chain]` / `node tools/gen-baldonnel.ts write` – Baldonnel's ten levels: climbs the slots not yet in `tools/fixed-levels/`, then writes `src/levels/baldonnel.json`
+- `npm run test:e2e:finale` – the finale: `?finale=1` through all four parts to the cover, a save one par short, Watch the ending (start the dev server first)
+- `python3 tools/port-finale.py` – writes `src/ui/finale-art.ts` and `finale-reference.json` from the finale's reference page
 - `npm run test:e2e:baldonnel` – Baldonnel on a phone: the tab, road ban patches, the standard scene, all ten levels at par (start the dev server first)
 - `npm run test:e2e:fling` (WebKit touch at 375 and 390, Chromium as a Pixel; real-time
   gestures): a flick against a truck, into the berm and out a gate, Undo, four kinds of ordinary
