@@ -251,7 +251,7 @@ describe("the sound pass: Jay's picks, each on its beat, levelled alike", () => 
     // (And Baldonnel's: the hat's thud and the two boots' clonks in Overweight, the ice pan's bump in Last Ice.)
     expect(uses.filter((u) => u !== 'cold' && u !== 'overweight' && u !== 'ice').length).toBe(11);
     expect(uses.filter((u) => u === 'overweight' || u === 'ice').length).toBe(4);
-    expect([...new Set(uses)].sort()).toEqual(['biffyA', 'biffyB', 'cold', 'deer', 'sam', 'surveyor', 'worker']);
+    expect([...new Set(uses)].sort()).toEqual(['biffyA', 'biffyB', 'cold', 'deer', 'ice', 'overweight', 'sam', 'surveyor', 'worker']);
     const names = Object.values(GAG_SOUNDS).flatMap((b) => Object.values(b).flat()).map((c) => parseCue(c).name);
     for (const old of ['rattle', 'win', 'gate', 'exit']) expect(names).not.toContain(old);
   });
