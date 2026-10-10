@@ -6,7 +6,7 @@
 // session is "ambient", so the iPhone's silent switch mutes the game.
 import { haptic } from './haptics.ts';
 import { STEP_CELLS, chordLift, nextChain, winCue } from './cues.ts';
-import { GAG_LOOPS, GAG_SOUNDS, gagKeys, parseCue, type GagLoop } from './gag-sounds.ts';
+import { FINALE_ID, FINALE_SOUNDS, GAG_LOOPS, GAG_SOUNDS, finaleKeys, gagKeys, parseCue, type GagLoop } from './gag-sounds.ts';
 import { CORE_KEYS, LAZY_KEYS, MUSIC_FADE, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, sfxInfo, type MusicKey, type Scene, type SfxKey } from './pack.ts';
 import { loadAudioSettings, saveAudioSettings, type AudioSettings } from './settings.ts';
 import type { GagId } from '../ui/gag-triggers.ts';
@@ -489,7 +489,27 @@ export const sound = {
 
   /** A gag reached a beat: play what the table says for it (gag-sounds.ts). */
   gag(id: GagId, beat: string): void {
-    for (const cue of GAG_SOUNDS[id]?.[beat] ?? []) {
+    sound.cues(id, GAG_SOUNDS[id]?.[beat] ?? []);
+  },
+  /** THE FINALE reached a beat of one of its parts (gag-sounds.ts `FINALE_SOUNDS`). Its loops stop with `finaleEnd`. */
+  finale(part: string, beat: string): void {
+    sound.cues(FINALE_ID, FINALE_SOUNDS[part]?.[beat] ?? []);
+  },
+  /** The finale is to play: fetch the sounds only it uses. */
+  finaleWarm(): void {
+    audio.warm(finaleKeys().filter((k) => LAZY_KEYS.includes(k)));
+  },
+  /** The finale is over, or was left: whatever it had running or still to come stops. */
+  finaleEnd(): void {
+    sound.gagEnd(FINALE_ID as GagId);
+  },
+  /** The finale's credits: the menu loop of the player's music style, if Music is on. */
+  finaleCredits(): void {
+    audio.setScene('menu');
+  },
+  /** Plays a list of cues for `id` (a gag, or the finale): one-shots now or after their delay, loops started and stopped. */
+  cues(id: string, list: readonly string[]): void {
+    for (const cue of list) {
       const { op, name, delay, semis } = parseCue(cue);
       const act = () => {
         if (op === 'play') return audio.play(name as SfxKey, semis ? { rate: 2 ** (semis / 12) } : {});

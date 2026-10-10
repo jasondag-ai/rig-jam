@@ -16,6 +16,7 @@
 // credits fade back up. Nobody walks in or out.
 // Reduced motion: stills. The card as it ends; the Polaroid already down; "Thanks for playing"; Moe at the door.
 import { type GameState, type Level } from '../engine/index.ts';
+import { sound } from '../audio/engine.ts';
 import { BoardView } from './board-view.ts';
 import { placeBubble, type BubbleSide } from './bubble.ts';
 import { confettiBurst } from './confetti.ts';
@@ -220,6 +221,7 @@ export class FinaleView {
   /** Starts the ending (or, `stageOnly`, leaves the empty stage standing). */
   start(): void {
     if (this.opts.stageOnly) return;
+    sound.finaleWarm();
     this.go('card');
   }
   private time(): number {
@@ -231,6 +233,10 @@ export class FinaleView {
     this.el.dataset.part = part;
     this.clearBubble();
     if (part === 'card') this.showCard();
+    // (A part's own loops never run on into the next: the credits may be skipped while something is still to come.)
+    if (part !== 'photo') sound.finaleEnd();
+    if (part === 'card' && !reducedMotion()) sound.finale('card', FINALE_BEATS.card[0][1]);
+    if (part === 'credits') sound.finaleCredits();
     cancelAnimationFrame(this.raf);
     if (part !== 'card') this.tick();
   }
@@ -249,8 +255,13 @@ export class FinaleView {
   };
   private beat(part: FinalePart, t: number): void {
     const b = FINALE_BEATS[part].reduce((name, x) => (t >= x[0] ? x[1] : name), FINALE_BEATS[part][0][1]);
-    if (this.el.dataset.beat !== b) this.el.dataset.beat = b;
+    if (this.el.dataset.beat === b && this.beatPart === part) return;
+    this.el.dataset.beat = b;
+    this.beatPart = part;
+    // The beat's sounds (audio/gag-sounds.ts `FINALE_SOUNDS`), once, as it starts. Not for a still, nor a frame held by a test.
+    if (this.held === null && !reducedMotion()) sound.finale(part, b);
   }
+  private beatPart: FinalePart | null = null;
   private set(layer: HTMLElement, html: string, key: string): void {
     if (this.last[key] === html) return;
     this.last[key] = html;
@@ -475,6 +486,7 @@ export class FinaleView {
     cancelAnimationFrame(this.raf);
     this.timers.forEach((t) => window.clearTimeout(t));
     this.board.stopAmbient();
+    sound.finaleEnd();
   }
 
   /** For the tests (`?gagtest=1`): the photo held like any strip gag (`__rhrGag`), and any part at any time (`__rhrFinale`). */
