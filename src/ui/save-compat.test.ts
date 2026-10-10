@@ -12,7 +12,21 @@ import { hardHats } from './progress.ts';
 import { levelOpen, newlyOpened, regionEarned, regionOpen } from './unlocks.ts';
 import { LOG_ENTRIES, camoOn, foundCount, parseLog, shownEntries } from './wildlife-log.ts';
 
-const fixture = JSON.parse(readFileSync(new URL('../../e2e/fixtures/live-save-de534ad.json', import.meta.url), 'utf8')) as { build: string; localStorage: Record<string, string> };
+/**
+ * THE REAL SAVES, each made by playing a LIVE build (e2e/make-live-save.mjs) just before something shipped. A new one is
+ * added BESIDE the others, never in place of one. What each holds, for the checks below:
+ *   de534ad (Oct 8, before Clearwater): Cardium 1 to 6 at par, Near Miss and Lost Goose, the Daily Pad of Oct 8, 80s Retro.
+ *   ba54c2b (Oct 10, before 1.0.0: the October upgrade): Cardium 1 to 7 (level 5 a move over par: two hard hats), the
+ *     Back Scratcher and the Lost Goose, a hint spent, the Daily Pad of Oct 10, Chill.
+ */
+const FIXTURES = [
+  { build: 'de534ad', when: 'before Clearwater', day: '2026-10-08', cleared: 6, hats: [3, 3, 3, 3, 3, 3], found: ['nearmiss', 'geese'], names: ['Near Miss', 'Lost Goose'], audio: { sfx: true, music: true, style: 'retro' } },
+  { build: 'ba54c2b', when: 'before 1.0.0 (the October upgrade)', day: '2026-10-10', cleared: 7, hats: [3, 3, 3, 3, 2, 3, 3], found: ['deer', 'geese'], names: ['Lost Goose', 'Back Scratcher'], audio: { sfx: true, music: true, style: 'chill' } },
+] as const;
+const nextDay = (day: string) => { const d = new Date(`${day}T12:00:00`); d.setDate(d.getDate() + 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
+for (const F of FIXTURES) {
+const fixture = JSON.parse(readFileSync(new URL(`../../e2e/fixtures/live-save-${F.build}.json`, import.meta.url), 'utf8')) as { build: string; localStorage: Record<string, string> };
 const store = fixture.localStorage;
 
 async function withStorage<T>(run: () => Promise<T>): Promise<T> {
@@ -24,13 +38,13 @@ async function withStorage<T>(run: () => Promise<T>): Promise<T> {
   try { return await run(); } finally { g.localStorage = before; }
 }
 
-describe('a save from the live build before Clearwater', () => {
-  it('is a real one: the five keys the game writes, from build de534ad', () => {
-    expect(fixture.build).toBe('de534ad');
+describe(`a save from the live build ${F.build}, ${F.when}`, () => {
+  it('is a real one: the five keys the game writes, from that build', () => {
+    expect(fixture.build).toBe(F.build);
     expect(Object.keys(store).sort()).toEqual(['rush-hour-rigs-audio', 'rush-hour-rigs:last-level', 'rush-hour-rigs:log', 'rush-hour-rigs:region', 'rush-hour-rigs:v2']);
   });
 
-  it('progress: every best score, hint, perfect clear and Daily Pad is read back as saved', async () => {
+  it('progress: every best score, hint, perfect clear and Daily Pad is read back as saved; the same hard hats', async () => {
     const saved = JSON.parse(store['rush-hour-rigs:v2']);
     const p = await withStorage(async () => (await import('./progress.ts')).loadProgress());
     expect(p.best).toEqual(saved.best);
@@ -40,12 +54,11 @@ describe('a save from the live build before Clearwater', () => {
     expect(p.announced).toEqual(saved.announced);
     expect(p.standDowns).toEqual(saved.standDowns);
     expect(p.demo).toBe(false);
-    // Every level it has a score for is still a level of the game, under the same id, with the same par.
+    // Every level it has a score for is still a level of the game, under the same id, with the same par: the same hard hats.
     const levels = new Map(REGIONS.flatMap((r) => r.levels).map((l) => [l.id, l]));
-    for (const [id, moves] of Object.entries(p.best).filter(([id]) => !/^d\d/.test(id))) {
-      expect(levels.has(id), id).toBe(true);
-      expect(hardHats(moves, levels.get(id)!.par), id).toBe(3);
-    }
+    for (const id of Object.keys(p.best).filter((id) => !/^d\d/.test(id))) expect(levels.has(id), id).toBe(true);
+    expect(REGIONS[0].levels.slice(0, F.cleared).map((l) => hardHats(p.best[l.id], l.par))).toEqual([...F.hats]);
+    expect(Object.keys(p.best).filter((id) => !/^d\d/.test(id)).length).toBe(F.cleared);
     // Saving it again writes the same progress back.
     const again = await withStorage(async () => { const m = await import('./progress.ts'); m.saveProgress(m.loadProgress()); return JSON.parse(localStorage.getItem('rush-hour-rigs:v2')!); });
     expect(again).toEqual(saved);
@@ -53,36 +66,54 @@ describe('a save from the live build before Clearwater', () => {
 
   it('the streak counts as it did: one day, on the day it was saved and on the next', async () => {
     const p = await withStorage(async () => (await import('./progress.ts')).loadProgress());
-    expect(streak(p.dailyCleared, '2026-10-08').days).toBe(1);
-    expect(streak(p.dailyCleared, '2026-10-09').days).toBe(1);
+    expect(p.dailyCleared).toEqual([F.day]);
+    expect(streak(p.dailyCleared, F.day).days).toBe(1);
+    expect(streak(p.dailyCleared, nextDay(F.day)).days).toBe(1);
   });
 
-  it('the same regions and levels are open, and the new region is simply locked: no banner, nothing taken away', async () => {
+  it('the same regions and levels are open, and every newer region is simply locked: no banner, nothing taken away', async () => {
     const p = await withStorage(async () => (await import('./progress.ts')).loadProgress());
-    // Cardium and Montney (five of Cardium cleared), as before; Cardium's seventh level open, as before.
+    // Cardium and Montney (five of Cardium cleared), as before; the level after the last one cleared open, the one after that not.
     expect(REGIONS.map((_, i) => regionOpen(REGIONS, i, p.best, false))).toEqual([true, true, false, false, false, false, false]);
-    expect(levelOpen(REGIONS, 0, 6, p.best, false)).toBe(true);
-    expect(levelOpen(REGIONS, 0, 7, p.best, false)).toBe(false);
+    expect(levelOpen(REGIONS, 0, F.cleared, p.best, false)).toBe(true);
+    expect(levelOpen(REGIONS, 0, F.cleared + 1, p.best, false)).toBe(false);
     expect(levelOpen(REGIONS, 1, 0, p.best, false)).toBe(true);
-    // Clearwater is the sixth, after Bakken, earned like the others. Nothing new is announced to this player.
-    expect(REGIONS[5].id).toBe('clearwater');
+    // Clearwater is the sixth and Baldonnel the seventh, each earned like the others. Nothing new is announced to this player.
+    expect(REGIONS.map((r) => r.id).slice(5)).toEqual(['clearwater', 'baldonnel']);
     expect(regionEarned(REGIONS, 5, p.best)).toBe(false);
+    expect(regionEarned(REGIONS, 6, p.best)).toBe(false);
     expect(newlyOpened(REGIONS, p.best, p.announced)).toEqual([]);
-    // No level id of the new region collides with one already saved.
-    expect(REGIONS[5].levels.some((l) => l.id in p.best)).toBe(false);
+    // No level id of a newer region collides with one already saved.
+    expect(REGIONS.slice(5).some((r) => r.levels.some((l) => l.id in p.best))).toBe(false);
   });
 
   it('the Wildlife Log: both sightings still found, the count out of more', () => {
     const saved = JSON.parse(store['rush-hour-rigs:log']);
     const log = parseLog(store['rush-hour-rigs:log']);
     expect(log.found).toEqual(saved.found);
-    expect(log.found).toEqual(['nearmiss', 'geese']);
+    expect(log.found).toEqual([...F.found]);
     expect(foundCount(log)).toBe(2);
     expect(LOG_ENTRIES.length).toBe(40);
     expect(camoOn(log)).toBe(false);
-    // Every id the old log could hold is still an entry.
+    expect(shownEntries(log).filter((e) => log.found.includes(e.id)).map((e) => e.name)).toEqual([...F.names]);
+  });
+
+  it('sound settings: as saved', () => {
+    expect(parseAudioSettings(store['rush-hour-rigs-audio'])).toEqual(F.audio);
+  });
+
+  it('none of what 1.0.0 adds is in it, and reading it adds nothing: no Turnaround result, no ending seen', async () => {
+    const { parseTurnResults } = await import('./turnaround.ts');
+    const { parseFinale } = await import('./finale-state.ts');
+    expect(parseTurnResults(store['rush-hour-rigs:turnaround'] ?? null)).toEqual({ best: {} });
+    expect(parseFinale(store['rush-hour-rigs:finale'] ?? null).seen).toBe(false);
+  });
+});
+}
+
+describe('an old full log', () => {
+  it('every id the old log could hold is still an entry', () => {
     for (const id of ['magpie', 'spotter', 'moose', 'nearmiss', 'landowner', 'biffy', 'biffyB', 'marshmallow', 'geese', 'porcupine', 'lunch', 'sam', 'tongue', 'surveyor', 'deer', 'tourists', 'muskeg', 'cattrain', 'beaver', 'aurora', 'tumbleweed', 'pdogs', 'bale', 'cloud', 'night', 'bull', 'dug', 'bear']) expect(LOG_ENTRIES.some((e) => e.id === id), id).toBe(true);
-    expect(shownEntries(log).filter((e) => log.found.includes(e.id)).map((e) => e.name)).toEqual(['Near Miss', 'Lost Goose']);
   });
 
   it('a player who had found all 28 keeps the camo pickups, though there are five more to find', () => {
@@ -92,10 +123,6 @@ describe('a save from the live build before Clearwater', () => {
     expect(camoOn(full)).toBe(true);
     expect(full.dug).toBe(61000);
     expect(full.dugSwipes).toBe(40);
-  });
-
-  it('sound settings: effects on, music on, 80s Retro, as saved', () => {
-    expect(parseAudioSettings(store['rush-hour-rigs-audio'])).toEqual({ sfx: true, music: true, style: 'retro' });
   });
 });
 
