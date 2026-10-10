@@ -5,7 +5,7 @@ import { FINALE_SOUNDS, GAG_LOOPS, GAG_SOUNDS, finaleKeys, gagKeys, parseCue } f
 import { BALD } from '../ui/bald-gags.ts';
 import { FINALE_BEATS } from '../ui/finale.ts';
 import { WAVE3 } from '../ui/wave3.ts';
-import { CORE_KEYS, FINALE_TRACK, LAZY_KEYS, MAX_TRIM, MUSIC_STYLES, MUSIC_TARGET_MEAN, MUSIC_VOLUME, PLAY_TIER, SFX_KEYS, TARGET_MEAN, VOLUME, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, playTier, sfxInfo, finaleTrack, type SfxKey } from './pack.ts';
+import { CORE_KEYS, FINALE_DUCK, FINALE_RISE, FINALE_TRACK, LAZY_KEYS, MAX_TRIM, MUSIC_STYLES, MUSIC_TARGET_MEAN, MUSIC_VOLUME, PLAY_TIER, SFX_KEYS, TARGET_MEAN, VOLUME, gainFor, loopPoints, musicGain, musicInfo, musicKey, pickFormat, playTier, sfxInfo, finaleTrack, type SfxKey } from './pack.ts';
 import { GAG_TRIGGERS, type GagId } from '../ui/gag-triggers.ts';
 
 /** Baldonnel's seven sightings, and the nine files made for them and for the finale (job U10). */
@@ -438,6 +438,14 @@ describe("the finale's credits music (job U9b)", () => {
       expect(CREDITS.find((c) => c.use === FINALE_TRACK)).toMatchObject({ kind: 'music' });
       // It plays where a menu loop would, at a menu loop's level: well under the effects.
       expect(musicGain(now)).toBeLessThanOrEqual(MUSIC_VOLUME.menu * 1.6);
+      // UNDER THE CREW PHOTO (job U9c) it is held down, so the photo's effects stay clearly on top: every one of them
+      // at least twice as loud as the march there (6 dB), and the march about where in-play music sits.
+      const under = musicGain(now) * FINALE_DUCK;
+      for (const k of ['timer_beep', 'step', 'camera', 'splat', 'polaroid', 'chuckle'] as SfxKey[]) expect(gainFor(k) / under, k).toBeGreaterThanOrEqual(2);
+      expect(under).toBeLessThanOrEqual(MUSIC_VOLUME.play * 1.1);
+      expect(FINALE_RISE).toBeGreaterThan(0.5);
+      // From the photo's start to the credits' lift it plays about 22 of its 26 s: it never runs out.
+      expect(9.2 + 12 + 0.7).toBeLessThan(musicInfo(now).seconds);
     }
   });
 });

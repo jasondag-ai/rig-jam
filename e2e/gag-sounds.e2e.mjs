@@ -9,7 +9,7 @@
 // Needs a running dev server (or URL=…). `ONLY=beaver` runs one gag.
 import { webkit } from 'playwright';
 import { GAG_SOUNDS, gagKeys, finaleKeys, parseCue } from '../src/audio/gag-sounds.ts';
-import { CORE_KEYS, LAZY_KEYS, finaleTrack } from '../src/audio/pack.ts';
+import { CORE_KEYS, FINALE_DUCK, LAZY_KEYS, finaleTrack } from '../src/audio/pack.ts';
 import { PREVIEWS } from '../src/ui/gag-triggers.ts';
 import { UNLOCKED } from './progress.mjs';
 
@@ -160,7 +160,7 @@ if (!process.env.ONLY || process.env.ONLY === 'finale') {
   // Everything heard from here on, with the part and the part's own time it was heard at.
   await page.evaluate(() => {
     const a = window.__rhrAudio; let seen = 0, part = null, t0 = 0;
-    window.__fin = { heard: [], peak: 0, parts: [], scrub: [], steps: [], music: {}, beats: [], beat: null };
+    window.__fin = { heard: [], peak: 0, parts: [], scrub: [], steps: [], music: {}, musicAt: {}, level: {}, beats: [], beat: null };
     const tick = () => {
       const s = document.querySelector('.screen.finale'), now = performance.now();
       const p = s?.dataset.part ?? (document.querySelector('#app > .screen.cover') ? 'cover' : null);
@@ -172,7 +172,7 @@ if (!process.env.ONLY || process.env.ONLY === 'finale') {
       if (!last || last.on !== on) window.__fin.scrub.push({ on, part, t: (now - t0) / 1000 });
       const st = a.repeatRunning('finale:steps'), lastS = window.__fin.steps.at(-1);
       if (!lastS || lastS.on !== st) window.__fin.steps.push({ on: st, part, t: (now - t0) / 1000 });
-      if (part) { const k = a.musicState()?.key ?? null, seen = (window.__fin.music[part] ??= []); if (seen.at(-1) !== k) seen.push(k); }
+      if (part) { const m = a.musicState(), k = m?.key ?? null, seen = (window.__fin.music[part] ??= []); if (seen.at(-1) !== k) { seen.push(k); (window.__fin.musicAt[part] ??= []).push({ k, t: (now - t0) / 1000 }); } if (m) (window.__fin.level[part] ??= []).push(m.level); }
       requestAnimationFrame(tick);
     };
     tick();
@@ -208,10 +208,18 @@ if (!process.env.ONLY || process.env.ONLY === 'finale') {
   // (The flash and the photo are heavy frames at DPR 3: the picture itself runs a frame or two late there, and the sound goes with the picture. Held to their own beats.)
   const onBeat = (part, beat, n) => { const b = fin.beats.find((x) => x.part === part && x.beat === beat), h = fin.heard.find((x) => x.part === part && x.n === n && b && x.t >= b.t - 0.02); return b && h ? h.t - b.t : NaN; };
   check(pol.length === 1 && near(pol[0], 6.05, 0.3) && near(onBeat('photo', 'the-photo-drops', 'polaroid'), 0, 0.06) && heh.length === 1 && near(heh[0], 6.15, 0.3) && near(onBeat('photo', 'heh-heh-the', 'chuckle'), 0, 0.06) && near(onBeat('photo', 'splat-flash-at', 'camera'), 0, 0.06), `the Polaroid's whirr as the photo drops (${pol.join()} s); the magpie's chuckle (${heh.join()} s)`);
-  // (The graduation music once it is in the pack, `finale_credits`; until then the menu loop of the player's style. It fades out as the credits lift and Still Here is quiet; with no track yet the menu loop plays on.)
+  // THE MARCH (job U9c): it starts as the crew photo starts, held down under the photo's effects, plays on through the
+  // credits at its full level, fades out as they lift, and Still Here is quiet. (A pack without the track keeps the menu loop.)
   const TRACK = finaleTrack();
-  check(mid.music === (TRACK ?? 'retro_menu') && fin.music.credits.includes(TRACK ?? 'retro_menu'), `under the credits: ${TRACK ? 'the graduation music' : "the menu loop of the player's own style (no graduation music in the pack yet)"} (${mid.music})`);
-  check(TRACK ? fin.music.still.join() === '' && fin.music.credits.at(-1) === null : fin.music.still.join() === 'retro_menu', `as the credits lift: ${TRACK ? 'it fades out, and Still Here is quiet' : 'the menu loop plays on'} (${fin.music.credits.map(String).join(' > ')}; then ${fin.music.still.map(String).join(' > ')})`);
+  if (TRACK) {
+    const began = fin.musicAt.photo?.find((x) => x.k === TRACK), lv = (part) => fin.level[part] ?? [];
+    check(!!began && began.t < 0.5 && fin.music.photo.at(-1) === TRACK, `the march starts as the crew photo starts (${began ? began.t.toFixed(2) : 'never'} s into the photo) and plays through it (${fin.music.photo.map(String).join(' > ')})`);
+    check(lv('photo').length > 100 && lv('photo').slice(30).every((x) => x === FINALE_DUCK), `under the photo it is held down to ${FINALE_DUCK} of its level, so the beeps, the steps, the flash and the Polaroid stay on top`);
+    check(mid.music === TRACK && fin.music.credits[0] === TRACK && lv('credits').some((x) => x === 1) && fin.musicAt.credits.filter((x) => x.k === TRACK).length <= 1, `it plays on into the credits without starting again, at its full level there (${fin.music.credits.map(String).join(' > ')})`);
+    check(fin.music.credits.at(-1) === null && fin.music.still.join() === '', `as the credits lift it fades out, and Still Here is quiet (then ${fin.music.still.map(String).join(' > ')})`);
+  } else {
+    check(mid.music === 'retro_menu' && fin.music.still.join() === 'retro_menu', "no graduation music in the pack: the menu loop of the player's own style plays through");
+  }
   check(fin.heard.filter((h) => h.part === 'credits' && !h.n.startsWith('music:')).length === 0, 'the credits have no effects of their own');
   const creak = at('still', 'creak'), scrub = fin.scrub.filter((x) => x.part === 'still');
   const ons = scrub.filter((x) => x.on).map((x) => +x.t.toFixed(2)), offs = scrub.filter((x) => !x.on && x.t > 1).map((x) => +x.t.toFixed(2));

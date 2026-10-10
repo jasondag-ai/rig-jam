@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 since Oct 10) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 the same day) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1313,6 +1313,20 @@ something, give exact clicks and one command at a time.
   there only the button's "Copied!" is checked).
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
+
+## The march starts at the crew photo (job U9c; Oct 10; shipped as 1.0.1)
+- THE GRADUATION MARCH STARTS AS THE CREW PHOTO STARTS, not at the credits (Jay, Oct 10), and plays on through the
+  credits: about 22 s of its 26 (`sound.finaleMarch(part)`, called by finale.ts as the photo and then the credits
+  begin; it never starts twice). It is fetched as the ending opens (`sound.finaleWarm` > `audio.warmMusic`), so it
+  is there on the photo's first frame. Still once, still following the Music switch, still fading out as the
+  credits lift or are skipped (and when the ending is left); Still Here stays quiet; the menu loop returns with
+  the cover. (Where the U9b notes below say it plays "under the credits", read "from the photo through the credits".)
+- UNDER THE PHOTO IT IS HELD DOWN (pack.ts `FINALE_DUCK` 0.55 of its level: about where in-play music sits), because
+  at its full level it was nearly as loud as the self-timer's beep and Moe's footsteps; a unit test holds every one
+  of the photo's effects at least twice as loud as the march there. As the credits begin it rises to its full
+  level over `FINALE_RISE` 1.2 s (`audio.setOverrideLevel`). To retune: those two numbers.
+- `ONLY=finale npm run test:e2e:gagsounds` holds the start (within half a second of the photo's), the two levels,
+  one continuous play into the credits, the fade and the quiet after.
 
 ## 1.0.0: the October upgrade is live (job U8; Oct 10, 2026)
 - WHAT SHIPPED, all of it built on `next` and described in its own section: Daily Pads forever (U2), Sunday

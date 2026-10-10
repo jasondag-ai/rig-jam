@@ -106,11 +106,19 @@ export const musicInfo = (key: MusicKey): { seconds: number; mean: number; forma
 /**
  * THE FINALE'S CREDITS MUSIC (job U9b): one track, `finale_credits` in pack.json's music: graduation music, the trio
  * of Elgar's "Pomp and Circumstance" March No. 1 (Jay's pick, take A, the United States Marine Band; public domain;
- * `python3 tools/audio-pack.py --finale-music` copies it in as delivered). It plays ONCE under the credits (26 s; it
- * is not a loop), at a menu loop's level, follows the Music switch, and fades out as the credits lift. `finaleTrack`
- * is null for a pack without it, and the credits then keep the menu loop of the player's style.
+ * `python3 tools/audio-pack.py --finale-music` copies it in as delivered). It plays ONCE (26 s; it is not a loop), from
+ * the start of the crew photo through the credits, follows the Music switch, and fades out as the credits lift.
+ * `finaleTrack` is null for a pack without it, and the ending then keeps the menu loop of the player's style.
  */
 export const FINALE_TRACK = 'finale_credits';
+/**
+ * THE MARCH STARTS WITH THE CREW PHOTO (Jay, Oct 10; job U9c) and plays on through the credits: about 22 s of its 26.
+ * UNDER THE PHOTO IT IS HELD DOWN to this share of its level (about where in-play music sits), so the self-timer's
+ * beeps, Moe's footsteps, the flash, the splat and the Polaroid stay clearly on top; as the credits begin it rises to
+ * its full level over `FINALE_RISE` seconds.
+ */
+export const FINALE_DUCK = 0.55;
+export const FINALE_RISE = 1.2;
 export const finaleTrack = (music: Record<string, unknown> = pack.music): MusicKey | null => (FINALE_TRACK in music ? (FINALE_TRACK as MusicKey) : null);
 
 /**
