@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.7 on Oct 11) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.8 on Oct 11) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1322,6 +1322,9 @@ something, give exact clicks and one command at a time.
   1280 kb/s; AAC 128 kb/s; `-movflags +faststart`; 5.6 MB, under the 6 MB limit). Its poster is the game's own
   `../cover.webp`. Its three buttons lead to the live game, `?demo=1` and `?finale=1` (absolute links, on the dev
   copy too). The page takes its fonts from Google Fonts, as written.
+- COPIED AGAIN (job U18, 1.0.8): the COO changed two lines (the heading "Evenings and weekends, directing AI", no day
+  count; "Manus found the sounds.", nothing about cutting videos). A new version of the page is always copied over
+  whole and compared byte for byte with the inbox's.
 - APART FROM THE GAME: nothing in `src/` knows of it. The service worker's list leaves out `judges/`
   (vite.config.ts), and its fetch handler returns at once for anything under `judges/` (service-worker.ts).
   WITHOUT THAT, a phone with the game installed that opened the guide would have had the GUIDE kept as the game's
