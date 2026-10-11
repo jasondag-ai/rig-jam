@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DIG_FINDS, DIG_SLOTS, QUIET_SCREENS } from './dig-finds.ts';
-import { DEEP, DIG, EARTH, ODDITIES, SURFACE_PX, UPPER_KM, clockText, depthKm, dugStill, gaugeLine, kerguelenSvg, kmText, layerAt, layerBackground, layerEdge, layerTop, marksFrom, oddityArt, oddityBox, seabedSvg, tileSvg, tilesIn, tilesNear, SWIPE_SHARE, SwipeCount } from './log-deep.ts';
+import { DEEP, DIG, EARTH, ODDITIES, SURFACE_PX, UPPER_KM, clockText, depthKm, dugStill, gaugeLine, kerguelenSvg, kmText, layerAt, layerBackground, layerEdge, layerTop, marksFrom, oddityArt, oddityBox, seabedSvg, tileSvg, tilesIn, tilesNear, SWIPE_SHARE, SwipeCount, arrivalCard, recordLines, recordToast, swipesText } from './log-deep.ts';
 import { FORMATIONS } from './log-dig.ts';
 import { BURIED_LINES } from './lines.ts';
 import { LOG_ENTRIES, complete, parseLog, record, recordDig, shownEntries, type Sighting } from './wildlife-log.ts';
@@ -177,6 +177,48 @@ describe('Dug Through: a hidden entry, the stopwatch and the swipes', () => {
     expect(parseLog(JSON.stringify({ v: 3, ...quicker.log }))).toMatchObject({ dug: 58000, dugSwipes: 31 });
     expect(parseLog(JSON.stringify({ v: 3, found: ['dug'], dug: -5, dugSwipes: 3 })).dug).toBeUndefined();
     expect(parseLog(JSON.stringify({ v: 3, found: ['dug'], dug: 5000, dugSwipes: 2.5 })).dugSwipes).toBeUndefined();
+  });
+
+  it('two records, named plainly, each on its own line: never one line that reads as a single run', () => {
+    expect(recordLines(12400, 3)).toEqual(['Best time 0:12.4', 'Fewest swipes 3']);
+    expect(recordLines(75000, 1)).toEqual(['Best time 1:15.0', 'Fewest swipes 1']);
+    expect(swipesText(1)).toBe('1 swipe');
+    expect(swipesText(4)).toBe('4 swipes');
+  });
+
+  it('the arrival card: the first dig is the new sighting; a slower dig shows the records as they stand; a better time or fewer swipes is a NEW RECORD with the old figure beside the new', () => {
+    // Three digs in a row and one more: slower, faster, fewer swipes, then both at once.
+    const first = recordDig(parseLog(null), 15000, 5);
+    expect(first.was).toEqual({ time: undefined, swipes: undefined });
+    expect(arrivalCard(15000, 5, first)).toEqual({ title: 'New sighting!', note: 'Dug Through added to your Wildlife Log.', run: 'This dig: 5 swipes in 0:15.0', records: [{ text: 'Best time 0:15.0', beaten: false }, { text: 'Fewest swipes 5', beaten: false }], record: false, confetti: true });
+    const slower = recordDig(first.log, 21300, 7);
+    expect(slower.log).toMatchObject({ dug: 15000, dugSwipes: 5 });
+    expect(arrivalCard(21300, 7, slower)).toEqual({ title: 'Dug Through!', run: 'This dig: 7 swipes in 0:21.3', records: [{ text: 'Best time 0:15.0', beaten: false }, { text: 'Fewest swipes 5', beaten: false }], record: false, confetti: false });
+    // Faster, with MORE swipes: the time's record falls at once, the swipes' stands.
+    const faster = recordDig(slower.log, 12400, 6);
+    expect(faster.log).toMatchObject({ dug: 12400, dugSwipes: 5 });
+    expect(faster.was).toEqual({ time: 15000, swipes: 5 });
+    const c2 = arrivalCard(12400, 6, faster);
+    expect(c2).toEqual({ title: 'NEW RECORD!', run: 'This dig: 6 swipes in 0:12.4', records: [{ text: 'Best time 0:12.4', was: 'was 0:15.0', beaten: true }, { text: 'Fewest swipes 5', beaten: false }], record: true, confetti: true });
+    expect(recordToast(c2)).toBe('Best time 0:12.4 (was 0:15.0)');
+    // Fewer swipes, but slower: the swipes' record falls, the time's stands.
+    const fewer = recordDig(faster.log, 30000, 3);
+    expect(fewer.log).toMatchObject({ dug: 12400, dugSwipes: 3 });
+    const c3 = arrivalCard(30000, 3, fewer);
+    expect(c3.title).toBe('NEW RECORD!');
+    expect(c3.records).toEqual([{ text: 'Best time 0:12.4', beaten: false }, { text: 'Fewest swipes 3', was: 'was 5', beaten: true }]);
+    expect(recordToast(c3)).toBe('Fewest swipes 3 (was 5)');
+    // Both at once.
+    const both = recordDig(fewer.log, 9900, 1);
+    const c4 = arrivalCard(9900, 1, both);
+    expect(c4.run).toBe('This dig: 1 swipe in 0:09.9');
+    expect(c4.records).toEqual([{ text: 'Best time 0:09.9', was: 'was 0:12.4', beaten: true }, { text: 'Fewest swipes 1', was: 'was 3', beaten: true }]);
+    expect(recordToast(c4)).toBe('Best time 0:09.9 (was 0:12.4) · Fewest swipes 1 (was 3)');
+    // The same figures again are no record.
+    expect(arrivalCard(9900, 1, recordDig(both.log, 9900, 1)).record).toBe(false);
+    // Saved and read back, the records are the same two numbers (nothing new is saved for any of this).
+    expect(Object.keys(JSON.parse(JSON.stringify({ v: 3, ...both.log }))).sort()).toEqual(['camo', 'camoEarned', 'dug', 'dugSwipes', 'found', 'v']);
+    for (const c of [c2, c3, c4]) for (const t of [c.title, c.run, ...c.records.map((x) => x.text + (x.was ?? ''))]) expect(t).not.toMatch(/—|–/);
   });
 
   it('it counts toward the camo unlock: every other entry is not enough, and the dig can be the one that completes the log', () => {
