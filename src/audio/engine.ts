@@ -491,6 +491,10 @@ export const sound = {
     if (cue === 'ditty') audio.play('tada', { delay: after });
     if (cue === 'trombone') audio.play('lose', { delay: after });
   },
+  /** A record beaten (the dig's best time or fewest swipes): the xylophone ta-da. */
+  record(): void {
+    audio.play('tada');
+  },
   /** The streak sign ticks up. */
   streakUp(): void {
     audio.play('streak', { delay: 0.9 });

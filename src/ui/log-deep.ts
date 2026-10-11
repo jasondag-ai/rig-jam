@@ -148,6 +148,40 @@ export function clockText(ms: number): string {
   return `${Math.floor(t / 600)}:${String(Math.floor(t / 10) % 60).padStart(2, '0')}.${t % 10}`;
 }
 
+// ---------- Dug Through: the two records, and the card at the far side (job U15) ----------
+
+/** "3 swipes" / "1 swipe". */
+export const swipesText = (n: number): string => `${n} ${n === 1 ? 'swipe' : 'swipes'}`;
+/** THE TWO RECORDS, NAMED PLAINLY, each on its own line: never one line that reads as a single run. */
+export const recordLines = (ms: number, swipes: number): [string, string] => [`Best time ${clockText(ms)}`, `Fewest swipes ${swipes}`];
+
+/** One record's line on the arrival card: its words, what it was before if this dig beat it. */
+export interface RecordRow { text: string; was?: string; beaten: boolean }
+/** The card at the far side: its heading, a note under it (the first time), this dig, and the two records. */
+export interface ArrivalCard { title: string; note?: string; run: string; records: RecordRow[]; record: boolean; confetti: boolean }
+/**
+ * What the arrival card says after a dig of `ms` and `swipes`. `r`: what recording it gave (wildlife-log.ts
+ * `recordDig`: the records now, which of them this dig set, what they were). The first dig is the new sighting; a
+ * later dig that beats either record is a NEW RECORD, with the old figure beside the new; any other dig just shows
+ * itself and the records as they stand.
+ */
+export function arrivalCard(ms: number, swipes: number, r: { isNew: boolean; best: number; bestSwipes: number; newBest: boolean; fewest: boolean; was: { time?: number; swipes?: number } }): ArrivalCard {
+  const [time, few] = recordLines(r.best, r.bestSwipes);
+  const record = !r.isNew && (r.newBest || r.fewest);
+  const records: RecordRow[] = [
+    { text: time, beaten: !r.isNew && r.newBest, ...(!r.isNew && r.newBest && r.was.time !== undefined ? { was: `was ${clockText(r.was.time)}` } : {}) },
+    { text: few, beaten: !r.isNew && r.fewest, ...(!r.isNew && r.fewest && r.was.swipes !== undefined ? { was: `was ${r.was.swipes}` } : {}) },
+  ];
+  return {
+    title: r.isNew ? 'New sighting!' : record ? 'NEW RECORD!' : 'Dug Through!',
+    ...(r.isNew ? { note: 'Dug Through added to your Wildlife Log.' } : {}),
+    run: `This dig: ${swipesText(swipes)} in ${clockText(ms)}`,
+    records, record, confetti: r.isNew || record,
+  };
+}
+/** The toast for a new record: which one, the new figure and the old. */
+export const recordToast = (card: ArrivalCard): string => card.records.filter((x) => x.beaten).map((x) => `${x.text}${x.was ? ` (${x.was})` : ''}`).join(' · ');
+
 // ---------- Oddities on the way down ----------
 
 import { DIG_FINDS, type DigFind } from './dig-finds.ts';

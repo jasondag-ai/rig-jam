@@ -2,7 +2,7 @@
 // four with a window on the formation between the groups, the strata drawn behind everything
 // once the page is laid out, the formation pills, the buried objects and what they say.
 import { BETWEEN, BURIED, FORMATIONS, GLINTS, GRASS, GROUP, buriedArt, buriedBox, layersFrom, pillLocked, strataSvg, tunnelSvg, type FormationId } from './log-dig.ts';
-import { SwipeCount, DEEP as DEEP_LAYERS, DIG, ODDITIES, clockText, depthKm, gaugeLine, kerguelenSvg, kmText, layerBackground, layerEdge, marksFrom, oddityArt, oddityBox, seabedSvg, tileSvg, tilesNear, type DeepId, type Mark } from './log-deep.ts';
+import { type ArrivalCard, SwipeCount, DEEP as DEEP_LAYERS, DIG, ODDITIES, clockText, depthKm, gaugeLine, kerguelenSvg, kmText, layerBackground, layerEdge, marksFrom, oddityArt, oddityBox, seabedSvg, tileSvg, tilesNear, type DeepId, type Mark } from './log-deep.ts';
 import { BURIED_LINES } from './lines.ts';
 import { onTap } from './tap.ts';
 import { confettiBurst } from './confetti.ts';
@@ -17,7 +17,7 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
  * `onArrive(ms, swipes)` is called each time the page is scrolled from the grass right through to
  * Kerguelen; what it returns (a title, lines, and whether to throw confetti) is shown on the arrival card there.
  */
-export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regionId: string) => boolean, onArrive: (ms: number, swipes: number) => { title: string; lines: string[]; confetti?: boolean } | null = () => null): { el: HTMLElement; layout: () => void } {
+export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regionId: string) => boolean, onArrive: (ms: number, swipes: number) => ArrivalCard | null = () => null): { el: HTMLElement; layout: () => void } {
   const col = document.createElement('div');
   col.className = 'dig-col';
   // (The gauge rides down the side of the screen: a sticky rail of no height, the pill hung from it.)
@@ -219,16 +219,23 @@ export function mountDig(cards: HTMLElement[], reward: HTMLElement, open: (regio
       clockEl.classList.add('final');
       const card = onArrive(ms, Math.max(1, swipes.count));
       if (arrival && card) {
-        arrival.innerHTML = `<b></b>${card.lines.map(() => '<span></span>').join('')}`;
+        // The heading (NEW RECORD! big, when one fell), a note the first time, this dig, then the two records each on its
+        // own line, a beaten one with what it was beside it.
+        arrival.innerHTML = `<b></b>${card.note ? '<span class="note"></span>' : ''}<span class="run"></span>${card.records.map((r) => `<span class="rec${r.beaten ? ' beaten' : ''}"><em></em>${r.was ? '<i></i>' : ''}</span>`).join('')}`;
         arrival.querySelector('b')!.textContent = card.title;
-        arrival.querySelectorAll('span').forEach((el, i) => (el.textContent = card.lines[i]));
+        if (card.note) arrival.querySelector('.note')!.textContent = card.note;
+        arrival.querySelector('.run')!.textContent = card.run;
+        arrival.querySelectorAll('.rec').forEach((el, i) => { el.querySelector('em')!.textContent = card.records[i].text; const was = el.querySelector('i'); if (was) was.textContent = card.records[i].was!; });
+        arrival.classList.toggle('record', card.record);
         arrival.hidden = false;
         // The hard-hat confetti, over the page (not with reduced motion).
         if (card.confetti && !reducedMotion()) confettiBurst(document.body, window.innerHeight, 'over-page');
       }
     }
-    if (top <= 0 && (done || started)) {
-      // Back on the grass: the next dig starts from nothing.
+    // BACK AT THE GRASS (the very top, or anywhere the gauge still reads 0 km: the wellhead and the grass are on the
+    // screen): the stopwatch is ready again, and EVERY DIG FROM THERE TO THE ISLAND COUNTS. (It used to take the page's
+    // exact top: from a few pixels short of it the next dig was not timed at all, and the old figures stood.)
+    if ((top <= 0 || km <= 0) && (done || started)) {
       window.clearInterval(ticker);
       started = 0;
       done = false;

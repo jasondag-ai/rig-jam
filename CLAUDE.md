@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1, 1.0.2 and 1.0.3 the same day) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1314,6 +1314,30 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
+## Dug Through's records (job U15; Oct 10; shipped as 1.0.4)
+- JAY, ON HIS PHONE: he beat his best time, the record did not change and nothing said so. THE CAUSE: the stopwatch
+  was made ready again only at the page's EXACT TOP (`scrollTop <= 0`). From a few pixels short of it (the grass
+  and the wellhead on the screen, to the eye "back at the top") the next dig was not timed at all: the old clock and
+  the old card stood. The saving itself was never wrong (three digs with real touch scrolling, each from the exact
+  top, kept every record). Two more things hid a real record: Dug Through's own card in the log was only written
+  when the log was opened, and the card's one line "New best! 3 swipes, 0:12.4" mixed the two records into what
+  read as a single run.
+- EVERY DIG FROM THE GRASS TO THE ISLAND COUNTS: the stopwatch is ready again at the top OR ANYWHERE THE GAUGE STILL
+  READS 0 km (log-dig-view.ts). Part way back up and down again is no dig, and changes nothing.
+- TWO RECORDS, NAMED PLAINLY, EACH ON ITS OWN LINE (log-deep.ts `recordLines`): "Best time 0:12.4" and "Fewest
+  swipes 3". The same on the arrival card and on Dug Through's card in the log (`white-space: pre-line`), which is
+  rewritten the moment a dig ends. Each is kept on its own (`recordDig`: `dug` ms, `dugSwipes`; `was` = what they
+  were): a faster dig with more swipes takes the time's record at once and leaves the swipes'. NOTHING NEW IS SAVED.
+- THE ARRIVAL CARD (`arrivalCard`, pure and tested; drawn by log-dig-view.ts): the heading, "This dig: n swipes in
+  m:ss.t", then the two records. First ever: "New sighting!" and its note. A RECORD BEATEN: "NEW RECORD!" big
+  (`.dig-arrival.record`, 30 px), the beaten record in orange with the old figure beside it ("was 0:15.0"),
+  hard-hat confetti, a toast ("New record!" over `recordToast`: which record, new and old) and the ta-da
+  (`sound.record()`, with Sound effects on). Any other dig: "Dug Through!" and the records as they stand.
+- `npm run test:e2e:records` (WebKit, DPR 3, 390 x 664 and 375 x 635): the first dig, a slower one, part way up
+  and down, a faster one, one with fewer swipes, each from the grass A FEW PX SHORT OF THE TOP; leaving the log and
+  coming back; a reload; saved values and every word of the card; the fanfare; `?demo=1` saving nothing.
+  `test:e2e:dig` has the new wording.
+
 ## Mouse and trackpad play (job U14; Oct 10; shipped as 1.0.3)
 - JAY, ON HIS MAC WITH A MOUSE: trucks would not go where he let them go, or snapped back. THE LIKELY CAUSE: FLING
   (U4). It is on for people and OFF in an automated browser, so no scripted drag had ever met it with a mouse. A hand
@@ -1824,6 +1848,7 @@ something, give exact clicks and one command at a time.
   which is a flick, and they mean a drag. With it off the board is exactly the old one (no held bumps).
 - The first how-to card ends "Flick a truck to send it all the way."
 - `node tools/gen-baldonnel.ts [minutes] [chain]` / `node tools/gen-baldonnel.ts write` – Baldonnel's ten levels: climbs the slots not yet in `tools/fixed-levels/`, then writes `src/levels/baldonnel.json`
+- `npm run test:e2e:records` – Dug Through's records: digs in a row from the grass, a new record's card, toast and ta-da, a reload, `?demo=1` (start the dev server first)
 - `npm run test:e2e:mouse` – mouse play like a real hand: Chromium and WebKit at two desktop sizes, fling on, every kind of release, never stuck, `?pointerlog=1` (start the dev server first)
 - `npm run test:e2e:best` – the best-from-here line: with a hint in normal play, always on the `?demo=1` link, every kind of pad, at Safari's two sizes (start the dev server first)
 - `npm run test:e2e:finale` – the finale: `?finale=1` through all four parts to the cover, a save one par short, Watch the ending (start the dev server first)

@@ -4278,8 +4278,18 @@ svg.dig-tunnel {
 
 .dig-arrival[hidden] { display: none; }
 .dig-arrival b { font-size: 22px; font-weight: 700; color: var(--ink); }
-.dig-arrival span { font-size: 16px; font-weight: 600; }
-.dig-arrival span + span { font-size: 14px; color: var(--ink-dim); }
+.dig-arrival span { font-size: 14px; font-weight: 600; color: var(--ink-dim); }
+.dig-arrival .note { font-size: 15px; color: var(--ink); }
+/* The two records, each on its own line: "Best time 0:12.4", "Fewest swipes 3". A beaten one stands out, with what it was beside it. */
+.dig-arrival .rec { display: flex; align-items: baseline; gap: 8px; font-size: 16px; color: var(--ink); }
+.dig-arrival .rec em { font-style: normal; }
+.dig-arrival .rec i { font-style: normal; font-size: 13px; font-weight: 600; color: var(--ink-dim); }
+.dig-arrival .rec.beaten em { font-weight: 700; color: #d0601b; }
+/* NEW RECORD! */
+.dig-arrival.record { border-color: #d0601b; box-shadow: inset 0 -4px 0 var(--cream-dark), 0 4px 0 #d0601b; }
+.dig-arrival.record b { font-size: 30px; letter-spacing: 0.5px; color: #d0601b; }
+/* Dug Through's own card in the log: its two records, one a line. */
+.log-card[data-id='dug'] p { white-space: pre-line; }
 
 @keyframes arrival-pop {
   from { transform: translateX(-50%) scale(0.7); opacity: 0; }

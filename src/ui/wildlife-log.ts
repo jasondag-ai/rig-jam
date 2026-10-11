@@ -158,16 +158,17 @@ export function record(log: WildlifeLog, id: Sighting): { log: WildlifeLog; isNe
 }
 
 /**
- * The dig went right through: Dug Through is found (the first time) and the bests kept: the
- * shortest time and the fewest swipes (each on its own). `newBest` is true the first time and
- * whenever the time is beaten; `fewest` likewise for the swipes.
+ * The dig went right through: Dug Through is found (the first time) and THE TWO RECORDS are kept, each on its own:
+ * the best time (`dug`, ms) and the fewest swipes (`dugSwipes`). A better time or fewer swipes replaces its record at
+ * once, whatever the other did. `newBest` is true the first time and whenever the time is beaten; `fewest` likewise
+ * for the swipes; `was` holds the records as they stood before this dig (nothing, the first time).
  */
-export function recordDig(log: WildlifeLog, ms: number, swipes: number): { log: WildlifeLog; isNew: boolean; count: number; completed: boolean; best: number; bestSwipes: number; newBest: boolean; fewest: boolean } {
+export function recordDig(log: WildlifeLog, ms: number, swipes: number): { log: WildlifeLog; isNew: boolean; count: number; completed: boolean; best: number; bestSwipes: number; newBest: boolean; fewest: boolean; was: { time?: number; swipes?: number } } {
   const r = record(log, 'dug');
   const newBest = log.dug === undefined || ms < log.dug;
   const fewest = log.dugSwipes === undefined || swipes < log.dugSwipes;
   const best = newBest ? ms : log.dug!, bestSwipes = fewest ? swipes : log.dugSwipes!;
-  return { ...r, log: { ...r.log, dug: best, dugSwipes: bestSwipes }, best, bestSwipes, newBest, fewest };
+  return { ...r, log: { ...r.log, dug: best, dugSwipes: bestSwipes }, best, bestSwipes, newBest, fewest, was: { time: log.dug, swipes: log.dugSwipes } };
 }
 
 /** The entries that have a card: every one but a hidden entry not found yet. */
