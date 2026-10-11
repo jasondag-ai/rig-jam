@@ -1,4 +1,4 @@
-import { demoLink } from './ui/demo-link.ts'; // FIRST: `?demo=1` keeps every write in memory (see the file)
+import { setDemo } from './ui/demo-mode.ts'; // FIRST: demo mode keeps every write in memory (see the file)
 import { bearStill } from './ui/bear.ts';
 import { nightStill } from './ui/night.ts';
 import { musicCredits, sfxCredits } from './audio/credits.ts';
@@ -338,7 +338,7 @@ const perfectCount = () => finaleCount(loadProgress().best, savedLog().found, RE
  * in the middle of a level waits for that.
  */
 function maybeFinale(): boolean {
-  if (finale || demoLink() || previewAll(location.search) || !finaleDue(perfectCount(), loadProgress().demo, loadFinale())) return false;
+  if (finale || previewAll(location.search) || !finaleDue(perfectCount(), loadProgress().demo, loadFinale())) return false;
   showFinale(true);
   return true;
 }
@@ -430,7 +430,7 @@ function showSettings(screen: HTMLElement): void {
         <label class="switch">
           <input type="checkbox" role="switch" data-act="demo" ${loadProgress().demo ? 'checked' : ''} />
           <span class="track" aria-hidden="true"><span class="knob"></span></span>
-          <span class="switch-label">Unlock everything (demo mode)</span>
+          <span class="switch-label">Demo mode</span>
         </label>
         <button class="btn quiet" data-act="credits">Credits</button>
         ${loadFinale().seen ? '<button class="btn quiet" data-act="ending">Watch the ending</button>' : ''}
@@ -478,6 +478,7 @@ function showSettings(screen: HTMLElement): void {
       showLevels(); // redraw with the current locks
     }
     if (act === 'wipe') {
+      setDemo(false); // a reset is a real one: demo mode goes off first, as it always has
       resetProgress();
       // (And the ending: a fresh start can earn it again.)
       try { localStorage.removeItem(FINALE_KEY); } catch { /* storage blocked */ }
@@ -490,9 +491,11 @@ function showSettings(screen: HTMLElement): void {
     saveLog(log);
     applyCamo(log);
   });
-  // Demo mode only flips a flag: scores, hard hats and streak stay exactly as they are.
+  // Demo mode (demo-mode.ts): on, everything is open and nothing is saved; off, real progress is back exactly as
+  // it was (scores, hard hats, streak, log, the ending). The switch itself is remembered.
   panel.querySelector<HTMLInputElement>('[data-act="demo"]')!.addEventListener('change', (e) => {
-    saveProgress({ ...loadProgress(), demo: (e.target as HTMLInputElement).checked });
+    setDemo((e.target as HTMLInputElement).checked);
+    applyCamo(); // the real log's own (what was toggled in demo mode went with it)
   });
   panel.querySelector<HTMLInputElement>('[data-act="sfx"]')!.addEventListener('change', (e) => {
     audio.setSettings({ sfx: (e.target as HTMLInputElement).checked });
@@ -516,20 +519,18 @@ function showLog(regionIndex: number): void {
   game?.leave();
   game = null;
   sound.quiet();
-  // Demo mode shows its own log; the real one comes back when demo mode is switched off.
-  // (Under the hidden `?demo=1` link the log is simply shown complete, with no DEMO label: it is for recording video.)
-  const demo = loadProgress().demo && !demoLink();
-  const log = loadLog(loadProgress().demo);
+  // (In demo mode the log is simply shown complete; the real one comes back when demo mode is switched off.)
+  const log = loadLog();
   const entries = LOG_ENTRIES;
   const have = foundCount(log);
   const screen = document.createElement('div');
-  screen.className = `screen log${demo ? ' demo-log' : ''}`;
+  screen.className = 'screen log';
   applyTheme(screen, themeFor(regionIndex));
   screen.innerHTML = `
     <div class="scenery" aria-hidden="true"></div>
     <header class="log-head">
       <button class="link back">${uiImg('icon_back', 'back-icon')}Levels</button>
-      <h1>Wildlife Log${demo ? '<span class="demo-tag">DEMO</span>' : ''}</h1>
+      <h1>Wildlife Log</h1>
       <span class="log-count" aria-label="${have} of ${entries.length} found">${have}/${entries.length}</span>
     </header>
     <p class="log-reward"></p>`;
@@ -543,12 +544,12 @@ function showLog(regionIndex: number): void {
     li.innerHTML = `${e.legendary ? '<span class="legend-tag">LEGENDARY</span>' : ''}<div class="art art-${e.id}" aria-hidden="true">${LOG_ART[e.id]()}</div><h2></h2><p></p>`;
     fitArt(li.querySelector<HTMLElement>('.art')!);
     li.querySelector('h2')!.textContent = found ? e.name : '???';
-    // Sightings: a locked card shows a riddle (its plain hint in demo mode).
+    // Sightings: a locked card shows a riddle; a tap turns it over to the plain hint.
     // (Dug Through shows the player's best time through the Earth.)
     // (Dug Through shows the player's two records, each on its own line: log-deep.ts `recordLines`.)
-    li.querySelector('p')!.textContent = found ? (e.id === 'dug' && log.dug ? recordLines(log.dug, log.dugSwipes ?? 1).join('\n') : e.caption) : cardHint(e, demo);
+    li.querySelector('p')!.textContent = found ? (e.id === 'dug' && log.dug ? recordLines(log.dug, log.dugSwipes ?? 1).join('\n') : e.caption) : cardHint(e, false);
     // A locked card in the game: a riddle first; a tap turns it over to the plain hint (and back).
-    if (!found && !demo) {
+    if (!found) {
       li.classList.add('riddle');
       li.tabIndex = 0;
       li.setAttribute('role', 'button');
@@ -566,15 +567,13 @@ function showLog(regionIndex: number): void {
     }
     cards.push(li);
   }
-  screen.querySelector('.log-reward')!.textContent = demo
-    ? `Demo log: ${have} of ${entries.length}. These sightings don't count toward your real log or camo.`
-    : complete(log)
+  screen.querySelector('.log-reward')!.textContent = complete(log)
       ? `All ${entries.length} found! Camo pickups unlocked (switch them off in Settings).`
       : log.camoEarned
         ? `Camo pickups unlocked. ${entries.length - have} new sightings to find.`
         : `Sightings. Find all ${entries.length} to unlock camo pickups.`;
   // Every card found but the hidden one: a nudge to keep going down.
-  if (!demo && !complete(log) && shownEntries(log).every((e) => log.found.includes(e.id))) screen.querySelector('.log-reward')!.textContent = `Every card found, but the log reads ${have}/${entries.length}. One sighting is hidden. Keep digging.`;
+  if (!complete(log) && shownEntries(log).every((e) => log.found.includes(e.id))) screen.querySelector('.log-reward')!.textContent = `Every card found, but the log reads ${have}/${entries.length}. One sighting is hidden. Keep digging.`;
   // The deep dig: the cards stand over one continuous cross-section down to the oil (log-dig.ts).
   const progress = loadProgress();
   // Scrolled from the grass right through the Earth to Kerguelen: Dug Through is found (a hidden
@@ -583,16 +582,15 @@ function showLog(regionIndex: number): void {
   const arrived = (ms: number, swipes: number): ArrivalCard => {
     // (`?log=all`, a preview: the card with this dig only; nothing is recorded.)
     if (previewAll(location.search)) return { title: 'Dug Through!', run: `This dig: ${swipesText(swipes)} in ${clockText(ms)}`, records: [], record: false, confetti: true };
-    const r = recordDig(loadLog(demo), ms, swipes);
-    saveLog(r.log, demo);
+    const r = recordDig(loadLog(), ms, swipes);
+    saveLog(r.log);
     const card = arrivalCard(ms, swipes, r);
     if (r.isNew) {
       const count = screen.querySelector('.log-count')!;
       count.textContent = `${r.count}/${entries.length}`;
       count.setAttribute('aria-label', `${r.count} of ${entries.length} found`);
-      void toast(sightingToast('dug', r.count, demo));
-      if (r.completed && demo) void toast('Demo log complete!', { sub: 'Your real log is unchanged', big: true, ms: 3200 });
-      else if (r.completed) {
+      void toast(sightingToast('dug', r.count));
+      if (r.completed) {
         void toast('Wildlife Log complete!', { sub: log.camoEarned ? 'Every sighting found' : 'Camo pickups unlocked', big: true, ms: 3200 });
         applyCamo(r.log);
       }
@@ -621,7 +619,7 @@ function showLog(regionIndex: number): void {
 
 /**
  * Today's Daily Pad, picked by the phone's local date. (`tryPad`: the dev copy's `?pad=N`, to try any pad; nothing
- * it does is saved: demo-link.ts.) A pad after the 60th is fetched (daily-pads.ts): if it cannot be had, a toast
+ * it does is saved: demo-mode.ts.) A pad after the 60th is fetched (daily-pads.ts): if it cannot be had, a toast
  * says so and the screen stays where it was.
  */
 async function showDaily(tryPad?: number): Promise<void> {
@@ -703,7 +701,7 @@ if (!forcedGag()) {
     const p = loadProgress();
     return !p.demo && Object.keys(p.best).length === 0 && p.dailyCleared.length === 0;
   };
-  // (The dev copy's `?pad=N`: straight into Daily Pad N, to try it. Nothing is saved: demo-link.ts.)
+  // (The dev copy's `?pad=N`: straight into Daily Pad N, to try it. Nothing is saved: demo-mode.ts.)
   const tryPad = isDev() ? padLink() : null, tryWeek = isDev() ? weekLink() : null;
   // (`?finale=1`: the ending, now, on any build, saving nothing. `?finale=stage`: its empty stage, for the tests.)
   if (finaleLink()) showFinale(false, finaleLink() === 'stage');

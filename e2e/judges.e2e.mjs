@@ -98,7 +98,7 @@ for (const [w, h, phone] of [[390, 664, true], [375, 635, true], [1280, 720, fal
   const sizes = await page.locator('nav.go a.btn').evaluateAll((as) => as.map((a) => Math.round(a.getBoundingClientRect().height)));
   check(sizes.every((s) => s >= 48), `each a tap target of at least 48 px (${sizes.join(', ')})`);
   if (process.env.LIVE !== '0') {
-    const want = [['.screen', 'the game'], ['.screen', 'judge mode'], ['.screen.finale', 'the ending']];
+    const want = [['.screen', 'the game'], ['.screen', 'Demo mode'], ['.screen.finale', 'the ending']];
     for (let i = 0; i < 3; i++) {
       const btn = page.locator('nav.go a.btn').nth(i);
       await btn.scrollIntoViewIfNeeded();

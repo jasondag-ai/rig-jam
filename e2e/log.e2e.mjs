@@ -2,7 +2,7 @@
 // the first time they fully play, with a toast at the top that never covers the board; the log
 // page shows found cards (puppet still + caption) and silhouettes; every card is a puppet still (no
 // sprite); finding them all unlocks camo pickups with a Settings switch; ?log=all previews
-// everything without saving; demo mode keeps its own log; Reset progress clears both.
+// everything without saving; demo mode shows the log complete and saves nothing; Reset progress clears it.
 // Run: npm run dev -- --host   (in one terminal), then:  npm run test:e2e:log
 import { LOG_ENTRIES as RIDDLE_ENTRIES } from '../src/ui/wildlife-log.ts';
 import { DEMO, UNLOCKED } from './progress.mjs';
@@ -235,43 +235,42 @@ await wait(250);
 check((await page.evaluate(() => localStorage.getItem('rush-hour-rigs:log'))) === null, 'Reset progress clears the log');
 check(!(await page.evaluate(() => document.body.classList.contains('camo-pickups'))), 'and the camo');
 
-// 8. Demo mode: every card shows how to find its gag; sightings go to a separate demo log.
+// 8. Demo mode (ONE switch, job U19): the log is shown complete, nothing is new, NOTHING is saved; off, the real log is back.
 console.log('\ndemo mode');
 const REAL = JSON.stringify({ v: 3, found: ['magpie'], camo: true, camoEarned: false });
+// (A phone that used the OLD demo mode still holds its separate demo log: nothing reads or writes it now.)
+const OLD_DEMO = JSON.stringify({ v: 3, found: ['bear'], camo: true, camoEarned: false });
 await page.goto(ROOT + `?magpie=0&worker=0&${QUIET}`, { waitUntil: 'networkidle' });
-await page.evaluate(([p, l]) => { localStorage.clear(); localStorage.setItem('rush-hour-rigs:v2', p); localStorage.setItem('rush-hour-rigs:log', l); }, [DEMO, REAL]);
+await page.evaluate(([p, l, d]) => { localStorage.clear(); localStorage.setItem('rush-hour-rigs:v2', p); localStorage.setItem('rush-hour-rigs:log', l); localStorage.setItem('rush-hour-rigs:demo-log', d); }, [DEMO, REAL, OLD_DEMO]);
 await page.reload({ waitUntil: 'networkidle' });
-const demoLog = () => page.evaluate(() => JSON.parse(localStorage.getItem('rush-hour-rigs:demo-log') ?? '{"found":[]}').found);
+/** What the phone really holds (another page of the site: the game's own page reads its copy in memory in demo mode). */
+const realLogs = async () => { const o = await page.context().newPage(); await o.goto(`${ROOT}manifest.webmanifest`); const r = await o.evaluate(() => [localStorage.getItem('rush-hour-rigs:log'), localStorage.getItem('rush-hour-rigs:demo-log')]); await o.close(); return r; };
 log = await openLog();
-const hints = Object.fromEntries(log.cards.map((c) => [c.id, c.text]));
-check(log.count === `0/${N}` && hints.magpie === 'Tap a truck without dragging it.' && hints.biffy === 'Bump a truck into the bottom berm.' && hints.bear === 'In Duvernay, tap the snowy bush three times.' && log.cards.every((c) => c.text.length > 10 && c.text !== riddleOf(c.id)), 'demo mode: the demo log starts empty and every card shows its hint');
+let tag = await page.$eval('.log-head h1', (h) => h.textContent);
+check(log.count === `${N}/${N}` && log.cards.every((c) => c.found) && !/DEMO/.test(tag), `demo mode: every sighting is shown in the log (${log.count}), with no DEMO label`);
 await page.$eval('.log-head .back', (b) => b.click());
 await wait(200);
 await enter(cardium, bumpLevel);
 await watchToasts();
 await bump();
-await page.waitForFunction(() => window.__toasts.length >= 1, null, { timeout: 15000 }).catch(() => {});
+await page.waitForFunction(() => document.querySelector('[data-gag="biffya"], .strip-layer') !== null, null, { timeout: 8000 }).catch(() => {});
+await wait(7000);
 t = await toasts();
-check(t[0]?.text === `Demo sighting! Occupied (1/${N})` && t.every((x) => !/New sighting/.test(x.text)), `toasts say "Demo sighting!" ("${t[0]?.text}")`);
-check((await demoLog()).join() === 'biffy', 'the sighting went to the demo log');
-check((await page.evaluate(() => localStorage.getItem('rush-hour-rigs:log'))) === REAL, 'the real log is exactly as it was');
-check(!(await page.evaluate(() => document.body.classList.contains('camo-pickups'))), 'demo sightings never unlock camo');
+check(t.every((x) => !/sighting/i.test(x.text)), `a gag played in demo mode is no new sighting: no toast (${t.length} toasts)`);
+check((await realLogs()).join('|') === [REAL, OLD_DEMO].join('|'), 'the real log is exactly as it was, and so is the old demo log');
+check(!(await page.evaluate(() => document.body.classList.contains('camo-pickups'))), 'demo mode never hands out camo');
 await page.$eval('.hud [data-act="levels"]', (b) => b.click());
-await wait(200);
-log = await openLog();
-const tag = await page.$eval('.log-head h1', (h) => h.textContent);
-check(log.count === `1/${N}` && /DEMO/.test(tag) && /don't count/.test(await page.$eval('.log-reward', (p) => p.textContent)), `demo mode on: the log page shows the demo log (${tag}, ${log.count})`);
-await page.$eval('.log-head .back', (b) => b.click());
 await wait(200);
 await page.$eval('.gear', (g) => g.click());
 await wait(200);
 check(await page.$eval('[data-act="camo"]', (i) => i.disabled), 'Settings: camo still locked');
+check((await page.$eval('[data-act="demo"]', (i) => i.closest('label').querySelector('.switch-label').textContent.trim())) === 'Demo mode', 'Settings: the switch is called "Demo mode"');
 await page.$eval('[data-act="demo"]', (i) => i.click());
 await page.$eval('[data-act="close"]', (b) => b.click());
 await wait(250);
 log = await openLog();
-check(log.count === `1/${N}` && !/DEMO/.test(await page.$eval('.log-head h1', (h) => h.textContent)) && log.cards.find((c) => c.id === 'magpie').found && !log.cards.find((c) => c.id === 'biffy').found, `demo mode off: the real log is back (${log.count}), demo log hidden`);
-check((await demoLog()).length === 1, 'the demo log is kept for next time');
+check(log.count === `1/${N}` && log.cards.find((c) => c.id === 'magpie').found && !log.cards.find((c) => c.id === 'biffy').found, `demo mode off: the real log is back (${log.count})`);
+check((await realLogs()).join('|') === [REAL, OLD_DEMO].join('|'), 'both saved logs still untouched');
 await page.$eval('.log-head .back', (b) => b.click());
 await wait(200);
 await page.$eval('.gear', (g) => g.click());
@@ -279,7 +278,7 @@ await wait(150);
 await page.$eval('[data-act="reset"]', (b) => b.click());
 await page.$eval('[data-act="wipe"]', (b) => b.click());
 await wait(250);
-check((await page.evaluate(() => [localStorage.getItem('rush-hour-rigs:log'), localStorage.getItem('rush-hour-rigs:demo-log')])).every((x) => x === null), 'Reset progress clears both logs');
+check((await realLogs()).every((x) => x === null), 'Reset progress clears both logs');
 
 // Night Shift: an idle Montney level goes fully dark, and that is a sighting like any gag's.
 // (?idle=0.1 makes the 30 s wait 3 s; the fade itself takes its 4 s.)

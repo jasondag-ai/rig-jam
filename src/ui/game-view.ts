@@ -1,5 +1,5 @@
 import { EXIT_MOST_MS } from './exit.ts';
-import { demoLink } from './demo-link.ts';
+import { demoOn } from './demo-mode.ts';
 import { bestFrom, bestLine, positionKey } from './best.ts';
 import { SolverLimitError, canUndo, getMoveRange, isWon, newGame, nextMove, solve, tryMove, undo, type GameState, type Level, type Move, SIZE, sizeOf } from '../engine/index.ts';
 import { seedFrom } from '../engine/rng.ts';
@@ -95,10 +95,10 @@ export class GameView {
   private state: GameState;
   private board: BoardView;
   private movesEl: HTMLElement;
-  // THE BEST SCORE STILL POSSIBLE (best.ts): the line under the moves and par. On the hidden `?demo=1` link it is
+  // THE BEST SCORE STILL POSSIBLE (best.ts): the line under the moves and par. In DEMO MODE it is
   // always on, each position solved in a worker; in normal play it shows with a hint, from the hint's own line.
   private bestEl: HTMLElement;
-  private readonly bestAlways = demoLink();
+  private readonly bestAlways = demoOn();
   private bestKey = '';
   private bestN: number | null = null;
   private bestWorker: Worker | null = null;
@@ -475,7 +475,7 @@ export class GameView {
           if (this.clear?.hitMats(e.clientX, e.clientY) && !this.eggsOn.has('golf') && !this.eggsOn.has('cold')) {
             if (++this.matTaps >= GAG_TRIGGERS.golf.matTaps) {
               this.matTaps = 0;
-              const next: GagId = loadLog(loadProgress().demo).found.includes('swings') ? 'cold' : 'golf';
+              const next: GagId = loadLog().found.includes('swings') ? 'cold' : 'golf';
               if (this.strips[next] && !this.eggDone.has(next)) this.fire(next);
               else this.clear.shake();
             } else this.clear.shake();
@@ -756,7 +756,7 @@ export class GameView {
     if (this.strips.mosquito && mover && drivesOnSoft(this.level.soft, mover, result.delta ?? delta) && ++this.patchDrives >= GAG_TRIGGERS.mosquito.patchDrives) { this.patchDrives = 0; this.fire('mosquito'); }
     this.exitRun = result.exited ? this.exitRun + 1 : 0;
     if (this.clear && this.exitRun >= GAG_TRIGGERS.bell.exitsInARow) {
-      const next: GagId = loadLog(loadProgress().demo).found.includes('bell') ? 'pea' : 'bell';
+      const next: GagId = loadLog().found.includes('bell') ? 'pea' : 'bell';
       if (!this.eggDone.has(next) && !this.eggsOn.has(next)) { this.exitRun = 0; this.fire(next); }
     }
     // The tumbleweed: a truck dragged the full length of the board in one move.
@@ -836,26 +836,22 @@ export class GameView {
   private chance(gag: GagId, chance: number, pin: boolean | null): boolean {
     if (pin !== null) return pin;
     if (loadProgress().demo) return true;
-    return CHANCES.comes(gag, chance, loadLog(false).found.includes(EGG_SIGHTING[gag]));
+    return CHANCES.comes(gag, chance, loadLog().found.includes(EGG_SIGHTING[gag]));
   }
 
   /**
-   * A gag played all the way through: the Wildlife Log collects it the first time. In demo mode it
-   * goes to the separate demo log, never the real one (and never earns camo). While the Wildlife Log
-   * is hidden (gags off) the sighting is still saved, quietly, with no toast.
+   * A gag played all the way through: the Wildlife Log collects it the first time. (In demo mode the log is
+   * shown complete already, so nothing is new and nothing is said.)
    */
   private seen(id: Sighting): void {
     // A scene still finishing after you've left the level (or reset) doesn't count.
     if (!this.el.isConnected) return;
-    const demo = loadProgress().demo;
-    const before = loadLog(demo);
+    const before = loadLog();
     const r = record(before, id);
     if (!r.isNew) return;
-    saveLog(r.log, demo);
-    void toast(sightingToast(id, r.count, demo));
-    if (demo) {
-      if (r.completed) void toast('Demo log complete!', { sub: 'Your real log is unchanged', big: true, ms: 3200 });
-    } else if (r.completed) {
+    saveLog(r.log);
+    void toast(sightingToast(id, r.count));
+    if (r.completed) {
       void toast('Wildlife Log complete!', { sub: before.camoEarned ? 'Every sighting found' : 'Camo pickups unlocked', big: true, ms: 3200 });
       applyCamo(r.log);
     }

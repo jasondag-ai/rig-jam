@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.8 on Oct 11) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.9 on Oct 11) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -711,7 +711,7 @@ something, give exact clicks and one command at a time.
   copy, and a Copy button that copies the address with the app version, the phone
   (`phoneModel`, from the user agent) with its screen size, and the level last opened
   (`rememberLevel`, its own storage key). No accounts, no links, no forms. THE ADDRESS IS ONE
-  CONSTANT, `FEEDBACK_EMAIL` (jason@stragentic.com): if it is empty the row is not shown. `?feedback=a@b.c` shows it
+  CONSTANT, `FEEDBACK_EMAIL` (info@stragentic.com since 1.0.9): if it is empty the row is not shown. `?feedback=a@b.c` shows it
   with that address (tests).
 - FIRST RUN: a brand-new player (no level cleared, no Daily Pad, demo off) goes from the cover's
   one tap STRAIGHT INTO LEVEL 1, which teaches itself with the ghost finger; everyone else gets
@@ -728,8 +728,8 @@ something, give exact clicks and one command at a time.
   5 of the previous region's 10 (`REGION_UNLOCK` in `src/ui/unlocks.ts`). Cardium is always open;
   the Daily Pad is never locked. Locked items show a padlock and "Clear … to unlock"; tapping
   only shakes. A region earned for real shows a one-time "NEW LEASE OPEN" banner (`announced`).
-- Settings → "Unlock everything (demo mode)": a flag in progress that opens everything without
-  touching scores or streak. Off restores normal locks. Reset progress turns it off.
+- Settings → "Demo mode": ONE switch (see "Demo mode: one switch"): everything open, the log complete, the best
+  line always on, nothing saved. Off restores real progress untouched. Reset progress turns it off.
 
 ## Characters and lines
 - The Company Man on the win card: a line by result (`src/ui/company.ts`: `tierFor`, `companyLine`;
@@ -1314,6 +1314,44 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
+## Demo mode: one switch (job U19; Oct 11; shipped as 1.0.9)
+- JAY (Oct 11, on live 1.0.8): Settings' demo mode was on and "Best from here" still only came with a hint. There
+  were two demo modes (Settings' saved switch with a log of its own, and the hidden `?demo=1` link). NOW THERE IS
+  ONE, called "Demo mode" everywhere (never "judge mode"): `src/ui/demo-mode.ts` (was demo-link.ts), the first
+  import of main.ts. `demoOn()` is the one question everything asks; `setDemo(on, remember)` the one way in and out.
+- WHILE IT IS ON: every region and level is open (and the Sunday Turnaround), every sighting is shown in the
+  Wildlife Log (no DEMO label; camo is not handed out; nothing is ever a new sighting, so no toasts), the "Best
+  from here" line is ALWAYS on in the HUD and asked again after every move (best.ts, in its worker), chance
+  sightings always come, the ending is not for earning, AND NOTHING IS SAVED: a copy in memory lies over
+  `localStorage` (`keepInMemory`), so scores, hints, the streak, the log, settings and the ending's flag written
+  meanwhile never reach the phone.
+- TWO WAYS ON, ONE CODE PATH: the "Demo mode" switch in Settings (`[data-act="demo"]`), which is REMEMBERED: the
+  one thing demo mode saves is the switch itself, the `demo` field of `rush-hour-rigs:v2`, as the switch always
+  was, written by editing only that field of the saved text (`saveSwitch`); and the link `?demo=1`, which turns
+  the same switch on for that page load and writes nothing at all. As the page opens, a saved switch or the link
+  turns it on before anything reads storage.
+- OFF (the same switch, whichever way it came on): the copy is lifted (`lift`), everything written meanwhile is
+  gone, and the phone's storage is BYTE FOR BYTE what it was before the switch was touched: scores, hard hats,
+  hints, streak, log, the ending. RESET PROGRESS turns demo mode off first and then wipes for real, as it always has.
+- THE OLD DEMO LOG (`rush-hour-rigs:demo-log`) is no longer read or written; a phone that has one keeps it
+  untouched (Reset clears it). The "Demo sighting!" toasts, the DEMO tag and "Demo log complete!" are gone. A phone
+  that had the old demo mode on opens in the new one.
+- SUPERSEDED BELOW: where older notes say Settings' switch is "Unlock everything (demo mode)", that it has "its own
+  demo log", that "DEMO mode shows the plain hint at once", or that it "does NOT turn on" the best line, read this
+  section instead. Suites that seed `demo: true` to open everything now get the whole of demo mode (a full log,
+  nothing saved): a suite that needs real saving seeds real progress (`UNLOCKED` in e2e/progress.mjs).
+- FEEDBACK: the in-game address is `info@stragentic.com` (`FEEDBACK_EMAIL`; it was jason@). The judges' page keeps
+  jason@stragentic.com on purpose.
+- `npm run test:e2e:demo` (Chromium and WebKit, 390 x 664 and 375 x 635; the phone's REAL storage is read from a
+  second page, since the game's own page reads its copy): off, on by the switch, a hint and a won level saving
+  nothing, a reload, off again with storage byte for byte as before, `?demo=1` in the same state field by field and
+  off by the same switch, the name, the feedback address. `demo-mode.test.ts` holds the same by unit test (a new
+  phone, a part-played one, a phone with the old demo mode on).
+- A THIRD REAL SAVE, made on live 1.0.8 before this shipped: `e2e/fixtures/live-save-cf02150.json`, beside `de534ad`
+  and `ba54c2b` in `FIXTURES` (save-compat.test.ts, e2e/save.e2e.mjs). All three must load whole.
+- LEFT FOR JAY: the judges' page (out of scope here) still labels its `?demo=1` button "Judge mode". And a player
+  who leaves the switch on plays with nothing saved, with no reminder on the screen beyond the open locks.
+
 ## The judges' guide (job U13; Oct 11; shipped as 1.0.7)
 - https://jasondag-ai.github.io/rig-jam/judges/ is the COO's one-page judges' guide: `public/judges/index.html`, COPIED
   EXACTLY from `~/Desktop/RHR Art Inbox/judges/index.html` (never restyle or reword it: a new version is copied over
@@ -1331,7 +1369,7 @@ something, give exact clicks and one command at a time.
   offline page (the worker keeps the last good page it was asked for as `./`), and the video put in its cache.
 - `npm run test:e2e:judges` (builds, serves `dist` under the Pages base path with byte ranges; WebKit at 390 x 664,
   375 x 635 and 1280 x 720): no sideways scroll, the poster, the video waits for a tap and then plays with sound,
-  the three buttons open the live game, judge mode and the ending (`LIVE=0` skips opening the live site); then in
+  the three buttons open the live game, `?demo=1` and the ending (`LIVE=0` skips opening the live site); then in
   Chromium and WebKit, with the game's worker in charge, the guide opens, its video plays, the game's offline page
   is still the game and nothing of the guide is in a cache. A unit test holds the worker's rule, the page's video
   tag, the size and the faststart order. NOBODY HAS WATCHED IT ON A REAL PHONE YET: Jay's thumb on the live page.
@@ -1929,6 +1967,7 @@ something, give exact clicks and one command at a time.
   which is a flick, and they mean a drag. With it off the board is exactly the old one (no held bumps).
 - The first how-to card ends "Flick a truck to send it all the way."
 - `node tools/gen-baldonnel.ts [minutes] [chain]` / `node tools/gen-baldonnel.ts write` – Baldonnel's ten levels: climbs the slots not yet in `tools/fixed-levels/`, then writes `src/levels/baldonnel.json`
+- `npm run test:e2e:demo` – Demo mode, the one switch: on and off in both engines, the always-on line, real storage byte for byte across a cycle, `?demo=1` in the same state (start the dev server first)
 - `npm run test:e2e:judges` – the judges' guide at /judges/: fit, the video after a tap, the three buttons, and that the game's service worker leaves it alone (builds first; needs no dev server)
 - `npm run test:e2e:layers` – the layer audit: nothing hides or cuts off what the player should be watching, unless a rule in `e2e/layer-audit/allow.mjs` says it is meant (`ENGINE=`, `VIEW=`, `PART=`; `node e2e/layer-audit/report.mjs` writes `qc/layer_audit.md`; start the dev server first)
 - `npm run test:e2e:striptop` – no strip gag is cut off by the lease or the buttons: all 32 through their whole runs (`VIEW=390x664`, `ONLY=beaver`; start the dev server first)

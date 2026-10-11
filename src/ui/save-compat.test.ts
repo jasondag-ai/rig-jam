@@ -22,6 +22,7 @@ import { LOG_ENTRIES, camoOn, foundCount, parseLog, shownEntries } from './wildl
 const FIXTURES = [
   { build: 'de534ad', when: 'before Clearwater', day: '2026-10-08', cleared: 6, hats: [3, 3, 3, 3, 3, 3], found: ['nearmiss', 'geese'], names: ['Near Miss', 'Lost Goose'], audio: { sfx: true, music: true, style: 'retro' } },
   { build: 'ba54c2b', when: 'before 1.0.0 (the October upgrade)', day: '2026-10-10', cleared: 7, hats: [3, 3, 3, 3, 2, 3, 3], found: ['deer', 'geese'], names: ['Lost Goose', 'Back Scratcher'], audio: { sfx: true, music: true, style: 'chill' } },
+  { build: 'cf02150', when: 'before 1.0.9 (Demo mode, the one switch)', day: '2026-10-11', cleared: 7, hats: [3, 3, 3, 3, 2, 3, 3], found: ['deer', 'geese'], names: ['Lost Goose', 'Back Scratcher'], audio: { sfx: true, music: true, style: 'chill' } },
 ] as const;
 const nextDay = (day: string) => { const d = new Date(`${day}T12:00:00`); d.setDate(d.getDate() + 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
@@ -164,12 +165,11 @@ async function devSave(): Promise<Map<string, string>> {
     p = P.recordDailyClear(p, '2026-10-09');
     p = { ...(P.spendHint(p) ?? p), announced: REGIONS.map((r) => r.id), standDowns: ['2026-10-05'] };
     P.saveProgress(p);
-    // Every sighting found, the dig dug through, camo switched off; a demo log too.
+    // Every sighting found, the dig dug through, camo switched off. (Demo mode's old log of its own is no longer written.)
     let log = L.loadLog();
     for (const e of LOG_ENTRIES) log = L.record(log, e.id).log;
     log = L.recordDig(log, 61000, 40).log;
     L.saveLog({ ...log, camo: false });
-    L.saveLog(L.record(L.loadLog(true), LOG_ENTRIES[0].id).log, true);
     A.saveAudioSettings({ sfx: true, music: true, style: A.MUSIC_STYLES.at(-1)!.id });
     F.rememberLevel(`${REGIONS.at(-1)!.name} ${REGIONS.at(-1)!.levels.length}`);
     fake.setItem('rush-hour-rigs:region', REGIONS.at(-1)!.id);
@@ -190,7 +190,7 @@ describe('the dev lane: a save written by the dev build loads whole in the live 
 
   it('it writes the keys the live build reads, under the same names; a new key must be declared', async () => {
     const save = await devSave();
-    for (const key of ['rush-hour-rigs:v2', 'rush-hour-rigs:log', 'rush-hour-rigs:demo-log', 'rush-hour-rigs-audio', 'rush-hour-rigs:region', 'rush-hour-rigs:last-level']) expect([...save.keys()], key).toContain(key);
+    for (const key of ['rush-hour-rigs:v2', 'rush-hour-rigs:log', 'rush-hour-rigs-audio', 'rush-hour-rigs:region', 'rush-hour-rigs:last-level']) expect([...save.keys()], key).toContain(key);
     for (const key of save.keys()) expect([...contract.keys, ...DEV_ADDS.keys], `"${key}" is a key the live build does not know: list it in DEV_ADDS.keys`).toContain(key);
   });
 
@@ -209,7 +209,7 @@ describe('the dev lane: a save written by the dev build loads whole in the live 
 
   it('the Wildlife Log: the same format number and fields; every sighting it can hold is one the live build knows, or is declared', async () => {
     const save = await devSave();
-    for (const key of ['rush-hour-rigs:log', 'rush-hour-rigs:demo-log']) {
+    for (const key of ['rush-hour-rigs:log']) {
       const log = JSON.parse(save.get(key)!) as Record<string, unknown>;
       expect(log.v, `${key}.v`).toBe(contract.log.v);
       for (const [field, type] of Object.entries(contract.log.fields)) {
