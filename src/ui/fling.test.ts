@@ -131,7 +131,9 @@ describe('fling: where it ends, under every region\'s rules', () => {
       expect(outs).toBeGreaterThan(5);
       // Duvernay's convoys, Bakken's racks and clock gates: flung at a gate that is shut for it, a truck stops there.
       if (['duvernay', 'mannville', 'bakken'].includes(region.id)) expect(shut, 'stopped at a shut gate').toBeGreaterThan(0);
-    });
+      // (A Big Pad's ten levels are solved along the way: a few seconds here, more on the deploy's machine, where the
+      // default 5 s once stopped a ship. Thirty is room enough.)
+    }, 30_000);
   }
 
   it('hints in a row: flinging the hinted move carries the line on; a fling that goes further starts a fresh one', () => {
