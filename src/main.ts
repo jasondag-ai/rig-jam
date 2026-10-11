@@ -36,7 +36,7 @@ import { FINALE_KEY, finaleCount, finaleDue, finaleLink, loadFinale, saveFinaleS
 import { applyUiArt, uiImg } from './ui/ui-art.ts';
 import { preloadSprites } from './ui/sprites.ts';
 import { LOG_ENTRIES, applyCamo, cardHint, complete, foundCount, loadLog, previewAll, recordDig, saveLog, savedLog, shownEntries, sightingToast, type Sighting } from './ui/wildlife-log.ts';
-import { clockText, dugStill } from './ui/log-deep.ts';
+import { arrivalCard, clockText, dugStill, recordLines, recordToast, swipesText, type ArrivalCard } from './ui/log-deep.ts';
 import { PREVIEWS, type GagId } from './ui/gag-triggers.ts';
 import { workerStill } from './ui/worker.ts';
 import { mountDig } from './ui/log-dig-view.ts';
@@ -510,7 +510,6 @@ function showSettings(screen: HTMLElement): void {
   screen.append(panel);
 }
 
-const swipesText = (n: number) => `${n} ${n === 1 ? 'swipe' : 'swipes'}`;
 
 /** The Wildlife Log: a card per gag. Found ones show the character and a caption; the rest a silhouette and a hint. */
 function showLog(regionIndex: number): void {
@@ -546,7 +545,8 @@ function showLog(regionIndex: number): void {
     li.querySelector('h2')!.textContent = found ? e.name : '???';
     // Sightings: a locked card shows a riddle (its plain hint in demo mode).
     // (Dug Through shows the player's best time through the Earth.)
-    li.querySelector('p')!.textContent = found ? (e.id === 'dug' && log.dug ? `Best: ${swipesText(log.dugSwipes ?? 1)}, ${clockText(log.dug)}` : e.caption) : cardHint(e, demo);
+    // (Dug Through shows the player's two records, each on its own line: log-deep.ts `recordLines`.)
+    li.querySelector('p')!.textContent = found ? (e.id === 'dug' && log.dug ? recordLines(log.dug, log.dugSwipes ?? 1).join('\n') : e.caption) : cardHint(e, demo);
     // A locked card in the game: a riddle first; a tap turns it over to the plain hint (and back).
     if (!found && !demo) {
       li.classList.add('riddle');
@@ -580,12 +580,12 @@ function showLog(regionIndex: number): void {
   // Scrolled from the grass right through the Earth to Kerguelen: Dug Through is found (a hidden
   // entry until then; it counts toward the camo like any other) and the bests are kept. What comes
   // back is the arrival card: this dig's swipes and time, and the best.
-  const arrived = (ms: number, swipes: number): { title: string; lines: string[]; confetti?: boolean } => {
-    const time = clockText(ms);
-    const now = `${swipesText(swipes)} in ${time}`;
-    if (previewAll(location.search)) return { title: 'Dug Through!', lines: [now], confetti: true };
+  const arrived = (ms: number, swipes: number): ArrivalCard => {
+    // (`?log=all`, a preview: the card with this dig only; nothing is recorded.)
+    if (previewAll(location.search)) return { title: 'Dug Through!', run: `This dig: ${swipesText(swipes)} in ${clockText(ms)}`, records: [], record: false, confetti: true };
     const r = recordDig(loadLog(demo), ms, swipes);
     saveLog(r.log, demo);
+    const card = arrivalCard(ms, swipes, r);
     if (r.isNew) {
       const count = screen.querySelector('.log-count')!;
       count.textContent = `${r.count}/${entries.length}`;
@@ -596,13 +596,15 @@ function showLog(regionIndex: number): void {
         void toast('Wildlife Log complete!', { sub: log.camoEarned ? 'Every sighting found' : 'Camo pickups unlocked', big: true, ms: 3200 });
         applyCamo(r.log);
       }
+    } else if (card.record) {
+      // A RECORD BEATEN IS UNMISTAKABLE: the card says so (big), a toast names it, the ta-da plays if sound is on.
+      void toast('New record!', { sub: recordToast(card), big: true, ms: 3200 });
+      sound.record();
     }
-    // The card leads with the news (the first time), then this dig, then the bests.
-    const best = `Best: ${swipesText(r.bestSwipes)}, ${clockText(r.best)}`;
-    const beaten = !r.isNew && (r.newBest || r.fewest);
-    return r.isNew
-      ? { title: 'New sighting!', lines: ['Dug Through added to your Wildlife Log.', now, best], confetti: true }
-      : { title: 'Dug Through!', lines: [now, beaten ? `New best! ${best.slice(6)}` : best], confetti: beaten };
+    // Its card up among the others (there once it has been earned and the log opened again) shows the records as they stand NOW.
+    const mine = screen.querySelector<HTMLElement>('.log-card[data-id="dug"] p');
+    if (mine) mine.textContent = recordLines(r.best, r.bestSwipes).join('\n');
+    return card;
   };
   const dig = mountDig(cards, screen.querySelector<HTMLElement>('.log-reward')!, (id) => regionOpen(REGIONS, REGIONS.findIndex((r) => r.id === id), progress.best, progress.demo), arrived);
   screen.append(dig.el);
