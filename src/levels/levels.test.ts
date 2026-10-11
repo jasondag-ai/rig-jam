@@ -118,7 +118,8 @@ describe('vehicle types', () => {
     expect(solve({ ...level, trucks: stripped })).toEqual(expected);
     const swapped = level.trucks.map((t) => ({ ...t, kind: TRUCK_KINDS[t.length].at(-1)! }));
     expect(solve({ ...level, trucks: swapped })).toEqual(expected);
-  });
+    // (Three solves of a Big Pad: the last Clearwater level took 5.1 s on the deploy's machine once, past the usual 5 s limit.)
+  }, 30000);
 
   it('shows a mix in every level and all five types in every region', () => {
     for (const l of all) expect(new Set(l.trucks.map((t) => t.kind)).size).toBeGreaterThanOrEqual(2);
