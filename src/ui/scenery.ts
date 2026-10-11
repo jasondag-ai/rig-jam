@@ -176,8 +176,8 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
   const top = box.y;
   const bandAbove = Math.max(0, top);
   // Open country: only a share of the trees stand (`Theme.trees`), the same ones every time for a seed. Where there
-  // is a strip below the lease it is done once the strip's trees are in; where there is none (the level list, a
-  // strip too short for trees) it is done at the end, so the prairie is the prairie there too.
+  // is a strip below the lease it is done once the strip's trees are in; on the level list (no lease, no strip) it
+  // is done at the end, so the prairie is the prairie there too.
   let thin = false;
   const thinned = (all: Item[]): Item[] => {
     thin = true;
@@ -220,7 +220,8 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
     for (const it of items) if (it.y > floor && Math.abs(it.y - (height - LANE_UP)) <= 3) it.y = height - 1;
   }
 
-  if (!thin) items = thinned(items);
+  // (Only the level list, which has no lease: a level's own trees stay exactly as they always were, Baldonnel's too.)
+  if (!thin && box.height === 0) items = thinned(items);
 
   // The berm keeps clear grass round it: no tree may reach into the box (grown by BERM_CLEAR)
   // anywhere along its sides. Trees above stand behind the top berm with their feet at its edge.
