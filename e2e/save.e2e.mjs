@@ -68,7 +68,9 @@ for (const [engine, name, opts] of PHONES) {
   check(list.hats.join() === wantHats.join(), `hard hats on Cardium's rows as earned (${list.hats.join(' ')})`);
   const cleared = cardium.filter((l) => progress.best[l.id] !== undefined).length;
   check(list.open.join() === cardium.map((_, i) => i <= cleared).join(), `the same levels are open: Cardium 1 to ${cleared + 1}`);
-  const days = streak(progress.dailyCleared, dayKey(new Date())).days;
+  // (Counted for the date the PHONE has, the day after the save's Daily Pad, not for the day the test is run: on Oct 11 the
+  // older save's streak, read against the real calendar, had lapsed, and this check failed though the game was right.)
+  const days = streak(progress.dailyCleared, dayKey(new Date(Y, M - 1, D + 1, 12, 0, 0))).days;
   check(list.days === `Days without incident: ${days}`, `the streak sign reads what the saved Daily Pads make it today (${list.days})`);
   check(list.tabs.map((t) => t.name).join() === REGIONS.map((r) => r.name).join() && list.tabs.map((t) => t.locked).join() === ['false', 'false', ...REGIONS.slice(2).map(() => 'true')].join(), `${REGIONS.length} tabs; Cardium and Montney open as before, the rest locked (${list.tabs.map((t) => `${t.name}${t.locked ? ' locked' : ''}`).join(', ')})`);
   check(/Clear 5 more in Bakken/.test(list.tabs[5].text) && !list.banner, `Clearwater is locked like any region not yet earned ("${list.tabs[5].text}"), and no "NEW LEASE OPEN" banner shows`);
