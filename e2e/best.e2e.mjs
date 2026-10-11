@@ -2,9 +2,9 @@
 // 375 x 635 and 390 x 664.
 //  NORMAL PLAY: the line shows only while a hint shows, from the hint's own solve: "Best from here: N" at par,
 //    "Par out of reach: best N" (the warning colour) after a wasted move; never by a free move or a free Undo.
-//  THE HIDDEN ?demo=1 LINK: always on, on every kind of pad (each region, the Big Pad, the Daily Pad, the Sunday
+//  DEMO MODE (here by its ?demo=1 link): always on, on every kind of pad (each region, the Big Pad, the Daily Pad, the Sunday
 //    Turnaround), by day and by night, right after every move, Undo and Restart; the board never waits for it; nothing
-//    is saved. Settings' own demo switch does not turn it on.
+//    is saved. Settings' Demo mode switch is the same switch (demo-mode.e2e.mjs).
 //  IT COVERS NOTHING AND MOVES NOTHING: inside the HUD, clear of the title and the near misses, the HUD no taller and
 //    the lease where it was.
 // Needs the dev server (URL=, default the dev build on 5181). `ONLY=normal|demo`. `VIEW=390x664`.
@@ -111,15 +111,16 @@ for (const [W, H] of SIZES) {
     await page.locator('.controls [data-act="restart"]').click(); await wait(400);
     h = await hud(page);
     check(h.text === '' && same(hinted, h), 'Restart: the line is gone');
-    // Settings' own demo switch (saved demo mode) does not turn it on.
+    // Settings' Demo mode switch DOES turn it on (ONE switch, job U19: demo-mode.e2e.mjs holds the whole of it).
     await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('rush-hour-rigs:v2')); p.demo = true; localStorage.setItem('rush-hour-rigs:v2', JSON.stringify(p)); });
     await page.reload({ waitUntil: 'networkidle' });
     await page.locator('.region-tab').nth(5).click();
     await page.locator('.level-btn').nth(0).click();
     await page.waitForSelector('.board .truck.sprite-on');
-    await wait(2500);
+    await answer(page);
     h = await hud(page);
-    check(h.text === '' && !h.shown, "Settings' demo mode (everything unlocked): no line without a hint, on a Big Pad either");
+    check(h.text === `Best from here: ${REGIONS[5].levels[0].par}` && h.shown, `Settings' Demo mode: the line is on with no hint, on a Big Pad ("${h.text}")`);
+    await page.evaluate(() => localStorage.clear());
     // By night (Montney, the night pinned): a hint's line is as bright as the HUD.
     await page.goto(`${ROOT}?${QUIET}&night=1`, { waitUntil: 'networkidle' });
     await page.locator('.region-tab').nth(1).click();

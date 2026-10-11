@@ -7,7 +7,7 @@
 //  - moose: Duvernay only, on the second bump into the top berm. Rises from behind the berm (cut off
 //    at it), the reference beats, "Mmrrph", ducks. Not in other regions, not on one bump.
 //  - neither blocks a touch; one gag at a time; reduced motion: simple fades; the Wildlife Log lists
-//    the live gags, with hints in demo mode only.
+//    the live gags; demo mode shows every card found.
 // Saves clips (gag23_*.webm) to OUT. Run with the dev server up: npm run test:e2e:eggs
 import { LOG_ENTRIES as RIDDLE_ENTRIES } from '../src/ui/wildlife-log.ts';
 import { DEMO, UNLOCKED } from './progress.mjs';
@@ -274,7 +274,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       await context.close();
     }
 
-    // ---------- 4. Wildlife Log: the live gags; hints in demo mode only ----------
+    // ---------- 4. Wildlife Log: the live gags; every card found in demo mode ----------
     console.log(`\n${engine}: Wildlife Log`);
     for (const [mode, progress] of [['game', UNLOCKED], ['demo', DEMO]]) {
       const { context, page } = await open(browser, { query: '?cover=0', progress, enter: false });
@@ -284,7 +284,7 @@ for (const [engine, type] of [['webkit', webkit], ['chromium', chromium]]) {
       if (mode === 'game') {
         check(cards.map((c) => c.id).slice(0, 3).join() === 'magpie,spotter,moose' && cards.every((c) => c.art), 'lists the live gags, each with card art from its puppet');
         check(cards.every((c) => c.text === riddleOf(c.id)), 'game mode hides the hints');
-      } else check(cards[1].text === 'Slide one truck into another.' && cards[2].text === 'In Duvernay, bump a truck into the top berm twice.', `demo mode shows each gag's hint ("${cards[1].text}" / "${cards[2].text}")`);
+      } else check(cards.every((c) => c.art && c.text !== riddleOf(c.id)), `demo mode shows every card found, with its caption (${cards.length})`);
       await context.close();
     }
   }
