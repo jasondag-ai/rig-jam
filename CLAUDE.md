@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 on Oct 11) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1314,6 +1314,30 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
+## The beaver's pipe, and nothing cut off by the lease (job U16; Oct 11; shipped as 1.0.5)
+- JAY: when the beaver stood his pipe upright, its top was cut off flat at the foot of the berm. WHY: the strip's
+  layers lie UNDER the board, so whatever a strip gag draws above the strip's top edge is hidden there. The
+  reference's pipe joint is 132 units long; stood up from his feet it reached 35 units above the strip.
+- THE PIPE IS 94 UNITS NOW (wave3.ts `PIPE_HALF` 46, a collar a unit past each end) and upright its centre is at
+  `GY-54` (was `GY-72`): its foot by his feet, its top end 5 units inside the strip's top (`MANN_SCENE.top`), BOTH
+  ENDS SHOWING IN EVERY FRAME. He stands 19 units nearer the aspen at each BONK (`bx` 232, 211, 207, 219 for the
+  reference's 213, 192, 188, 200; `BEAVER_IN` 312/2.2), so the shorter pipe's end still meets the trunk; upright he
+  squeezes past behind the tree as before. Every beat, time and sound is the reference's. A unit test holds the top,
+  the foot, both bonks and the pass (scene-stage.test.ts).
+- `npm run test:e2e:striptop` (WebKit; `VIEW=390x844` by default): EVERY STRIP GAG (32) stepped through its whole run
+  every 0.1 s on every region's scene, every drawn piece measured: NONE UNDER THE LEASE (above the board's bottom
+  edge, where the board is over it) and none under the buttons. Pieces inside a clip of the gag's own are left out
+  (cut on purpose: a hole's rim, the water's surface, a truck's window). At 390 x 844 nothing at all goes under.
+- KNOWN, LISTED FOR JAY, NOT CHANGED (lowering them would change the jokes' drawings): on SAFARI'S SHORT SCREENS
+  (390 x 664, 375 x 635; an 84 px strip) nine sightings send something small past the strip's top for a moment (2
+  to 17 px): the landowner's hat, the bull's hearts, the ball in Out Cold, the sound words BZZZZ and SPLOOSH, Moe
+  jumping on the ice pan, and small pieces in Gopher Lunch, Frozen Tongue and the Bear. The test holds each to what
+  it is today (`KNOWN_SHORT`): none may get worse, no other sighting may join them.
+- CUT ON PURPOSE, part of the joke (not faults): the moose behind the top berm, the gopher at his hole's rim, the
+  hare behind the bush, the prairie dogs in their holes, the boot in the muskeg, the frogs and the pike at the
+  water's surface, drivers in their windows, and Fresh Wash's mud wave at the strip's floor.
+- Before and after stills of the upright pipe: `qc/u16/` (in the repo).
+
 ## Dug Through's records (job U15; Oct 10; shipped as 1.0.4)
 - JAY, ON HIS PHONE: he beat his best time, the record did not change and nothing said so. THE CAUSE: the stopwatch
   was made ready again only at the page's EXACT TOP (`scrollTop <= 0`). From a few pixels short of it (the grass
@@ -1848,6 +1872,7 @@ something, give exact clicks and one command at a time.
   which is a flick, and they mean a drag. With it off the board is exactly the old one (no held bumps).
 - The first how-to card ends "Flick a truck to send it all the way."
 - `node tools/gen-baldonnel.ts [minutes] [chain]` / `node tools/gen-baldonnel.ts write` – Baldonnel's ten levels: climbs the slots not yet in `tools/fixed-levels/`, then writes `src/levels/baldonnel.json`
+- `npm run test:e2e:striptop` – no strip gag is cut off by the lease or the buttons: all 32 through their whole runs (`VIEW=390x664`, `ONLY=beaver`; start the dev server first)
 - `npm run test:e2e:records` – Dug Through's records: digs in a row from the grass, a new record's card, toast and ta-da, a reload, `?demo=1` (start the dev server first)
 - `npm run test:e2e:mouse` – mouse play like a real hand: Chromium and WebKit at two desktop sizes, fling on, every kind of release, never stuck, `?pointerlog=1` (start the dev server first)
 - `npm run test:e2e:best` – the best-from-here line: with a hint in normal play, always on the `?demo=1` link, every kind of pad, at Safari's two sizes (start the dev server first)
