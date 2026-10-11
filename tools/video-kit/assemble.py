@@ -35,7 +35,7 @@ CLIPS = [
     ('region_swipe', "The home page: the region bar swiped along and each of the seven regions tapped in turn (Cardium, Montney, Duvernay, Mannville, Bakken, Clearwater, Baldonnel), the list changing season each time."),
     ('gag_magpie', "Sighting, Magpie (Cardium): he lands on a truck's cab, strains, leaves his mark, looks smug and flies off; the driver: \"Somebody get the pressure washer.\""),
     ('gag_moose', "Sighting, Moose (Duvernay): he rises from behind the top berm, blinks, chews, stares, \"Mmrrph\", and ducks. The whole of it."),
-    ('gag_beaver', "Sighting, Beaver (Mannville): BONK, his pipe will not pass the aspen; BONK again; an idea; he tilts it upright, squeezes past, and is proud."),
+    ('gag_beaver', "Sighting, Beaver (Mannville), the whole of it, from live 1.0.5 (the pipe is whole in every frame now): he waddles in with a pipe joint on his head, BONK, it will not pass the aspen; BONK again; an idea; he tilts it upright, squeezes past, lowers it, is proud (two tail slaps) and waddles off."),
     ('gag_personal_cloud', "Sighting, Personal Cloud (Bakken): a small cloud rains on Slow Moe alone; he sidesteps, it follows; umbrella, smug; he closes it, DOWNPOUR."),
     ('gag_out_cold', "Sighting, Out Cold (Clearwater): one mighty swing, CRACK, TOK off the rig mats, PING off the aspen, BONK on Moe's hard hat, timber; the bearded worker: \"Fore.\", and drags him off by the ankles."),
     ('gag_runaway_roll', "Sighting, The Runaway Roll (Cardium), on its real trigger: a truck bumps the bottom berm twice, the biffy's door bangs open, the roll runs off, a glove gropes for it, and Moe shuffles after it."),

@@ -24,7 +24,8 @@ export const CLIPS = {
   // The sightings: one run of each, from the preview link's own start (mark `a`); the stretch that holds the joke.
   gag_magpie: ['gag_magpie', 'a', 1.2, 'a', 11.0],
   gag_moose: ['gag_moose', 'a', -0.3, 'a', 5.5],
-  gag_beaver: ['gag_beaver', 'a', 1.6, 'a', 10.0],
+  // (Re-recorded from live 1.0.5, job U16, with the shorter pipe: the WHOLE gag this time, from the empty strip before he waddles in to the empty strip after.)
+  gag_beaver: ['gag_beaver', 'a', -0.4, 'b', 0.3],
   gag_personal_cloud: ['gag_cloud', 'a', 1.8, 'a', 11.0],
   gag_out_cold: ['gag_cold', 'a', 2.6, 'a', 11.6],
   gag_runaway_roll: ['gag_roll', 'a', 0.2, 'a', 8.0], // (on its real trigger: two bumps down into the bottom berm)
