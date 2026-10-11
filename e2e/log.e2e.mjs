@@ -264,7 +264,7 @@ await wait(200);
 await page.$eval('.gear', (g) => g.click());
 await wait(200);
 check(await page.$eval('[data-act="camo"]', (i) => i.disabled), 'Settings: camo still locked');
-check((await page.$eval('[data-act="demo"]', (i) => i.closest('label').querySelector('.switch-label').textContent.trim())) === 'Demo mode', 'Settings: the switch is called "Demo mode"');
+check((await page.$eval('[data-act="demo"]', (i) => i.closest('label').querySelector('.switch-label').firstChild.textContent.trim())) === 'Demo mode', 'Settings: the switch is called "Demo mode"');
 await page.$eval('[data-act="demo"]', (i) => i.click());
 await page.$eval('[data-act="close"]', (b) => b.click());
 await wait(250);

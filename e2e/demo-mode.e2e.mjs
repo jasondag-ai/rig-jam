@@ -82,7 +82,8 @@ async function state(page) {
   const hats = await page.evaluate(() => [...document.querySelectorAll('.level-btn')].slice(0, 5).map((b) => b.querySelectorAll('img[src*="hat_full"], .hat.full, .hat.on').length));
   await page.locator('.gear').click();
   await page.waitForSelector('.settings');
-  const set = await page.evaluate(() => ({ demo: document.querySelector('.settings [data-act="demo"]').checked, label: document.querySelector('.settings [data-act="demo"]').closest('label').querySelector('.switch-label').textContent.trim(), ending: !!document.querySelector('.settings [data-act="ending"]'), mail: document.querySelector('.settings .feedback-mail')?.textContent ?? '', words: document.querySelector('.settings').textContent }));
+  await wait(450); // (the panel pops in: measure it once it has settled)
+  const set = await page.evaluate(() => ({ demo: document.querySelector('.settings [data-act="demo"]').checked, label: document.querySelector('.settings [data-act="demo"]').closest('label').querySelector('.switch-label').firstChild.textContent.trim(), sub: (() => { const sm = document.querySelector('.settings [data-act="demo"]').closest('label').querySelector('.switch-label small'), camo = document.querySelector('.settings [data-act="camo"]').closest('label').querySelector('.switch-label small'), done = document.querySelector('.settings [data-act="close"]'); if (!sm) return null; const r = sm.getBoundingClientRect(), d = done.getBoundingClientRect(), cs = getComputedStyle(sm), cc = camo ? getComputedStyle(camo) : null; done.scrollIntoView({ block: 'nearest' }); const d2 = done.getBoundingClientRect(); return { text: sm.textContent, inside: r.left >= 0 && r.right <= innerWidth && r.width > 20 && r.height > 8, oneLine: r.height < parseFloat(cs.lineHeight || '20') * 1.6 || r.height < 24, likeCamo: !cc || (cs.fontSize === cc.fontSize && cs.color === cc.color), doneInView: d.top >= 0 && d.bottom <= innerHeight, doneReachable: d2.top >= 0 && d2.bottom <= innerHeight && d2.height >= 44 }; })(), ending: !!document.querySelector('.settings [data-act="ending"]'), mail: document.querySelector('.settings .feedback-mail')?.textContent ?? '', words: document.querySelector('.settings').textContent }));
   await page.locator('.settings [data-act="close"]').click();
   await page.locator('.binoculars').click();
   await page.waitForSelector('.screen.log .log-count');
@@ -135,6 +136,8 @@ for (const name of WHICH) {
     const off = await state(page);
     check(!off.set.demo && off.tabsLocked === REGIONS.length - 1 && off.locked[0] === 5 && off.log.count === `2/${N}` && off.log.found === 2 && off.turnLocked === true, `off: the real save (${off.tabsLocked} regions locked, ${off.locked[0]} of Cardium's levels locked, the log ${off.log.count}, the Turnaround locked)`);
     check(off.set.label === 'Demo mode' && !/judge/i.test(off.set.words), `Settings calls it "${off.set.label}", and nothing says "judge mode"`);
+    check(off.set.sub?.text === 'Everything open. Nothing is saved.' && off.set.sub.inside && off.set.sub.likeCamo, `under the switch, one quiet line in the Camo sub-line's style: "${off.set.sub?.text}" (off)`);
+    check(off.set.sub?.doneReachable, `Settings at ${W} x ${H}: the Done button is ${off.set.sub?.doneInView ? 'on the screen without scrolling' : 'reachable by scrolling the panel'}`);
     check(off.set.mail === FEEDBACK_EMAIL && FEEDBACK_EMAIL === 'info@stragentic.com', `feedback goes to ${off.set.mail}`);
     let l = await lineOn(page, 0, 4, 2500);
     check(!l.before.shown && !l.after.shown && !l.after.room, 'off: no "Best from here" line without a hint, before or after a move');
@@ -149,6 +152,7 @@ for (const name of WHICH) {
     const flipped = { ...seed, 'rush-hour-rigs:v2': JSON.stringify({ ...JSON.parse(seed['rush-hour-rigs:v2']), demo: true }) };
     check(sameBytes(onStore, flipped), 'the switch on: the one thing saved is the switch itself (the `demo` field), every other byte as it was');
     const on = await state(page);
+    check(on.set.sub?.text === 'Everything open. Nothing is saved.' && on.set.sub.inside && on.set.sub.doneReachable, 'the same line shows with the switch on, and Done is still reachable');
     check(on.set.demo && on.tabsLocked === 0 && on.locked.every((n) => n === 0) && on.turnLocked === false, `on: every region and every level open (${on.locked.join(', ')} locked), the Turnaround too`);
     check(on.log.count === `${N}/${N}` && on.log.found >= N - 1 && !on.log.tag && !on.log.camo, `on: every sighting shown in the Wildlife Log (${on.log.count}), no DEMO label, no camo handed out`);
     l = await lineOn(page, 5, 9, 0);

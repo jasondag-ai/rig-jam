@@ -431,7 +431,7 @@ function showSettings(screen: HTMLElement): void {
         <label class="switch">
           <input type="checkbox" role="switch" data-act="demo" ${loadProgress().demo ? 'checked' : ''} />
           <span class="track" aria-hidden="true"><span class="knob"></span></span>
-          <span class="switch-label">Demo mode</span>
+          <span class="switch-label">Demo mode<small>Everything open. Nothing is saved.</small></span>
         </label>
         <button class="btn quiet" data-act="credits">Credits</button>
         ${loadFinale().seen ? '<button class="btn quiet" data-act="ending">Watch the ending</button>' : ''}
