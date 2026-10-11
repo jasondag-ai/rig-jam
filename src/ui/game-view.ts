@@ -1,4 +1,6 @@
 import { EXIT_MOST_MS } from './exit.ts';
+import { demoLink } from './demo-link.ts';
+import { bestFrom, bestLine, positionKey } from './best.ts';
 import { SolverLimitError, canUndo, getMoveRange, isWon, newGame, nextMove, solve, tryMove, undo, type GameState, type Level, type Move, SIZE, sizeOf } from '../engine/index.ts';
 import { seedFrom } from '../engine/rng.ts';
 import { BoardView } from './board-view.ts';
@@ -93,6 +95,15 @@ export class GameView {
   private state: GameState;
   private board: BoardView;
   private movesEl: HTMLElement;
+  // THE BEST SCORE STILL POSSIBLE (best.ts): the line under the moves and par. On the hidden `?demo=1` link it is
+  // always on, each position solved in a worker; in normal play it shows with a hint, from the hint's own line.
+  private bestEl: HTMLElement;
+  private readonly bestAlways = demoLink();
+  private bestKey = '';
+  private bestN: number | null = null;
+  private bestWorker: Worker | null = null;
+  private bestBusy = false;
+  private bestSeq = 0;
   private missesEl: HTMLElement;
   private undoBtn: HTMLButtonElement;
   private hintBtn: HTMLButtonElement;
@@ -260,6 +271,7 @@ export class GameView {
             <span class="moves">0</span>
             <span class="par">par ${level.par}</span>
           </span>
+          <span class="best" aria-live="polite"></span>
           <span class="misses" aria-label="0 near misses"><svg class="hazard" viewBox="0 0 24 22" aria-hidden="true"><path d="M12 2 L22.5 20 H1.5 Z"/><rect x="11" y="8" width="2" height="6.5" rx="1"/><circle cx="12" cy="17" r="1.3"/></svg><b>0</b><span class="lbl">near misses</span></span>
         </div>
       </header>
@@ -274,6 +286,7 @@ export class GameView {
     this.el.querySelector('.num')!.textContent = label;
     this.el.querySelector('.name')!.textContent = level.name;
     this.movesEl = this.el.querySelector('.moves')!;
+    this.bestEl = this.el.querySelector('.hud .best')!;
     this.missesEl = this.el.querySelector('.misses')!;
     this.undoBtn = this.el.querySelector('[data-act="undo"]')!;
     this.hintBtn = this.el.querySelector('[data-act="hint"]')!;
@@ -856,6 +869,8 @@ export class GameView {
 
   /** The player has left this level: every gag stops where it is (and its sounds with it). */
   leave(): void {
+    this.bestWorker?.terminate();
+    this.bestWorker = null;
     this.clearEggs();
     window.clearInterval(this.eggTimer);
     this.board.stopAmbient();
@@ -1211,7 +1226,50 @@ export class GameView {
     else this.hintBtn.innerHTML = `Hint <span class="count" aria-label="${hints} left">${hintCountText(hints)}</span>`;
     this.hintBtn.disabled = won || this.hintStep === 2;
     this.hintBtn.classList.toggle('empty', hints === 0 && this.hintStep === 0);
+    this.updateBest();
   }
+
+  /** The line under the moves and par: "Best from here: N", or "Par out of reach: best N" (best.ts). */
+  private updateBest(): void {
+    let n: number | null = null;
+    if (!isWon(this.state)) {
+      if (this.bestAlways) {
+        // The `?demo=1` link: a new position is asked for, and nothing shows until its answer is in.
+        const key = positionKey(this.state);
+        if (key !== this.bestKey) { this.bestKey = key; this.bestN = null; this.askBest(); }
+        n = this.bestN;
+      } else if (this.hintStep > 0) n = bestFrom(this.state.moves, this.hintPath); // (normal play: only while a hint shows)
+    }
+    const said = n === null ? null : bestLine(n, this.level.par);
+    // The line has its row in the HUD while it may show (the whole level on the demo link, so nothing there shifts
+    // between moves); the HUD is no taller for it, so the lease never moves.
+    this.bestEl.parentElement!.classList.toggle('best-room', this.bestAlways || said !== null);
+    this.bestEl.textContent = said?.text ?? '';
+    this.bestEl.classList.toggle('over', !!said?.over);
+    this.bestEl.dataset.n = n === null ? '' : String(n);
+  }
+  /** Asks the worker for the best line from where the pad stands now. A solve still running for an older position is dropped. */
+  private askBest(): void {
+    if (this.bestBusy) { this.bestWorker?.terminate(); this.bestWorker = null; }
+    if (!this.bestWorker) {
+      try {
+        this.bestWorker = new Worker(new URL('./best-worker.ts', import.meta.url), { type: 'module' });
+      } catch {
+        return; // (no workers here: the line simply does not show)
+      }
+      this.bestWorker.onmessage = (e: MessageEvent<{ seq: number; n: number | null }>) => {
+        if (e.data.seq !== this.bestSeq) return;
+        this.bestBusy = false;
+        this.bestN = bestFrom(this.bestMade, e.data.n === null ? null : { length: e.data.n } as unknown[]);
+        if (this.el.isConnected) this.updateBest();
+      };
+      this.bestWorker.onerror = () => { this.bestBusy = false; };
+    }
+    this.bestBusy = true;
+    this.bestMade = this.state.moves;
+    this.bestWorker.postMessage({ seq: ++this.bestSeq, level: this.state.level, trucks: this.state.trucks, moves: this.state.moves });
+  }
+  private bestMade = 0;
 
   /** Saves the win (once, however long the card takes to come) and says what it changed. */
   private recordWinOnce(): NonNullable<GameView['won']> {
