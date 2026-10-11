@@ -1,4 +1,5 @@
 import { shiftOpen, SIZE, sizeOf, cabSide, convoyWaitingFor, getMoveRange, type GameState, type Level, type Move, type MoveRange, type Side, type Truck } from '../engine/index.ts';
+import { installPointerLog, pointerLogOn } from './pointer-log.ts';
 import { FLING_EASE, PUSH_HOLD_MS, addSample, fingerSpeed, flingDelta, flingDir, flingMs, flingOn, FLING_SPEED, type Sample } from './fling.ts';
 import { bumpTarget, pickSpeaker } from './bump.ts';
 import { placeBubble, type BubbleSide } from './bubble.ts';
@@ -52,6 +53,8 @@ interface Drag {
   samples: Sample[];
   raw: number;
   held: { dir: 1 | -1; timer: number } | null;
+  /** A mouse (or a trackpad's click): it never flings, and its button going up is looked for on every move. */
+  mouse: boolean;
 }
 
 /** Renders the pad, gates, obstacles and trucks, and turns drags into (truckId, delta) move requests. */
@@ -110,6 +113,11 @@ export class BoardView {
     this.onBump = onBump;
     this.el = document.createElement('div');
     this.el.className = 'board';
+    // NOTHING OF THE BROWSER'S OWN STARTS FROM THE BOARD (job U14; a mouse brings these where a finger does not): no
+    // native drag of a picture, no text selection, and no scroll of the page under a drag (a trackpad's two fingers).
+    this.el.addEventListener('dragstart', (e) => e.preventDefault());
+    this.el.addEventListener('selectstart', (e) => e.preventDefault());
+    this.el.addEventListener('wheel', (e) => { if (this.drag) e.preventDefault(); }, { passive: false });
     // The yard clips what is on the pad (except a truck on its way out); bubbles sit on the board so they can overhang.
     this.yard = document.createElement('div');
     this.yard.className = 'yard';
@@ -141,6 +149,7 @@ export class BoardView {
     this.el.classList.toggle('big-pad', this.size > SIZE);
     this.tracks.setSize(this.size);
     this.drag = null;
+    this.followDrag(false);
     this.el.querySelectorAll('.gate, .obstacle, .floor, .ghost, .bubble, .dust').forEach((n) => n.remove());
     this.hitCounts.clear();
     this.trucks.forEach((t) => t.remove());
@@ -355,10 +364,8 @@ export class BoardView {
       `<i class="lamps"></i>` +
       `<div class="cab"><span class="driver-arm"><i class="upper"></i><i class="fore"><i class="hand"></i></i></span>${t.convoy ? `<span class="convoy-no" aria-label="convoy ${t.convoy}">${t.convoy}</span>` : ''}</div></div>`;
     wireSprite(el);
+    // (Only the press is listened for on the truck: once a drag is on, the whole WINDOW is followed. `followDrag`.)
     el.addEventListener('pointerdown', (e) => this.onPointerDown(e, t.id, el));
-    el.addEventListener('pointermove', (e) => this.onPointerMove(e));
-    el.addEventListener('pointerup', (e) => this.onPointerUp(e));
-    el.addEventListener('pointercancel', (e) => this.onPointerCancel(e));
     return el;
   }
 
@@ -719,7 +726,14 @@ export class BoardView {
   }
 
   private onPointerDown(e: PointerEvent, id: string, el: HTMLElement): void {
-    if (this.drag || this.flinging || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (this.flinging || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (this.drag) {
+      // A NEW PRESS WHILE A DRAG IS STILL ON: by the same pointer, or while a mouse's drag is on, the old press never
+      // ended properly (its release was lost somewhere): it is ended cleanly, its truck put back, and this press
+      // begins. A second finger while a first is dragging is ignored, as it always was.
+      if (e.pointerId !== this.drag.pointerId && !this.drag.mouse) return;
+      this.cancelDrag();
+    }
     const truck = this.truckById(id);
     const range = truck && getMoveRange(this.getState(), id);
     if (!truck || !range) return;
@@ -730,7 +744,8 @@ export class BoardView {
       // Capture can fail (e.g. the pointer is already gone); the drag still works without it.
     }
     const horizontal = truck.orient === 'h';
-    this.drag = { id, el, pointerId: e.pointerId, start: horizontal ? e.clientX : e.clientY, range, horizontal, offset: 0, pressing: false, wig: { dir: 0, ext: 0 }, samples: [{ t: e.timeStamp, at: horizontal ? e.clientX : e.clientY }], raw: 0, held: null };
+    this.drag = { id, el, pointerId: e.pointerId, start: horizontal ? e.clientX : e.clientY, range, horizontal, offset: 0, pressing: false, wig: { dir: 0, ext: 0 }, samples: [{ t: e.timeStamp, at: horizontal ? e.clientX : e.clientY }], raw: 0, held: null, mouse: e.pointerType === 'mouse' };
+    this.followDrag(true);
     el.classList.add('dragging');
     this.onGrab(id);
     sound.dragStart();
@@ -742,6 +757,9 @@ export class BoardView {
   private onPointerMove(e: PointerEvent): void {
     const d = this.drag;
     if (!d || e.pointerId !== d.pointerId) return;
+    // A mouse moving with no button down: its release was missed (let go outside the window, over another app, a
+    // menu). The drag ends here and now as a release, where the truck stands.
+    if (d.mouse && e.buttons === 0) return this.onPointerUp(e);
     const raw = (d.horizontal ? e.clientX : e.clientY) - d.start;
     d.raw = raw;
     d.samples = addSample(d.samples, { t: e.timeStamp, at: d.horizontal ? e.clientX : e.clientY });
@@ -779,7 +797,7 @@ export class BoardView {
     if ((bumpLo || bumpHi) && !d.pressing) {
       // A FAST finger running on past the stop is a flick on its way, not a push (fling.ts): the bump is held
       // back, and comes only if the finger is still down and still past the stop a moment later, or slows there.
-      const fast = this.fling && Math.abs(fingerSpeed(d.samples, e.timeStamp, this.cell)) >= FLING_SPEED;
+      const fast = this.fling && !d.mouse && Math.abs(fingerSpeed(d.samples, e.timeStamp, this.cell)) >= FLING_SPEED;
       if (fast) {
         if (!d.held) {
           const dir = bumpHi ? 1 : -1;
@@ -849,8 +867,10 @@ export class BoardView {
     if (!d || e.pointerId !== d.pointerId) return;
     this.dropHeld(d);
     this.endDrag();
-    // A quick flick sends it all the way (fling.ts); anything slower is the drag it always was.
-    const flick = this.fling ? flingDir(d.samples, e.timeStamp, this.cell) : 0;
+    // A quick flick sends it all the way (fling.ts); anything slower is the drag it always was. FLING IS FOR FINGERS: a
+    // mouse or trackpad drag never flings (a hand lets a button go while still moving, often with a small recoil,
+    // which read as a flick and sent the truck on past where it was let go, or back): it lands where it is let go.
+    const flick = this.fling && !d.mouse ? flingDir(d.samples, e.timeStamp, this.cell) : 0;
     if (flick !== 0) {
       const to = flingDelta(d.range, flick);
       if (to !== 0) return this.flingTo(d, to);
@@ -871,6 +891,11 @@ export class BoardView {
 
   private onPointerCancel(e: PointerEvent): void {
     if (!this.drag || e.pointerId !== this.drag.pointerId) return;
+    this.cancelDrag();
+  }
+  /** Ends a drag with no move made: the truck goes back to where it was. */
+  private cancelDrag(): void {
+    if (!this.drag) return;
     this.dropHeld(this.drag);
     this.endDrag();
     this.tracks.release(false, 260);
@@ -880,7 +905,41 @@ export class BoardView {
   }
 
   private endDrag(): void {
-    this.drag?.el.classList.remove('dragging');
+    const d = this.drag;
+    if (d) {
+      d.el.classList.remove('dragging');
+      try { d.el.releasePointerCapture(d.pointerId); } catch { /* it had none, or the pointer is gone */ }
+    }
     this.drag = null;
+    this.followDrag(false);
+  }
+
+  /**
+   * ONCE A DRAG IS ON, THE WHOLE WINDOW IS FOLLOWED (job U14), not only the truck: moves and the release count
+   * wherever they happen (off the truck, off the board, outside the window while the button is held), whether or
+   * not the pointer's capture held. And A DRAG IS NEVER LEFT STUCK: the window losing focus or the tab being hidden
+   * ends it (the truck goes back); a mouse seen moving with no button down ends it as a release (`onPointerMove`);
+   * a new press ends an old one (`onPointerDown`). A lost capture alone does not end it: the window still follows.
+   */
+  private followDrag(on: boolean): void {
+    for (const [type, fn] of [['pointermove', this.winMove], ['pointerup', this.winUp], ['pointercancel', this.winCancel]] as const) {
+      if (on) window.addEventListener(type, fn, true);
+      else window.removeEventListener(type, fn, true);
+    }
+    if (on) { window.addEventListener('blur', this.winGone); document.addEventListener('visibilitychange', this.winHidden); }
+    else { window.removeEventListener('blur', this.winGone); document.removeEventListener('visibilitychange', this.winHidden); }
+    this.logDrag();
+  }
+  private winMove = (e: PointerEvent): void => { this.onPointerMove(e); this.logDrag(); };
+  private winUp = (e: PointerEvent): void => this.onPointerUp(e);
+  private winCancel = (e: PointerEvent): void => this.onPointerCancel(e);
+  private winGone = (): void => this.cancelDrag();
+  private winHidden = (): void => { if (document.hidden) this.cancelDrag(); };
+  /** `?pointerlog=1`: what the board makes of the pointer just now (pointer-log.ts). */
+  private pointerLog = pointerLogOn() ? installPointerLog() : null;
+  private logDrag(): void {
+    if (!this.pointerLog) return;
+    const d = this.drag;
+    this.pointerLog.state(d ? `drag ${d.id}: ${(d.offset / this.cell).toFixed(2)} cells of ${d.range.min}..${d.range.max} (${d.mouse ? 'mouse' : 'touch'} #${d.pointerId})` : this.flinging ? 'flinging' : 'no drag');
   }
 }

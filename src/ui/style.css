@@ -568,6 +568,26 @@ input,
 .board {
   position: relative;
   touch-action: none;
+  /* (A mouse must not select the lease's numbers and symbols, nor pick a picture up: board-view.ts stops the events too.) */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.board img, .board svg { -webkit-user-drag: none; }
+/* `?pointerlog=1` (pointer-log.ts): the last pointer events and the drag's state, in a corner. It takes no touches. */
+.pointer-log {
+  position: fixed;
+  left: 6px;
+  bottom: 6px;
+  z-index: 50;
+  margin: 0;
+  max-width: min(92vw, 420px);
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(20, 14, 8, 0.82);
+  color: #e9ffd8;
+  font: 11px/1.3 ui-monospace, Menlo, monospace;
+  white-space: pre-wrap;
+  pointer-events: none;
 }
 
 /* The lease's ground: one continuous surface under the pad and the berm band alike (it shows through
