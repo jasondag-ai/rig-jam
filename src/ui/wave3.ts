@@ -144,7 +144,11 @@ function pdog(o){
  const mouth={smile:`<path d="M-3 -29 q3 2.6 6 0" fill="none" ${sw(1.6)}/>`,O:`<ellipse cx="0" cy="-28" rx="2.6" ry="3" fill="#6a2a24" ${sw(1.6)}/>`,frown:`<path d="M-3 -27.6 q3 -2.6 6 0" fill="none" ${sw(1.6)}/>`,grin:`<path d="M-4 -30 q4 5 8 0 z" fill="#6a2a24" ${sw(1.6)}/>`,flat:`<path d="M-3 -28.6 h6" ${sw(1.6)}/>`}[o.mouth];
  return`<g transform="translate(${r2(o.x)} ${r2(o.y)}) scale(${o.s})">${armL}${armR}<ellipse cx="0" cy="-16" rx="11" ry="16" fill="${c}" ${sw(2.4)}/><ellipse cx="0" cy="-13" rx="6.6" ry="10.5" fill="${cl}"/><circle cx="-8" cy="-44" r="3" fill="${c}" ${sw(1.8)}/><circle cx="8" cy="-44" r="3" fill="${c}" ${sw(1.8)}/><circle cx="0" cy="-36" r="10" fill="${c}" ${sw(2.4)}/><ellipse cx="0" cy="-31" rx="5.5" ry="3.8" fill="${cl}"/>${E(-4.2)}${E(4.2)}<ellipse cx="0" cy="-33" rx="2" ry="1.4" fill="${OL}"/>${mouth}${o.blush?`<ellipse cx="-6" cy="-31" rx="2.6" ry="1.5" fill="#e8786a" opacity="${o.blush}"/><ellipse cx="6" cy="-31" rx="2.6" ry="1.5" fill="#e8786a" opacity="${o.blush}"/>`:''}</g>`;}
 
-function pipe(cx,cy,a){return`<g transform="translate(${r2(cx)} ${r2(cy)}) rotate(${r2(a)})"><rect x="-65" y="-4" width="130" height="8" rx="2" fill="#9aa4ae" ${sw(2.4)}/><path d="M-54 -1.4 H52" stroke="#cfd5da" stroke-width="1.6"/><rect x="-66" y="-5.2" width="10" height="10.4" rx="1.5" fill="#6d7782" ${sw(2.2)}/><rect x="56" y="-5.2" width="10" height="10.4" rx="1.5" fill="#6d7782" ${sw(2.2)}/></g>`;}
+// THE BEAVER'S PIPE JOINT IS 94 UNITS LONG (PIPE_HALF 46, a collar a unit past each end), not the reference's 132 (Jay,
+// Oct 11, job U16): stood upright from the ground at his feet, the reference's pipe reached 35 units above the strip's
+// top edge, under the berm, and its top was cut off flat. This one stands inside the strip with both ends showing.
+const PIPE_HALF=46;
+function pipe(cx,cy,a){const h=PIPE_HALF;return`<g transform="translate(${r2(cx)} ${r2(cy)}) rotate(${r2(a)})"><rect x="${-h}" y="-4" width="${2*h}" height="8" rx="2" fill="#9aa4ae" ${sw(2.4)}/><path d="M${-h+11} -1.4 H${h-13}" stroke="#cfd5da" stroke-width="1.6"/><rect x="${-h-1}" y="-5.2" width="10" height="10.4" rx="1.5" fill="#6d7782" ${sw(2.2)}/><rect x="${h-9}" y="-5.2" width="10" height="10.4" rx="1.5" fill="#6d7782" ${sw(2.2)}/></g>`;}
 const SPIRAL='M0 0 A3 3 0 0 1 6 0 A6 6 0 0 1 -6 0 A9 9 0 0 1 12 0 A12 12 0 0 1 -12 0 A15 15 0 0 1 18 0 A18 18 0 0 1 -18 0 A21 21 0 0 1 24 0';
 function bale(x,y,rot){return`<ellipse cx="${r2(x)}" cy="${GY+1}" rx="24" ry="4" fill="${OL}" opacity=".14"/><g transform="translate(${r2(x)} ${r2(y)}) rotate(${r2(rot)})"><circle r="27" fill="#e3c46c" ${sw()}/><path d="${SPIRAL}" fill="none" stroke="#b48f3c" stroke-width="2.2" stroke-linecap="round"/><path d="M-27 -3 l-4 -2 M-25 10 l-4 1 M20 -18 l3 -3 M8 26 l1 4" stroke="#b48f3c" stroke-width="1.8" stroke-linecap="round"/></g>`;}
 const TWC={};
@@ -161,7 +165,7 @@ const MUSKEG=(()=>{let s='';[[150,152,40,8.5,4],[92,161,16,4,9],[352,147,13,3.6,
 
 /* The game moved ONE thing in the scenery above: the small left puddle and its cattail stand 54 px
    further right (at 92, not 38), clear of the sleepy worker's spot by the screen's left edge. */
-export { GY, OL, C, MUSKEG, bale, sfx, r2, rng, tuft, worker as w3worker, cat, beaver, coyote, pdog };
+export { GY, OL, C, MUSKEG, PIPE_HALF, bale, sfx, r2, rng, tuft, worker as w3worker, cat, beaver, coyote, pdog };
 // (For the Baldonnel sightings, bald-gags.ts: the same helpers and puppets. `worker` is the Clearwater reference's, with the
 // Baldonnel reference's two additions, a thing on the hat (`hatItem`) and a nose colour (`noseC`), and the finale reference's
 // three, a plain suit with no stripes (`plain`), a thing on the chest (`torsoItem`) and one at the mouth (`faceItem`): none
@@ -257,11 +261,12 @@ WAVE3.catTrain = { name:'Cat Train', dur:12.4, still:7.0,
   return s;}};
 
 /* 3. Beaver */
-const BEAVER_IN=293/2.2, BEAVER_OUT=143/1.4;
+// (He stands 19 units nearer the aspen than in the reference at each BONK, so the shorter pipe's end still meets the trunk.)
+const BEAVER_IN=312/2.2, BEAVER_OUT=143/1.4;
 WAVE3.beaver = { name:'Beaver', dur:11.4, still:5.6,
  beats:[[0,'waddles-in','Waddles in with a pipe joint balanced on his head.'],[2.2,'bonk','BONK. The pipe hits the aspen.'],[2.5,'glares','Shakes it off, backs up, glares at the tree.'],[3.3,'bonk-again','Crouch, charge, BONK again. Dizzy.'],[4.2,'thinks','Thinks it over.'],[4.6,'idea','Idea!'],[4.8,'tilts-pipe','Tilts the pipe upright.'],[6.2,'squeezes-past','Squeezes past behind the tree, pipe straight up.'],[8.4,'lowers','Lowers it on the far side.'],[9.0,'proud','Chin up, proud. Two tail slaps.'],[9.6,'waddles-off','Waddles off with his pipe.']],
  lead:E=>E/BEAVER_IN, tail:E=>E/BEAVER_OUT,
- bx(t){return t<0?-80+BEAVER_IN*t:t>11.0?495+BEAVER_OUT*(t-11.0):kf(t,[[0,-80],[2.2,213,'lin'],[2.5,213],[3.0,192],[3.3,192],[3.45,188],[3.6,213,'in'],[3.8,200,'out'],[6.2,200],[8.4,352,'lin'],[9.6,352],[11.0,495,'lin']]);},
+ bx(t){return t<0?-80+BEAVER_IN*t:t>11.0?495+BEAVER_OUT*(t-11.0):kf(t,[[0,-80],[2.2,232,'lin'],[2.5,232],[3.0,211],[3.3,211],[3.45,207],[3.6,232,'in'],[3.8,219,'out'],[6.2,219],[8.4,352,'lin'],[9.6,352],[11.0,495,'lin']]);},
  focus(t){return{x:this.bx(t)+20,y:110};},
  render(t,E=0){
   let s='';
@@ -273,7 +278,8 @@ WAVE3.beaver = { name:'Beaver', dur:11.4, still:5.6,
   const pa=-90*up+wob(2.2)+wob(3.6)*1.6;
   const lift=up;
   const bob=walking?-1.5*Math.abs(Math.cos(bx/5)):0;
-  const pcy=lerp(GY-38,GY-72,lift)+bob, pcx=bx+8;
+  // (Upright, its foot is by his feet and its top end 5 units inside the strip's top edge: scene-stage.ts MANN_SCENE.)
+  const pcy=lerp(GY-38,GY-54,lift)+bob, pcx=bx+8;
   s+=pipe(pcx,pcy,pa);
   let b={x:bx,ph:bx/5,walk:walking?1:0,brow:3,armA:lerp(-168,-178,lift)};
   b.y=GY+bob*.5;

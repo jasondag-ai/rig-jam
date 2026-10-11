@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GAG_TRIGGERS, PREVIEWS } from './gag-triggers.ts';
-import { BALE_BOX, ASPEN_BOX, BIG_PUDDLE, LANE_ASPEN, MANN_SIGN_X, MANN_TREES, SCENE, SCENE_MIN, mannFront, mannScene, sceneDef, sceneGeom, skyGeom, tapBox, toScreen, wave3Still } from './scene-stage.ts';
-import { BALE_AT, WAVE3, baleAtRest } from './wave3.ts';
+import { BALE_BOX, ASPEN_BOX, BIG_PUDDLE, LANE_ASPEN, MANN_SCENE, MANN_SIGN_X, MANN_TREES, SCENE, SCENE_MIN, mannFront, mannScene, sceneDef, sceneGeom, skyGeom, tapBox, toScreen, wave3Still } from './scene-stage.ts';
+import { BALE_AT, PIPE_HALF, WAVE3, baleAtRest } from './wave3.ts';
 import { LOG_ENTRIES } from './wildlife-log.ts';
 
 type Gag = { name: string; dur: number; still: number; beats: [number, string, string][]; lead: (E: number) => number; tail: (E: number) => number; render: (t: number, E: number) => string; over?: (t: number, E: number) => string };
@@ -171,6 +171,22 @@ describe('the four Mannville gags (ported: wave3.ts)', () => {
     expect(strip(g.render(mid, 100))).toBe(strip(g.render(mid, 0)));
   });
 
+  it("the beaver's WHOLE PIPE stays inside the strip in every frame, both ends showing; flat, its end still BONKs the aspen's trunk; upright, it passes behind the tree (job U16)", () => {
+    const g = gags.beaver as unknown as { render: (t: number, E?: number) => string; dur: number };
+    // (The pipe is the first thing the gag draws: its centre and its turn. A collar stands a unit past each end.)
+    const ends = (t: number) => { const m = g.render(t).match(/^<g transform="translate\(([-\d.]+) ([-\d.]+)\) rotate\(([-\d.]+)\)"/)!; const [cx, cy, a] = [+m[1], +m[2], (+m[3] * Math.PI) / 180], r = PIPE_HALF + 1; return { top: cy - Math.abs(Math.sin(a)) * r - 5.2 * Math.abs(Math.cos(a)), foot: cy + Math.abs(Math.sin(a)) * r + 5.2 * Math.abs(Math.cos(a)), right: cx + Math.abs(Math.cos(a)) * r, cx, deg: +m[3] }; };
+    let highest = 1e9;
+    for (let t = 0; t <= g.dur; t += 0.02) { const e = ends(t); highest = Math.min(highest, e.top); expect(e.top, `the pipe's top at ${t.toFixed(2)} s`).toBeGreaterThanOrEqual(MANN_SCENE.top + 3); expect(e.foot, `its foot at ${t.toFixed(2)} s`).toBeLessThanOrEqual(MANN_SCENE.ground); }
+    expect(highest).toBeLessThan(MANN_SCENE.top + 8); // (upright it stands nearly the whole height of the strip: a long joint still)
+    // BONK, twice: flat, its leading end is on the trunk of the lane aspen (x 288).
+    for (const t of [2.2, 3.6]) { const e = ends(t); expect(Math.abs(e.deg)).toBeLessThan(12); expect(Math.abs(e.right - LANE_ASPEN.x)).toBeLessThanOrEqual(3); }
+    // Upright from 5.7 s, and carried upright past the trunk.
+    const past = ends(7.4);
+    expect(past.deg).toBe(-90);
+    expect(ends(6.2).cx).toBeLessThan(LANE_ASPEN.x);
+    expect(ends(8.4).cx).toBeGreaterThan(LANE_ASPEN.x);
+  });
+
   it('a walk-in from the wider screen edge is at the reference speed: at t = 0 everyone is where the reference starts them', () => {
     const m = gags.muskeg as unknown as { x: (t: number) => number };
     expect(m.x(0)).toBe(-40);
@@ -179,7 +195,8 @@ describe('the four Mannville gags (ported: wave3.ts)', () => {
     expect(m.x(8.3)).toBeCloseTo(440, 5);
     const b = gags.beaver as unknown as { bx: (t: number) => number };
     expect(b.bx(0)).toBe(-80);
-    expect(b.bx(2.2)).toBe(213);
+    // (19 units nearer the aspen than the reference's 213: his pipe is shorter, and its end still meets the trunk. Job U16.)
+    expect(b.bx(2.2)).toBe(232);
     expect(b.bx(-0.5)).toBeLessThan(-80);
     const c = gags.catTrain as unknown as { train: (t: number) => number; mom: (t: number, E: number) => number };
     expect(c.train(0)).toBe(-40);
