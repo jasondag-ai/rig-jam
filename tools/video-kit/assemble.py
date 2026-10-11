@@ -24,7 +24,7 @@ VERSION = json.loads((ROOT / 'package.json').read_text())['version']
 CLIPS = [
     ('cover_first_drag', "The cover as the game opens (the roughneck, RIG JAM, TAP TO START), one tap, and level 1: the ghost finger shows the first move, then both trucks are dragged out through their gates and the win card comes."),
     ('solves_cardium', "Cardium 8 (summer): seven moves near the end of the solve, trucks dragged clear and driven out through their gates."),
-    ('solves_montney', "Montney 7 (spring mud, lease equipment in the way; the cow in the strip): six moves near the end of the solve."),
+    ('solves_montney', "Montney 7 (spring mud, lease equipment in the way; the cow in the strip; from live 1.0.10, with Montney's foothills on the horizon): six moves near the end of the solve."),
     ('solves_duvernay', "Duvernay 6 (winter; its two convoy trucks carry their numbers): six moves near the end of the solve."),
     ('solves_bigpad', "Clearwater 4, the 8 x 8 Big Pad: six moves near the end of the solve, one truck after another out."),
     ('solves_baldonnel', "Baldonnel 1: a frac unit is pushed at a soft road ban patch and cannot go (its driver: \"Road ban. I'm too heavy for that.\"); then a pickup drives over the other patch and out, and the pad goes on."),
@@ -32,7 +32,7 @@ CLIPS = [
     ('perfect_solve', "Cardium 7 at par: the last three moves, the last truck out, hard-hat confetti, the win card with three hard hats and the Zero Incident medal."),
     ('daily_pad_share', "Today's Daily Pad (#11, named in the HUD): its last three trucks out, the win card with the days-without-incident sign, and a tap on Share (\"Copied! Paste it anywhere.\")."),
     ('sunday_turnaround', "The home page (Daily Pad and Sunday Turnaround buttons), a tap on Sunday Turnaround #1, and the first five moves of the week's 8 x 8 pad."),
-    ('region_swipe', "The home page: the region bar swiped along and each of the seven regions tapped in turn (Cardium, Montney, Duvernay, Mannville, Bakken, Clearwater, Baldonnel), the list changing season each time."),
+    ('region_swipe', "From live 1.0.10 (Montney's list has its foothills, Bakken's is prairie with hay bales). The home page: the region bar swiped along and each of the seven regions tapped in turn (Cardium, Montney, Duvernay, Mannville, Bakken, Clearwater, Baldonnel), the list changing season each time."),
     ('gag_magpie', "Sighting, Magpie (Cardium): he lands on a truck's cab, strains, leaves his mark, looks smug and flies off; the driver: \"Somebody get the pressure washer.\""),
     ('gag_moose', "Sighting, Moose (Duvernay): he rises from behind the top berm, blinks, chews, stares, \"Mmrrph\", and ducks. The whole of it."),
     ('gag_beaver', "Sighting, Beaver (Mannville), the whole of it, from live 1.0.5 (the pipe is whole in every frame now): he waddles in with a pipe joint on his head, BONK, it will not pass the aspen; BONK again; an idea; he tilts it upright, squeezes past, lowers it, is proud (two tail slaps) and waddles off."),

@@ -1336,6 +1336,12 @@ something, give exact clicks and one command at a time.
   saved.", shown whether the switch is on or off. Settings on a phone in Safari is a scrolling panel (it already
   was: the version line is below the fold at 390 x 664); the line adds 6 px and Done is reached as before.
   `test:e2e:demo` holds the line and Done at both sizes.
+- THE VIDEO KIT: two clips were recorded again from live 1.0.10 and replaced in `video_kit/02_phone_clips`:
+  `solves_montney.mp4` (9.1 s, as before; opened with an ordinary all-cleared save in the recorder's own browser,
+  `solveClip(..., { played: true })`, because Demo mode's HUD now carries the "Best from here" line, which the
+  1.0.1 clips do not have) and `region_swipe.mp4` (9.6 s; it was 9.8). No still in `06_screenshots` shows a
+  Montney level or a list, so none changed. Other clips that pass the home page show Cardium's list unscrolled,
+  which looks as it did. The kit's zips were not rebuilt.
 - Tests: mountains.test.ts (the foothills, the thinner list, the bales); `ONLY=mountains npm run test:e2e:baldonnel`
   (the range is Baldonnel's alone, the foothills Montney's alone).
 
