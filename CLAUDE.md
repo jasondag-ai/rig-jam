@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.9 on Oct 11) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1314,7 +1314,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
-## Backdrops: the list scrolls as one, Montney's foothills, the prairie's list (Jay, Oct 11; ON `next`, NOT LIVE YET)
+## Backdrops: the list scrolls as one, Montney's foothills, the prairie's list (job U20; Oct 11; shipped as 1.0.10)
 - THE LEVEL LIST'S SKY AND GROUND SCROLL WITH THE LIST. The list (`.screen.levels`) is the scroller and its sky
   and grass were its own background, which by default stays put while the content scrolls; the tree line is content
   (`.scenery`), so it slid up into the sky as the ground stood still. Now `background-attachment: local` (style.css,
@@ -1326,9 +1326,16 @@ something, give exact clicks and one command at a time.
   seed. Behind the farthest trees on the list and on every level of the spring theme (so the even Daily Pads too),
   under the HUD, dimmed by the night like the trees. Baldonnel's range is `horizon: 'range'`, as it was.
 - THE PRAIRIE'S LIST (Bakken): the thinning of trees for open country (`Theme.trees`) was only done where there was
-  a strip below the lease, so the list stood a full tree line. It is done everywhere now (`thinned` in scenery.ts;
-  a level's trees come out exactly as before), and the list has five round HAY BALES on the horizon in front of
+  a strip below the lease, so the list stood a full tree line. It is done on the level list too now (`thinned` in
+  scenery.ts, at the end where the box has no lease: `box.height === 0`). A LEVEL'S TREES ARE EXACTLY AS THEY WERE
+  in every theme (compared with the 1.0.9 code piece for piece: Baldonnel's levels, which have no generic strip,
+  would otherwise have lost a fifth of their trees). Baldonnel's LIST is thinned by its own `trees` 0.8. The list has five round HAY BALES on the horizon in front of
   the shelterbelt (`balesSvg`, `BALES`, option `bales`; the list only). Bakken's levels are as they were.
+- ALSO IN 1.0.10: the judges' page copied again (its orange button now reads "Demo mode"), and one quiet line under
+  Settings' Demo mode switch, in the Camo sub-line's style (`.switch-label small`): "Everything open. Nothing is
+  saved.", shown whether the switch is on or off. Settings on a phone in Safari is a scrolling panel (it already
+  was: the version line is below the fold at 390 x 664); the line adds 6 px and Done is reached as before.
+  `test:e2e:demo` holds the line and Done at both sizes.
 - Tests: mountains.test.ts (the foothills, the thinner list, the bales); `ONLY=mountains npm run test:e2e:baldonnel`
   (the range is Baldonnel's alone, the foothills Montney's alone).
 
@@ -1367,8 +1374,8 @@ something, give exact clicks and one command at a time.
   phone, a part-played one, a phone with the old demo mode on).
 - A THIRD REAL SAVE, made on live 1.0.8 before this shipped: `e2e/fixtures/live-save-cf02150.json`, beside `de534ad`
   and `ba54c2b` in `FIXTURES` (save-compat.test.ts, e2e/save.e2e.mjs). All three must load whole.
-- LEFT FOR JAY: the judges' page (out of scope here) still labels its `?demo=1` button "Judge mode". And a player
-  who leaves the switch on plays with nothing saved, with no reminder on the screen beyond the open locks.
+- (Both things left for Jay here were done in 1.0.10: the judges' page says "Demo mode", and Settings says under
+  the switch that nothing is saved.)
 
 ## The judges' guide (job U13; Oct 11; shipped as 1.0.7)
 - https://jasondag-ai.github.io/rig-jam/judges/ is the COO's one-page judges' guide: `public/judges/index.html`, COPIED
