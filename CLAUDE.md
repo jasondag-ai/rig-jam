@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 and 1.0.6 on Oct 11) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.7 on Oct 11) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1314,6 +1314,25 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
+## The judges' guide (job U13; Oct 11; shipped as 1.0.7)
+- https://jasondag-ai.github.io/rig-jam/judges/ is the COO's one-page judges' guide: `public/judges/index.html`, COPIED
+  EXACTLY from `~/Desktop/RHR Art Inbox/judges/index.html` (never restyle or reword it: a new version is copied over
+  it), and `public/judges/how-to-play.mp4`, the 30-second how-to video encoded for the web from
+  `~/Desktop/RHR Art Inbox/video_kit/rigjam_how_to_play_30s.mp4` (H.264 high, yuv420p, 720 x 1280, two passes at
+  1280 kb/s; AAC 128 kb/s; `-movflags +faststart`; 5.6 MB, under the 6 MB limit). Its poster is the game's own
+  `../cover.webp`. Its three buttons lead to the live game, `?demo=1` and `?finale=1` (absolute links, on the dev
+  copy too). The page takes its fonts from Google Fonts, as written.
+- APART FROM THE GAME: nothing in `src/` knows of it. The service worker's list leaves out `judges/`
+  (vite.config.ts), and its fetch handler returns at once for anything under `judges/` (service-worker.ts).
+  WITHOUT THAT, a phone with the game installed that opened the guide would have had the GUIDE kept as the game's
+  offline page (the worker keeps the last good page it was asked for as `./`), and the video put in its cache.
+- `npm run test:e2e:judges` (builds, serves `dist` under the Pages base path with byte ranges; WebKit at 390 x 664,
+  375 x 635 and 1280 x 720): no sideways scroll, the poster, the video waits for a tap and then plays with sound,
+  the three buttons open the live game, judge mode and the ending (`LIVE=0` skips opening the live site); then in
+  Chromium and WebKit, with the game's worker in charge, the guide opens, its video plays, the game's offline page
+  is still the game and nothing of the guide is in a cache. A unit test holds the worker's rule, the page's video
+  tag, the size and the faststart order. NOBODY HAS WATCHED IT ON A REAL PHONE YET: Jay's thumb on the live page.
+
 ## The layer audit (job U17; Oct 11; shipped as 1.0.6)
 - THE QUESTION: does anything hide or cut off what the player should be watching, unless it was meant to?
   `npm run test:e2e:layers` (`e2e/layer-audit.e2e.mjs`, parts in `e2e/layer-audit/`; Chromium and WebKit; 390 x 844,
@@ -1907,6 +1926,7 @@ something, give exact clicks and one command at a time.
   which is a flick, and they mean a drag. With it off the board is exactly the old one (no held bumps).
 - The first how-to card ends "Flick a truck to send it all the way."
 - `node tools/gen-baldonnel.ts [minutes] [chain]` / `node tools/gen-baldonnel.ts write` – Baldonnel's ten levels: climbs the slots not yet in `tools/fixed-levels/`, then writes `src/levels/baldonnel.json`
+- `npm run test:e2e:judges` – the judges' guide at /judges/: fit, the video after a tap, the three buttons, and that the game's service worker leaves it alone (builds first; needs no dev server)
 - `npm run test:e2e:layers` – the layer audit: nothing hides or cuts off what the player should be watching, unless a rule in `e2e/layer-audit/allow.mjs` says it is meant (`ENGINE=`, `VIEW=`, `PART=`; `node e2e/layer-audit/report.mjs` writes `qc/layer_audit.md`; start the dev server first)
 - `npm run test:e2e:striptop` – no strip gag is cut off by the lease or the buttons: all 32 through their whole runs (`VIEW=390x664`, `ONLY=beaver`; start the dev server first)
 - `npm run test:e2e:records` – Dug Through's records: digs in a row from the grass, a new record's card, toast and ta-da, a reload, `?demo=1` (start the dev server first)

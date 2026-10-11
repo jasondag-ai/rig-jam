@@ -95,6 +95,9 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET' || url.origin !== self.location.origin || !url.href.startsWith(SCOPE)) return;
   // What version is live is always asked of the network (an open copy uses it to see it is out of date).
   if (url.pathname.endsWith('/version.json')) return;
+  // The judges' guide (/judges/) is a page of its own beside the game: the worker leaves it and its video to the
+  // browser, so its page is never kept as the game's offline copy and its video is never cached.
+  if (url.href.startsWith(at('judges/'))) return;
   if (req.mode === 'navigate') {
     // Pages: the network first (so a reload brings the new version), the cached page when there is none.
     event.respondWith((async () => {

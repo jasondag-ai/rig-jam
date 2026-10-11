@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Rig Jam judges' guide: how to play, judge mode, the ending, and how it was built.">
+<title>Rig Jam Judges' Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=Allerta+Stencil&display=swap">
+<style>
+/* Layout: one phone-width column, like the game itself: sky header, the video, three big toy buttons, then a cream site-orientation card. */
+/* One deliberate look (the game's daytime lease), so every colour is set explicitly and the page reads the same on any host theme. */
+:root {
+  color-scheme: light;
+  --sky-top: #4fb0ff;
+  --sky-bottom: #c4ecff;
+  --cream: #fff7e6;
+  --cream-dark: #f0dfbd;
+  --ink: #3a2412;
+  --ink-dim: #6e5034;
+  --outline: #2a1a0c;
+  --yellow: #ffd21f;
+  --red: #ff4747;
+  --orange: #ff8a00;
+  --green: #2fcf5f;
+  --blue: #43a8ff;
+  --ground: #6cc24a;
+  --ground-dark: #4c9a32;
+  --display: 'Fredoka', ui-rounded, 'Arial Rounded MT Bold', system-ui, sans-serif;
+  --body: 'Nunito', ui-rounded, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --stencil: 'Allerta Stencil', 'Arial Narrow', Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: linear-gradient(180deg, var(--sky-top) 0, var(--sky-bottom) 420px, var(--ground) 420px, var(--ground) 100%);
+  background-color: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.page {
+  max-width: 560px;
+  margin: 0 auto;
+  padding-inline: 16px;
+  padding-block: 28px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--outline); outline-offset: 3px; }
+
+/* Header */
+.head { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(56px, 17vw, 84px);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  -webkit-text-stroke: 7px var(--outline);
+  paint-order: stroke fill;
+  text-shadow: 0 6px 0 rgba(42, 26, 12, 0.35);
+}
+.title .rig { color: var(--yellow); }
+.title .jam { color: var(--red); }
+.sign {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--orange);
+  color: #1d1208;
+  border: 3px solid var(--outline);
+  border-radius: 6px;
+  padding: 6px 14px 5px;
+  font-family: var(--stencil);
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 0 rgba(42, 26, 12, 0.3);
+}
+.sign .stripe {
+  width: 22px; height: 14px; border: 2px solid var(--outline);
+  background: repeating-linear-gradient(-45deg, #1d1208 0 4px, var(--yellow) 4px 8px);
+  border-radius: 2px;
+}
+.lede {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.3;
+  color: var(--outline);
+  text-wrap: balance;
+  max-width: 30ch;
+}
+
+/* Video */
+.video-wrap { display: flex; justify-content: center; }
+.phone {
+  position: relative;
+  width: min(300px, 78vw);
+  aspect-ratio: 9 / 16;
+  max-width: 100%;
+  border: 4px solid var(--outline);
+  border-radius: 26px;
+  overflow: hidden;
+  background: var(--outline);
+  box-shadow: 0 8px 0 rgba(42, 26, 12, 0.3);
+}
+.phone video, .phone img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.soon {
+  position: absolute; inset: auto 12px 14px 12px;
+  background: rgba(255, 247, 230, 0.94);
+  border: 3px solid var(--outline);
+  border-radius: 14px;
+  padding: 8px 12px;
+  text-align: center;
+  font-family: var(--display); font-weight: 600; font-size: 15px; line-height: 1.25;
+}
+.cap { margin: 8px 0 0; text-align: center; font-weight: 700; font-size: 14px; color: var(--outline); }
+
+/* Big toy buttons */
+.go { display: flex; flex-direction: column; gap: 14px; }
+.btn {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 12px;
+  min-height: 64px;
+  padding: 12px 16px 14px 18px;
+  border: 3px solid var(--outline);
+  border-radius: 18px;
+  text-decoration: none;
+  color: #fff;
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.35), inset 0 -6px 0 rgba(0, 0, 0, 0.18), 0 5px 0 rgba(42, 26, 12, 0.35);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.btn:active { transform: translateY(3px); box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.35), inset 0 -4px 0 rgba(0, 0, 0, 0.18), 0 2px 0 rgba(42, 26, 12, 0.35); }
+.btn .label {
+  font-family: var(--display); font-weight: 700; font-size: 23px; line-height: 1.1;
+  -webkit-text-stroke: 4px var(--outline); paint-order: stroke fill;
+}
+.btn .what { grid-column: 1; font-weight: 700; font-size: 14.5px; line-height: 1.3; color: var(--outline); min-width: 0; }
+.btn .arrow {
+  grid-column: 2; grid-row: 1 / span 2;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85); border: 3px solid var(--outline);
+  display: grid; place-items: center;
+}
+.btn .arrow svg { width: 16px; height: 16px; }
+.btn.play { background: var(--green); }
+.btn.judge { background: var(--orange); }
+.btn.end { background: var(--blue); }
+
+/* The orientation card */
+.card {
+  background: var(--cream);
+  border: 3px solid var(--outline);
+  border-radius: 20px;
+  padding: 20px 18px 22px;
+  box-shadow: 0 6px 0 rgba(42, 26, 12, 0.28);
+  display: flex; flex-direction: column; gap: 16px;
+}
+.card h2 {
+  margin: 0;
+  font-family: var(--display); font-weight: 700; font-size: 24px; line-height: 1.15;
+  color: var(--outline);
+  text-wrap: balance;
+}
+.eyebrow {
+  margin: 0 0 -10px;
+  font-family: var(--stencil); font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim);
+}
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; counter-reset: step; }
+.steps li { display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start; }
+.steps li::before {
+  counter-increment: step; content: counter(step);
+  width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--yellow); border: 3px solid var(--outline);
+  font-family: var(--display); font-weight: 700; font-size: 18px; color: var(--outline);
+}
+.steps li > div { min-width: 0; padding-top: 5px; }
+b, strong { font-weight: 800; color: var(--outline); }
+
+.regions { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 8px; }
+.regions li {
+  display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline;
+  background: #fff; border: 2px solid var(--cream-dark); border-radius: 12px; padding: 8px 12px;
+  font-size: 15px; line-height: 1.35;
+}
+.regions .n { font-family: var(--display); font-weight: 700; color: var(--orange); font-variant-numeric: tabular-nums; -webkit-text-stroke: 0; }
+.regions li > span:last-child { min-width: 0; }
+
+.more { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.more li { padding-left: 22px; position: relative; }
+.more li::before {
+  content: ''; position: absolute; left: 0; top: 0.5em;
+  width: 11px; height: 11px; border-radius: 3px; background: var(--orange); border: 2px solid var(--outline);
+}
+.card p { margin: 0; }
+.note { font-size: 15px; color: var(--ink-dim); }
+
+.contact { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.mail {
+  font-family: var(--display); font-weight: 600; font-size: 18px;
+  user-select: all; -webkit-user-select: all;
+  background: #fff; border: 2px solid var(--cream-dark); border-radius: 10px; padding: 6px 10px;
+  overflow-wrap: anywhere; min-width: 0;
+}
+.copy {
+  font-family: var(--display); font-weight: 600; font-size: 16px;
+  min-height: 44px; padding: 0 16px;
+  border: 3px solid var(--outline); border-radius: 12px;
+  background: var(--yellow); color: var(--outline); cursor: pointer;
+  box-shadow: 0 3px 0 rgba(42, 26, 12, 0.3);
+}
+.phone-card {
+  display: grid; grid-template-columns: 116px 1fr; gap: 16px; align-items: center;
+  background: var(--cream); border: 3px solid var(--outline); border-radius: 20px;
+  padding: 14px 18px 14px 14px; box-shadow: 0 6px 0 rgba(42, 26, 12, 0.28);
+}
+.qr-code { display: block; width: 116px; height: 116px; border-radius: 10px; border: 2px solid var(--cream-dark); }
+.qr-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 15.5px; line-height: 1.35; }
+.qr-text b { font-family: var(--display); font-weight: 700; font-size: 21px; line-height: 1.15; }
+/* On a phone the code is no use: they are already holding one. */
+@media (hover: none) and (pointer: coarse) { .phone-card { display: none; } }
+.foot { text-align: center; font-weight: 700; font-size: 14px; color: #fff; text-shadow: 0 1px 0 var(--ground-dark), 0 0 6px rgba(42, 26, 12, 0.35); margin: 0; }
+@media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+</style>
+
+</head>
+<body>
+<main class="page">
+  <header class="head">
+    <h1 class="title" aria-label="Rig Jam"><span class="rig">RIG</span> <span class="jam">JAM</span></h1>
+    <span class="sign"><span class="stripe" aria-hidden="true"></span>Site orientation: judges</span>
+    <p class="lede">An oilfield puzzle made for your phone. Here is all of it in two minutes.</p>
+  </header>
+
+  <section class="video-wrap" aria-label="How to play in 30 seconds">
+    <div>
+      <div class="phone">
+        <video src="how-to-play.mp4" poster="../cover.webp" controls playsinline preload="metadata" aria-label="How to play Rig Jam in 30 seconds"></video>
+      </div>
+      <p class="cap">How to play, in 30 seconds</p>
+    </div>
+  </section>
+
+  <section class="phone-card" aria-label="Play on your phone">
+    <svg class="qr-code" viewBox="-2 -2 33 33" role="img" aria-label="QR code for jasondag-ai.github.io/rig-jam"><rect x="-2" y="-2" width="33" height="33" fill="#ffffff"/><path d="M0 0h7v1h-7zM8 0h2v1h-2zM12 0h2v1h-2zM16 0h1v1h-1zM19 0h2v1h-2zM22 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h2v1h-2zM11 1h2v1h-2zM16 1h3v1h-3zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM9 2h1v1h-1zM11 2h4v1h-4zM16 2h1v1h-1zM19 2h1v1h-1zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h2v1h-2zM12 3h2v1h-2zM15 3h1v1h-1zM17 3h1v1h-1zM19 3h1v1h-1zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM9 4h8v1h-8zM19 4h1v1h-1zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM11 5h2v1h-2zM14 5h1v1h-1zM16 5h1v1h-1zM19 5h2v1h-2zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM8 7h2v1h-2zM11 7h2v1h-2zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h1v1h-1zM0 8h1v1h-1zM2 8h2v1h-2zM5 8h3v1h-3zM9 8h1v1h-1zM12 8h2v1h-2zM15 8h5v1h-5zM22 8h1v1h-1zM25 8h1v1h-1zM27 8h2v1h-2zM1 9h1v1h-1zM5 9h1v1h-1zM7 9h1v1h-1zM9 9h5v1h-5zM16 9h1v1h-1zM19 9h6v1h-6zM28 9h1v1h-1zM3 10h2v1h-2zM6 10h1v1h-1zM8 10h1v1h-1zM13 10h1v1h-1zM16 10h3v1h-3zM20 10h3v1h-3zM24 10h1v1h-1zM26 10h2v1h-2zM0 11h1v1h-1zM4 11h2v1h-2zM9 11h1v1h-1zM11 11h2v1h-2zM18 11h1v1h-1zM20 11h1v1h-1zM23 11h2v1h-2zM28 11h1v1h-1zM0 12h1v1h-1zM2 12h1v1h-1zM4 12h3v1h-3zM9 12h1v1h-1zM14 12h1v1h-1zM17 12h1v1h-1zM19 12h1v1h-1zM25 12h2v1h-2zM0 13h2v1h-2zM4 13h1v1h-1zM8 13h3v1h-3zM14 13h2v1h-2zM17 13h1v1h-1zM19 13h2v1h-2zM22 13h1v1h-1zM26 13h3v1h-3zM3 14h1v1h-1zM5 14h2v1h-2zM9 14h2v1h-2zM12 14h2v1h-2zM17 14h1v1h-1zM19 14h6v1h-6zM26 14h3v1h-3zM0 15h1v1h-1zM2 15h1v1h-1zM5 15h1v1h-1zM7 15h3v1h-3zM14 15h1v1h-1zM16 15h1v1h-1zM18 15h1v1h-1zM21 15h1v1h-1zM24 15h1v1h-1zM27 15h1v1h-1zM0 16h1v1h-1zM3 16h1v1h-1zM6 16h3v1h-3zM14 16h1v1h-1zM19 16h3v1h-3zM24 16h2v1h-2zM27 16h1v1h-1zM1 17h1v1h-1zM5 17h1v1h-1zM7 17h2v1h-2zM11 17h1v1h-1zM14 17h2v1h-2zM17 17h1v1h-1zM20 17h1v1h-1zM23 17h1v1h-1zM25 17h3v1h-3zM0 18h1v1h-1zM3 18h2v1h-2zM6 18h1v1h-1zM9 18h1v1h-1zM12 18h6v1h-6zM20 18h2v1h-2zM23 18h2v1h-2zM26 18h1v1h-1zM2 19h1v1h-1zM7 19h1v1h-1zM11 19h4v1h-4zM17 19h1v1h-1zM20 19h2v1h-2zM23 19h1v1h-1zM26 19h1v1h-1zM1 20h3v1h-3zM5 20h2v1h-2zM8 20h1v1h-1zM10 20h1v1h-1zM13 20h14v1h-14zM8 21h4v1h-4zM16 21h3v1h-3zM20 21h1v1h-1zM24 21h5v1h-5zM0 22h7v1h-7zM8 22h4v1h-4zM14 22h1v1h-1zM17 22h1v1h-1zM19 22h2v1h-2zM22 22h1v1h-1zM24 22h2v1h-2zM27 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM8 23h3v1h-3zM13 23h4v1h-4zM18 23h1v1h-1zM20 23h1v1h-1zM24 23h2v1h-2zM0 24h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM10 24h3v1h-3zM15 24h3v1h-3zM20 24h5v1h-5zM26 24h1v1h-1zM0 25h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM8 25h1v1h-1zM10 25h1v1h-1zM13 25h1v1h-1zM15 25h2v1h-2zM19 25h3v1h-3zM23 25h3v1h-3zM28 25h1v1h-1zM0 26h1v1h-1zM2 26h3v1h-3zM6 26h1v1h-1zM8 26h2v1h-2zM11 26h1v1h-1zM13 26h2v1h-2zM17 26h2v1h-2zM20 26h1v1h-1zM23 26h1v1h-1zM26 26h1v1h-1zM28 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM10 27h2v1h-2zM13 27h2v1h-2zM16 27h1v1h-1zM20 27h1v1h-1zM25 27h1v1h-1zM27 27h1v1h-1zM0 28h7v1h-7zM8 28h1v1h-1zM10 28h1v1h-1zM13 28h1v1h-1zM15 28h1v1h-1zM20 28h5v1h-5zM27 28h1v1h-1z" fill="#2a1a0c"/></svg>
+    <div class="qr-text">
+      <b>Made for your phone.</b>
+      <span>Scan to play. No download, no account. It also runs in a laptop browser.</span>
+    </div>
+  </section>
+
+  <nav class="go" aria-label="Open the game">
+    <a class="btn play" href="https://jasondag-ai.github.io/rig-jam/" target="_blank" rel="noopener">
+      <span class="label">Play Rig Jam</span>
+      <span class="what">The game as a new player sees it.</span>
+      <span class="arrow" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M5 2l6 6-6 6" fill="none" stroke="#2a1a0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </a>
+    <a class="btn judge" href="https://jasondag-ai.github.io/rig-jam/?demo=1" target="_blank" rel="noopener">
+      <span class="label">Judge mode</span>
+      <span class="what">All 70 levels open, every sighting in the log, and a live par tracker. Nothing is saved.</span>
+      <span class="arrow" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M5 2l6 6-6 6" fill="none" stroke="#2a1a0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </a>
+    <a class="btn end" href="https://jasondag-ai.github.io/rig-jam/?finale=1" target="_blank" rel="noopener">
+      <span class="label">Watch the ending</span>
+      <span class="what">What a perfect game earns. About 40 seconds; tap once for sound.</span>
+      <span class="arrow" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M5 2l6 6-6 6" fill="none" stroke="#2a1a0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </a>
+  </nav>
+
+  <section class="card" aria-labelledby="how">
+    <p class="eyebrow">20 seconds</p>
+    <h2 id="how">How to play</h2>
+    <ol class="steps">
+      <li><div><b>Drag a truck along its length.</b> It slides until something stops it.</div></li>
+      <li><div><b>Drive it out the gate of its own colour.</b> Any other gate is a wall.</div></li>
+      <li><div><b>One drag is one move.</b> Clear the pad in par moves for three hard hats.</div></li>
+      <li><div><b>Undo and Restart are free.</b> Hint shows the best next move. Flick a truck to send it all the way.</div></li>
+    </ol>
+  </section>
+
+  <section class="card" aria-labelledby="inside">
+    <p class="eyebrow">What to look for</p>
+    <h2 id="inside">Seven regions, one new rule each</h2>
+    <ul class="regions">
+      <li><span class="n">1</span><span><b>Cardium</b>: trucks and gates</span></li>
+      <li><span class="n">2</span><span><b>Montney</b>: lease equipment in the way</span></li>
+      <li><span class="n">3</span><span><b>Duvernay</b>: convoys leave in number order</span></li>
+      <li><span class="n">4</span><span><b>Mannville</b>: muskeg, you slide until you hit something</span></li>
+      <li><span class="n">5</span><span><b>Bakken</b>: load racks and shift-change gates</span></li>
+      <li><span class="n">6</span><span><b>Clearwater</b>: the 8 x 8 Big Pad</span></li>
+      <li><span class="n">7</span><span><b>Baldonnel</b>: road bans, rigs can't cross soft ground</span></li>
+    </ul>
+    <ul class="more">
+      <li><b>40 sightings.</b> Tap the scenery, bump the berm, try things. Each one goes in the Wildlife Log (the binoculars), which digs down through real Alberta geology and out the far side of the Earth.</li>
+      <li><b>A Daily Pad every day</b> and a Sunday Turnaround every week, with a Days Without Incident streak and a share card.</li>
+      <li><b>Sound starts off.</b> The gear turns it on. Four music styles.</li>
+      <li><b>Every par is the true minimum,</b> proven by a solver.</li>
+    </ul>
+    <p class="note">Made for phones, held upright. On a laptop it plays in a phone-sized column with the mouse.</p>
+  </section>
+
+  <section class="card" aria-labelledby="built">
+    <p class="eyebrow">How it was built</p>
+    <h2 id="built">12 days, directing AI</h2>
+    <p>I'm a P.Eng with a full-time day job and no game-dev experience. Claude Code wrote every line (TypeScript, no game engine) and over 1,100 automated tests. Claude ran the plan as my COO. Manus found the sounds and cut the videos. I played every build on my phone and decided what stayed.</p>
+    <div class="contact">
+      <span>Questions or a bug?</span>
+      <span class="mail" id="mail">jason@stragentic.com</span>
+      <button class="copy" id="copy" type="button">Copy</button>
+    </div>
+  </section>
+
+  <p class="foot">Built by Jay Dagenais, directing AI (Claude)</p>
+</main>
+
+<script>
+(function () {
+  var btn = document.getElementById('copy');
+  var mail = document.getElementById('mail');
+  function selectIt() {
+    try {
+      var r = document.createRange(); r.selectNodeContents(mail);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    } catch (e) {}
+  }
+  btn.addEventListener('click', function () {
+    var text = mail.textContent.trim();
+    var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1800); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { selectIt(); btn.textContent = 'Selected'; });
+    } else { selectIt(); btn.textContent = 'Selected'; }
+  });
+})();
+</script>
+
+</body>
+</html>
