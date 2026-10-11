@@ -269,12 +269,13 @@ if (!ONLY || ONLY === 'mountains') {
     for (let k = 0; k < 3; k++) { await page.mouse.click(pt.x, pt.y); await wait(150); }
     const cranes = await page.waitForSelector('.strip-layer[data-gag="cranes"]', { state: 'attached', timeout: 5000 }).then(() => true, () => false);
     check(cranes, `three taps on the sky${pt.onRange ? ', on the range itself,' : ''} bring Two Left Feet: a tap on the mountains is a tap on the sky`);
-    // No other region has them.
+    // No other region has the range. (Montney has its own foothills, lower: mountains.ts.)
     await page.evaluate(() => document.querySelector('.hud [data-act="levels"]')?.click());
     await page.waitForSelector('.region-tab');
     const others = [];
-    for (let r = 0; r < REGIONS.length; r++) { if (r === BI) continue; await page.locator('.region-tab').nth(r).click(); await wait(250); others.push(await page.evaluate(() => document.querySelectorAll('.mountains').length)); }
-    check(others.every((n) => n === 0), `no other region's list has mountains (${others.join(', ')})`);
+    for (let r = 0; r < REGIONS.length; r++) { if (r === BI) continue; await page.locator('.region-tab').nth(r).click(); await wait(250); others.push(await page.evaluate(() => [document.querySelectorAll('.mountains:not(.foothills)').length, document.querySelectorAll('.mountains.foothills').length])); }
+    const hills = REGIONS.map((x, r) => r).filter((r) => r !== BI).map((r) => (REGIONS[r].id === 'montney' ? 1 : 0));
+    check(others.every(([range]) => range === 0) && others.map(([, f]) => f).join() === hills.join(), `no other region's list has the range; Montney's has its foothills and nobody else's (${others.map(([, f]) => f).join(', ')})`);
     check(errors.length === 0, `no errors${errors.length ? ': ' + errors[0] : ''}`);
     await context.close();
   }

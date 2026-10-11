@@ -18,6 +18,8 @@ export const OUT = resolve('qc-out/video-kit');
 const dirOf = (name) => join(OUT, 'sessions', name);
 /** Sightings left out of a clip that is about something else (their own clips show them). */
 const QUIET = 'magpie=0&worker=0&moose=0&soundnudge=0&night=0&tourists=0&surveyor=0&off=nearmiss,landowner,biffya,biffyb,sam,geese,tumbleweed,cattrain,bale,bell,pea,mosquito,overweight,lunch';
+/** A save with every level cleared, none at par, three hints: every region open, the ordinary HUD. */
+const PLAYED = JSON.stringify({ best: Object.fromEntries(REGIONS.flatMap((r) => r.levels.map((l) => [l.id, l.par + 5]))), hints: 3, perfect: [], dailyCleared: [], demo: false, announced: REGIONS.map((r) => r.id), standDowns: [] });
 const demo = (more = '') => `${LIVE}?demo=1&cover=0&${QUIET}${more ? '&' + more : ''}`;
 
 /** From the level list (demo link): into level `li` of region `ri`. */
@@ -38,9 +40,12 @@ async function done(s) {
   return s;
 }
 /** A stretch of a level's best line as a clip: the moves before it are played quickly out of shot. `leave`: moves left unplayed at the end. */
-async function solveClip(name, ri, li, { moves = 7, leave = 1, more = '', before = null, pace = 1 } = {}) {
-  const s = await open(dirOf(name));
-  await s.page.goto(demo(more), { waitUntil: 'networkidle' });
+async function solveClip(name, ri, li, { moves = 7, leave = 1, more = '', before = null, pace = 1, played = false } = {}) {
+  // `played`: not Demo mode but a save with every level cleared (in the recorder's own throwaway browser), so the HUD
+  // is the ordinary one: Demo mode (since 1.0.2) shows its "Best from here" line there, which clips recorded from
+  // 1.0.1 do not have. Nothing of the game is changed either way.
+  const s = await open(dirOf(name), played ? { storage: { 'rush-hour-rigs:v2': PLAYED } } : {});
+  await s.page.goto(played ? `${LIVE}?cover=0&${QUIET}${more ? '&' + more : ''}` : demo(more), { waitUntil: 'networkidle' });
   await s.start();
   await enter(s, ri, li);
   await unlockSound(s);
@@ -79,7 +84,7 @@ const SESSIONS = {
     return done(s);
   },
   async cardium() { return done((await solveClip('cardium', 0, 7, { moves: 7 })).s); },
-  async montney() { return done((await solveClip('montney', 1, 6, { moves: 6 })).s); },
+  async montney() { return done((await solveClip('montney', 1, 6, { moves: 6, played: true })).s); },
   async duvernay() { return done((await solveClip('duvernay', 2, 5, { moves: 6 })).s); },
   async bigpad() { return done((await solveClip('bigpad', 5, 3, { moves: 6, pace: 0.9 })).s); },
   // Baldonnel 1: the frac unit pushed at the road ban patch beside it (it cannot go; its driver says why), then the

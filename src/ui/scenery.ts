@@ -71,6 +71,26 @@ export interface SceneryOptions {
    * above this line (the HUD's foot; the header's on the level list). `base`: where the sky meets the ground.
    */
   mountains?: { top: number; base: number };
+  /** The level list of the prairie (Bakken): round hay bales out on the stubble, their feet on this line (px). */
+  bales?: number;
+}
+
+/**
+ * ROUND HAY BALES on the prairie's horizon (the Bakken list; Jay, Oct 11: Saskatchewan is wheat and bales, not
+ * bush). The board's toy look: a straw-gold drum seen a little from the side, a spiral on its face, a dark outline,
+ * a contact shadow. Fixed places in shares of the width, so the list looks the same every visit.
+ */
+export const BALES: readonly { x: number; s: number }[] = [{ x: 0.1, s: 0.8 }, { x: 0.3, s: 1 }, { x: 0.47, s: 0.7 }, { x: 0.66, s: 0.95 }, { x: 0.88, s: 0.82 }];
+export function balesSvg(width: number, base: number): string {
+  const one = (x: number, s: number): string => {
+    const w = 26 * s, h = 17 * s, cx = x * width, top = base - h;
+    return `<g class="list-bale"><ellipse cx="${r1(cx + 2)}" cy="${r1(base)}" rx="${r1(w * 0.56)}" ry="${r1(2.2 * s)}" fill="rgba(40,30,10,0.22)"/>` +
+      `<rect x="${r1(cx - w / 2)}" y="${r1(top)}" width="${r1(w)}" height="${r1(h)}" rx="${r1(h * 0.42)}" fill="#e3bd55" stroke="#4a3413" stroke-width="1.6"/>` +
+      `<path d="M${r1(cx - w * 0.3)} ${r1(top + h * 0.3)} h${r1(w * 0.5)} M${r1(cx - w * 0.36)} ${r1(top + h * 0.56)} h${r1(w * 0.62)} M${r1(cx - w * 0.22)} ${r1(top + h * 0.8)} h${r1(w * 0.5)}" stroke="#b98f2f" stroke-width="1.2" stroke-linecap="round" fill="none"/>` +
+      `<ellipse cx="${r1(cx + w * 0.3)}" cy="${r1(top + h / 2)}" rx="${r1(h * 0.3)}" ry="${r1(h * 0.5 - 0.8)}" fill="#f2d679" stroke="#4a3413" stroke-width="1.4"/>` +
+      `<ellipse cx="${r1(cx + w * 0.3)}" cy="${r1(top + h / 2)}" rx="${r1(h * 0.13)}" ry="${r1(h * 0.24)}" fill="none" stroke="#b98f2f" stroke-width="1.1"/></g>`;
+  };
+  return `<svg class="list-bales" data-bales="${BALES.length}" width="${r1(width)}" height="${r1(base + 4)}" style="position:absolute;left:0;top:0" aria-hidden="true">${BALES.map((b) => one(b.x, b.s)).join('')}</svg>`;
 }
 
 /** Clear grass kept between the berm and any tree, px. */
@@ -155,6 +175,16 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
   const pick = (): WorldArt => (art.aspen && rng() >= theme.spruceShare ? art.aspen : art.spruce);
   const top = box.y;
   const bandAbove = Math.max(0, top);
+  // Open country: only a share of the trees stand (`Theme.trees`), the same ones every time for a seed. Where there
+  // is a strip below the lease it is done once the strip's trees are in; on the level list (no lease, no strip) it
+  // is done at the end, so the prairie is the prairie there too.
+  let thin = false;
+  const thinned = (all: Item[]): Item[] => {
+    thin = true;
+    if (theme.trees >= 1) return all;
+    const keep: Rng = mulberry32((options.seed ?? 0) ^ 0x7ee5);
+    return all.filter(() => keep() < theme.trees);
+  };
 
   // Above: three rows in depth. The back row is a nearly unbroken, small tree line on the horizon;
   // the nearer rows are bigger and stand in clusters with clearings.
@@ -181,10 +211,7 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
       if (rng() < (a === 'cattails' ? 0.8 : 0.5)) items.push({ x: width * (0.2 + rng() * 0.6), y: floor + bandBelow - 2, h: h * (a === 'cattails' ? 0.42 : 0.5), art: a, flip: a === 'cattails' && rng() < 0.5 });
     }
     // Open country (the prairie): only a share of the trees stand, the same ones every time for a seed.
-  if (theme.trees < 1) {
-    const thin: Rng = mulberry32((options.seed ?? 0) ^ 0x7ee5);
-    items = items.filter(() => thin() < theme.trees);
-  }
+    items = thinned(items);
   // Nothing below may stand lower than the strip's floor line (the buttons start there).
     for (const it of items) if (it.y > height - 1) it.y = height - 1;
     // DEPTH (STANDING_RULES 1): the strip's walking lane is `LANE_UP` above its floor. A tree whose
@@ -192,6 +219,9 @@ export function sceneryItems(theme: Theme, width: number, height: number, box: B
     // IN FRONT of whoever walks by; every other tree is clearly behind the lane.
     for (const it of items) if (it.y > floor && Math.abs(it.y - (height - LANE_UP)) <= 3) it.y = height - 1;
   }
+
+  // (Only the level list, which has no lease: a level's own trees stay exactly as they always were, Baldonnel's too.)
+  if (!thin && box.height === 0) items = thinned(items);
 
   // The berm keeps clear grass round it: no tree may reach into the box (grown by BERM_CLEAR)
   // anywhere along its sides. Trees above stand behind the top berm with their feet at its edge.
@@ -264,5 +294,5 @@ export function sceneryHtml(theme: Theme, width: number, height: number, box: Bo
   const isAnchor = (it: Item) => it.art === 'willow' && anchors.some((a) => a.kind === 'bush' && a.x === it.x && a.y === it.y);
   const html = items.map((it) => piece(season, it, isAnchor(it) ? ' data-anchor="bush"' : '')).join('');
   const mounds = anchors.filter((a) => a.kind === 'mound').map((a) => mound(a, season)).join('');
-  return `<div class="trees" style="width:${r1(width)}px;height:${r1(height)}px" aria-hidden="true"><svg class="tree-defs" width="0" height="0" aria-hidden="true"><defs>${seasonSymbols(season)}</defs></svg>${theme.id === 'thaw' && options.mountains ? mountainsSvg(width, options.mountains.top, options.mountains.base) : ''}${stalks}${html}${mounds}</div>`;
+  return `<div class="trees" style="width:${r1(width)}px;height:${r1(height)}px" aria-hidden="true"><svg class="tree-defs" width="0" height="0" aria-hidden="true"><defs>${seasonSymbols(season)}</defs></svg>${theme.horizon && options.mountains ? mountainsSvg(width, options.mountains.top, options.mountains.base, theme.horizon) : ''}${stalks}${html}${options.bales ? balesSvg(width, options.bales) : ''}${mounds}</div>`;
 }

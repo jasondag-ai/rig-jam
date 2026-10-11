@@ -310,7 +310,8 @@ function showLevels(requested = savedRegion()): void {
     width: rect.width,
     height: 0,
     // (Baldonnel's list has its mountains on the horizon, behind the tree line, under the header: mountains.ts.)
-  }, { below: false, maxTree: LIST_TREES - 2, depth: 4, mountains: { top: 6, base: horizon } });
+    // (And Montney's its foothills. Bakken's, the prairie, has hay bales out on the stubble under a thin shelterbelt.)
+  }, { below: false, maxTree: LIST_TREES - 2, depth: 4, mountains: { top: 6, base: horizon }, ...(themeFor(regionIndex).id === 'prairie' ? { bales: horizon - 1 } : {}) });
 
   // A region earned for real gets a one-time "NEW LEASE OPEN" banner.
   const fresh = newlyOpened(REGIONS, progress.best, progress.announced);
@@ -430,7 +431,7 @@ function showSettings(screen: HTMLElement): void {
         <label class="switch">
           <input type="checkbox" role="switch" data-act="demo" ${loadProgress().demo ? 'checked' : ''} />
           <span class="track" aria-hidden="true"><span class="knob"></span></span>
-          <span class="switch-label">Demo mode</span>
+          <span class="switch-label">Demo mode<small>Everything open. Nothing is saved.</small></span>
         </label>
         <button class="btn quiet" data-act="credits">Credits</button>
         ${loadFinale().seen ? '<button class="btn quiet" data-act="ending">Watch the ending</button>' : ''}

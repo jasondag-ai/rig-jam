@@ -2745,6 +2745,12 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
     var(--ground);
 }
 
+/* THE LEVEL LIST'S SKY AND GROUND SCROLL WITH THE LIST (Jay, Oct 11): a scroller's own background stays put by
+   default, so the tree line (which scrolls with the page) used to slide up into the sky while the ground stood
+   still. `local` lays the background on what is scrolled: sky, horizon, trees and ground move as one. */
+.screen.levels,
+.screen.levels.ground-tex { background-attachment: local; }
+
 /* Trees: a soft shadow cast down and to the right. */
 .screen.game .scenery,
 .screen.levels .scenery {
@@ -3293,6 +3299,8 @@ img.hat { width: 100%; height: auto; }
     radial-gradient(ellipse 34% 6% at 70% 28%, rgba(72, 50, 34, 0.6), transparent 100%),
     var(--grass-tile) 0 0 / 384px 384px repeat,
     var(--ground);
+  /* (The shorthand above sets the attachment back: the list's sky and ground scroll with it, as on every list.) */
+  background-attachment: local;
 }
 
 /* ---------- Job 4b: base polish ---------- */
