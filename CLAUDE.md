@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 the same day) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 and 1.0.2 the same day) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1314,6 +1314,26 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
+## The best score still possible (job U12; Oct 10; shipped as 1.0.2)
+- A SMALL LINE UNDER THE MOVES AND PAR in the HUD (`.hud .best`; rules in `src/ui/best.ts`, pure and tested): "Best
+  from here: N", N = the moves made + the best line from where the pad stands (`bestFrom`); once N is over par,
+  "Par out of reach: best N" in the warning colour (the near misses' yellow; `bestLine`). Gone once the pad is won.
+- NORMAL PLAY: ONLY WHILE A HINT SHOWS (`hintStep > 0`), from the hint's own solve (`hintPath`, which starts at the
+  hinted move): a hint costs a hint, so free Undo cannot test moves for nothing. It goes with the hint (the hinted
+  move played, any other move, Undo, Restart). Hint counts and rewards are untouched.
+- THE HIDDEN `?demo=1` LINK ONLY (`demoLink()`; nothing is saved there): ALWAYS ON, asked again after every move,
+  Undo and Restart (`positionKey`), solved in a WEB WORKER (`src/ui/best-worker.ts`: the hint's own `solve`), so
+  the board and a drag never wait; the line is empty until the answer is in, and a solve still running for an
+  older position is dropped (the worker is ended and made again). Settings' own demo switch does NOT turn it on.
+- IT MOVES NOTHING AND COVERS NOTHING: the line has its row only while it may show (`.score.best-room`: the whole
+  level on the demo link), and the three rows are then set closer, so THE HUD IS NO TALLER (52 px) and the lease
+  never shifts; it never widens its column either (it runs out to the left, 10.5 px type). Every pad: the regions,
+  the Big Pad, the Daily Pad, the Sunday Turnaround; day and night.
+- `npm run test:e2e:best` (WebKit, DPR 3, 375 x 635 and 390 x 664): normal play (no line without a hint, by a free
+  move or a free Undo; a hint at par; a hint after a wasted move: "Par out of reach: best N"; by night; Settings'
+  demo mode) and the demo link on nine pads (the first drag never held up, the line after every move, a wasted move
+  and back, Undo, Restart, by night, nothing saved), and that the HUD and the lease stay where they were.
+
 ## The video kit (job U11; Oct 10): clips, stills and brand files made from the live game
 - `~/Desktop/RHR Art Inbox/video_kit/` is the kit Manus edits the two videos from (the COO's `VIDEO_BRIEF.md` names
   every file; `CLIPS.md` in the kit lists what each one shows). JAY RECORDS NOTHING: `tools/video-kit/` makes it all
@@ -1778,6 +1798,7 @@ something, give exact clicks and one command at a time.
   which is a flick, and they mean a drag. With it off the board is exactly the old one (no held bumps).
 - The first how-to card ends "Flick a truck to send it all the way."
 - `node tools/gen-baldonnel.ts [minutes] [chain]` / `node tools/gen-baldonnel.ts write` – Baldonnel's ten levels: climbs the slots not yet in `tools/fixed-levels/`, then writes `src/levels/baldonnel.json`
+- `npm run test:e2e:best` – the best-from-here line: with a hint in normal play, always on the `?demo=1` link, every kind of pad, at Safari's two sizes (start the dev server first)
 - `npm run test:e2e:finale` – the finale: `?finale=1` through all four parts to the cover, a save one par short, Watch the ending (start the dev server first)
 - `python3 tools/port-finale.py` – writes `src/ui/finale-art.ts` and `finale-reference.json` from the finale's reference page
 - `npm run test:e2e:baldonnel` – Baldonnel on a phone: the tab, road ban patches, the standard scene, all ten levels at par (start the dev server first)
