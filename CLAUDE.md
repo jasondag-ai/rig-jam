@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 the same day) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 and 1.0.2 the same day) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1314,6 +1314,54 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
+## The best score still possible (job U12; Oct 10; shipped as 1.0.2)
+- A SMALL LINE UNDER THE MOVES AND PAR in the HUD (`.hud .best`; rules in `src/ui/best.ts`, pure and tested): "Best
+  from here: N", N = the moves made + the best line from where the pad stands (`bestFrom`); once N is over par,
+  "Par out of reach: best N" in the warning colour (the near misses' yellow; `bestLine`). Gone once the pad is won.
+- NORMAL PLAY: ONLY WHILE A HINT SHOWS (`hintStep > 0`), from the hint's own solve (`hintPath`, which starts at the
+  hinted move): a hint costs a hint, so free Undo cannot test moves for nothing. It goes with the hint (the hinted
+  move played, any other move, Undo, Restart). Hint counts and rewards are untouched.
+- THE HIDDEN `?demo=1` LINK ONLY (`demoLink()`; nothing is saved there): ALWAYS ON, asked again after every move,
+  Undo and Restart (`positionKey`), solved in a WEB WORKER (`src/ui/best-worker.ts`: the hint's own `solve`), so
+  the board and a drag never wait; the line is empty until the answer is in, and a solve still running for an
+  older position is dropped (the worker is ended and made again). Settings' own demo switch does NOT turn it on.
+- IT MOVES NOTHING AND COVERS NOTHING: the line has its row only while it may show (`.score.best-room`: the whole
+  level on the demo link), and the three rows are then set closer, so THE HUD IS NO TALLER (52 px) and the lease
+  never shifts; it never widens its column either (it runs out to the left, 10.5 px type). Every pad: the regions,
+  the Big Pad, the Daily Pad, the Sunday Turnaround; day and night.
+- `npm run test:e2e:best` (WebKit, DPR 3, 375 x 635 and 390 x 664): normal play (no line without a hint, by a free
+  move or a free Undo; a hint at par; a hint after a wasted move: "Par out of reach: best N"; by night; Settings'
+  demo mode) and the demo link on nine pads (the first drag never held up, the line after every move, a wasted move
+  and back, Undo, Restart, by night, nothing saved), and that the HUD and the lease stay where they were.
+
+## The video kit (job U11; Oct 10): clips, stills and brand files made from the live game
+- `~/Desktop/RHR Art Inbox/video_kit/` is the kit Manus edits the two videos from (the COO's `VIDEO_BRIEF.md` names
+  every file; `CLIPS.md` in the kit lists what each one shows). JAY RECORDS NOTHING: `tools/video-kit/` makes it all
+  from the LIVE site, and changes nothing in the game. Everything temporary is under `qc-out/video-kit/`.
+- `recorder.mjs`: a headless Chromium at a 9:16 phone view (432 x 768 CSS px at 2.5 = 1080 x 1920). PICTURE: the
+  browser's own screencast (CDP `Page.startScreencast`), every painted frame with its time stamp (about 40 to 60 a
+  second), laid out at a constant 30 fps by `cut` (H.264, video range, BT.709). SOUND, WITHOUT TOUCHING THE GAME:
+  before the page's scripts run, `AudioNode.connect` is wrapped so whatever is connected to an AudioContext's
+  destination is also connected to a MediaStreamDestination and a MediaRecorder (Opus): it only listens. HOW FAR
+  THE RECORDED SOUND SITS FROM THE CLOCK DIFFERS FROM SESSION TO SESSION (65 to 390 ms), so each session plays one
+  30 ms 1 kHz beep of its own after its last clip (`calibrate`), finds it in the recording (a Goertzel filter) and
+  `cut` takes that lag out. A finger is real touch events (`Input.dispatchTouchEvent`), eased like a thumb
+  (`play.mjs` `drag`, `flick`, `tapOn`); the first tap of a session is on the HUD's title, which is no button
+  (sound may only start after a touch), and the effects are given time to load before a clip begins.
+- `record.mjs <session...>` plays a session and keeps it whole (`qc-out/video-kit/sessions/<name>/`: frames, sound,
+  marks, beats); `cut.mjs [clip...]` cuts the clips from marks (`CLIPS`); `stills.mjs evolution|shots|recut` makes
+  build 11 and the five stills at 390 x 844 at 3x; `brand.mjs` draws `title_logo.png` and `end_card.png` with the
+  game's own cover image and title styles; `assemble.py` copies everything into the kit, adds the Classic Rock menu
+  track and `credits.txt`, adds build 11's column to the contact sheet, writes `CLIPS.md` and zips the kit into
+  `~/Desktop/RHR Art Inbox/video_kit_zips/` in parts under 50 MB (they unzip into one `video_kit/`).
+- THE GAME'S OWN SWITCHES DO THE REST: `?demo=1` (every region open, nothing saved), `?gag=<name>` (a sighting, again
+  and again: one whole run is recorded between two gaps and the stretch with the joke is cut), `?fling=1` (fling is
+  off in an automated browser otherwise), `?cover=1`, and the saved sound settings (effects on, music off; the
+  finale with music on, replayed from Settings' "Watch the ending" so sound is already out when it starts).
+- FOUND ON THE WAY, NOT FIXED (no game changes in this job): the preview link `?gag=biffyb` shows Clearwater's
+  scenery in the strip behind its Cardium level on the live build. Real play is right, so the kit's Runaway Roll
+  was recorded on its real trigger (two bumps down into the bottom berm).
+
 ## The march starts at the crew photo (job U9c; Oct 10; shipped as 1.0.1)
 - THE GRADUATION MARCH STARTS AS THE CREW PHOTO STARTS, not at the credits (Jay, Oct 10), and plays on through the
   credits: about 22 s of its 26 (`sound.finaleMarch(part)`, called by finale.ts as the photo and then the credits
@@ -1750,6 +1798,7 @@ something, give exact clicks and one command at a time.
   which is a flick, and they mean a drag. With it off the board is exactly the old one (no held bumps).
 - The first how-to card ends "Flick a truck to send it all the way."
 - `node tools/gen-baldonnel.ts [minutes] [chain]` / `node tools/gen-baldonnel.ts write` – Baldonnel's ten levels: climbs the slots not yet in `tools/fixed-levels/`, then writes `src/levels/baldonnel.json`
+- `npm run test:e2e:best` – the best-from-here line: with a hint in normal play, always on the `?demo=1` link, every kind of pad, at Safari's two sizes (start the dev server first)
 - `npm run test:e2e:finale` – the finale: `?finale=1` through all four parts to the cover, a save one par short, Watch the ending (start the dev server first)
 - `python3 tools/port-finale.py` – writes `src/ui/finale-art.ts` and `finale-reference.json` from the finale's reference page
 - `npm run test:e2e:baldonnel` – Baldonnel on a phone: the tab, road ban patches, the standard scene, all ten levels at par (start the dev server first)
@@ -2055,6 +2104,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:fling` – fling: flicks, ordinary drags, pushes, Zero Incident, hints, at three phone sizes (start the dev server first)
 - `node tools/gen-turnaround.ts` – the 112 Sunday Turnarounds into `public/turnaround/` (REGENERATE BEFORE DEC 2028; about 11 minutes from nothing)
 - `node tools/gen-daily.ts [--check n]` – Daily Pads 61 to 790 into `public/daily/` (REGENERATE BEFORE NOV 2028); `--check` remakes pads 1..n and compares them with daily.json
+- `node tools/video-kit/record.mjs <session|all|list>`, then `node tools/video-kit/cut.mjs`, `node tools/video-kit/stills.mjs evolution shots`, `node tools/video-kit/brand.mjs`, `python3 tools/video-kit/assemble.py` – the video kit, from the live site (needs ffmpeg; see "The video kit")
 - `sh tools/push-dev.sh` – push branch `next` to the dev repo and wait for the dev site's build id
 - `npm run test:e2e:judge` – judge-proofing: a fresh visitor with a mouse at 1440 x 900 and 1280 x 720 in both engines, Share, the credit line, `?demo=1`, the load-error page; screenshots (start the dev server first)
 - `npm run test:e2e:sightings` – every sighting on its real trigger at Safari's visible size, and every tappable prop answers a tap (`VIEW=375x635`, `ONLY=beaver`, `URL=` the live site; start the dev server first)

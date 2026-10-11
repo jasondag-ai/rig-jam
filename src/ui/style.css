@@ -3328,6 +3328,32 @@ img.hat { width: 100%; height: auto; }
 .hud .misses .hazard { width: 15px; height: 14px; }
 .hud .misses .lbl { font-weight: 600; margin-left: 2px; }
 .hud .score { gap: 3px; }
+/* THE BEST SCORE STILL POSSIBLE (best.ts): a small line between the moves and the near misses. It has its row only
+   while it may show (`.best-room`), and the three rows are then set closer, so THE HUD IS NO TALLER FOR IT (52 px:
+   the lease never shifts) and no wider (the line never widens its column: it runs out to the left). */
+.hud .best { display: none; }
+.hud .score.best-room { gap: 1px; }
+.hud .score.best-room .score-row { line-height: 1; }
+.hud .score.best-room .misses { line-height: 1.05; }
+.hud .score.best-room .best {
+  display: flex;
+  justify-content: flex-end;
+  width: 0;
+  min-width: 100%;
+  min-height: 11px;
+  margin-block: -1px;
+  white-space: nowrap;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 11px;
+  letter-spacing: 0.1px;
+  color: #fff;
+  text-shadow:
+    -1px -1px 0 var(--outline), 1px -1px 0 var(--outline), -1px 1px 0 var(--outline), 1px 1px 0 var(--outline),
+    0 -1px 0 var(--outline), 0 1px 0 var(--outline), -1px 0 0 var(--outline), 1px 0 0 var(--outline), 0 2px 0 var(--outline);
+}
+/* Par out of reach: the warning colour, the near misses' own yellow. */
+.hud .score.best-room .best.over { color: #ffd21f; }
 
 /* Settings: Done is the main button; Reset progress is a quiet destructive one (outline, small). */
 .settings .btn.danger[data-act='reset'] {
