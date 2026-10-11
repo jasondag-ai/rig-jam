@@ -1314,6 +1314,24 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
+## Backdrops: the list scrolls as one, Montney's foothills, the prairie's list (Jay, Oct 11; ON `next`, NOT LIVE YET)
+- THE LEVEL LIST'S SKY AND GROUND SCROLL WITH THE LIST. The list (`.screen.levels`) is the scroller and its sky
+  and grass were its own background, which by default stays put while the content scrolls; the tree line is content
+  (`.scenery`), so it slid up into the sky as the ground stood still. Now `background-attachment: local` (style.css,
+  and again inside Montney's own `[data-theme='spring']` rule, whose background shorthand would set it back): sky,
+  horizon, trees and ground move as one. `test:e2e:menus` holds every layer of every region's list to `local`.
+- MONTNEY HAS FOOTHILLS (`Theme.horizon: 'foothills'` on the spring theme; `mountainsSvg(..., 'foothills')` in
+  mountains.ts): lower than Baldonnel's range (`FOOTHILL_SHARE` 0.15 of the width against 0.19), a far ridge of
+  five small pale peaks with a touch of snow and four ROUNDED forested hills with none in front, their own fixed
+  seed. Behind the farthest trees on the list and on every level of the spring theme (so the even Daily Pads too),
+  under the HUD, dimmed by the night like the trees. Baldonnel's range is `horizon: 'range'`, as it was.
+- THE PRAIRIE'S LIST (Bakken): the thinning of trees for open country (`Theme.trees`) was only done where there was
+  a strip below the lease, so the list stood a full tree line. It is done everywhere now (`thinned` in scenery.ts;
+  a level's trees come out exactly as before), and the list has five round HAY BALES on the horizon in front of
+  the shelterbelt (`balesSvg`, `BALES`, option `bales`; the list only). Bakken's levels are as they were.
+- Tests: mountains.test.ts (the foothills, the thinner list, the bales); `ONLY=mountains npm run test:e2e:baldonnel`
+  (the range is Baldonnel's alone, the foothills Montney's alone).
+
 ## Demo mode: one switch (job U19; Oct 11; shipped as 1.0.9)
 - JAY (Oct 11, on live 1.0.8): Settings' demo mode was on and "Best from here" still only came with a hint. There
   were two demo modes (Settings' saved switch with a log of its own, and the hidden `?demo=1` link). NOW THERE IS
