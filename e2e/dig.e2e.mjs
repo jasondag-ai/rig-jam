@@ -217,7 +217,7 @@ console.log('\nwebkit 390x844: the depth gauge, the stopwatch and Dug Through');
   check(end.depth === '12,742 km' && end.final && /^\d+:\d\d\.\d$/.test(end.clock), `at the end it reads "${end.depth}" and the stopwatch stops at ${end.clock}`);
   await page.screenshot({ path: join(OUT, 'log_dig_kerguelen.png') });
   check(first.toasts[0] === `New sighting! Dug Through (1/${N})` && first.count === `1/${N}` && first.found.join() === 'dug' && first.dug > 0 && first.swipes === 3, `reaching the island is a new sighting: "${first.toasts[0]}"; the log reads ${first.count}; the time and the swipes are saved (${Math.round(first.dug)} ms, ${first.swipes} swipes)`);
-  check(first.shown && first.inView && first.title === 'New sighting!' && first.lines.join('|') === `Dug Through added to your Wildlife Log.|3 swipes in ${end.clock}|Best: 3 swipes, ${end.clock}` && first.confetti > 20, `an arrival card at the island leads with the news, then this dig, then the best, in a burst of hard-hat confetti: "${first.title}" "${first.lines.join('" "')}"`);
+  check(first.shown && first.inView && first.title === 'New sighting!' && first.lines.join('|') === `Dug Through added to your Wildlife Log.|This dig: 3 swipes in ${end.clock}|Best time ${end.clock}|Fewest swipes 3` && first.confetti > 20, `an arrival card at the island leads with the news, then this dig, then the best, in a burst of hard-hat confetti: "${first.title}" "${first.lines.join('" "')}"`);
   // Back at the top the stopwatch is ready again. A slower dig with more swipes keeps the bests; a quick one-swipe dig beats both.
   const again = await at(0);
   const gone = await page.evaluate(() => document.querySelector('.dig-arrival').hidden);
@@ -229,7 +229,7 @@ console.log('\nwebkit 390x844: the depth gauge, the stopwatch and Dug Through');
   const slow = await at('end');
   await wait(300);
   const kept = await card();
-  check(again.clock === null && slow.final && kept.dug === first.dug && kept.swipes === 3 && kept.title === 'Dug Through!' && kept.lines.join('|') === `5 swipes in ${slow.clock}|Best: 3 swipes, ${end.clock}`, `(13 touches, 5 of them swipes) a slower dig keeps the best: "${kept.lines.join('" "')}"`);
+  check(again.clock === null && slow.final && kept.dug === first.dug && kept.swipes === 3 && kept.title === 'Dug Through!' && kept.lines.join('|') === `This dig: 5 swipes in ${slow.clock}|Best time ${end.clock}|Fewest swipes 3`, `(13 touches, 5 of them swipes) a slower dig keeps the best: "${kept.lines.join('" "')}"`);
   await at(0);
   await wait(1700);
   await swipe();
@@ -237,13 +237,13 @@ console.log('\nwebkit 390x844: the depth gauge, the stopwatch and Dug Through');
   const quick = await at('end');
   await wait(300);
   const beat = await card();
-  check(gone && beat.dug < first.dug && beat.swipes === 1 && beat.lines.join('|') === `1 swipe in ${quick.clock}|New best! 1 swipe, ${quick.clock}` && beat.found.join() === 'dug', `a quicker dig is the new best: "${beat.lines.join('" "')}"; still one sighting`);
+  check(gone && beat.dug < first.dug && beat.swipes === 1 && beat.title === 'NEW RECORD!' && beat.lines.join('|') === `This dig: 1 swipe in ${quick.clock}|Best time ${quick.clock}was ${end.clock}|Fewest swipes 1was 3` && beat.found.join() === 'dug', `a quicker dig is the new best: "${beat.lines.join('" "')}"; still one sighting`);
   // Opened again, the log has its card now, with the best on it.
   await page.locator('.log-head .back').click();
   await page.locator('.binoculars').click();
   await page.waitForSelector('.dig-bg svg.strata');
   const mine = await page.evaluate(() => { const c = document.querySelector('.log-card[data-id="dug"]'); return c && [c.classList.contains('found'), c.querySelector('h2').textContent, c.querySelector('p').textContent, document.querySelectorAll('.log-card').length]; });
-  check(mine && mine[0] && mine[1] === 'Dug Through' && mine[2] === `Best: 1 swipe, ${quick.clock}` && mine[3] === SHOWN + 1, `the next time the log is opened Dug Through has its card: "${mine?.[2]}"`);
+  check(mine && mine[0] && mine[1] === 'Dug Through' && mine[2] === `Best time ${quick.clock}\nFewest swipes 1` && mine[3] === SHOWN + 1, `the next time the log is opened Dug Through has its card: "${mine?.[2]}"`);
   // The dirt is drawn only near the screen: a handful of tiles on the page wherever the dig is scrolled to.
   let most = 0, far = 0, bare = 0;
   for (const f of [0.1, 0.2, 0.33, 0.47, 0.5, 0.61, 0.76, 0.9, 0.97]) {
