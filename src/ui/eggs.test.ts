@@ -151,7 +151,7 @@ describe('moose peekaboo: the reference, as approved', () => {
 });
 
 describe('Wildlife Log: hints', () => {
-  it('demo mode shows each gag hint; the game keeps them secret', () => {
+  it('a card turned over shows its plain hint; until then the riddle keeps it secret', () => {
     const [, worker, moose] = LOG_ENTRIES;
     expect(cardHint(worker, true)).toBe('Slide one truck into another.');
     expect(cardHint(moose, true)).toBe('In Duvernay, bump a truck into the top berm twice.');

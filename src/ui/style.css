@@ -2528,21 +2528,6 @@ body.camo-pickups .truck[data-kind='pickup'] .v-camo {
   white-space: nowrap;
 }
 
-/* Demo mode's own log. */
-.demo-tag {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 1px 7px;
-  border: 2px solid var(--outline);
-  border-radius: 8px;
-  background: #ff8a3c;
-  color: #fff;
-  font-size: 12px;
-  letter-spacing: 1px;
-  vertical-align: middle;
-  text-shadow: none;
-}
-
 /* ---------- Cover (cover.ts): hero image, title slam, push-in, drifting clouds, TAP TO START ---------- */
 
 .screen.cover {

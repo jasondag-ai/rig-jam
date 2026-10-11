@@ -58,11 +58,11 @@ describe('Wildlife Log', () => {
     expect(LOG_ENTRIES.find((e) => e.id === 'bear')!.hint).toBe('In Duvernay, tap the snowy bush three times.');
   });
 
-  it('demo sightings are worded differently', () => {
-    expect(sightingToast('bear', 3, true)).toBe(`Demo sighting! Bear (3/${LOG_ENTRIES.length})`);
+  it('a sighting has one wording (demo mode shows the log complete, so nothing is ever new there)', () => {
+    expect(sightingToast('bear', 3)).toBe(`New sighting! Bear (3/${LOG_ENTRIES.length})`);
   });
 
-  it('both logs live under the progress prefix (separate keys), so Reset progress clears both', () => {
+  it("the log, and the old demo mode's log some phones still hold, live under the progress prefix (separate keys), so Reset progress clears both", () => {
     expect(DEMO_LOG_KEY.startsWith(STORAGE_PREFIX)).toBe(true);
     expect(DEMO_LOG_KEY).not.toBe(LOG_KEY);
     expect(LOG_KEY.startsWith(STORAGE_PREFIX)).toBe(true);

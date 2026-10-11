@@ -1,5 +1,5 @@
 // Player progress (best scores, hint balance), kept in this browser only.
-import { demoLink } from './demo-link.ts';
+import { demoOn } from './demo-mode.ts';
 const KEY = 'rush-hour-rigs:v2';
 export const START_HINTS = 3;
 
@@ -64,8 +64,8 @@ export function spendHint(p: Progress): Progress | null {
 
 export function loadProgress(): Progress {
   const p = storedProgress();
-  // (`?demo=1`, the hidden link for recording video: everything is open for this page load. Nothing is saved: demo-link.ts.)
-  return demoLink() ? { ...p, demo: true } : p;
+  // (Demo mode, by its switch in Settings or the `?demo=1` link: everything is open, and nothing is saved: demo-mode.ts.)
+  return { ...p, demo: demoOn() };
 }
 
 function storedProgress(): Progress {

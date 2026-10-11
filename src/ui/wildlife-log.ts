@@ -3,7 +3,7 @@
 // (how to set the gag off) when tapped; demo mode shows the plain hint at once. Finding them all unlocks camo pickups (on by default once earned, with a switch in
 // Settings). Saved on this phone under a `rush-hour-rigs:` key, so "Reset progress" clears it too.
 // `?log=all` previews a full log.
-import { demoLink } from './demo-link.ts';
+import { demoOn } from './demo-mode.ts';
 import { STORAGE_PREFIX } from './progress.ts';
 import { dressCamo } from './sprites.ts';
 
@@ -77,9 +77,11 @@ export const foundCount = (log: WildlifeLog): number => LOG_ENTRIES.filter((e) =
 export const cardHint = (e: LogEntry, plain: boolean): string => (plain ? e.hint : e.riddle);
 
 export const LOG_KEY = `${STORAGE_PREFIX}log`;
-/** Demo mode keeps its own log: its sightings never count toward the real log or camo. Reset clears both. */
+/**
+ * Where the OLD demo mode kept a log of its own (before 1.0.9). Nothing reads or writes it any more: demo mode now
+ * shows the log complete and saves nothing. A phone that has one keeps it untouched (Reset progress clears it).
+ */
 export const DEMO_LOG_KEY = `${STORAGE_PREFIX}demo-log`;
-const keyFor = (demo: boolean) => (demo ? DEMO_LOG_KEY : LOG_KEY);
 
 export interface WildlifeLog {
   /** Sightings in the order they were found. */
@@ -115,30 +117,27 @@ export function parseLog(raw: string | null): WildlifeLog {
 export const previewAll = (search: string) => new URLSearchParams(search).get('log') === 'all';
 
 /** The log as it is SAVED on this phone (no preview link's make-believe): what the finale is earned by (finale-state.ts). */
-export const savedLog = (): WildlifeLog => { try { return parseLog(localStorage.getItem(keyFor(false))); } catch { return parseLog(null); } };
+export const savedLog = (): WildlifeLog => { try { return parseLog(localStorage.getItem(LOG_KEY)); } catch { return parseLog(null); } };
 
-/** The real log, or (with `demo`) the separate demo-mode log. */
-export function loadLog(demo = false): WildlifeLog {
+/** The log. In demo mode every card is shown found. */
+export function loadLog(): WildlifeLog {
   let log: WildlifeLog;
   try {
-    log = parseLog(localStorage.getItem(keyFor(demo)));
-    // A demo log never earns camo, whatever it holds.
-    if (demo) log = { ...log, camoEarned: false };
+    log = parseLog(localStorage.getItem(LOG_KEY));
   } catch {
     log = parseLog(null);
   }
-  // (`?demo=1`, the hidden link for recording video: every card is shown found. The trucks keep their own paint:
-  // camo is not handed out by it. Nothing is saved: demo-link.ts.)
-  if (demoLink()) return { ...log, found: LOG_ENTRIES.map((e) => e.id) };
+  // (Demo mode: every card is shown found. The trucks keep their own paint: camo is not handed out by it. Nothing
+  // is saved: demo-mode.ts.)
+  if (demoOn()) return { ...log, found: LOG_ENTRIES.map((e) => e.id) };
   return typeof location !== 'undefined' && previewAll(location.search) ? { ...log, found: LOG_ENTRIES.map((e) => e.id), camoEarned: true } : log;
 }
 
 /** Saves the log (in preview mode only the camo switch is kept; the real sightings stay as they were). */
-export function saveLog(log: WildlifeLog, demo = false): void {
+export function saveLog(log: WildlifeLog): void {
   try {
-    if (demo && previewAll(location.search)) return;
     const stored = previewAll(location.search) ? { ...parseLog(localStorage.getItem(LOG_KEY)), camo: log.camo } : log;
-    localStorage.setItem(keyFor(demo), JSON.stringify({ v: VERSION, ...stored, ...(demo ? { camoEarned: false } : {}) }));
+    localStorage.setItem(LOG_KEY, JSON.stringify({ v: VERSION, ...stored }));
   } catch {
     // Storage blocked: the log lasts for this visit only.
   }
@@ -174,8 +173,8 @@ export function recordDig(log: WildlifeLog, ms: number, swipes: number): { log: 
 /** The entries that have a card: every one but a hidden entry not found yet. */
 export const shownEntries = (log: WildlifeLog): LogEntry[] => LOG_ENTRIES.filter((e) => !e.hidden || log.found.includes(e.id));
 
-export const sightingToast = (id: Sighting, count: number, demo = false) =>
-  `${demo ? 'Demo' : 'New'} sighting! ${LOG_ENTRIES.find((e) => e.id === id)?.name ?? id} (${count}/${LOG_ENTRIES.length})`;
+export const sightingToast = (id: Sighting, count: number) =>
+  `New sighting! ${LOG_ENTRIES.find((e) => e.id === id)?.name ?? id} (${count}/${LOG_ENTRIES.length})`;
 
 /** Every pickup in the game wears camo in its own gate colour (a class on <body>; sprites.ts picks the camo sprite). */
 export function applyCamo(log: WildlifeLog = loadLog()): void {
