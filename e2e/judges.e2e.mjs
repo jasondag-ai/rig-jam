@@ -95,6 +95,8 @@ for (const [w, h, phone] of [[390, 664, true], [375, 635, true], [1280, 720, fal
   await v.evaluate((el) => el.pause());
   const links = await page.locator('nav.go a.btn').evaluateAll((as) => as.map((a) => a.href));
   check(JSON.stringify(links) === JSON.stringify([LIVE, `${LIVE}?demo=1`, `${LIVE}?finale=1`]), `three buttons: the game, ?demo=1, ?finale=1`);
+  const labels = await page.locator('nav.go a.btn .label').allTextContents();
+  check(labels[1].trim() === 'Demo mode' && !/judge mode/i.test(await page.locator('nav.go').innerText()), `the ?demo=1 button reads "${labels[1].trim()}"`);
   const sizes = await page.locator('nav.go a.btn').evaluateAll((as) => as.map((a) => Math.round(a.getBoundingClientRect().height)));
   check(sizes.every((s) => s >= 48), `each a tap target of at least 48 px (${sizes.join(', ')})`);
   if (process.env.LIVE !== '0') {
