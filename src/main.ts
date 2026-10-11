@@ -310,7 +310,8 @@ function showLevels(requested = savedRegion()): void {
     width: rect.width,
     height: 0,
     // (Baldonnel's list has its mountains on the horizon, behind the tree line, under the header: mountains.ts.)
-  }, { below: false, maxTree: LIST_TREES - 2, depth: 4, mountains: { top: 6, base: horizon } });
+    // (And Montney's its foothills. Bakken's, the prairie, has hay bales out on the stubble under a thin shelterbelt.)
+  }, { below: false, maxTree: LIST_TREES - 2, depth: 4, mountains: { top: 6, base: horizon }, ...(themeFor(regionIndex).id === 'prairie' ? { bales: horizon - 1 } : {}) });
 
   // A region earned for real gets a one-time "NEW LEASE OPEN" banner.
   const fresh = newlyOpened(REGIONS, progress.best, progress.announced);

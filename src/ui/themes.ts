@@ -41,6 +41,8 @@ export interface Theme {
   trees: number;
   /** A berm of pale sand (Clearwater) in place of the ground's own dirt. */
   berm?: 'sand';
+  /** What stands on the horizon behind the farthest trees (mountains.ts): Baldonnel's range, Montney's foothills. */
+  horizon?: 'range' | 'foothills';
   vars: Record<ThemeVar, string>;
 }
 
@@ -79,6 +81,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     spruceShare: 0.55,
     season: 'spring',
     trees: 1,
+    horizon: 'foothills',
     vars: {
       '--sky-top': '#7fa3bd',
       '--sky-bottom': '#d9e2e6',
@@ -215,6 +218,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     spruceShare: 0.8,
     season: 'thaw',
     trees: 0.8,
+    horizon: 'range',
     vars: {
       '--sky-top': '#7fa9c9',
       '--sky-bottom': '#e6edf0',

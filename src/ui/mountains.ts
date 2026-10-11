@@ -25,10 +25,44 @@ export function peaks(): { far: Peak[]; near: Peak[] } {
 }
 
 /**
+ * MONTNEY'S FOOTHILLS (Jay, Oct 11: some mountains there too, not Baldonnel's range). Lower (`FOOTHILL_SHARE`), and
+ * gentler: a far ridge of small pale peaks with a touch of snow, and in front of it a line of ROUNDED, forested
+ * hills with no snow. The same flat toy style and soft outline; their own fixed seed.
+ */
+export const FOOTHILL_SHARE = 0.15;
+const HILL_SEED = 1911;
+const HILL_FAR = '#b3c2cf', HILL = '#7f9a8c', HILL_SHADE = '#6b8779', HILL_LINE = '#4f6659';
+export function foothills(): { far: Peak[]; near: Peak[] } {
+  const rng = mulberry32(HILL_SEED);
+  const ridge = (n: number, lo: number, hi: number, w: number, shift: number): Peak[] =>
+    Array.from({ length: n }, (_, i) => ({ x: (i + 0.5 + shift + (rng() - 0.5) * 0.5) / n, h: lo + rng() * (hi - lo), w: w * (0.85 + rng() * 0.4) }));
+  return { far: ridge(5, 0.62, 1, 0.15, 0.2), near: ridge(4, 0.5, 0.72, 0.24, 0) };
+}
+function foothillsSvg(width: number, top: number, base: number): string {
+  const H = Math.min(base - top, width * FOOTHILL_SHARE);
+  if (!(width > 0) || !(H >= MOUNTAIN_MIN)) return '';
+  const { far, near } = foothills();
+  const at = (p: Peak) => ({ x: p.x * width, y: H - p.h * H, w: p.w * width });
+  const peak = (t: { x: number; y: number; w: number }) => `<path d="M${r1(t.x - t.w)} ${r1(H)} L${r1(t.x - t.w * 0.3)} ${r1(t.y + (H - t.y) * 0.36)} L${r1(t.x)} ${r1(t.y)} L${r1(t.x + t.w * 0.42)} ${r1(t.y + (H - t.y) * 0.44)} L${r1(t.x + t.w)} ${r1(H)} Z" fill="${HILL_FAR}" stroke="${LINE}" stroke-width="1.2" stroke-linejoin="round"/>`;
+  // (A touch of snow on each far peak: the top fifth.)
+  const snow = (t: { x: number; y: number; w: number }) => { const d = (H - t.y) * 0.2; return `<path d="M${r1(t.x)} ${r1(t.y)} L${r1(t.x - t.w * 0.3 * (0.2 / 0.36))} ${r1(t.y + d)} L${r1(t.x + t.w * 0.02)} ${r1(t.y + d * 0.7)} L${r1(t.x + t.w * 0.42 * (0.2 / 0.44))} ${r1(t.y + d)} Z" fill="${SNOW}" stroke="${LINE}" stroke-width="0.8" stroke-linejoin="round"/>`; };
+  // A rounded hill: one smooth hump on the range's foot, its right-hand side in shade (light from the top left).
+  const hill = (t: { x: number; y: number; w: number }) =>
+    `<path d="M${r1(t.x - t.w)} ${r1(H)} Q${r1(t.x - t.w * 0.45)} ${r1(t.y)} ${r1(t.x)} ${r1(t.y)} Q${r1(t.x + t.w * 0.5)} ${r1(t.y)} ${r1(t.x + t.w)} ${r1(H)} Z" fill="${HILL}" stroke="${HILL_LINE}" stroke-width="1.2" stroke-linejoin="round"/>` +
+    `<path d="M${r1(t.x + t.w * 0.12)} ${r1(t.y + 0.8)} Q${r1(t.x + t.w * 0.55)} ${r1(t.y + (H - t.y) * 0.1)} ${r1(t.x + t.w - 1)} ${r1(H)} L${r1(t.x + t.w * 0.3)} ${r1(H)} Z" fill="${HILL_SHADE}"/>`;
+  return (
+    `<svg class="mountains foothills" data-peaks="${far.length + near.length}" width="${r1(width)}" height="${r1(H)}" viewBox="0 0 ${r1(width)} ${r1(H)}" style="position:absolute;left:0;top:${r1(base - H)}px" overflow="hidden" aria-hidden="true">` +
+    far.map(at).map((t) => peak(t) + snow(t)).join('') + near.map(at).map(hill).join('') +
+    `</svg>`
+  );
+}
+
+/**
  * The range as one SVG, `width` px wide, its foot on `base` and nothing of it above `top` (both px from the screen's
  * top). '' where there is no room for it.
  */
-export function mountainsSvg(width: number, top: number, base: number): string {
+export function mountainsSvg(width: number, top: number, base: number, kind: 'range' | 'foothills' = 'range'): string {
+  if (kind === 'foothills') return foothillsSvg(width, top, base);
   const H = Math.min(base - top, width * MOUNTAIN_SHARE);
   if (!(width > 0) || !(H >= MOUNTAIN_MIN)) return '';
   const { far, near } = peaks();
