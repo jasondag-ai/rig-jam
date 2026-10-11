@@ -1347,6 +1347,8 @@ something, give exact clicks and one command at a time.
   nothing, a reload, off again with storage byte for byte as before, `?demo=1` in the same state field by field and
   off by the same switch, the name, the feedback address. `demo-mode.test.ts` holds the same by unit test (a new
   phone, a part-played one, a phone with the old demo mode on).
+- A THIRD REAL SAVE, made on live 1.0.8 before this shipped: `e2e/fixtures/live-save-cf02150.json`, beside `de534ad`
+  and `ba54c2b` in `FIXTURES` (save-compat.test.ts, e2e/save.e2e.mjs). All three must load whole.
 - LEFT FOR JAY: the judges' page (out of scope here) still labels its `?demo=1` button "Judge mode". And a player
   who leaves the switch on plays with nothing saved, with no reminder on the screen beyond the open locks.
 

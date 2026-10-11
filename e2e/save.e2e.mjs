@@ -15,8 +15,8 @@ import { LOG_ENTRIES } from '../src/ui/wildlife-log.ts';
 
 const ROOT = process.env.URL ?? 'http://localhost:5173/';
 // EVERY REAL SAVE WE HAVE, each made on a live build just before something shipped (make-live-save.mjs): the one from
-// before Clearwater (de534ad, Oct 8) and the one from before 1.0.0, the October upgrade (ba54c2b, Oct 10). `ONLY=ba54c2b` runs one.
-const FIXTURES = ['de534ad', 'ba54c2b'].filter((b) => !process.env.ONLY || process.env.ONLY === b);
+// before Clearwater (de534ad, Oct 8) the one from before 1.0.0, the October upgrade (ba54c2b, Oct 10), and the one from before 1.0.9, the one demo switch (cf02150, Oct 11). `ONLY=ba54c2b` runs one.
+const FIXTURES = ['de534ad', 'ba54c2b', 'cf02150'].filter((b) => !process.env.ONLY || process.env.ONLY === b);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;
 const check = (ok, text) => {

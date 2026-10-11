@@ -22,6 +22,7 @@ import { LOG_ENTRIES, camoOn, foundCount, parseLog, shownEntries } from './wildl
 const FIXTURES = [
   { build: 'de534ad', when: 'before Clearwater', day: '2026-10-08', cleared: 6, hats: [3, 3, 3, 3, 3, 3], found: ['nearmiss', 'geese'], names: ['Near Miss', 'Lost Goose'], audio: { sfx: true, music: true, style: 'retro' } },
   { build: 'ba54c2b', when: 'before 1.0.0 (the October upgrade)', day: '2026-10-10', cleared: 7, hats: [3, 3, 3, 3, 2, 3, 3], found: ['deer', 'geese'], names: ['Lost Goose', 'Back Scratcher'], audio: { sfx: true, music: true, style: 'chill' } },
+  { build: 'cf02150', when: 'before 1.0.9 (Demo mode, the one switch)', day: '2026-10-11', cleared: 7, hats: [3, 3, 3, 3, 2, 3, 3], found: ['deer', 'geese'], names: ['Lost Goose', 'Back Scratcher'], audio: { sfx: true, music: true, style: 'chill' } },
 ] as const;
 const nextDay = (day: string) => { const d = new Date(`${day}T12:00:00`); d.setDate(d.getDate() + 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
