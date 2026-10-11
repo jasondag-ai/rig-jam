@@ -1,7 +1,7 @@
 {
   "name": "rig-jam",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -50,6 +50,7 @@
     "test:e2e:depth": "node e2e/depth.e2e.mjs",
     "test:e2e:finale": "node e2e/finale.e2e.mjs",
     "test:e2e:best": "node e2e/best.e2e.mjs",
+    "test:e2e:mouse": "node e2e/mouse.e2e.mjs",
     "test:e2e:gagsounds": "node e2e/gag-sounds.e2e.mjs"
   },
   "devDependencies": {

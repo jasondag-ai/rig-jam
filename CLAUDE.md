@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 and 1.0.2 the same day) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1, 1.0.2 and 1.0.3 the same day) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1314,6 +1314,32 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
+## Mouse and trackpad play (job U14; Oct 10; shipped as 1.0.3)
+- JAY, ON HIS MAC WITH A MOUSE: trucks would not go where he let them go, or snapped back. THE LIKELY CAUSE: FLING
+  (U4). It is on for people and OFF in an automated browser, so no scripted drag had ever met it with a mouse. A hand
+  lets a mouse button go while still moving, so a plain drag read as a flick and the truck shot on to the end of
+  its lane (run against the old board code, the new suite lands drags of 2 and 3 cells at 4). FLING IS FOR FINGERS
+  NOW: a mouse or trackpad drag (`Drag.mouse`, `pointerType === 'mouse'`) never flings and its bumps are never held
+  back; it lands on the nearest cell to where it is let go. Touch is exactly as it was.
+- ONCE A DRAG IS ON, THE WHOLE WINDOW IS FOLLOWED (`BoardView.followDrag`): the truck listens only for the press;
+  moves, the release and a cancel are taken at the window (capture phase), so they count off the truck, off the
+  board and outside the window, whether or not the pointer's capture held.
+- A DRAG IS NEVER LEFT STUCK: the window losing focus or the tab being hidden ends it (the truck goes back, no move);
+  a mouse seen moving with NO BUTTON DOWN ends it as a release where the truck stands (a release that never arrived:
+  let go over another app or a menu); a new press by the same pointer, or while a mouse's drag is on, puts the old
+  truck back and begins anew (a second finger during a touch drag is ignored, as ever). A LOST CAPTURE ALONE DOES
+  NOT END IT: the window still follows, which is kinder than dropping the truck.
+- NOTHING OF THE BROWSER'S OWN STARTS FROM THE BOARD: `dragstart` and `selectstart` are refused on `.board`, it is
+  `user-select: none`, and a wheel or two-finger scroll is refused while a drag is on.
+- `?pointerlog=1` (`src/ui/pointer-log.ts`, pure parts tested): a small box in the bottom left with the drag's state
+  ("drag D: 1.50 cells of 0..4 (mouse #1)" or "no drag") over the last 15 pointer events (a run of moves is one row
+  with a count). It takes no clicks. For Jay to screenshot if a mouse still misbehaves.
+- `npm run test:e2e:mouse` (Chromium and WebKit, 1280 x 720 and 1440 x 900, `?fling=1` AS PEOPLE HAVE IT): A REAL
+  MOUSE moved like a hand (a 150 ms hold, eased or steady, 300 to 3200 px a second): drags of 1 to 4 cells let go
+  after a pause and still moving, the nearest cell, a jerk back on release, let go off the truck, off the board and
+  outside the window, back to back, blur, a lost release, a new press, no selection or picture drag, the log box.
+  WHEN A SUITE'S DRAGS ARE SCRIPTED EVENTS, IT HAS NOT TESTED A MOUSE: use this one for anything a desktop player does.
+
 ## The best score still possible (job U12; Oct 10; shipped as 1.0.2)
 - A SMALL LINE UNDER THE MOVES AND PAR in the HUD (`.hud .best`; rules in `src/ui/best.ts`, pure and tested): "Best
   from here: N", N = the moves made + the best line from where the pad stands (`bestFrom`); once N is over par,
@@ -1798,6 +1824,7 @@ something, give exact clicks and one command at a time.
   which is a flick, and they mean a drag. With it off the board is exactly the old one (no held bumps).
 - The first how-to card ends "Flick a truck to send it all the way."
 - `node tools/gen-baldonnel.ts [minutes] [chain]` / `node tools/gen-baldonnel.ts write` – Baldonnel's ten levels: climbs the slots not yet in `tools/fixed-levels/`, then writes `src/levels/baldonnel.json`
+- `npm run test:e2e:mouse` – mouse play like a real hand: Chromium and WebKit at two desktop sizes, fling on, every kind of release, never stuck, `?pointerlog=1` (start the dev server first)
 - `npm run test:e2e:best` – the best-from-here line: with a hint in normal play, always on the `?demo=1` link, every kind of pad, at Safari's two sizes (start the dev server first)
 - `npm run test:e2e:finale` – the finale: `?finale=1` through all four parts to the cover, a save one par short, Watch the ending (start the dev server first)
 - `python3 tools/port-finale.py` – writes `src/ui/finale-art.ts` and `finale-reference.json` from the finale's reference page
