@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 on Oct 11) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 and 1.0.6 on Oct 11) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1314,6 +1314,41 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
+## The layer audit (job U17; Oct 11; shipped as 1.0.6)
+- THE QUESTION: does anything hide or cut off what the player should be watching, unless it was meant to?
+  `npm run test:e2e:layers` (`e2e/layer-audit.e2e.mjs`, parts in `e2e/layer-audit/`; Chromium and WebKit; 390 x 844,
+  375 x 667 and 1440 x 900; `ENGINE=`, `VIEW=`, `PART=gags|previews|board|out|finale|dig`, `ONLY=<gag>`; a whole
+  size in one engine takes about 9 minutes, so run sizes side by side).
+- WHAT IT PLAYS: every strip sighting stepped through its run every quarter second (`?gagtest=1`); every sighting's
+  preview link in real time, for the speech bubbles (a line is only said when the gag really plays) and for the
+  ones that are not strip gags (magpie, sleepy worker, moose, geese, aurora, Personal Cloud, the marshmallow's
+  stick); a bump and its driver's line; the hint's rim, ghost and OUT badge; every truck's drive out on Cardium 9
+  and Clearwater 3; the win card and its confetti; the finale's card, photo, credits and Still Here; the log's
+  cards, every buried thing and find with its bubble, and the far side.
+- HOW IT LOOKS (`core.mjs`, put into the page): COVERED = points over the thing's box, `elementsFromPoint` at each
+  (pointer events switched on for everything meanwhile, so layers that take no touches are seen); a point counts
+  where the thing itself paints, and is covered if something above it REALLY PAINTS there (an SVG shape, a canvas
+  or picture that is not see-through at that pixel, a box with a background) and is not its own family. CLIPPED =
+  an ancestor that cuts its children (overflow, a picture's frame, a clip-path, a mask) or the screen's edge. A
+  flag is a thing half covered for half a second or more (an eighth is enough when the cover is the lease, the
+  HUD, the tip line or the buttons: nothing is ever meant to be under those), or a quarter cut off. A thing half
+  off the edge of the stage on its way in or out is not a flag unless it stops there; THE STAGE is the game's own
+  screen, which on a desktop is a column in the middle of the window, and a piece wholly outside it is in the wings.
+- THE ALLOW LIST (`allow.mjs`): each cover-up that is ON PURPOSE has a rule (scenario, kind, by what) and ONE LINE OF
+  WHY: the beaver behind the aspen, walkers behind Mannville's lane aspen and the scenery's front trees, the
+  stampede behind the rig mats, the moose behind the top berm, the geese behind the HUD and the lease, the lights
+  behind the HUD, a truck passing under the HUD or off the screen's edge, confetti under the win card... A FLAG
+  WITH NO RULE FAILS THE TEST: fix it, or, if it is meant, add its rule with its reason. A NEW SIGHTING OR BUBBLE
+  IS IN THE AUDIT BY ITSELF (it reads the game's own gag list and `PREVIEWS`).
+- WHAT IT FOUND (Oct 11): 13 distinct flags, ALL INTENDED; no z-order, clip or position fault, so nothing in the
+  game was changed. `qc/layer_audit.md` (written by `node e2e/layer-audit/report.mjs` from the runs' flags, with a
+  still of each in `qc/layer_audit/`) lists every one with what covers what and the call. THREE ARE JUDGMENT CALLS
+  left for Jay: the "Squeeze in!" bubble lying over a corner of the camera in the crew photo; the magpie's last
+  frames behind the lease as it flies off the photo on a short strip; and on a desktop a truck leaving by a side
+  being cut at the game column's edge.
+- IT DOES NOT REPLACE `test:e2e:striptop` (U16), which measures every drawn piece to the pixel against the lease's
+  edge: this audit looks at whole actors and would miss a few pixels of a big puppet.
+
 ## The beaver's pipe, and nothing cut off by the lease (job U16; Oct 11; shipped as 1.0.5)
 - JAY: when the beaver stood his pipe upright, its top was cut off flat at the foot of the berm. WHY: the strip's
   layers lie UNDER the board, so whatever a strip gag draws above the strip's top edge is hidden there. The
@@ -1872,6 +1907,7 @@ something, give exact clicks and one command at a time.
   which is a flick, and they mean a drag. With it off the board is exactly the old one (no held bumps).
 - The first how-to card ends "Flick a truck to send it all the way."
 - `node tools/gen-baldonnel.ts [minutes] [chain]` / `node tools/gen-baldonnel.ts write` – Baldonnel's ten levels: climbs the slots not yet in `tools/fixed-levels/`, then writes `src/levels/baldonnel.json`
+- `npm run test:e2e:layers` – the layer audit: nothing hides or cuts off what the player should be watching, unless a rule in `e2e/layer-audit/allow.mjs` says it is meant (`ENGINE=`, `VIEW=`, `PART=`; `node e2e/layer-audit/report.mjs` writes `qc/layer_audit.md`; start the dev server first)
 - `npm run test:e2e:striptop` – no strip gag is cut off by the lease or the buttons: all 32 through their whole runs (`VIEW=390x664`, `ONLY=beaver`; start the dev server first)
 - `npm run test:e2e:records` – Dug Through's records: digs in a row from the grass, a new record's card, toast and ta-da, a reload, `?demo=1` (start the dev server first)
 - `npm run test:e2e:mouse` – mouse play like a real hand: Chromium and WebKit at two desktop sizes, fling on, every kind of release, never stuck, `?pointerlog=1` (start the dev server first)
