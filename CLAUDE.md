@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11; 1.0.11 on Oct 12) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1313,6 +1313,29 @@ something, give exact clicks and one command at a time.
   there only the button's "Copied!" is checked).
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
+
+## The ending in Demo mode (job U21; Oct 12; shipped as 1.0.11)
+- JAY (Oct 12): with Demo mode on he cleared every level at par, every sighting showing in the log, and the ending
+  never played. It was barred there (`finaleEarned(c, demo)` refused demo mode). NOW THE PERFECT GAME CHECK RUNS ON
+  WHATEVER STATE THE PLAYER IS IN (`perfectCount` in main.ts): normal play, the real save, exactly as before; Demo
+  mode, THE SESSION'S OWN PARS (they are in demo mode's copy in memory, over the real save's) with every sighting
+  counted, since the log shows them all found there.
+- IT PLAYS ONCE, AFTER THE LEVEL THAT COMPLETES IT, as ever: never over a level, after that level's win card is left.
+- NOTHING IS SAVED IN DEMO MODE: the "seen" flag is written to the copy in memory, so the phone's
+  `rush-hour-rigs:finale` and everything else stay byte for byte as they were; the session's pars and its earned
+  state are gone when the switch goes off, or with the page (a reload is a new session).
+- IT NEVER COMES UNPROMPTED: not twice on one page (`playedInDemo`), and not for a state nobody completed in the
+  session: if every level was at par already when Demo mode came on (a real save with every par but not every
+  sighting), nothing plays by itself (`demoCameOnEarned`, taken when the page opens and when the switch goes on).
+- "WATCH THE ENDING" (`endingOffered` in finale-state.ts) is in Settings under Credits once the ending has been seen
+  and, in Demo mode, whenever the session's state has earned it (so also in the case just above). Off again, the
+  row is as the real save has it.
+- `finaleEarned(c)` and `finaleDue(c, saved, playedInDemo)` no longer take `demo`. Where older notes say the ending
+  is "never in demo mode" or "on real progress only", read this section.
+- Tests: finale-state.test.ts and demo-mode.test.ts (the session's pars, the flag in memory, off and on);
+  `npm run test:e2e:demo` has the whole of it in Chromium and WebKit at 390 x 664 and 375 x 635 (the last par made
+  with the switch on, the win card first, the ending, the row, once, a replay, a reload, off, on again, a save that
+  had every par already; the real save compared byte for byte at each step). `test:e2e:finale` holds normal play.
 
 ## Backdrops: the list scrolls as one, Montney's foothills, the prairie's list (job U20; Oct 11; shipped as 1.0.10)
 - THE LEVEL LIST'S SKY AND GROUND SCROLL WITH THE LIST. The list (`.screen.levels`) is the scroller and its sky
