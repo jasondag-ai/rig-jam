@@ -7,6 +7,9 @@
 //  - `?demo=1`: lands in the same state as the switch (compared field by field), writes nothing at all, and goes
 //    off by the same switch
 //  - one name ("Demo mode"; nothing says "judge mode"); the feedback address
+//  - THE ENDING IN DEMO MODE (job U21): the last par made with the switch on plays it once, after that level's win
+//    card is left; "Watch the ending" is then in Settings; the real save byte for byte unchanged; nothing after a
+//    reload or off and on again; a save that had every par already does not set it off by itself
 // Needs the dev server (URL=, default the dev build on 5181). `ENGINE=chromium|webkit`, `VIEW=390x664`.
 import { chromium, webkit } from 'playwright';
 import { REGIONS } from '../src/levels/regions.ts';
@@ -201,6 +204,100 @@ for (const name of WHICH) {
     check(sameBytes(out, off) && sameBytes(await stored(L.page), seedL), 'and the same switch turns it off: real progress again, storage untouched');
     check(L.errors.length === 0, `no errors${L.errors.length ? `: ${L.errors.join('; ')}` : ''}`);
     await L.context.close();
+  }
+
+  // ---------- THE ENDING IN DEMO MODE (job U21) ----------
+  for (const [W, H] of SIZES) {
+    console.log(`\n${name} ${W} x ${H}: the ending in Demo mode`);
+    const LEVELS = REGIONS.flatMap((r) => r.levels);
+    // A REAL SAVE with every level at par BUT CARDIUM 1 (one over), two sightings, the ending never seen.
+    const NEAR = { ...SAVE, 'rush-hour-rigs:v2': JSON.stringify({ best: { ...Object.fromEntries(LEVELS.map((l) => [l.id, l.par])), [C[0].id]: C[0].par + 1 }, hints: 4, perfect: LEVELS.slice(1).map((l) => l.id), dailyCleared: [day(1), day(0)], demo: false, announced: REGIONS.map((r) => r.id), standDowns: [] }) };
+    delete NEAR['rush-hour-rigs:finale'];
+    const context = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: name === 'webkit' ? 3 : 2, hasTouch: true });
+    const page = await context.newPage();
+    const errors = []; page.on('pageerror', (e) => errors.push(e.message));
+    const seedIt = async (save) => {
+      await page.goto(`${ROOT}?${QUIET}`, { waitUntil: 'networkidle' });
+      await page.evaluate((s) => { localStorage.clear(); for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v); }, save);
+      await page.goto(`${ROOT}?${QUIET}`, { waitUntil: 'networkidle' });
+      await page.waitForSelector('.screen.levels .region-tab');
+    };
+    const row = async () => { await page.locator('.gear').click(); await page.waitForSelector('.settings'); await wait(450); const n = await page.locator('.settings [data-act="ending"]').count(); const under = n ? await page.evaluate(() => { const kids = [...document.querySelector('.settings .ask').children].filter((k) => k.matches('.btn.quiet')); return kids[0]?.dataset.act === 'credits' && kids[1]?.dataset.act === 'ending'; }) : false; await page.locator('.settings [data-act="close"]').click(); await page.waitForSelector('.screen.levels .region-tab'); return { n, under }; };
+    const finaleOn = () => page.evaluate(() => !!document.querySelector('.screen.finale'));
+    const inOut = async (li) => { await page.locator('.region-tab').nth(0).evaluate((t) => t.click()); await wait(250); await page.locator('.level-btn').nth(li).click(); await page.waitForSelector('.board .truck.sprite-on'); await wait(300); await page.locator('.hud [data-act="levels"]').click(); await wait(900); };
+    const solveIt = async (li) => { await page.locator('.region-tab').nth(0).evaluate((t) => t.click()); await wait(250); await page.locator('.level-btn').nth(li).click(); await page.waitForSelector('.board .truck.sprite-on'); const level = C[li]; let s = newGame(level); for (const m of solve(level)) { const r = tryMove(s, m.id, m.delta); s = r.state; await drag(page, m.id, m.delta, r.exited); } return page.waitForSelector('.win [data-act="levels"]', { timeout: 8000 }).then(() => true, () => false); };
+
+    await seedIt(NEAR);
+    const seed = await stored(page);
+    check((await row()).n === 0 && !seed['rush-hour-rigs:finale'], 'normal play, one par short: no ending yet, no "Watch the ending" in Settings');
+    await setSwitch(page, true);
+    const onStore = await stored(page);
+    check((await row()).n === 0, 'Demo mode on, still one par short: no row yet');
+    await inOut(1);
+    check(!(await finaleOn()), 'leaving a level that completes nothing: no ending');
+    // The last par, made in Demo mode.
+    const won = await solveIt(0);
+    await wait(1800);
+    check(won && !(await finaleOn()) && (await page.evaluate(() => !document.querySelector('.overlay.win').hidden)), `Cardium 1 cleared at par in Demo mode: its own win card first (the ending never interrupts)`);
+    await page.locator('.win [data-act="levels"]').click();
+    const played = await page.waitForSelector('.screen.finale[data-part="card"]', { timeout: 6000 }).then(() => true, () => false);
+    const card = played ? await page.evaluate(() => document.querySelector('.screen.finale').innerText.replace(/\s+/g, ' ')) : '';
+    check(played && new RegExp(`${LEVELS.length} of ${LEVELS.length}`).test(card) && new RegExp(`${N} of ${N}`).test(card), `leaving the win card: THE ENDING PLAYS (the Perfect Game card: ${LEVELS.length} of ${LEVELS.length}, ${N} of ${N})`);
+    await page.screenshot({ path: `${OUT}/${name}_${W}x${H}_ending.png` }).catch(() => {});
+    check(sameBytes(await stored(page), onStore), 'the real save is byte for byte unchanged while it plays: no finale flag, no pars');
+    await page.locator('.screen.finale .hud [data-act="levels"]').click();
+    await page.waitForSelector('.screen.levels .region-tab', { timeout: 6000 }).catch(() => {});
+    await wait(600);
+    check(!(await finaleOn()), 'left by "Levels": the list, and it does not start again');
+    const r1 = await row();
+    check(r1.n === 1 && r1.under, '"Watch the ending" is now in Settings, right under Credits');
+    await inOut(1);
+    const again = await solveIt(1);
+    if (again) { await page.locator('.win [data-act="levels"]').click(); await wait(1200); }
+    check(again && !(await finaleOn()), 'ONCE: another level left, another level won and its card left: no second ending');
+    await page.waitForSelector('.screen.levels .region-tab');
+    // Watched again from Settings, in Demo mode.
+    await page.locator('.gear').click(); await page.waitForSelector('.settings'); await wait(450);
+    await page.locator('.settings [data-act="ending"]').click();
+    const replay = await page.waitForSelector('.screen.finale[data-part="card"]', { timeout: 6000 }).then(() => true, () => false);
+    await page.locator('.screen.finale .hud [data-act="levels"]').click();
+    await page.waitForSelector('.screen.levels .region-tab', { timeout: 6000 }).catch(() => {});
+    check(replay && sameBytes(await stored(page), onStore), 'a tap on the row replays it; still nothing saved');
+    // A reload in Demo mode: the session's pars are gone with the page, so nothing is earned and nothing plays.
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForSelector('.screen.levels .region-tab');
+    await inOut(1);
+    check(!(await finaleOn()) && (await row()).n === 0, 'after a reload (a new demo session): no ending by itself, and no row until it is earned again');
+    // Off: the demo's earned state is gone, the phone as it was.
+    await setSwitch(page, false);
+    check(sameBytes(await stored(page), seed), 'Demo mode off: the real save is byte for byte what it was (no finale flag, Cardium 1 still one over par)');
+    check((await row()).n === 0, 'and the row is gone: the real game has not earned it');
+    // On again: it does not come back unprompted.
+    await setSwitch(page, true);
+    await inOut(1);
+    await inOut(0);
+    check(!(await finaleOn()) && (await row()).n === 0 && sameBytes(await stored(page), onStore), 'Demo mode on again: no ending unprompted, levels opened and left');
+    await setSwitch(page, false);
+
+    // A real save with EVERY par already (two sightings short of the lot): Demo mode counts the sightings, but no par was made in the session.
+    const ALLPAR = { ...NEAR, 'rush-hour-rigs:v2': JSON.stringify({ ...JSON.parse(NEAR['rush-hour-rigs:v2']), best: Object.fromEntries(LEVELS.map((l) => [l.id, l.par])) }) };
+    await seedIt(ALLPAR);
+    await inOut(1);
+    check(!(await finaleOn()) && (await row()).n === 0, 'normal play, every par but not every sighting: not earned, as ever');
+    const seed2 = await stored(page);
+    await setSwitch(page, true);
+    await wait(500);
+    await inOut(1);
+    const r2 = await row();
+    check(!(await finaleOn()) && r2.n === 1, 'the same save with Demo mode switched on: it does not play by itself (nothing was completed), and the row is offered');
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForSelector('.screen.levels .region-tab', { timeout: 6000 }).catch(() => {});
+    await wait(800);
+    check(!(await finaleOn()), 'nor on opening the game with the switch remembered');
+    await setSwitch(page, false);
+    check(sameBytes(await stored(page), seed2), 'and off again: that save untouched');
+    check(errors.length === 0, `no errors${errors.length ? `: ${errors.join('; ')}` : ''}`);
+    await context.close();
   }
   await browser.close();
 }

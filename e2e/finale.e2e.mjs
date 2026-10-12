@@ -6,7 +6,7 @@
 //     NOTHING COVERS THE HUD OR THE BUTTONS BEFORE THE CLOSE-UP, but for the flash and the dark the credits roll on
 //     (the page's own): the card stands between them, the crew stays in the strip, the Polaroid drops UNDER the HUD.
 //  2. EARNED FOR REAL: a save one par short (every sighting found) plays it after that level's win card, once; it is
-//     remembered under its own key; Settings then offers "Watch the ending". Not in demo mode; not a sighting short.
+//     remembered under its own key; Settings then offers "Watch the ending". Not a sighting short. (In Demo mode: demo-mode.e2e.mjs.)
 // Needs the dev server (URL=, default the dev build on 5181). `ONLY=play|earned`. `VIEW=390x664`.
 import { webkit } from 'playwright';
 import { REGIONS } from '../src/levels/regions.ts';
@@ -237,7 +237,7 @@ for (const [W, H] of SIZES) {
       check(k === '{"v":1,"seen":true}' && o.errors.length === 0, `and it is remembered (${k})${o.errors.length ? ' ERR ' + o.errors[0] : ''}`);
       await o.context.close();
     }
-    // Not earned: a sighting short; demo mode; and a fresh player sees no such button.
+    // Not played by itself: a sighting short; a perfect save opened with demo mode already on.
     for (const [name, p, l] of [['every level at par, one sighting short', JSON.stringify({ ...JSON.parse(progress()), best: Object.fromEntries(levels.map((x) => [x.id, x.par])) }), log(all.filter((id) => id !== 'bear'))], ['a perfect save with demo mode on', JSON.stringify({ ...JSON.parse(progress({ demo: true })), best: Object.fromEntries(levels.map((x) => [x.id, x.par])) }), log(all)]]) {
       const o = await open(p, l);
       await o.page.waitForSelector('.screen.levels', { timeout: 5000 }).catch(() => {});
@@ -246,7 +246,10 @@ for (const [W, H] of SIZES) {
       await o.page.locator('.gear').click();
       await o.page.waitForSelector('.settings');
       const btn = await o.page.locator('.settings [data-act="ending"]').count();
-      check(st.list && !st.finale && !st.key && btn === 0, `${name}: no ending, and no "Watch the ending" in Settings`);
+      // (Demo mode, job U21: the ending can be earned there by a par made in the session; a save that was perfect
+      // already when the page opened completes nothing, so it does not play by itself, but the row is offered. demo-mode.e2e.mjs.)
+      const demo = /demo mode on/.test(name);
+      check(st.list && !st.finale && !st.key && btn === (demo ? 1 : 0), `${name}: no ending by itself, and ${demo ? '"Watch the ending" is offered' : 'no "Watch the ending"'} in Settings`);
       await o.context.close();
     }
   }
