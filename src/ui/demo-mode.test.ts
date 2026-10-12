@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { SWITCH_KEY, demoLink, demoOn, keepInMemory, lift, setDemo, switchSaved } from './demo-mode.ts';
 import { freshProgress, loadProgress, recordWin, saveProgress } from './progress.ts';
 import { DEMO_LOG_KEY, LOG_ENTRIES, LOG_KEY, loadLog, record, saveLog } from './wildlife-log.ts';
-import { finaleDue } from './finale-state.ts';
+import { FINALE_KEY, finaleCount, finaleDue, loadFinale, saveFinaleSeen } from './finale-state.ts';
+import { REGIONS } from '../levels/regions.ts';
 
 /** A stand-in for the browser's store, with the same methods on its prototype. */
 class Store {
@@ -105,7 +106,7 @@ describe('demo mode: ONE SWITCH', () => {
     expect(switchSaved(store as unknown as Storage)).toBe(true);
   });
 
-  it('on: every level is open, every sighting shows, the ending is not for earning; off: real progress is back', () => {
+  it('on: every level is open, every sighting shows; off: real progress is back', () => {
     const store = phone(played());
     expect(loadProgress().demo).toBe(false);
     expect(loadLog().found).toEqual(['magpie', 'moose']);
@@ -115,7 +116,6 @@ describe('demo mode: ONE SWITCH', () => {
     expect(loadProgress().best).toEqual({ c01: 2, c02: 6, c03: 5 });
     expect(loadLog().found).toEqual(LOG_ENTRIES.map((e) => e.id));
     expect(loadLog().camoEarned).toBe(false);
-    expect(finaleDue({ pads: 70, ofPads: 70, sightings: 40, ofSightings: 40 }, loadProgress().demo, { seen: false })).toBe(false);
     setDemo(false, true, store as unknown as Storage);
     expect(demoOn()).toBe(false);
     expect(loadProgress().demo).toBe(false);
@@ -144,6 +144,43 @@ describe('demo mode: ONE SWITCH', () => {
     expect(g.localStorage!.getItem('rush-hour-rigs:finale')).toBe('{"v":1,"seen":true}');
     expect(g.localStorage!.getItem(DEMO_LOG_KEY)).toContain('bear');
     expect(g.localStorage!.getItem(LOG_KEY)).toContain('moose');
+  });
+
+  it('THE ENDING IN DEMO MODE (job U21): earned by the session\'s own pars with every sighting counted, its flag kept in memory only, gone when the switch goes off', () => {
+    const levels = REGIONS.flatMap((r) => r.levels);
+    const store = phone(played());
+    const before = bytes(store);
+    const count = () => finaleCount(loadProgress().best, loadLog().found, levels, LOG_ENTRIES);
+    // The real save is three levels in, with two sightings: nowhere near.
+    expect(finaleDue(count(), loadFinale())).toBe(false);
+    setDemo(true, true, store as unknown as Storage);
+    const on = bytes(store);
+    // (This save had seen the ending for real; say it had not.)
+    g.localStorage!.removeItem(FINALE_KEY);
+    expect(count().sightings).toBe(LOG_ENTRIES.length);
+    expect(finaleDue(count(), loadFinale())).toBe(false);
+    // Every level at par, in the demo session: the last one makes it due.
+    let p = loadProgress();
+    for (const l of levels.slice(0, -1)) p = recordWin(p, l.id, l.par, l.par).progress;
+    saveProgress(p);
+    expect(finaleDue(count(), loadFinale())).toBe(false);
+    saveProgress(recordWin(loadProgress(), levels.at(-1)!.id, levels.at(-1)!.par, levels.at(-1)!.par).progress);
+    expect(finaleDue(count(), loadFinale())).toBe(true);
+    // It plays: the flag goes to the copy in memory, never to the phone.
+    saveFinaleSeen();
+    expect(loadFinale().seen).toBe(true);
+    expect(finaleDue(count(), loadFinale())).toBe(false);
+    expect(bytes(store)).toBe(on);
+    // Off: the session's pars and its flag are gone; the phone is byte for byte what it was (its own flag included).
+    setDemo(false, true, store as unknown as Storage);
+    expect(bytes(store)).toBe(before);
+    expect(store.data.get(FINALE_KEY)).toBe('{"v":1,"seen":true}');
+    expect(count().pads).toBe(1);
+    // On again: a new session, nothing earned, nothing due.
+    store.data.delete(FINALE_KEY);
+    setDemo(true, true, store as unknown as Storage);
+    expect(finaleDue(count(), loadFinale())).toBe(false);
+    expect(loadFinale().seen).toBe(false);
   });
 
   it('the link turns the same switch on and writes nothing at all, not even the switch', () => {

@@ -1,4 +1,4 @@
-import { setDemo } from './ui/demo-mode.ts'; // FIRST: demo mode keeps every write in memory (see the file)
+import { demoOn, setDemo } from './ui/demo-mode.ts'; // FIRST: demo mode keeps every write in memory (see the file)
 import { bearStill } from './ui/bear.ts';
 import { nightStill } from './ui/night.ts';
 import { musicCredits, sfxCredits } from './audio/credits.ts';
@@ -32,7 +32,7 @@ import { isDev, versionText } from './ui/version.ts';
 import { fakeRegions, furthestOpen, runRegionBar } from './ui/region-bar.ts';
 import { shouldShowCover, showCover } from './ui/cover.ts';
 import { FinaleView } from './ui/finale.ts';
-import { FINALE_KEY, finaleCount, finaleDue, finaleLink, loadFinale, saveFinaleSeen } from './ui/finale-state.ts';
+import { FINALE_KEY, endingOffered, finaleCount, finaleDue, finaleEarned, finaleLink, loadFinale, saveFinaleSeen } from './ui/finale-state.ts';
 import { applyUiArt, uiImg } from './ui/ui-art.ts';
 import { preloadSprites } from './ui/sprites.ts';
 import { LOG_ENTRIES, applyCamo, cardHint, complete, foundCount, loadLog, previewAll, recordDig, saveLog, savedLog, shownEntries, sightingToast, type Sighting } from './ui/wildlife-log.ts';
@@ -329,17 +329,31 @@ function showLevels(requested = savedRegion()): void {
 
 // ---------- THE FINALE (finale.ts; job U9) ----------
 let finale: FinaleView | null = null;
-/** The game's own counts, from what is really saved: levels at par, sightings found. */
-const perfectCount = () => finaleCount(loadProgress().best, savedLog().found, REGIONS.flatMap((r) => r.levels), LOG_ENTRIES);
+/**
+ * The game's own counts, for the state the player is in: levels at par, sightings found. Normal play: what is really
+ * saved (never a preview link's make-believe log). Demo mode: the session's own pars (in its copy in memory), and
+ * every sighting, since the log shows them all found there.
+ */
+const perfectCount = () => finaleCount(loadProgress().best, demoOn() ? LOG_ENTRIES.map((e) => e.id) : savedLog().found, REGIONS.flatMap((r) => r.levels), LOG_ENTRIES);
+/** The ending has played in Demo mode on this page: it does not come again by itself, whatever the switch does since. */
+let playedInDemo = false;
+/**
+ * IN DEMO MODE THE ENDING COMES ONLY FOR A PAR MADE IN THE SESSION: if everything was at par already when Demo mode
+ * came on (a real save with every par but not every sighting: demo mode counts the sightings as found), nothing
+ * completed it, so it does not play by itself. ("Watch the ending" is in Settings there all the same.)
+ */
+let demoCameOnEarned = false;
+const demoCameOn = (): void => { demoCameOnEarned = demoOn() && finaleEarned(perfectCount()); };
+demoCameOn();
 /**
  * A perfect game, not yet celebrated? Then the ending plays now (once), in place of wherever the player was going.
- * Real progress only: not demo mode, not a preview link.
+ * In Demo mode too (job U21: by the demo session's own pars; nothing of it is saved). Not from a preview link.
  * IT NEVER INTERRUPTS A LEVEL (Jay, Oct 10): it is asked for only when the player is going somewhere, leaving a win
  * card (Next, the next field, All levels) or leaving the level ("Levels"). A sighting that completes the perfect game
  * in the middle of a level waits for that.
  */
 function maybeFinale(): boolean {
-  if (finale || previewAll(location.search) || !finaleDue(perfectCount(), loadProgress().demo, loadFinale())) return false;
+  if (finale || previewAll(location.search) || !finaleDue(perfectCount(), loadFinale(), demoOn() && (playedInDemo || demoCameOnEarned))) return false;
   showFinale(true);
   return true;
 }
@@ -351,7 +365,8 @@ function showFinale(record: boolean, stageOnly = false): void {
   game?.leave();
   game = null;
   finale?.leave();
-  if (record) saveFinaleSeen();
+  // (In Demo mode this is written to demo mode's copy in memory, never to the phone: demo-mode.ts.)
+  if (record) { saveFinaleSeen(); if (demoOn()) playedInDemo = true; }
   const c = perfectCount();
   // (A replay or the link shows the whole game's counts even on a phone that has not earned them.)
   const counts = c.pads === c.ofPads && c.sightings === c.ofSightings ? c : { ...c, pads: c.ofPads, sightings: c.ofSightings };
@@ -434,7 +449,7 @@ function showSettings(screen: HTMLElement): void {
           <span class="switch-label">Demo mode<small>Everything open. Nothing is saved.</small></span>
         </label>
         <button class="btn quiet" data-act="credits">Credits</button>
-        ${loadFinale().seen ? '<button class="btn quiet" data-act="ending">Watch the ending</button>' : ''}
+        ${endingOffered(perfectCount(), loadFinale(), demoOn()) ? '<button class="btn quiet" data-act="ending">Watch the ending</button>' : ''}
         ${feedbackEmail() ? `<div class="feedback"><b>Send feedback</b><span class="feedback-mail">${esc(feedbackEmail())}</span><button class="btn quiet" data-act="copy-feedback">Copy address and details</button><small>Adds your app version, phone and level.</small></div>` : ''}
         <button class="btn danger" data-act="reset">Reset progress</button>
         <button class="btn" data-act="close">Done</button>
@@ -496,6 +511,7 @@ function showSettings(screen: HTMLElement): void {
   // it was (scores, hard hats, streak, log, the ending). The switch itself is remembered.
   panel.querySelector<HTMLInputElement>('[data-act="demo"]')!.addEventListener('change', (e) => {
     setDemo((e.target as HTMLInputElement).checked);
+    demoCameOn();
     applyCamo(); // the real log's own (what was toggled in demo mode went with it)
   });
   panel.querySelector<HTMLInputElement>('[data-act="sfx"]')!.addEventListener('change', (e) => {

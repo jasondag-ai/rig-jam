@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { REGIONS } from '../levels/regions.ts';
 import page from './finale-reference.json' with { type: 'json' };
-import { FINALE_KEY, FINALE_PARTS, finaleCount, finaleDue, finaleEarned, finaleLink, parseFinale } from './finale-state.ts';
+import { FINALE_KEY, FINALE_PARTS, endingOffered, finaleCount, finaleDue, finaleEarned, finaleLink, parseFinale } from './finale-state.ts';
 import { FINALE_CREDITS, FINALE_LINES, FINALE_PHOTO } from './lines.ts';
 import { LOG_ENTRIES } from './wildlife-log.ts';
 
@@ -15,14 +15,14 @@ describe('the finale: when it is earned (job U9)', () => {
     const c = finaleCount(allAtPar, allFound, levels, LOG_ENTRIES);
     expect(c).toEqual({ pads: levels.length, ofPads: levels.length, sightings: LOG_ENTRIES.length, ofSightings: LOG_ENTRIES.length });
     expect([c.ofPads, c.ofSightings]).toEqual([70, 40]);
-    expect(finaleEarned(c, false)).toBe(true);
+    expect(finaleEarned(c)).toBe(true);
   });
 
   it('every level at 3 hard hats: one level a move over par, or one never played, and it is not earned', () => {
     const last = levels.at(-1)!;
-    expect(finaleEarned(finaleCount({ ...allAtPar, [last.id]: last.par + 1 }, allFound, levels, LOG_ENTRIES), false)).toBe(false);
+    expect(finaleEarned(finaleCount({ ...allAtPar, [last.id]: last.par + 1 }, allFound, levels, LOG_ENTRIES))).toBe(false);
     const { [levels[3].id]: _gone, ...rest } = allAtPar;
-    expect(finaleEarned(finaleCount(rest, allFound, levels, LOG_ENTRIES), false)).toBe(false);
+    expect(finaleEarned(finaleCount(rest, allFound, levels, LOG_ENTRIES))).toBe(false);
     // (Under par cannot happen, but it would still be three hard hats.)
     expect(finaleCount({ ...allAtPar, [last.id]: last.par - 1 }, allFound, levels, LOG_ENTRIES).pads).toBe(levels.length);
     // A Daily Pad or a Turnaround score is not a level, either way.
@@ -30,17 +30,28 @@ describe('the finale: when it is earned (job U9)', () => {
   });
 
   it('every sighting found: one missing (the hidden one too), and it is not earned; a retired id does not count', () => {
-    for (const miss of ['bear', 'dug', 'night', 'mosquito']) expect(finaleEarned(finaleCount(allAtPar, allFound.filter((id) => id !== miss), levels, LOG_ENTRIES), false), miss).toBe(false);
+    for (const miss of ['bear', 'dug', 'night', 'mosquito']) expect(finaleEarned(finaleCount(allAtPar, allFound.filter((id) => id !== miss), levels, LOG_ENTRIES)), miss).toBe(false);
     expect(finaleCount(allAtPar, [...allFound.filter((id) => id !== 'bear'), 'pumper'], levels, LOG_ENTRIES).sightings).toBe(LOG_ENTRIES.length - 1);
   });
 
-  it('never in demo mode; and it plays once', () => {
+  it('it plays once; in Demo mode too, by the same counts, and never twice by itself on one page', () => {
     const c = finaleCount(allAtPar, allFound, levels, LOG_ENTRIES);
-    expect(finaleEarned(c, true)).toBe(false);
-    expect(finaleDue(c, false, { seen: false })).toBe(true);
-    expect(finaleDue(c, false, { seen: true })).toBe(false);
-    expect(finaleDue(c, true, { seen: false })).toBe(false);
-    expect(finaleEarned({ pads: 0, ofPads: 0, sightings: 0, ofSightings: 0 }, false)).toBe(false);
+    expect(finaleEarned(c)).toBe(true);
+    expect(finaleDue(c, { seen: false })).toBe(true);
+    expect(finaleDue(c, { seen: true })).toBe(false);
+    // Demo mode's "seen" lives in its copy in memory: gone when the switch goes off. The page remembers it played.
+    expect(finaleDue(c, { seen: false }, true)).toBe(false);
+    expect(finaleEarned({ pads: 0, ofPads: 0, sightings: 0, ofSightings: 0 })).toBe(false);
+  });
+
+  it('"Watch the ending" is offered once it has been seen, and in Demo mode whenever the session has earned it', () => {
+    const c = finaleCount(allAtPar, allFound, levels, LOG_ENTRIES), short = finaleCount({ ...allAtPar, [levels[0].id]: levels[0].par + 1 }, allFound, levels, LOG_ENTRIES);
+    expect(endingOffered(short, { seen: false }, false)).toBe(false);
+    expect(endingOffered(short, { seen: true }, false)).toBe(true);
+    expect(endingOffered(c, { seen: false }, false)).toBe(false); // (normal play: only once it has played)
+    expect(endingOffered(c, { seen: false }, true)).toBe(true);
+    expect(endingOffered(short, { seen: false }, true)).toBe(false);
+    expect(endingOffered(short, { seen: true }, true)).toBe(true);
   });
 
   it('it has a key of its own; rubbish reads as not seen', () => {

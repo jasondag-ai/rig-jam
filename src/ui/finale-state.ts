@@ -1,8 +1,11 @@
 // THE FINALE (October upgrade, job U9): when it is earned, and that it has been seen. Pure, and its own storage key.
-//   EARNED: every level of every region at 3 hard hats (par or better) AND every Wildlife Log entry found, on real
-//   progress: never in demo mode (its levels are only opened, and it has a log of its own), never from `?log=all`.
+//   EARNED: every level of every region at 3 hard hats (par or better) AND every Wildlife Log entry found, in
+//   WHATEVER STATE THE PLAYER IS IN (job U21): normal play, by the real save; Demo mode, by the demo session's own
+//   record of levels cleared at par, the sightings being all shown as found there. Never from `?log=all`.
 //   IT PLAYS ONCE, straight after whatever completes it; `rush-hour-rigs:finale` remembers that it has. Once seen it
 //   can be watched again from Settings ("Watch the ending"). `?finale=1` plays it on any build and saves nothing.
+//   IN DEMO MODE NOTHING IS SAVED: the flag is written to demo mode's copy in memory and is gone, with the session's
+//   pars, when Demo mode goes off; and it never plays twice by itself on one page (`playedInDemo`).
 export const FINALE_KEY = 'rush-hour-rigs:finale';
 
 export interface FinaleCount { /** Levels of the regions at par or better, and how many there are. */ pads: number; ofPads: number; /** Sightings found, and how many there are. */ sightings: number; ofSightings: number }
@@ -16,9 +19,9 @@ export function finaleCount(best: Record<string, number>, found: readonly string
     ofSightings: entries.length,
   };
 }
-/** A perfect game: every level at par, every sighting found. Never in demo mode. */
-export function finaleEarned(c: FinaleCount, demo: boolean): boolean {
-  return !demo && c.ofPads > 0 && c.pads === c.ofPads && c.ofSightings > 0 && c.sightings === c.ofSightings;
+/** A perfect game: every level at par, every sighting found. */
+export function finaleEarned(c: FinaleCount): boolean {
+  return c.ofPads > 0 && c.pads === c.ofPads && c.ofSightings > 0 && c.sightings === c.ofSightings;
 }
 
 export interface FinaleSaved { /** Has the ending played? */ seen: boolean }
@@ -31,8 +34,14 @@ export function loadFinale(): FinaleSaved {
 export function saveFinaleSeen(): void {
   try { localStorage.setItem(FINALE_KEY, JSON.stringify({ v: 1, seen: true })); } catch { /* storage blocked: for this visit only */ }
 }
-/** Should the ending play now? Earned, and not played before. */
-export const finaleDue = (c: FinaleCount, demo: boolean, saved: FinaleSaved): boolean => finaleEarned(c, demo) && !saved.seen;
+/**
+ * Should the ending play now? Earned, and not played before. `playedInDemo`: it has already played in Demo mode on
+ * this page (demo mode's "seen" is only in memory and goes when the switch goes off: off and on again must not
+ * bring the ending back by itself).
+ */
+export const finaleDue = (c: FinaleCount, saved: FinaleSaved, playedInDemo = false): boolean => finaleEarned(c) && !saved.seen && !playedInDemo;
+/** Does Settings offer "Watch the ending"? Once it has been seen; and in Demo mode whenever the session has earned it. */
+export const endingOffered = (c: FinaleCount, saved: FinaleSaved, demo: boolean): boolean => saved.seen || (demo && finaleEarned(c));
 
 /** `?finale=1`: play the ending now, on any build, saving nothing. `?finale=stage`: its empty stage only (tests). */
 export function finaleLink(search: string = typeof location === 'undefined' ? '' : location.search): '1' | 'stage' | null {
