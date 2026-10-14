@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11; 1.0.11 on Oct 12) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11; 1.0.11 on Oct 12; 1.0.12 on Oct 14) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1414,6 +1414,16 @@ something, give exact clicks and one command at a time.
   1280 kb/s; AAC 128 kb/s; `-movflags +faststart`; 5.6 MB, under the 6 MB limit). Its poster is the game's own
   `../cover.webp`. Its three buttons lead to the live game, `?demo=1` and `?finale=1` (absolute links, on the dev
   copy too). The page takes its fonts from Google Fonts, as written.
+- THE NUMBERS STRIP (job U23, 1.0.12): the page copied byte for byte from Jay's download (22,152 bytes): a strip of
+  six tiles under the three buttons (70 levels, 7 regions, 40 sightings, 112 Sunday puzzles, 4 music styles, 1,100+
+  tests), "Tap once for sound." under the video, and a few lines reworded. Its new QR code decodes to
+  https://jasondag-ai.github.io/rig-jam (Pages sends that on to /rig-jam/). `test:e2e:judges` holds the strip.
+- THE INBOX MOVED (Jay, Oct 13/14, for good): `~/Desktop/RHR Art Inbox/` is now OneDrive's
+  `Stragentic/6. Operations/Projects & Clients/Rig Jam/RJ Art Inbox/` (under `~/Library/CloudStorage/OneDrive-stragentic.com/`).
+  Wherever these notes say the Desktop inbox, read that. Never recreate the Desktop folder.
+- DEPLOYS ARE MANUAL (Jay, Oct 13, commit a0be14c): a push no longer builds or deploys. After a push, start the run:
+  `gh workflow run deploy.yml --repo jasondag-ai/rig-jam --ref main` (the dev repo likewise, `--repo
+  jasondag-ai/rig-jam-next --ref main`), wait for it, then `sh tools/check-live.sh` / `tools/push-dev.sh`'s check.
 - COPIED AGAIN (job U18, 1.0.8): the COO changed two lines (the heading "Evenings and weekends, directing AI", no day
   count; "Manus found the sounds.", nothing about cutting videos). A new version of the page is always copied over
   whole and compared byte for byte with the inbox's.
