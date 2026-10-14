@@ -97,6 +97,9 @@ for (const [w, h, phone] of [[390, 664, true], [375, 635, true], [1280, 720, fal
   check(JSON.stringify(links) === JSON.stringify([LIVE, `${LIVE}?demo=1`, `${LIVE}?finale=1`]), `three buttons: the game, ?demo=1, ?finale=1`);
   const labels = await page.locator('nav.go a.btn .label').allTextContents();
   check(labels[1].trim() === 'Demo mode' && !/judge mode/i.test(await page.locator('nav.go').innerText()), `the ?demo=1 button reads "${labels[1].trim()}"`);
+  // The numbers strip (job U23): six tiles under the three buttons, two rows of three, inside the page.
+  const nums = await page.evaluate(() => { const ul = document.querySelector('ul.nums'), nav = document.querySelector('nav.go'); if (!ul) return null; const tiles = [...ul.children].map((li) => li.getBoundingClientRect()); return { n: tiles.length, below: ul.getBoundingClientRect().top >= nav.getBoundingClientRect().bottom, rows: new Set(tiles.map((r) => Math.round(r.top))).size, inside: tiles.every((r) => r.left >= 0 && r.right <= innerWidth + 0.5), text: ul.innerText.replace(/\s+/g, ' ').trim() }; });
+  check(nums?.n === 6 && nums.below && nums.rows === 2 && nums.inside, `the numbers strip: ${nums?.n} tiles in ${nums?.rows} rows under the three buttons (${nums?.text})`);
   const sizes = await page.locator('nav.go a.btn').evaluateAll((as) => as.map((a) => Math.round(a.getBoundingClientRect().height)));
   check(sizes.every((s) => s >= 48), `each a tap target of at least 48 px (${sizes.join(', ')})`);
   if (process.env.LIVE !== '0') {
