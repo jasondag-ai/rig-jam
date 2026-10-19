@@ -4,6 +4,7 @@
 // If the image isn't in within IMAGE_WAIT_MS, the title shows over a sky gradient instead (the
 // image fades in if it turns up later). Reduced motion: everything still, no slam, no pulse.
 import { onTap } from './tap.ts';
+import { setPageSky } from './themes.ts';
 
 export const COVER_IMAGE = './cover.webp';
 export const IMAGE_WAIT_MS = 1000;
@@ -58,6 +59,7 @@ export function showCover(app: HTMLElement, onStart: () => void): HTMLElement {
     started = true;
     onStart();
   });
+  setPageSky(null); // (the cover has no theme: the page's canvas goes back to its fallback sky)
   app.replaceChildren(screen);
   return screen;
 }

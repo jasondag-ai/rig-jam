@@ -250,6 +250,45 @@ export function applyTheme(el: HTMLElement, theme: Theme): void {
   el.dataset.theme = theme.id;
   for (const [name, value] of Object.entries(theme.vars)) el.style.setProperty(name, value);
   groundTextures(el, theme.id);
+  // (The page's own canvas, under the status bar, takes this screen's sky: setPageSky.)
+  setPageSky(theme.vars['--sky-top']);
+}
+
+/** The night sky's top colour (style.css `.night-skyfill`, the top of its gradient). */
+export const NIGHT_SKY_TOP = '#142460';
+
+/**
+ * The colour the top of the screen really shows at night: the night sky (`NIGHT_SKY_TOP`) under the night's shade
+ * (`shade`, night.ts `nightRgba`: deeper on mud, stronger on snow), laid over it as the browser does. As `#rrggbb`.
+ */
+export function nightCanvas(shade: string, sky: string = NIGHT_SKY_TOP): string {
+  const s = sky.match(/[0-9a-f]{2}/gi)!.map((h) => parseInt(h, 16));
+  const m = shade.match(/[\d.]+/g)?.map(Number) ?? [];
+  const a = m.length >= 4 ? m[3] : 0;
+  return '#' + s.map((v, i) => Math.round(v * (1 - a) + (m[i] ?? 0) * a).toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * THE PAGE'S CANVAS IS THE SKY (job U24; Jay, Oct 19). On an iPhone the status bar sits over the page's own canvas
+ * (`html`'s background), and iOS 26 blurs the edge between them: a grass-green canvas under a blue sky made a band and
+ * a smear. So `html` is painted `var(--sky-top)`, and this ONE HELPER sets that colour on `document.documentElement`
+ * and the `theme-color` meta to match: the shown screen's sky (applyTheme), the night sky while a level is dark
+ * (`fadeMs`: over the night's own fade, so the two never part), or `null`, back to `:root`'s fallback and
+ * index.html's own `theme-color` (the cover, which has no theme). `body` keeps the ground colour: the letterbox
+ * beside the 560 px column on a desktop is unchanged.
+ */
+let metaFallback: string | null = null;
+export function setPageSky(color: string | null, fadeMs = 0): void {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  root.style.transition = fadeMs > 0 ? `background-color ${fadeMs}ms ease` : '';
+  if (color) root.style.setProperty('--sky-top', color);
+  else root.style.removeProperty('--sky-top');
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (meta) {
+    metaFallback ??= meta.content;
+    meta.content = color ?? metaFallback;
+  }
 }
 
 /**

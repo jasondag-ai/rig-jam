@@ -56,6 +56,9 @@ body {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
+/* THE PAGE'S CANVAS IS THE SKY (job U24): what iOS shows under the status bar. The screen's own sky, set by
+   themes.ts `setPageSky`; `body` stays the ground colour (above), so a desktop's letterbox is unchanged. */
+html { background: var(--sky-top); }
 
 /* The visible screen and nothing more: dvh follows Safari's toolbars as they show and hide. */
 #app {
