@@ -5,7 +5,7 @@ import { SolverLimitError, canUndo, getMoveRange, isWon, newGame, nextMove, solv
 import { seedFrom } from '../engine/rng.ts';
 import { BoardView } from './board-view.ts';
 import { sceneryHtml } from './scenery.ts';
-import { applyTheme, type Theme, type ThemeId } from './themes.ts';
+import { applyTheme, nightCanvas, setPageSky, type Theme, type ThemeId } from './themes.ts';
 import { WITNESS_REACH, nearestWitness } from './bubble.ts';
 import { ghostFinger } from './tutorial.ts';
 import { NUDGE_LINE, nightComes, nightForced, nightRgba, nightSky } from './night.ts';
@@ -986,6 +986,9 @@ export class GameView {
     this.nightAt = on ? performance.now() : 0;
     this.el.classList.toggle('night', on);
     this.board.setNight(on);
+    // The page's canvas under the status bar follows the night sky as it is seen (under the night's shade), over the
+    // night's own fade (themes.ts setPageSky, nightCanvas).
+    setPageSky(on ? nightCanvas(nightRgba(this.theme.ground)) : this.theme.vars['--sky-top'], reducedMotion() ? 0 : on ? GAG_TRIGGERS.night.fadeInMs : GAG_TRIGGERS.night.fadeOutMs);
   }
 
   /** What is on screen of a gag right now: the boxes of its characters and props (screen px). */

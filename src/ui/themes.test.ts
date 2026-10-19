@@ -59,3 +59,15 @@ describe('themes', () => {
     expect(themeOverride('')).toBeNull();
   });
 });
+
+describe('the page canvas at night (job U24)', () => {
+  it('is the night sky under the night shade, as the screen shows it', async () => {
+    const { nightCanvas, NIGHT_SKY_TOP } = await import('./themes.ts');
+    const { nightRgba } = await import('./night.ts');
+    // Measured on screen in WebKit, within 1 of these: 13,25,69 on gravel; 11,21,60 on snow; 10,19,56 on mud.
+    expect(nightCanvas(nightRgba('gravel'))).toBe('#0d1946');
+    expect(nightCanvas(nightRgba('snow'))).toBe('#0b153c');
+    expect(nightCanvas(nightRgba('mud'))).toBe('#0a1438');
+    expect(nightCanvas('rgba(0, 0, 0, 0)')).toBe(NIGHT_SKY_TOP);
+  });
+});
