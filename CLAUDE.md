@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11; 1.0.11 on Oct 12; 1.0.12 on Oct 14) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11; 1.0.11 on Oct 12; 1.0.12 on Oct 14; 1.0.13 on Oct 19) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1313,6 +1313,27 @@ something, give exact clicks and one command at a time.
   there only the button's "Copied!" is checked).
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
+
+## The page's canvas is the sky (job U24; Oct 19; shipped as 1.0.13, a bug fix on main)
+- JAY, ON HIS IPHONE FROM THE HOME-SCREEN ICON: a band and a smear between the status bar and the sky. The status bar
+  lies over the page's own canvas (`html`'s background), which was the grass (`--ground-dark`), and iOS 26 blurs the
+  edge between it and the screen's sky. NOW `html` IS PAINTED `var(--sky-top)` and `body` keeps `--ground-dark`, so
+  the desktop letterbox beside the 560 px column is unchanged (checked pixel for pixel at 1440 x 900).
+- ONE HELPER, `setPageSky(color, fadeMs)` (themes.ts): sets `--sky-top` on `document.documentElement` and the
+  `theme-color` meta to the same colour. `applyTheme` calls it with the screen's own sky (every themed screen: the
+  list, a level, the log, the finale); the cover calls it with `null`, back to `:root`'s `#4fb0ff` and index.html's
+  own `theme-color`. AT NIGHT (`GameView.setNight`) it is the night sky AS THE SCREEN SHOWS IT, the skyfill's top
+  under the night's shade (`nightCanvas(nightRgba(ground))`: #0d1946 on gravel, #0b153c on snow, #0a1438 on mud),
+  faded over the night's own `fadeInMs` / `fadeOutMs` (none with reduced motion); day comes back the same way.
+  `apple-mobile-web-app-status-bar-style`, the viewport meta and every screen's padding are as they were.
+- THE TOP ROW OF THE SCREEN is the canvas's colour in the middle (within 1 of 255); towards the sides the game's
+  own soft vignette (`.vignette`, 20% at the very corner) darkens it smoothly, up to about 30 of 255 at the
+  outermost pixel. Left as it is (cosmetic, out of scope): if a soft darkening shows at the status bar's corners,
+  that is the vignette.
+- `npm run test:e2e:pagesky` (`e2e/page-sky.e2e.mjs`; WebKit at iPhone DPR 3, 390 x 844 and 390 x 664; Cardium,
+  Duvernay and Baldonnel by day and with the night fully down): the canvas against the top row, the theme-color,
+  the sky running smoothly down both edges, the cover's fallback, and the desktop letterbox against `BASE=` (default
+  the live site). Against 1.0.12 it fails with a step of 204 of 255 (the grass canvas).
 
 ## The ending in Demo mode (job U21; Oct 12; shipped as 1.0.11)
 - JAY (Oct 12): with Demo mode on he cleared every level at par, every sighting showing in the log, and the ending
@@ -2031,6 +2052,7 @@ something, give exact clicks and one command at a time.
   which is a flick, and they mean a drag. With it off the board is exactly the old one (no held bumps).
 - The first how-to card ends "Flick a truck to send it all the way."
 - `node tools/gen-baldonnel.ts [minutes] [chain]` / `node tools/gen-baldonnel.ts write` – Baldonnel's ten levels: climbs the slots not yet in `tools/fixed-levels/`, then writes `src/levels/baldonnel.json`
+- `npm run test:e2e:pagesky` – the page's canvas under the iPhone's status bar is the screen's sky, by day and at night, in three regions; the desktop letterbox unchanged (start the dev server first)
 - `npm run test:e2e:demo` – Demo mode, the one switch: on and off in both engines, the always-on line, real storage byte for byte across a cycle, `?demo=1` in the same state (start the dev server first)
 - `npm run test:e2e:judges` – the judges' guide at /judges/: fit, the video after a tap, the three buttons, and that the game's service worker leaves it alone (builds first; needs no dev server)
 - `npm run test:e2e:layers` – the layer audit: nothing hides or cuts off what the player should be watching, unless a rule in `e2e/layer-audit/allow.mjs` says it is meant (`ENGINE=`, `VIEW=`, `PART=`; `node e2e/layer-audit/report.mjs` writes `qc/layer_audit.md`; start the dev server first)
