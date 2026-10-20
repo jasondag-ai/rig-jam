@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11; 1.0.11 on Oct 12; 1.0.12 on Oct 14; 1.0.13 and 1.0.14 on Oct 19) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11; 1.0.11 on Oct 12; 1.0.12 on Oct 14; 1.0.13 to 1.0.15 on Oct 19) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1314,7 +1314,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
-## The page's canvas is the sky (job U24; Oct 19; shipped as 1.0.13 and 1.0.14, bug fixes on main)
+## The page's canvas is the sky (job U24; Oct 19; shipped as 1.0.13 to 1.0.15, bug fixes on main)
 - JAY, ON HIS IPHONE FROM THE HOME-SCREEN ICON: a band and a smear between the status bar and the sky. The status bar
   lies over the page's own canvas (`html`'s background), which was the grass (`--ground-dark`), and iOS 26 blurs the
   edge between it and the screen's sky. NOW `html` IS PAINTED `var(--sky-top)` and `body` keeps `--ground-dark`, so
@@ -1331,6 +1331,18 @@ something, give exact clicks and one command at a time.
   (`@media (max-width: 560px)`: every phone) `body` is `var(--sky-top)` too; wider than that, it keeps the ground
   colour, so the desktop letterbox is still pixel for pixel what it was. The green-to-blue blur under the status bar
   is also what made the HUD's top row of text look fuzzy. `test:e2e:pagesky` checks body's colour as well.
+- 1.0.15: THE TOP ROW OF TEXT WAS STILL BLURRED on Jay's iPhone ("0 moves par 18", "BALDONNEL 3"), with the colours
+  now matching. Our own render is sharp: it is iOS 26's soft EDGE EFFECT, which in a home-screen app blurs roughly
+  the first 25 to 30 pt of the page under the status bar (measured on his screenshot: text from 13 pt down was
+  blurred, from 30 pt sharp). No page can switch it off. So IN THE HOME-SCREEN APP ONLY (`html.ios-app`, set in
+  index.html's head from `navigator.standalone`, which only iOS has) `--safe-top` is at least `--ios-edge` (40 px):
+  every screen starts that much lower and the HUD's first text is 39 px down, about 10 pt clear of the blur; the
+  lease and the strip give way as they always do. Safari's own tabs, Android and desktops are unchanged (their
+  `--safe-top` is still the notch's own inset). This changes the top padding in the app, which job U24 had said to
+  leave alone: done on Jay's "fix it" (Oct 19). If iOS ever stops blurring, take `--ios-edge` out.
+  `test:e2e:pagesky` fakes `navigator.standalone` at 396 x 817, 390 x 797 and 375 x 647 (a phone less its status
+  bar): the first text on the list, three levels and the log starts below 30 px, the lease and the buttons still fit,
+  and Safari's own tab is untouched.
 - THE TOP ROW OF THE SCREEN is the canvas's colour in the middle (within 1 of 255); towards the sides the game's
   own soft vignette (`.vignette`, 20% at the very corner) darkens it smoothly, up to about 30 of 255 at the
   outermost pixel. Left as it is (cosmetic, out of scope): if a soft darkening shows at the status bar's corners,
