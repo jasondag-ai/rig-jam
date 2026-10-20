@@ -38,6 +38,16 @@
   font-family: 'Fredoka', ui-rounded, system-ui, -apple-system, sans-serif;
   -webkit-text-size-adjust: 100%;
 }
+/* IOS 26'S EDGE BLUR (Jay's iPhone, Oct 19): run from the home screen, iOS blurs the first 25 pt or so of the page
+   under the status bar, and the HUD's top row ("0 moves par 18", "BALDONNEL 3") was in it. Our own render is sharp;
+   no page can switch the effect off. So in the home-screen app (`html.ios-app`, set in index.html from
+   `navigator.standalone`, which only iOS has) every screen starts lower: its top padding is at least `--ios-edge`
+   (40 px against the usual 12: about 10 pt clear of the blurred band), and what is pinned to the top (toasts, the update bar) comes down with it. Safari's
+   own tabs and every other browser are as they were. */
+:root.ios-app {
+  --ios-edge: 40px;
+  --safe-top: max(env(safe-area-inset-top, 0px), var(--ios-edge));
+}
 
 * {
   box-sizing: border-box;

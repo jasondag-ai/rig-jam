@@ -13,6 +13,9 @@
     <link rel="icon" href="./icons/favicon-v2-48.png" type="image/png" sizes="48x48" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon-v2.png" />
     <title>Rig Jam</title>
+    <!-- On an iPhone's home screen (navigator.standalone), iOS 26 blurs the top of the page under the status bar:
+         the page starts a little lower there (style.css, html.ios-app). Set before anything is drawn. -->
+    <script>if (navigator.standalone === true) document.documentElement.classList.add('ios-app');</script>
   </head>
   <body>
     <!-- NEVER A WHITE SCREEN: until the game is up this shows in its place (the game replaces everything inside #app
