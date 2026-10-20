@@ -6,6 +6,8 @@
 //  - body is the same colour (iOS 26 colours the status bar from body); the theme-color meta too; the cover puts
 //    them back to the fallback
 //  - the desktop letterbox at 1440 x 900: pixel for pixel what `BASE=` (default the live site) shows
+//  - THE HOME-SCREEN APP: iOS 26 blurs the top ~25 pt; with `navigator.standalone` every screen's text starts below
+//    that band, the lease and buttons still fit; Safari's own tabs unchanged
 // Needs the dev server (URL=, default 5173).
 import { webkit } from 'playwright';
 import { outDir } from './out.mjs';
@@ -75,6 +77,65 @@ for (const [W, H] of [[390, 844], [390, 664]]) {
   check(cover.body === cover.html, `the cover: body is the canvas's colour too (${cover.body})`);
   check(cover.inline === '' && cover.meta === '#4fb0ff' && cover.html === 'rgb(79, 176, 255)', `the cover: the fallback sky (${cover.html}, theme-color ${cover.meta})`);
   check(errors.length === 0, `no errors${errors.length ? `: ${errors.join('; ')}` : ''}`);
+  await context.close();
+}
+
+// THE HOME-SCREEN APP (navigator.standalone): iOS 26 blurs the top ~25 pt of the page under the status bar, so every
+// screen starts lower there. Faked here (WebKit cannot be a home-screen app): the page's height is the phone's less
+// its status bar. Text must start below the blurred band; everything else must still fit, with nothing scrolling.
+const BAND = 30;
+for (const [W, H] of [[396, 817], [390, 797], [375, 647]]) {
+  console.log(`\nwebkit ${W} x ${H}, as the iPhone home-screen app`);
+  const context = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 3, hasTouch: true, isMobile: true });
+  await context.addInitScript(() => Object.defineProperty(Navigator.prototype, 'standalone', { get: () => true, configurable: true }));
+  const page = await context.newPage();
+  const errors = []; page.on('pageerror', (e) => errors.push(e.message));
+  /** The top of the first text on the screen, and whether the screen scrolls or anything leaves it. */
+  const firstText = () => page.evaluate(() => {
+    const scr = document.querySelector('#app > .screen');
+    let top = Infinity;
+    const walk = document.createTreeWalker(scr, NodeFilter.SHOW_TEXT);
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+      if (!n.textContent.trim()) continue;
+      const el = n.parentElement; const cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden' || cs.display === 'none' || el.closest('[hidden], .overlay[hidden], .bubble, .toast')) continue;
+      const r = document.createRange(); r.selectNodeContents(n); const b = r.getBoundingClientRect();
+      if (b.width > 0 && b.height > 0 && b.bottom > 0) top = Math.min(top, b.top);
+    }
+    return { top: Math.round(top), app: document.documentElement.classList.contains('ios-app'), scrolls: scr.scrollHeight > scr.clientHeight + 1 && getComputedStyle(scr).overflowY === 'hidden', wide: document.documentElement.scrollWidth > innerWidth };
+  });
+  for (const [ri, li] of [[6, 2], [5, 1], [0, 0]]) {
+    await page.goto(`${ROOT}?demo=1&${QUIET}&night=0`, { waitUntil: 'networkidle' });
+    if (ri === 6 && li === 2) {
+      const list = await firstText();
+      check(list.app && list.top >= BAND, `the level list: html.ios-app is on; its first text starts ${list.top} px down (below the ${BAND} px blurred band)`);
+    }
+    await page.locator('.region-tab').nth(ri).evaluate((t) => t.click());
+    await wait(300);
+    await page.locator('.level-btn').nth(li).click();
+    await page.waitForSelector('.board .truck.sprite-on');
+    await wait(700);
+    const t = await firstText();
+    const fit = await page.evaluate(() => { const b = (s) => document.querySelector(s).getBoundingClientRect(); const hud = b('.hud'), board = b('.board'), ctl = b('.controls'); return { hudBottom: Math.round(hud.bottom), boardTop: Math.round(board.top), boardBottom: Math.round(board.bottom), ctlTop: Math.round(ctl.top), ctlBottom: Math.round(ctl.bottom), h: innerHeight }; });
+    const name = await page.evaluate(() => document.querySelector('.hud').innerText.split('\n').slice(0, 2).join(' '));
+    check(t.top >= BAND && fit.hudBottom <= fit.boardTop + 1 && fit.boardBottom <= fit.ctlTop && fit.ctlBottom <= fit.h && !t.wide, `${name}: the HUD's text starts ${t.top} px down; the lease (${fit.boardTop} to ${fit.boardBottom}) and the buttons (to ${fit.ctlBottom} of ${fit.h}) still fit`);
+    if (ri === 6) await page.screenshot({ path: `${OUT}/ios_app_${W}x${H}.png`, clip: { x: 0, y: 0, width: W, height: 140 } });
+  }
+  // The log and Settings start lower too.
+  await page.goto(`${ROOT}?demo=1&${QUIET}`, { waitUntil: 'networkidle' });
+  await page.locator('.binoculars').click(); await page.waitForSelector('.log-card');
+  const log = await firstText();
+  check(log.top >= BAND, `the Wildlife Log: its first text starts ${log.top} px down`);
+  check(errors.length === 0, `no errors${errors.length ? `: ${errors.join('; ')}` : ''}`);
+  await context.close();
+}
+// And in Safari's own tabs (not standalone) nothing moved.
+{
+  const context = await browser.newContext({ viewport: { width: 390, height: 664 }, deviceScaleFactor: 3, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  await page.goto(`${ROOT}?demo=1&${QUIET}`, { waitUntil: 'networkidle' });
+  const p = await page.evaluate(() => ({ app: document.documentElement.classList.contains('ios-app'), pad: getComputedStyle(document.querySelector('#app > .screen')).paddingTop }));
+  check(!p.app && p.pad === '12px', `in Safari's own tab: no ios-app, the screen's top padding still ${p.pad}`);
   await context.close();
 }
 
