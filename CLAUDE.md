@@ -694,7 +694,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11; 1.0.11 on Oct 12; 1.0.12 on Oct 14; 1.0.13 on Oct 19) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11; 1.0.11 on Oct 12; 1.0.12 on Oct 14; 1.0.13 and 1.0.14 on Oct 19) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1314,7 +1314,7 @@ something, give exact clicks and one command at a time.
 - `npm run test:e2e:judge` checks all of it and saves screenshots of every step at both desktop
   sizes in both engines to `qc-out/judge/` (`OUT=` another folder).
 
-## The page's canvas is the sky (job U24; Oct 19; shipped as 1.0.13, a bug fix on main)
+## The page's canvas is the sky (job U24; Oct 19; shipped as 1.0.13 and 1.0.14, bug fixes on main)
 - JAY, ON HIS IPHONE FROM THE HOME-SCREEN ICON: a band and a smear between the status bar and the sky. The status bar
   lies over the page's own canvas (`html`'s background), which was the grass (`--ground-dark`), and iOS 26 blurs the
   edge between it and the screen's sky. NOW `html` IS PAINTED `var(--sky-top)` and `body` keeps `--ground-dark`, so
@@ -1326,6 +1326,11 @@ something, give exact clicks and one command at a time.
   under the night's shade (`nightCanvas(nightRgba(ground))`: #0d1946 on gravel, #0b153c on snow, #0a1438 on mud),
   faded over the night's own `fadeInMs` / `fadeOutMs` (none with reduced motion); day comes back the same way.
   `apple-mobile-web-app-status-bar-style`, the viewport meta and every screen's padding are as they were.
+- 1.0.14, THE SAME DAY: on Jay's iPhone (home-screen app) the band was still there, in BODY'S green: iOS 26 takes
+  the status bar's colour from `body`, not only from `html`. So wherever the game's column fills the screen's width
+  (`@media (max-width: 560px)`: every phone) `body` is `var(--sky-top)` too; wider than that, it keeps the ground
+  colour, so the desktop letterbox is still pixel for pixel what it was. The green-to-blue blur under the status bar
+  is also what made the HUD's top row of text look fuzzy. `test:e2e:pagesky` checks body's colour as well.
 - THE TOP ROW OF THE SCREEN is the canvas's colour in the middle (within 1 of 255); towards the sides the game's
   own soft vignette (`.vignette`, 20% at the very corner) darkens it smoothly, up to about 30 of 255 at the
   outermost pixel. Left as it is (cosmetic, out of scope): if a soft darkening shows at the status bar's corners,
