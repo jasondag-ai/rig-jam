@@ -3,7 +3,8 @@
 //  - WebKit at iPhone DPR 3, 390 x 844 and 390 x 664: a level of Cardium, Duvernay and Baldonnel, by day and with the
 //    night fully down: the canvas colour against the screen's top rows at its two edges and its middle (no step);
 //    the top 60 pt of each edge column changes only gradually until something stands there (no band)
-//  - the theme-color meta is the same colour; the cover puts both back to the fallback
+//  - body is the same colour (iOS 26 colours the status bar from body); the theme-color meta too; the cover puts
+//    them back to the fallback
 //  - the desktop letterbox at 1440 x 900: pixel for pixel what `BASE=` (default the live site) shows
 // Needs the dev server (URL=, default 5173).
 import { webkit } from 'playwright';
@@ -45,9 +46,11 @@ for (const [W, H] of [[390, 844], [390, 664]]) {
       await page.locator('.level-btn').nth(2).click();
       await page.waitForSelector('.board .truck.sprite-on');
       await wait(night ? 4600 : 700);
-      const canvas = await page.evaluate(() => ({ html: getComputedStyle(document.documentElement).backgroundColor, meta: document.querySelector('meta[name="theme-color"]').content, transition: document.documentElement.style.transition }));
+      const canvas = await page.evaluate(() => ({ body: getComputedStyle(document.body).backgroundColor, html: getComputedStyle(document.documentElement).backgroundColor, meta: document.querySelector('meta[name="theme-color"]').content, transition: document.documentElement.style.transition }));
       const want = rgb(canvas.html);
       const hex = '#' + want.map((v) => v.toString(16).padStart(2, '0')).join('');
+      // (iOS 26 takes the status bar's colour from body: Jay's iPhone, Oct 19. On a phone body is the sky too.)
+      check(canvas.body === canvas.html, `body is the same colour as the canvas (${canvas.body}): iOS 26 colours the status bar from it`);
       check(canvas.meta.toLowerCase() === hex, `theme-color ${canvas.meta} is the canvas's own colour (${hex})`);
       const cols = await columns(page, [1, W / 2, W - 2], 60);
       // THE TOP ROW, ACROSS: in the middle it is the canvas's own colour. Towards the sides the game's own soft
@@ -68,7 +71,8 @@ for (const [W, H] of [[390, 844], [390, 664]]) {
   // The cover has no theme: the canvas and the theme-color go back to their fallbacks.
   await page.goto(`${ROOT}?cover=1&${QUIET}`, { waitUntil: 'networkidle' });
   await wait(500);
-  const cover = await page.evaluate(() => ({ html: getComputedStyle(document.documentElement).backgroundColor, inline: document.documentElement.style.getPropertyValue('--sky-top'), meta: document.querySelector('meta[name="theme-color"]').content }));
+  const cover = await page.evaluate(() => ({ body: getComputedStyle(document.body).backgroundColor, html: getComputedStyle(document.documentElement).backgroundColor, inline: document.documentElement.style.getPropertyValue('--sky-top'), meta: document.querySelector('meta[name="theme-color"]').content }));
+  check(cover.body === cover.html, `the cover: body is the canvas's colour too (${cover.body})`);
   check(cover.inline === '' && cover.meta === '#4fb0ff' && cover.html === 'rgb(79, 176, 255)', `the cover: the fallback sky (${cover.html}, theme-color ${cover.meta})`);
   check(errors.length === 0, `no errors${errors.length ? `: ${errors.join('; ')}` : ''}`);
   await context.close();
