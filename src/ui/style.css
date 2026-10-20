@@ -59,6 +59,13 @@ body {
 /* THE PAGE'S CANVAS IS THE SKY (job U24): what iOS shows under the status bar. The screen's own sky, set by
    themes.ts `setPageSky`; `body` stays the ground colour (above), so a desktop's letterbox is unchanged. */
 html { background: var(--sky-top); }
+/* And body too, wherever the game's column fills the screen's width (every phone): iOS 26 takes the status bar's
+   colour from `body` (Jay's iPhone, Oct 19: the band under the status bar was body's green, and its blur made the
+   HUD's top row fuzzy). Only a screen wider than the column shows body beside it: there it keeps the ground colour,
+   the desktop letterbox as it always was. */
+@media (max-width: 560px) {
+  body { background: var(--sky-top); }
+}
 
 /* The visible screen and nothing more: dvh follows Safari's toolbars as they show and hide. */
 #app {
