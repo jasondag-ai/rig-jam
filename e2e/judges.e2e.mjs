@@ -103,7 +103,7 @@ for (const [w, h, phone] of [[390, 664, true], [375, 635, true], [1280, 720, fal
   await howto.evaluate((el) => { el.muted = true; return el.play(); }).catch(() => {});
   await page.waitForFunction(() => document.querySelector('section.card video').currentTime > 1, null, { timeout: 15000 }).catch(() => {});
   const h2 = await howto.evaluate((el) => ({ t: el.currentTime, dur: el.duration }));
-  check(h2.t > 1 && Math.abs(h2.dur - 31.5) < 0.3, `the how-to video in its card plays (${h2.t.toFixed(1)} of ${h2.dur.toFixed(1)} s)`);
+  check(h2.t > 1 && Math.abs(h2.dur - 33.1) < 0.3, `the how-to video in its card plays (${h2.t.toFixed(1)} of ${h2.dur.toFixed(1)} s)`);
   await howto.evaluate((el) => el.pause());
   await v.scrollIntoViewIfNeeded();
   check(!now.muted && now.vol > 0 && now.audio !== 0, `with sound (not muted, volume ${now.vol}${now.audio > 0 ? `, ${now.audio} bytes of sound decoded` : ''})`);
@@ -112,6 +112,10 @@ for (const [w, h, phone] of [[390, 664, true], [375, 635, true], [1280, 720, fal
   const links = await page.locator('nav.go a.btn').evaluateAll((as) => as.map((a) => a.href));
   check(JSON.stringify(links) === JSON.stringify([LIVE, `${LIVE}?demo=1`, `${LIVE}?finale=1`]), `three buttons: the game, ?demo=1, ?finale=1`);
   const labels = await page.locator('nav.go a.btn .label').allTextContents();
+  const tag = await page.locator('nav.go a.btn.judge .tag').textContent().catch(() => null);
+  check(tag?.trim() === 'For hackathon judges', `the orange Demo mode button carries its tag ("${tag?.trim()}")`);
+  const mails = await page.evaluate(() => document.body.innerHTML.match(/[a-z]+@stragentic\.com/g) ?? []);
+  check(mails.length > 0 && mails.every((m) => m === 'info@stragentic.com'), `the only address on the page is info@stragentic.com (${[...new Set(mails)].join(', ')})`);
   check(labels[1].trim() === 'Demo mode' && !/judge mode/i.test(await page.locator('nav.go').innerText()), `the ?demo=1 button reads "${labels[1].trim()}"`);
   // The numbers strip (job U23): six tiles under the three buttons, two rows of three, inside the page.
   const nums = await page.evaluate(() => { const ul = document.querySelector('ul.nums'), nav = document.querySelector('nav.go'); if (!ul) return null; const tiles = [...ul.children].map((li) => li.getBoundingClientRect()); return { n: tiles.length, below: ul.getBoundingClientRect().top >= nav.getBoundingClientRect().bottom, rows: new Set(tiles.map((r) => Math.round(r.top))).size, inside: tiles.every((r) => r.left >= 0 && r.right <= innerWidth + 0.5), text: ul.innerText.replace(/\s+/g, ' ').trim() }; });
