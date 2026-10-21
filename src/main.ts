@@ -181,7 +181,7 @@ function showLevels(requested = savedRegion()): void {
       <button class="gear" aria-label="Settings">${uiImg('icon_gear')}</button>
       <h1>Rig Jam</h1>
       ${isDev() ? '<span class="dev-chip" aria-label="Dev copy">DEV</span>' : ''}
-      ${Object.keys(progress.best).length ? '' : '<p>Slide each truck out through the gate of its color. Trucks slide only along their length. One drag is one move.</p>'}
+      ${Object.keys(progress.best).length ? '' : '<p>Slide each truck out through the gate of its colour. Trucks slide only along their length. One drag is one move.</p>'}
     </header>
     <div class="daily-block"></div>
     <div class="regions"><div class="regions-track" role="tablist"></div><svg class="regions-more" viewBox="0 0 12 18" aria-hidden="true"><path d="M3 3 L9 9 L3 15"/></svg></div>
@@ -227,7 +227,8 @@ function showLevels(requested = savedRegion()): void {
     if (tab.classList.contains('locked')) shake(tab);
     else showLevels(Number(tab.dataset.index));
   });
-  screen.querySelector('.region-blurb')!.textContent = region.blurb;
+  // (Which region of how many, then its own blurb: regions.ts.)
+  screen.querySelector('.region-blurb')!.innerHTML = `<span class="region-of">Region ${regionIndex + 1} of ${REGIONS.length}</span> · ${esc(region.blurb)}`;
 
   // Today's Daily Pad and the streak sign, above the regions.
   const today = dayKey(new Date());

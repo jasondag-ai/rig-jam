@@ -54,7 +54,7 @@ const bar = (page) => page.evaluate(() => {
   return { tabs, view: { left: v.left, right: v.right, w: v.width }, frame: { left: f.left, right: f.right }, scroll: track.scrollLeft, max: track.scrollWidth - track.clientWidth,
     overflow: [cs.overflowX, cs.overflowY], snapType: cs.scrollSnapType, touch: cs.touchAction, over: cs.overscrollBehaviorX, bars: track.offsetHeight - track.clientHeight, sbw: cs.scrollbarWidth,
     more: [frame.classList.contains('more-left'), frame.classList.contains('more-right')], fade: [getComputedStyle(frame, '::before').opacity, getComputedStyle(frame, '::after').opacity].map(Number),
-    pageX: document.querySelector('.screen.levels').scrollWidth > innerWidth + 1, active: document.querySelector('.region-blurb').textContent };
+    pageX: document.querySelector('.screen.levels').scrollWidth > innerWidth + 1, active: document.querySelector('.region-blurb').textContent.replace(/^Region \d+ of \d+ · /, '') };
 });
 const scrollTo = (page, x) => page.evaluate(async (x) => { const t = document.querySelector('.regions-track'); t.scrollLeft = x; await new Promise((r) => setTimeout(r, 260)); return t.scrollLeft; }, x);
 const ptr = (page, type, x, y, target = null) => page.evaluate(([type, x, y, target]) => { const el = (target ? document.querySelector(target) : document.elementFromPoint(x, y)); el.dispatchEvent(new PointerEvent(type, { pointerId: 9, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, clientX: x, clientY: y, buttons: type === 'pointerup' || type === 'pointercancel' ? 0 : 1 })); }, [type, x, y, target]);
@@ -126,6 +126,9 @@ for (const width of [375, 390]) {
     const opened = await bar(page);
     const m = opened.tabs.find((t) => t.active);
     check(m?.name === 'Montney' && m.shown > 0.99 && Math.abs(opened.scroll) < 2 && opened.active === REGIONS[1].blurb, 'at rest, one tap on Montney opens it, and the bar stays where it was');
+    // (Job U26: the list says which region of how many, beside the region's own blurb.)
+    const label = await page.evaluate(() => { const p = document.querySelector('.region-blurb'), of = p.querySelector('.region-of'); const a = p.getBoundingClientRect(); return { text: p.textContent, of: of?.textContent, inside: a.left >= 0 && a.right <= innerWidth + 0.5 }; });
+    check(label.of === `Region 2 of ${REGIONS.length}` && label.text === `Region 2 of ${REGIONS.length} · ${REGIONS[1].blurb}` && label.inside, `the list's header line: "${label.text}"`);
     await context.close();
   }
   // The one you were last on.
