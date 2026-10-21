@@ -566,6 +566,8 @@ something, give exact clicks and one command at a time.
   margins at 375 to 430px (`.daily-block` is one `minmax(0, 1fr)` column; the sign is `width: 100%`,
   never sized from its height). The intro paragraph shows only until the first level is cleared.
   `.levels` scrolls up and down only (`overflow-x: hidden`; `.scenery` clips its trees).
+- The line under the region bar (`.region-blurb`): "Region N of 7 · " (`.region-of`, the region's place in `REGIONS`)
+  then the region's own blurb from regions.ts (job U26). `test:e2e:tabs` holds it.
 - Level list: compact rows 54px tall (`.level-btn`, the whole row is the button): number chip,
   name, three small hard hats (empty until earned), or for a locked level a padlock and "Clear level
   N to unlock". All 10 need about 200px of scroll at 390x844 (under 220). The big level-card art is not used.
@@ -694,7 +696,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11; 1.0.11 on Oct 12; 1.0.12 on Oct 14; 1.0.13 to 1.0.15 on Oct 19) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11; 1.0.11 on Oct 12; 1.0.12 on Oct 14; 1.0.13 to 1.0.15 on Oct 19; 1.0.16 on Oct 21) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1452,6 +1454,12 @@ something, give exact clicks and one command at a time.
   1280 kb/s; AAC 128 kb/s; `-movflags +faststart`; 5.6 MB, under the 6 MB limit). Its poster is the game's own
   `../cover.webp`. Its three buttons lead to the live game, `?demo=1` and `?finale=1` (absolute links, on the dev
   copy too). The page takes its fonts from Google Fonts, as written.
+- THE PITCH LEADS (job U26, 1.0.16): the COO's page copied again from the OneDrive inbox (`RJ Art Inbox/judges/`),
+  byte for byte: the three buttons come first (all on the screen without scrolling at 390 x 664 and 375 x 635), then
+  the hero video, now `pitch.mp4` (copied as delivered, never re-encoded: 720 x 1280, H.264 high, AAC, faststart,
+  8.3 MB, 53.1 s), and the how-to video inside the "How to play" card (`preload="none"`). The service worker leaves
+  all of `judges/` alone, the pitch included (vite.config.ts list, service-worker.ts fetch rule; both tested).
+  `judges_index_*_backup.html` files in the inbox root are backups: never copied.
 - THE NUMBERS STRIP (job U23, 1.0.12): the page copied byte for byte from Jay's download (22,152 bytes): a strip of
   six tiles under the three buttons (70 levels, 7 regions, 40 sightings, 112 Sunday puzzles, 4 music styles, 1,100+
   tests), "Tap once for sound." under the video, and a few lines reworded. Its new QR code decodes to
