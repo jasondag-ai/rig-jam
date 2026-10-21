@@ -143,6 +143,12 @@ a { color: inherit; }
   display: grid; place-items: center;
 }
 .btn .arrow svg { width: 16px; height: 16px; }
+.btn .tag {
+  grid-column: 1; justify-self: start;
+  font-weight: 700; font-size: 11.5px; letter-spacing: 0.09em; text-transform: uppercase;
+  color: #fff; background: var(--outline); border-radius: 999px; padding: 3px 10px; margin-bottom: 4px;
+}
+.btn.judge .arrow { grid-row: 1 / span 3; }
 .btn.play { background: var(--green); }
 .btn.judge { background: var(--orange); }
 .btn.end { background: var(--blue); }
@@ -257,8 +263,9 @@ b, strong { font-weight: 800; color: var(--outline); }
       <span class="arrow" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M5 2l6 6-6 6" fill="none" stroke="#2a1a0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </a>
     <a class="btn judge" href="https://jasondag-ai.github.io/rig-jam/?demo=1" target="_blank" rel="noopener">
+      <span class="tag">For hackathon judges</span>
       <span class="label">Demo mode</span>
-      <span class="what">The same switch as Settings, Demo mode. All 70 levels open, every sighting in the log, and a live par tracker.</span>
+      <span class="what">Every one of the 70 levels open, the full sighting log, and a live par tracker. It is the Demo mode switch in Settings.</span>
       <span class="arrow" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M5 2l6 6-6 6" fill="none" stroke="#2a1a0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </a>
     <a class="btn end" href="https://jasondag-ai.github.io/rig-jam/?finale=1" target="_blank" rel="noopener">
@@ -337,7 +344,7 @@ b, strong { font-weight: 800; color: var(--outline); }
     <p>I'm a P.Eng with a full-time day job and no game-dev experience. Claude Code wrote every line (TypeScript, no game engine) and over 1,100 automated tests. Claude ran the plan as my COO and cut the videos. Manus found the sounds. I played every build on my phone and decided what stayed.</p>
     <div class="contact">
       <span>Questions or a bug?</span>
-      <span class="mail" id="mail">jason@stragentic.com</span>
+      <span class="mail" id="mail">info@stragentic.com</span>
       <button class="copy" id="copy" type="button">Copy</button>
     </div>
   </section>
