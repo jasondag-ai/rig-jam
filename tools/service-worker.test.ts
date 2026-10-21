@@ -32,12 +32,16 @@ describe('PWA', () => {
     expect(guide).toBeLessThan(fetchPart.indexOf('respondWith'));
     // The page is the COO's own, with its video and the game's cover as the poster; the video is small enough to stream.
     const html = readFileSync(pub('judges/index.html'), 'utf8');
+    // (Job U26: the pitch is the hero, the how-to video in the "How to play" card.)
+    expect(html).toContain('<video src="pitch.mp4" poster="../cover.webp"');
     expect(html).toContain('<video src="how-to-play.mp4" poster="../cover.webp"');
     expect(existsSync(pub('cover.webp'))).toBe(true);
-    const video = readFileSync(pub('judges/how-to-play.mp4'));
-    expect(video.length).toBeLessThan(6 * 1024 * 1024);
-    // Faststart: the index (moov) comes before the data (mdat), so it plays while it loads.
-    expect(video.indexOf('moov')).toBeLessThan(video.indexOf('mdat'));
+    for (const [file, mb] of [['judges/how-to-play.mp4', 6], ['judges/pitch.mp4', 9]] as const) {
+      const video = readFileSync(pub(file));
+      expect(video.length, file).toBeLessThan(mb * 1024 * 1024);
+      // Faststart: the index (moov) comes before the data (mdat), so it plays while it loads.
+      expect(video.indexOf('moov'), file).toBeLessThan(video.indexOf('mdat'));
+    }
   });
 
   it('precaches the given files under a versioned cache', () => {

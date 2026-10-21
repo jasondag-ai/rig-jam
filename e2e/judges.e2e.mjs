@@ -50,9 +50,10 @@ const LIVE = 'https://jasondag-ai.github.io/rig-jam/';
 
 console.log('the build');
 const sw = readFileSync(join(DIST, 'sw.js'), 'utf8');
-check(existsSync(join(DIST, 'judges/index.html')) && existsSync(join(DIST, 'judges/how-to-play.mp4')), 'the page and its video are in the build');
+check(['index.html', 'how-to-play.mp4', 'pitch.mp4'].every((f) => existsSync(join(DIST, 'judges', f))), 'the page and its two videos are in the build');
 check(!/"judges\//.test(sw), "the service worker's list has nothing of the guide");
-check(statSync(join(DIST, 'judges/how-to-play.mp4')).size < 6 * 1024 * 1024, 'the video is under 6 MB');
+check(statSync(join(DIST, 'judges/how-to-play.mp4')).size < 6 * 1024 * 1024 && statSync(join(DIST, 'judges/pitch.mp4')).size < 9 * 1024 * 1024, 'the how-to video is under 6 MB, the pitch under 9 MB');
+check(!/"judges\//.test(sw) && !sw.includes('pitch.mp4'), "the service worker's list has nothing of the guide (the pitch included)");
 
 const wk = await webkit.launch();
 for (const [w, h, phone] of [[390, 664, true], [375, 635, true], [1280, 720, false]]) {
@@ -72,7 +73,13 @@ for (const [w, h, phone] of [[390, 664, true], [375, 635, true], [1280, 720, fal
   });
   check(fit.scroll <= fit.client && fit.wide.length === 0, `no sideways scroll (page ${fit.scroll} in ${fit.client}${fit.wide.length ? `; past the edge: ${fit.wide.slice(0, 4).join(', ')}` : ''})`);
   check((await page.title()) === "Rig Jam Judges' Guide", 'the guide shows');
-  const v = page.locator('video');
+  // THE BUTTONS FIRST (job U26): all three on the screen without scrolling, above the hero video.
+  const top = await page.evaluate(() => { const go = document.querySelector('nav.go').getBoundingClientRect(), hero = document.querySelector('section.video-wrap').getBoundingClientRect(); return { goBottom: Math.round(go.bottom), heroTop: Math.round(hero.top), h: innerHeight, y: scrollY }; });
+  check(top.y === 0 && top.goBottom <= top.h && top.goBottom <= top.heroTop, `the three buttons show without scrolling (they end ${top.goBottom} px down of ${top.h}), above the hero video`);
+  const heroes = await page.locator('section.video-wrap video').evaluateAll((vs) => vs.map((v) => v.getAttribute('src')));
+  const inCard = await page.locator('section.card video').evaluateAll((vs) => vs.map((v) => v.getAttribute('src')));
+  check(heroes.join() === 'pitch.mp4' && inCard.join() === 'how-to-play.mp4', `the hero is ${heroes.join()}; the how-to video is in the "How to play" card (${inCard.join()})`);
+  const v = page.locator('section.video-wrap video');
   const poster = await v.evaluate((el) => new Promise((done) => { const i = new Image(); i.onload = () => done(i.naturalWidth); i.onerror = () => done(0); i.src = el.poster; }));
   check(poster > 0 && (await v.getAttribute('poster')) === '../cover.webp', `the poster is the game's cover (${poster} px wide)`);
   await v.scrollIntoViewIfNeeded();
@@ -86,10 +93,19 @@ for (const [w, h, phone] of [[390, 664, true], [375, 635, true], [1280, 720, fal
   await page.waitForTimeout(400);
   // (If the engine's controls did not take that as play, the same gesture's permission lets the page start it.)
   if (await v.evaluate((el) => el.paused)) await v.evaluate((el) => el.play());
-  await page.waitForFunction(() => document.querySelector('video').currentTime > 1.5, null, { timeout: 15000 }).catch(() => {});
+  await page.waitForFunction(() => document.querySelector('section.video-wrap video').currentTime > 1.5, null, { timeout: 15000 }).catch(() => {});
   const now = await v.evaluate((el) => ({ t: el.currentTime, paused: el.paused, muted: el.muted, vol: el.volume, w: el.videoWidth, h: el.videoHeight, dur: el.duration, audio: el.webkitAudioDecodedByteCount ?? -1, err: el.error?.message ?? '' }));
   check(now.t > 1.5 && !now.paused, `it plays after a tap (${now.t.toFixed(1)} s in${now.err ? `; ${now.err}` : ''})`);
-  check(now.w === 720 && now.h === 1280 && Math.abs(now.dur - 31.5) < 0.3, `720 x 1280, ${now.dur.toFixed(1)} s`);
+  check(now.w === 720 && now.h === 1280 && Math.abs(now.dur - 53.1) < 0.4, `the pitch: 720 x 1280, ${now.dur.toFixed(1)} s`);
+  // The how-to video in its card plays too (it loads nothing until asked: preload none).
+  const howto = page.locator('section.card video');
+  await howto.scrollIntoViewIfNeeded();
+  await howto.evaluate((el) => { el.muted = true; return el.play(); }).catch(() => {});
+  await page.waitForFunction(() => document.querySelector('section.card video').currentTime > 1, null, { timeout: 15000 }).catch(() => {});
+  const h2 = await howto.evaluate((el) => ({ t: el.currentTime, dur: el.duration }));
+  check(h2.t > 1 && Math.abs(h2.dur - 31.5) < 0.3, `the how-to video in its card plays (${h2.t.toFixed(1)} of ${h2.dur.toFixed(1)} s)`);
+  await howto.evaluate((el) => el.pause());
+  await v.scrollIntoViewIfNeeded();
   check(!now.muted && now.vol > 0 && now.audio !== 0, `with sound (not muted, volume ${now.vol}${now.audio > 0 ? `, ${now.audio} bytes of sound decoded` : ''})`);
   await page.screenshot({ path: join(OUT, `playing_${w}x${h}.png`) });
   await v.evaluate((el) => el.pause());
@@ -143,9 +159,9 @@ for (const [name, type] of [['chromium', chromium], ['webkit', webkit]]) {
   const was = await kept();
   await page.goto(`${ROOT}judges/`, { waitUntil: 'load' });
   check((await page.title()) === "Rig Jam Judges' Guide", 'the guide opens under the worker');
-  await page.locator('video').evaluate((el) => { el.muted = true; return el.play(); }).catch(() => {});
-  await page.waitForFunction(() => document.querySelector('video').currentTime > 1, null, { timeout: 15000 }).catch(() => {});
-  check(await page.locator('video').evaluate((el) => el.currentTime > 1), 'its video plays there');
+  await page.locator('section.video-wrap video').evaluate((el) => { el.muted = true; return el.play(); }).catch(() => {});
+  await page.waitForFunction(() => document.querySelector('section.video-wrap video').currentTime > 1, null, { timeout: 15000 }).catch(() => {});
+  check(await page.locator('section.video-wrap video').evaluate((el) => el.currentTime > 1), 'its video plays there');
   await page.waitForTimeout(500);
   const is = await kept();
   check(was.page.includes('id="app"') && is.page === was.page, "the game's offline page is still the game");
