@@ -114,6 +114,8 @@ for (const [w, h, phone] of [[390, 664, true], [375, 635, true], [1280, 720, fal
   const labels = await page.locator('nav.go a.btn .label').allTextContents();
   const tag = await page.locator('nav.go a.btn.judge .tag').textContent().catch(() => null);
   check(tag?.trim() === 'For hackathon judges', `the orange Demo mode button carries its tag ("${tag?.trim()}")`);
+  const end = await page.evaluate(() => { const b = document.querySelector('nav.go a.btn.end'); const r = b.getBoundingClientRect(), t = b.querySelector('.tag'); return { tag: t?.textContent.trim(), what: b.querySelector('.what')?.textContent.trim(), inside: r.left >= 0 && r.right <= innerWidth + 0.5, tagInside: t ? t.getBoundingClientRect().right <= r.right : false }; });
+  check(end.tag === 'Spoiler' && end.what === 'The payoff for a perfect game. Judges, tap it. Everyone else, go earn it.' && end.inside && end.tagInside, `the blue Watch the ending button carries its "${end.tag}" tag and the new line under it`);
   const mails = await page.evaluate(() => document.body.innerHTML.match(/[a-z]+@stragentic\.com/g) ?? []);
   check(mails.length > 0 && mails.every((m) => m === 'info@stragentic.com'), `the only address on the page is info@stragentic.com (${[...new Set(mails)].join(', ')})`);
   check(labels[1].trim() === 'Demo mode' && !/judge mode/i.test(await page.locator('nav.go').innerText()), `the ?demo=1 button reads "${labels[1].trim()}"`);
