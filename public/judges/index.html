@@ -148,7 +148,7 @@ a { color: inherit; }
   font-weight: 700; font-size: 11.5px; letter-spacing: 0.09em; text-transform: uppercase;
   color: #fff; background: var(--outline); border-radius: 999px; padding: 3px 10px; margin-bottom: 4px;
 }
-.btn.judge .arrow { grid-row: 1 / span 3; }
+.btn.judge .arrow, .btn.end .arrow { grid-row: 1 / span 3; }
 .btn.play { background: var(--green); }
 .btn.judge { background: var(--orange); }
 .btn.end { background: var(--blue); }
@@ -265,12 +265,13 @@ b, strong { font-weight: 800; color: var(--outline); }
     <a class="btn judge" href="https://jasondag-ai.github.io/rig-jam/?demo=1" target="_blank" rel="noopener">
       <span class="tag">For hackathon judges</span>
       <span class="label">Demo mode</span>
-      <span class="what">Every one of the 70 levels open, the full sighting log, and a live par tracker. It is the Demo mode switch in Settings.</span>
+      <span class="what">All 70 levels open, the full sighting log, and a live par tracker. The Demo mode switch in Settings.</span>
       <span class="arrow" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M5 2l6 6-6 6" fill="none" stroke="#2a1a0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </a>
     <a class="btn end" href="https://jasondag-ai.github.io/rig-jam/?finale=1" target="_blank" rel="noopener">
+      <span class="tag">Spoiler</span>
       <span class="label">Watch the ending</span>
-      <span class="what">What a perfect game earns. About 40 seconds; tap once for sound.</span>
+      <span class="what">The payoff for a perfect game. Judges, tap it. Everyone else, go earn it.</span>
       <span class="arrow" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M5 2l6 6-6 6" fill="none" stroke="#2a1a0c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </a>
   </nav>
