@@ -696,7 +696,7 @@ something, give exact clicks and one command at a time.
   `?cover=1`; `?cover=0` skips it. `npm run test:e2e:cover` tests it.
 
 ## Beta readiness (Job O)
-- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11; 1.0.11 on Oct 12; 1.0.12 on Oct 14; 1.0.13 to 1.0.15 on Oct 19; 1.0.16 and 1.0.17 on Oct 21; 1.0.18 on Oct 22) and a BUILD id (the first 7 of the commit's hash:
+- VERSION: `package.json` `version` (1.0.0 on Oct 10, then 1.0.1 to 1.0.4 the same day; 1.0.5 to 1.0.10 on Oct 11; 1.0.11 on Oct 12; 1.0.12 on Oct 14; 1.0.13 to 1.0.15 on Oct 19; 1.0.16 and 1.0.17 on Oct 21; 1.0.18 on Oct 22; 1.0.19 on Oct 24) and a BUILD id (the first 7 of the commit's hash:
   `GITHUB_SHA` in the deploy, `git rev-parse` locally, else 'dev') are set at build time
   (vite.config.ts `define`: `__APP_VERSION__`, `__APP_BUILD__`; `src/ui/version.ts` `APP`,
   `versionText`). Shown at the very bottom of Settings ("Version 1.0.0 (a1b2c3d)") and copied into
@@ -1454,6 +1454,13 @@ something, give exact clicks and one command at a time.
   1280 kb/s; AAC 128 kb/s; `-movflags +faststart`; 5.6 MB, under the 6 MB limit). Its poster is the game's own
   `../cover.webp`. Its three buttons lead to the live game, `?demo=1` and `?finale=1` (absolute links, on the dev
   copy too). The page takes its fonts from Google Fonts, as written.
+- U29 (1.0.19): from the inbox, byte for byte, never re-encoded: the page (23,419 bytes; "What to look for" is now
+  the first card, the how-to card after it, captions "Tap to play, sound is on."), `how-to-play.mp4` (33.1 s),
+  `pitch.mp4` (50.2 s, was 53.1) and `og.jpg` (1200 x 630) into the PUBLIC ROOT, `public/og.jpg`. LINK PREVIEWS: the
+  game's own index.html carries the judges' page's og: and twitter: block after its description meta, with its own
+  og:title "Rig Jam", og:url the game's address and its own og:description; og:image is that `og.jpg`
+  (service-worker.test.ts holds them). `og.jpg` is a public file like any other, so the game's service worker
+  precaches it (138 KB).
 - U28 (1.0.18): the page copied again, byte for byte (22,694 bytes): the blue "Watch the ending" button carries a
   "Spoiler" tag and reads "The payoff for a perfect game. Judges, tap it. Everyone else, go earn it."; the orange
   button's line is shorter. A first version of it overflowed 375 x 635 (the blue button 21 px below the fold): THE
