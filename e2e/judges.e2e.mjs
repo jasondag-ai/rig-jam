@@ -76,6 +76,10 @@ for (const [w, h, phone] of [[390, 664, true], [375, 635, true], [1280, 720, fal
   // THE BUTTONS FIRST (job U26): all three on the screen without scrolling, above the hero video.
   const top = await page.evaluate(() => { const go = document.querySelector('nav.go').getBoundingClientRect(), hero = document.querySelector('section.video-wrap').getBoundingClientRect(); return { goBottom: Math.round(go.bottom), heroTop: Math.round(hero.top), h: innerHeight, y: scrollY }; });
   check(top.y === 0 && top.goBottom <= top.h && top.goBottom <= top.heroTop, `the three buttons show without scrolling (they end ${top.goBottom} px down of ${top.h}), above the hero video`);
+  // (Job U29: the first card is "What to look for"; the how-to card comes after it, its caption 33 seconds.)
+  const cards = await page.locator('section.card').evaluateAll((cs) => cs.map((c) => c.querySelector('.eyebrow')?.textContent.trim()));
+  const howCap = await page.locator('section.card video').evaluate((v) => v.closest('section').querySelector('.cap')?.textContent.trim()).catch(() => '');
+  check(cards[0] === 'What to look for' && /33 seconds/.test(howCap), `the first card is "${cards[0]}"; the how-to video's caption: "${howCap}"`);
   const heroes = await page.locator('section.video-wrap video').evaluateAll((vs) => vs.map((v) => v.getAttribute('src')));
   const inCard = await page.locator('section.card video').evaluateAll((vs) => vs.map((v) => v.getAttribute('src')));
   check(heroes.join() === 'pitch.mp4' && inCard.join() === 'how-to-play.mp4', `the hero is ${heroes.join()}; the how-to video is in the "How to play" card (${inCard.join()})`);
@@ -96,7 +100,7 @@ for (const [w, h, phone] of [[390, 664, true], [375, 635, true], [1280, 720, fal
   await page.waitForFunction(() => document.querySelector('section.video-wrap video').currentTime > 1.5, null, { timeout: 15000 }).catch(() => {});
   const now = await v.evaluate((el) => ({ t: el.currentTime, paused: el.paused, muted: el.muted, vol: el.volume, w: el.videoWidth, h: el.videoHeight, dur: el.duration, audio: el.webkitAudioDecodedByteCount ?? -1, err: el.error?.message ?? '' }));
   check(now.t > 1.5 && !now.paused, `it plays after a tap (${now.t.toFixed(1)} s in${now.err ? `; ${now.err}` : ''})`);
-  check(now.w === 720 && now.h === 1280 && Math.abs(now.dur - 53.1) < 0.4, `the pitch: 720 x 1280, ${now.dur.toFixed(1)} s`);
+  check(now.w === 720 && now.h === 1280 && Math.abs(now.dur - 50.2) < 0.4, `the pitch: 720 x 1280, ${now.dur.toFixed(1)} s`);
   // The how-to video in its card plays too (it loads nothing until asked: preload none).
   const howto = page.locator('section.card video');
   await howto.scrollIntoViewIfNeeded();

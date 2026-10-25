@@ -16,6 +16,23 @@ describe('PWA', () => {
     for (const icon of m.icons) expect(icon.src).toMatch(/icon-v2-/);
   });
 
+  it("link previews (job U29): the game's own og: and twitter: tags, the image in the public root at 1200 x 630", () => {
+    const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+    const meta = (k: string) => html.match(new RegExp(`(?:property|name)="${k}" content="([^"]*)"`))?.[1];
+    expect(meta('og:title')).toBe('Rig Jam');
+    expect(meta('og:url')).toBe('https://jasondag-ai.github.io/rig-jam/');
+    expect(meta('og:description')).toBe('An oilfield puzzle for your phone. Slide the trucks off the lease pad. 70 levels, 7 regions, no download.');
+    expect(meta('og:image')).toBe('https://jasondag-ai.github.io/rig-jam/og.jpg');
+    expect(meta('twitter:card')).toBe('summary_large_image');
+    // After the description meta, in the head.
+    expect(html.indexOf('og:type')).toBeGreaterThan(html.indexOf('name="description"'));
+    expect(html.indexOf('og:type')).toBeLessThan(html.indexOf('</head>'));
+    const jpg = readFileSync(pub('og.jpg'));
+    // (A JPEG's frame header holds its height then its width.)
+    const sof = jpg.findIndex((b, i) => b === 0xff && (jpg[i + 1] === 0xc0 || jpg[i + 1] === 0xc2));
+    expect([jpg.readUInt16BE(sof + 7), jpg.readUInt16BE(sof + 5)]).toEqual([1200, 630]);
+  });
+
   it('links the manifest and iPhone home-screen icon from index.html', () => {
     const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
     expect(html).toContain('rel="manifest"');
