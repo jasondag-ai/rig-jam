@@ -253,6 +253,11 @@ if (!process.env.ONLY || process.env.ONLY === 'finale') {
   const p4 = await c4.newPage();
   const f4 = []; p4.on('request', (r) => { if (/\/audio\//.test(r.url()) && !r.url().includes('/src/')) f4.push(r.url().split('/audio/')[1]); });
   await p4.goto(BASE + '?audiolog&finale=1', { waitUntil: 'networkidle' });
+  // (Effects are on by default since 1.0.20: this case is a player who turned them off. Seeded, then the page is reloaded,
+  // as the wave 3 case below does; the requests the first load made are not counted.)
+  await p4.evaluate(() => localStorage.setItem('rush-hour-rigs-audio', JSON.stringify({ sfx: false, music: false, style: 'country' })));
+  await p4.reload({ waitUntil: 'networkidle' });
+  f4.length = 0;
   await p4.mouse.click(8, 8);
   await p4.waitForSelector('.finale-card [data-act="photo"]');
   await wait(3600);
