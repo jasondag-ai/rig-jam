@@ -10,8 +10,21 @@ export interface AudioSettings {
   style: MusicStyle;
 }
 
-/** SOUND IS OFF until the player turns it on: no effects, no music. Country is the first style. */
-export const DEFAULT_AUDIO: AudioSettings = { sfx: false, music: false, style: 'country' };
+/**
+ * EFFECTS ARE ON for a new player, MUSIC IS OFF (Jay, Oct 26; job U30). A family tester reported
+ * the game "needed more sound effects": it has 74, and they had simply never turned them on. Sound
+ * used to be off until the player found the switches, and the only thing that said so was a
+ * one-time "Tap for sound" chip on their first win card (sound-nudge.ts). One missed tap cost them
+ * the whole sound design, permanently.
+ *
+ * The effects are 1.0 MB, fetched after the first tap and never blocking play. The music stays off:
+ * it is a couple of megabytes more, and a soundtrack starting unprompted is what makes someone
+ * close a game in public. Both are still one switch away in Settings.
+ *
+ * This default applies ONLY when nothing is saved. Anyone who has already chosen keeps their
+ * choice, in either direction (parseAudioSettings below, and its tests).
+ */
+export const DEFAULT_AUDIO: AudioSettings = { sfx: true, music: false, style: 'country' };
 export const AUDIO_KEY = 'rush-hour-rigs-audio';
 /** The synth styles of the old sound engine, and what each has become. */
 const OLD_STYLES: Record<string, MusicStyle> = { synth: 'retro', lofi: 'chill' };

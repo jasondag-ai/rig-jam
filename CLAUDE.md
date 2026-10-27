@@ -782,7 +782,7 @@ something, give exact clicks and one command at a time.
   tail into head baked in by the script (`crossfaded`). Music files are NOT in the service worker's
   precache (vite.config.ts).
 - Settings (`settings.ts`, localStorage `rush-hour-rigs-audio`, separate so Reset progress keeps
-  it): SOUND IS OFF BY DEFAULT (effects off, music off), style Country; a style saved under the old
+  it): EFFECTS ARE ON FOR A NEW PLAYER AND MUSIC IS OFF (job U30, below), style Country; a style saved under the old
   engine maps to its nearest (`synth` > retro, `lofi` > chill). Settings has both switches, the
   style picker and a CREDITS screen (`src/audio/credits.ts`: the six loops by title, the effects
   gathered by source and licence; nothing picked needs an attribution licence).
@@ -1609,6 +1609,34 @@ something, give exact clicks and one command at a time.
   after a pause and still moving, the nearest cell, a jerk back on release, let go off the truck, off the board and
   outside the window, back to back, blur, a lost release, a new press, no selection or picture drag, the log box.
   WHEN A SUITE'S DRAGS ARE SCRIPTED EVENTS, IT HAS NOT TESTED A MOUSE: use this one for anything a desktop player does.
+
+## Effects on for a new player (job U30; Oct 26; shipped as 1.0.20)
+- A family tester reported the game "needed more sound effects". It has 74, all wired and tested:
+  THEY HAD NEVER TURNED SOUND ON. Sound was off until the player found the switches in Settings, and
+  the only thing that ever said so was the one-time "Tap for sound" chip on their FIRST win card
+  (sound-nudge.ts), offered once ever on that phone. One missed tap cost them the whole sound
+  design, permanently, and a judge playing in silence scores a much flatter game.
+- `DEFAULT_AUDIO.sfx` IS NOW `true`; `music` STAYS `false` (settings.ts). The effects are 1.0 MB,
+  fetched after the first tap (`void this.fetchBuffer`, engine.ts: fire and forget, it never blocks
+  the first level). The music is a couple of megabytes more and a soundtrack starting unprompted is
+  what makes someone close a game in public, so it still waits to be asked for. Both are one switch
+  away in Settings, exactly as before.
+- THE DEFAULT APPLIES ONLY WHEN NOTHING IS SAVED. `parseAudioSettings` reads a saved boolean either
+  way, so a player who turned the effects OFF stays off for ever and one who turned them ON stays
+  on. Held by a unit test in cues.test.ts ("a player who already chose keeps their choice").
+- THE "TAP FOR SOUND" CHIP IS LEFT IN PLACE and simply does not fire for a new player any more
+  (`nudgeDue` returns false once `sfx` is on). It was not deleted.
+- HAPTICS RIDE ALONG: they follow the Sound effects switch and have no toggle of their own
+  (haptics.ts), so the light tick on every button tap and truck exit is on by default too.
+- `e2e/audio.e2e.mjs` section 1 now checks the NEW default on a fresh page, and section 1b SEEDS
+  both switches off (`OFF`) before the "nothing sounds, nothing is fetched" guarantee and the
+  switch-on flow, which are otherwise unchanged. Every other suite already seeded
+  `rush-hour-rigs-audio` explicitly and needed no change.
+- WHO SHIPPED IT: the COO, directly, not Claude Code (Jay's one-time exception, Oct 26 21:57: he was
+  away from the Mac and judges were playing in silence meanwhile). Unit tests (1,145) and the build
+  were run before the push, which is the gate the deploy Action itself uses. THE WEBKIT e2e SUITES
+  WERE NOT RUN (the COO's container has Chromium only) and nobody has listened. Jay's ear on a phone
+  is still the only real check of the mix.
 
 ## The best score still possible (job U12; Oct 10; shipped as 1.0.2)
 - A SMALL LINE UNDER THE MOVES AND PAR in the HUD (`.hud .best`; rules in `src/ui/best.ts`, pure and tested): "Best

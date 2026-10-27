@@ -85,14 +85,26 @@ const enter = async (page, tab, index) => {
   await wait(400);
 };
 const ON = { sfx: true, music: false, style: 'country' };
+const OFF = { sfx: false, music: false, style: 'country' };
 
-// ---------- 1. Off by default; nothing fetched; nothing before the first tap ----------
-console.log('\nchromium iPhone 13: sound is off until asked for');
+// ---------- 1. What a new player gets: effects on, music off, nothing fetched before the tap ----------
+// Job U30: the effects used to be off until the player found the switch, and most never did.
+// They are on for a new player now; the music still waits to be asked for.
+console.log('\nchromium iPhone 13: effects on by default, music off, nothing before the first tap');
 {
-  const { context, page, cdp, fetched } = await open();
-  check(await page.evaluate(() => window.__rhrAudio && window.__rhrAudio.ctx === null), 'no audio before the first tap');
-  const defaults = await page.evaluate(() => window.__rhrAudio.settings);
-  check(defaults.sfx === false && defaults.music === false && defaults.style === 'country', `defaults: effects off, music off, Country (${JSON.stringify(defaults)})`);
+  const fresh = await open();
+  check(await fresh.page.evaluate(() => window.__rhrAudio && window.__rhrAudio.ctx === null), 'no audio before the first tap');
+  const defaults = await fresh.page.evaluate(() => window.__rhrAudio.settings);
+  check(defaults.sfx === true && defaults.music === false && defaults.style === 'country', `defaults: effects ON, music off, Country (${JSON.stringify(defaults)})`);
+  check(fresh.fetched.length === 0, `and nothing is fetched from /audio/ before the first tap (${fresh.fetched.length} requests)`);
+  await fresh.context.close();
+}
+
+// ---------- 1b. Both switches off: nothing sounds. Then each one on, loading only what it needs ----------
+// Off is no longer the default, so it is seeded here: the guarantee itself is unchanged.
+console.log('\nchromium iPhone 13: both switches off, then each turned on');
+{
+  const { context, page, cdp, fetched } = await open({ audio: OFF });
   await touch(cdp, 5, 5);
   await wait(300);
   check((await page.evaluate(() => window.__rhrAudio.ctx?.state)) === 'running', 'the first tap starts the audio');
